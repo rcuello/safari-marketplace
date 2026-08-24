@@ -1,6 +1,6 @@
 import scrapy
 from scrapy_playwright.page import PageMethod
-from alkosto_project.items import TouretItem
+from items import TouretItem
 import asyncio
 import platform
 

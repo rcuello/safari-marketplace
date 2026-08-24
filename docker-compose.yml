@@ -1,0 +1,33 @@
+# Base de datos local para el scraper.
+#
+#   just db-up        levanta Postgres y aplica el esquema
+#   just db-shell     abre psql contra la base
+#   just db-down      apaga el contenedor (los datos sobreviven)
+#   just db-reset     borra el volumen y empieza de cero
+#
+# Estas credenciales son para desarrollo local. En la nube, la cadena de
+# conexión se inyecta por la variable DATABASE_URL y nunca se versiona.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: safari-postgres
+    environment:
+      POSTGRES_USER: safari
+      POSTGRES_PASSWORD: safari
+      POSTGRES_DB: safari_scraper
+    ports:
+      # 5432 es el puerto por defecto de Postgres y suele estar ocupado si
+      # ya hay una instalación local. Se expone en 5433 para evitar choques;
+      # dentro de la red de Docker el contenedor sigue usando 5432.
+      - "5433:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U safari -d safari_scraper"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres-data:

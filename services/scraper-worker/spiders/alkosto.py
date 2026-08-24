@@ -1,6 +1,6 @@
 import scrapy
 from scrapy_playwright.page import PageMethod
-from alkosto_project.items import AlkostoProjectItem
+from items import AlkostoProjectItem
 import sys
 import asyncio
 

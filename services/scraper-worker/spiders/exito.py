@@ -1,6 +1,6 @@
 import scrapy
 from scrapy_playwright.page import PageMethod
-from alkosto_project.items import ExitoProjectItem
+from items import ExitoProjectItem
 import re
 import unicodedata
 import os

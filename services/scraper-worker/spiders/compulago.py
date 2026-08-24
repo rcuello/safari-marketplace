@@ -3,7 +3,7 @@ import re
 import sys
 import asyncio
 from scrapy_playwright.page import PageMethod
-from alkosto_project.items import CompulagoItem
+from items import CompulagoItem
 
 if sys.platform == 'win32':
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
