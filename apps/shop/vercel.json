@@ -1,0 +1,44 @@
+{
+  "env": {
+    "FRAMEWORK_PROVIDER": "rest",
+    "NEXT_PUBLIC_REST_API_ENDPOINT": "your_rest_api_endpoint",
+    "NEXT_PUBLIC_GRAPHQL_API_ENDPOINT": "your_graphql_api_endpoint",
+    "NEXT_PUBLIC_SITE_URL": "",
+    "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY": "",
+    "NEXTAUTH_URL": "",
+    "SECRET": "your_secret",
+    "GOOGLE_CLIENT_ID": "your_google_client_id",
+    "GOOGLE_CLIENT_SECRET": "your_google_client_secret",
+    "NEXT_PUBLIC_ADMIN_URL": "",
+    "NEXT_PUBLIC_PAYPAL_CLIENT_TOKEN": "",
+    "NEXT_PUBLIC_RAZORPAY_KEY": "your_razorpay_key",
+    "APPLICATION_MODE": "production",
+    "NEXT_PUBLIC_DEFAULT_LANGUAGE": "en",
+    "NEXT_PUBLIC_ENABLE_MULTI_LANG": "false",
+    "NEXT_PUBLIC_AVAILABLE_LANGUAGES": "en",
+    "NEXT_PUBLIC_GOOGLE_MAP_API_KEY": "your_google_map_api_key",
+    "NEXT_PUBLIC_PAYSTACK_KEY": "your_paystack_key"
+  },
+  "build": {
+    "env": {
+      "FRAMEWORK_PROVIDER": "rest",
+      "NEXT_PUBLIC_REST_API_ENDPOINT": "your_rest_api_endpoint",
+      "NEXT_PUBLIC_GRAPHQL_API_ENDPOINT": "your_graphql_api_endpoint",
+      "NEXT_PUBLIC_SITE_URL": "",
+      "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY": "",
+      "NEXTAUTH_URL": "",
+      "SECRET": "your_secret",
+      "GOOGLE_CLIENT_ID": "your_google_client_id",
+      "GOOGLE_CLIENT_SECRET": "your_google_client_secret",
+      "NEXT_PUBLIC_ADMIN_URL": "",
+      "NEXT_PUBLIC_PAYPAL_CLIENT_TOKEN": "",
+      "NEXT_PUBLIC_RAZORPAY_KEY": "your_razorpay_key",
+      "APPLICATION_MODE": "production",
+      "NEXT_PUBLIC_DEFAULT_LANGUAGE": "en",
+      "NEXT_PUBLIC_ENABLE_MULTI_LANG": "false",
+      "NEXT_PUBLIC_AVAILABLE_LANGUAGES": "en",
+      "NEXT_PUBLIC_GOOGLE_MAP_API_KEY": "your_google_map_api_key",
+      "NEXT_PUBLIC_PAYSTACK_KEY": "your_paystack_key"
+    }
+  }
+}
