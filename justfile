@@ -17,6 +17,14 @@ API_PORT   := env_var_or_default("API_PORT", "9001")
 SHOP_PORT  := env_var_or_default("SHOP_PORT", "3003")
 ADMIN_PORT := env_var_or_default("ADMIN_PORT", "3002")
 
+# Postgres del scraper (ver docker-compose.yml)
+DB_URL := env_var_or_default("DATABASE_URL", "postgresql://safari:safari@localhost:5433/safari_scraper")
+
+# El venv del scraper cambia de ruta segun el sistema operativo. Se resuelve
+# absoluto para que las recetas puedan hacer cd sin romper la ruta.
+SCRAPER_DIR := justfile_directory() / "services/scraper-worker"
+VENV_BIN    := if os_family() == "windows" { SCRAPER_DIR / ".venv/Scripts" } else { SCRAPER_DIR / ".venv/bin" }
+
 # Lista las tareas disponibles
 default:
     @just --list
@@ -234,26 +242,83 @@ doctor:
     done
 
 
-# ─────────────────────────── scraper ─────────────────────────
-#
-# OJO: el proyecto Scrapy esta roto en el repo. settings.py, scrapy.cfg y los
-# seis spiders importan el paquete `alkosto_project`, que no existe: los
-# archivos se aplanaron en services/scraper-worker/ sin actualizar las
-# referencias. `just scrape` fallara con ModuleNotFoundError hasta que se
-# recree el paquete o se reescriban esos imports.
+# ────────────────────── base de datos ────────────────────────
 
-# Instala las dependencias Python del scraper + navegadores de Playwright
+# Levanta Postgres en Docker, espera a que este listo y aplica el esquema
+[group('bd')]
+db-up:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    docker compose up -d postgres
+    echo -n "esperando a Postgres"
+    for i in $(seq 1 30); do
+      if docker compose exec -T postgres pg_isready -U safari -d safari_scraper >/dev/null 2>&1; then
+        echo " listo"; break
+      fi
+      echo -n "."; sleep 1
+    done
+    just db-migrate
+    if [ ! -f services/scraper-worker/.env ]; then
+      cp services/scraper-worker/.env.example services/scraper-worker/.env
+      echo "  + services/scraper-worker/.env creado"
+    fi
+
+# Aplica db/schema.sql + db/seed.sql (idempotente)
+[group('bd')]
+db-migrate:
+    docker compose exec -T postgres psql -U safari -d safari_scraper -v ON_ERROR_STOP=1 -q -c "CREATE EXTENSION IF NOT EXISTS pg_trgm;"
+    docker compose exec -T postgres psql -U safari -d safari_scraper -v ON_ERROR_STOP=1 -q < db/schema.sql
+    docker compose exec -T postgres psql -U safari -d safari_scraper -v ON_ERROR_STOP=1 -q < db/seed.sql
+    @echo "  * esquema y datos de referencia aplicados"
+
+# Abre una sesion psql interactiva contra la base
+[group('bd')]
+db-shell:
+    docker compose exec postgres psql -U safari -d safari_scraper
+
+# Cuantos productos hay, por tienda y por categoria
+[group('bd')]
+db-count:
+    docker compose exec -T postgres psql -U safari -d safari_scraper -c "SELECT tienda, categoria, count(*) AS n, round(avg(precio)) AS precio_medio FROM productos GROUP BY ROLLUP (tienda, categoria) ORDER BY tienda NULLS LAST, n DESC;"
+
+# Prueba el pipeline contra la base, sin salir a internet
+[group('bd')]
+db-test:
+    cd "{{SCRAPER_DIR}}" && DATABASE_URL="{{DB_URL}}" "{{VENV_BIN}}/python" test_pipeline.py
+
+# Apaga Postgres. Los datos sobreviven en el volumen
+[group('bd')]
+db-down:
+    docker compose down
+
+# Borra la base entera, volumen incluido, y la recrea vacia
+[group('bd')]
+db-reset:
+    docker compose down -v
+    just db-up
+
+
+# ─────────────────────────── scraper ─────────────────────────
+
+# Crea el venv e instala dependencias + el navegador de Playwright
 [group('scraper')]
-[working-directory: 'services/scraper-worker']
 scraper-install:
-    python -m pip install -r requirements.txt
-    python -m playwright install chromium
+    #!/usr/bin/env bash
+    set -euo pipefail
+    python -m venv "{{SCRAPER_DIR}}/.venv"
+    "{{VENV_BIN}}/python" -m pip install --upgrade pip
+    "{{VENV_BIN}}/python" -m pip install -r "{{SCRAPER_DIR}}/requirements.txt"
+    "{{VENV_BIN}}/python" -m playwright install chromium
 
 # Ejecuta un spider (alkosto|compulago|compuworking|exito|falabella|tauret)
 [group('scraper')]
-[working-directory: 'services/scraper-worker']
 scrape spider:
-    scrapy crawl {{spider}}
+    cd "{{SCRAPER_DIR}}" && "{{VENV_BIN}}/python" -m scrapy crawl {{spider}}
+
+# Lista los spiders que Scrapy reconoce (util para validar la configuracion)
+[group('scraper')]
+spiders:
+    cd "{{SCRAPER_DIR}}" && "{{VENV_BIN}}/python" -m scrapy list
 
 
 # ─────────────────────────── limpieza ────────────────────────
