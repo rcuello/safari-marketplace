@@ -271,6 +271,11 @@ db-migrate:
     docker compose exec -T postgres psql -U safari -d safari_scraper -v ON_ERROR_STOP=1 -q < db/seed.sql
     @echo "  * esquema y datos de referencia aplicados"
 
+# Regenera db/seed.sql desde los JSON del mock de la aplicacion
+[group('bd')]
+db-seed-generate:
+    node db/generate-seed.mjs
+
 # Abre una sesion psql interactiva contra la base
 [group('bd')]
 db-shell:
