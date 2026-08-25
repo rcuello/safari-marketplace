@@ -303,6 +303,23 @@ db-reset:
     just db-up
 
 
+# ────────────────────── capa de datos ────────────────────────
+
+# Instala y construye packages/db (prisma generate + tsup -> dist/)
+[group('bd')]
+[working-directory: 'packages/db']
+db-build:
+    npm install
+    npm run build
+
+# Typecheck + tests de integracion de packages/db
+[group('bd')]
+[working-directory: 'packages/db']
+db-check:
+    npm run typecheck
+    npm test
+
+
 # ─────────────────────────── scraper ─────────────────────────
 
 # Crea el venv e instala dependencias + el navegador de Playwright

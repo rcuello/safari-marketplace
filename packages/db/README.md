@@ -2,15 +2,25 @@
 
 Paquete **autónomo** (fuera del workspace de yarn de `apps/`) que expone el
 acceso a Postgres vía Prisma 7 + `@prisma/adapter-pg`: un cliente singleton
-y repositorios de **funciones planas** por agregado. Sin paso de build: los
-`exports` de `package.json` apuntan directo al `.ts` fuente.
+y repositorios de **funciones planas** por agregado.
 
 ```bash
 cd packages/db
 npm install           # dependencias propias (NO forma parte de apps/)
-npm run generate      # prisma generate → generated/prisma/client
+npm run build         # prisma generate + tsup → dist/ (CJS + .d.ts)
 npm run typecheck     # tsc --noEmit
 npm test              # integración contra el Postgres del docker-compose
+npm run dev           # tsup --watch, para iterar
+```
+
+`dist/` y `generated/` están gitignored, así que tras clonar hay que
+construirlos. El script `prepare` los genera en una instalación **limpia** (y
+cuando otro paquete instala este por `file:`), pero **npm se salta los
+lifecycle scripts si el árbol de dependencias ya está al día**: en un `npm
+install` repetido no pasa nada. El comando fiable es siempre explícito:
+
+```bash
+npm run build      # o, desde la raíz del repo:  just db-build
 ```
 
 Requiere la base corriendo y sembrada: `just db-up` en la raíz del repo.
@@ -119,12 +129,47 @@ No usar `prisma migrate dev` ni `prisma db push` contra esta base.
 "dependencies": { "@safari/db": "file:../../../packages/db" }
 ```
 
-Dos cosas a resolver en ese paso (deliberadamente no resueltas aquí):
+Queda una sola cosa por resolver: **`DATABASE_URL` debe llegar al `.env` de la
+API**.
 
-1. Los `exports` apuntan a `.ts` fuente: el consumidor debe transpilar el
-   paquete (en Nest: `ts-node`/SWC ya lo hacen si el paquete entra por
-   `file:`; si no, añadir un paso de build aquí).
-2. `DATABASE_URL` debe llegar al `.env` de la API.
+## Por qué este paquete se construye (y el de referencia no)
+
+`agenthub-platform/packages/db` no tiene build: sus `exports` apuntan al `.ts`
+fuente y funciona, porque sus consumidores son apps Next.js, que bundlean con
+SWC y transpilan dependencias.
+
+Aquí el consumidor es **NestJS 9, que compila con `tsc` a secas**, y `tsc` no
+transpila archivos que resuelve dentro de `node_modules`: los typechequea y los
+deja intactos. Sin build, esto pasa:
+
+```
+$ tsc            # exit 0, ni una queja
+$ node dist/main.js
+SyntaxError: Unexpected token 'export'
+   at loadESMFromCJS (node:internal/modules/cjs/loader)
+```
+
+La brecha es sutil y merece entenderla: **el compilador que typechequea ignora
+el campo `exports` y el runtime que ejecuta lo respeta.** El `tsc` de la API no
+declara `moduleResolution`, así que usa resolución `node10`, que no lee
+`exports`; al no encontrar `main` ni `types` cae a su fallback de directorio,
+localiza `index.ts` y typechequea contra el fuente sin protestar. Node, en
+cambio, sí resuelve `exports`, carga el `.ts` y revienta.
+
+De ahí tres detalles del `package.json` que no son decorativos:
+
+- **`main` y `types` en el nivel superior**, no solo dentro de `exports`. Con
+  resolución `node10` los `exports` se ignoran; sin `main`/`types` la API
+  volvería a leer el `.ts` fuente.
+- **Solo formato CJS.** El paquete exporta un singleton con estado (el cliente
+  de Prisma): emitir CJS y ESM a la vez abre el *dual package hazard*, con dos
+  clientes y dos pools de conexiones. Añadir `'esm'` es una línea en
+  `tsup.config.ts` si algún día Next.js consume el paquete directamente.
+- **`shims: true` en tsup.** El cliente generado por Prisma 7 arranca con
+  `globalThis['__dirname'] = path.dirname(fileURLToPath(import.meta.url))`, y
+  `import.meta` no existe en CommonJS: esbuild lo sustituye por un objeto vacío
+  y `fileURLToPath(undefined)` lanza un `TypeError` **al cargar el módulo**. El
+  build sale en verde y el artefacto no arranca. El shim lo resuelve.
 
 El scraper Python (`services/scraper-worker`) **no** consume este paquete:
 sigue hablando SQL directo. `upsertScrapedProduct` existe para cuando la

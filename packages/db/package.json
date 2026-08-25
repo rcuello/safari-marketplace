@@ -4,15 +4,24 @@
   "private": true,
   "scripts": {
     "generate": "prisma generate",
+    "build": "prisma generate && tsup",
+    "dev": "tsup --watch",
     "lint": "biome check .",
     "format": "biome check --write .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "prepare": "npm run build"
   },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "exports": {
     ".": {
-      "types": "./index.ts",
-      "default": "./index.ts"
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
     }
   },
   "dependencies": {
@@ -23,6 +32,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.15",
+    "tsup": "^8.5.1",
     "typescript": "^5",
     "vitest": "^4.1.7"
   }
