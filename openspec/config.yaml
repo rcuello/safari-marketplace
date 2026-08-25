@@ -1,0 +1,85 @@
+# openspec/config.yaml
+# SDD configuration for safari-marketplace
+# Managed by SDD init. Update via sdd-init or manual edits; do not delete.
+
+schema: spec-driven
+
+project:
+  name: safari-marketplace
+  git_remote: https://github.com/rcuello/safari-marketplace.git
+  branch: main
+  # openspec-only: el MCP de Engram NO esta conectado en esta maquina.
+  # Todo artefacto SDD persiste exclusivamente en openspec/ (specs/ + changes/).
+  # Si algun archivo de .claude/skills/_shared/ menciona Engram, esa rama no aplica aqui.
+  artifact_store_mode: openspec
+
+# Context block kept under 10 lines. Describes implemented tech stack and conventions.
+context: |
+  Tech stack: monorepo didactico de sistemas distribuidos. Next.js 13.5 (apps/shop, apps/admin),
+  NestJS 9 (apps/api), Prisma 7 + adapter-pg (packages/db), Scrapy+Playwright (services/scraper-worker),
+  PostgreSQL 16 en Docker (puerto 5433). Orquestacion de tareas con `just` (justfile en la raiz).
+  Fuente de verdad del DDL: db/schema.sql (aplicado por `just db-migrate`); Prisma se re-introspeciona.
+  Docs y prosa en espanol neutral; identificadores/slugs/archivos en ingles kebab-case.
+  Backlog de producto en docs/product/ (epicos + US con CA numerados y DoD con evidencia real).
+
+strict_tdd: false   # no hay runner de tests repo-wide todavia (ver testing.test_command)
+
+testing:
+  framework: mixed             # vitest (packages/db), jest declarado sin specs (apps/api/rest), script Python (scraper)
+  # PENDIENTE: no existe un comando de test repo-wide. Los unicos tests reales hoy:
+  #   - packages/db: `npm test` (vitest, integracion; requiere `just db-up` antes)  -> envuelto en `just db-check`
+  #   - scraper: `just db-test` (services/scraper-worker/test_pipeline.py) — HOY ROTO:
+  #     el pipeline escribe en la tabla `productos`, que ya no existe en db/schema.sql
+  # apps/api/rest declara jest en package.json pero no tiene ningun *.spec.ts.
+  # Crear el gate agregador (`just check`) es una US del backlog (Epico 9).
+  test_command: "just db-check"   # el unico gate de tests que existe y pasa hoy (requiere just db-up)
+  coverage_command: ""            # not yet configured
+  build_command: "just build"     # build de produccion shop + admin (build-api aparte)
+  coverage_threshold: 0
+  layers:
+    unit: false                # no implementado en ningun paquete
+    integration: true          # packages/db/src/repositories/products.integration.test.ts (vitest + Postgres real)
+    e2e: false                 # `just verify` comprueba los 3 servicios levantados, pero es manual, no una suite
+  quality:
+    linter: true               # biome en packages/db (`npm run lint`); eslint declarado en apps/api/rest
+    type_checker: true         # tsc --noEmit en packages/db (`npm run typecheck`); resto solo via build
+    formatter: true            # biome format en packages/db; prettier configurado en apps/
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+    - Respect US scope strictly; "NO incluye" is binding (no drive-by improvements)
+    - 1 US = 1 agent session; never mix two US in one change
+  specs:
+    - Use Given/When/Then (Gherkin) for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+    - Spanish specs are allowed (project convention); SDD artifacts default to English otherwise
+  design:
+    - db/schema.sql es la fuente de verdad del DDL; packages/db/prisma/schema.prisma se regenera con `prisma db pull` + renombres, nunca genera migraciones
+    - Las CHECK constraints que Prisma no modela se validan en los repositorios de packages/db y se traducen a errores de dominio
+    - El scraper escribe en las MISMAS tablas que consulta la tienda (products + source_*); no crea esquema propio
+    - La API publica snake_case (contrato heredado del frontend); la capa de datos devuelve camelCase; la traduccion vive en los servicios de Nest
+    - Los contratos HTTP existentes se preservan byte a byte al migrar endpoints del mock a Postgres (precedente: /api/settings)
+    - Document architecture decisions with rationale
+  tasks:
+    - Group by phase, use hierarchical numbering
+    - Keep tasks completable in one session
+  apply:
+    tdd: false                 # strict_tdd es false hasta que exista un runner repo-wide
+    # Inner loop por paquete (elegir segun el area tocada):
+    #   packages/db  -> cd packages/db && npm test          (vitest; requiere just db-up)
+    #   scraper      -> just db-test                        (hoy roto: ver testing.test_command)
+    #   apps/api     -> no hay tests; verificar con build + curl contra el endpoint
+    test_command: "just db-check"
+    follow_existing_patterns: true
+  verify:
+    # No hay runner quiet-mode como en otros repos. La evidencia de cierre es la salida
+    # REAL de los comandos: just db-check / just db-test / just verify / curl contra
+    # los endpoints, pegada en el reporte. "Deberia funcionar" no cierra una US.
+    test_command: "just db-check"
+    build_command: "just build"
+    coverage_threshold: 0
+    require_evidence: true
+  archive:
+    - Warn before merging destructive deltas
+    - Archive is an audit trail; never delete or modify archived changes
