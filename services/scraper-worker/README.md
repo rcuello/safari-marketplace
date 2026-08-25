@@ -60,9 +60,10 @@ El sistema cuenta con 6 spiders especializados y optimizados:
   `"44%"`) y el pipeline los convierte a `NUMERIC` antes de guardarlos. Sin esa
   conversión la base rechaza la fila: es el contrato que un esquema relacional
   impone y que un documento no.
-- **Persistencia relacional**: Los productos se guardan en **PostgreSQL**, una fila
-  por par `(tienda, product_id)`. Ver [`schema.sql`](schema.sql) para el modelo
-  y las notas de diseño.
+- **Persistencia compartida**: Los productos se guardan en **PostgreSQL**, en la
+  **misma tabla `products` que consulta la tienda**. El scraper no tiene base ni
+  esquema propios. Ver [`db/README.md`](../../db/README.md) para el modelo y
+  [`db/schema.sql`](../../db/schema.sql) para el DDL.
 
 ---
 
@@ -130,9 +131,20 @@ services/scraper-worker/
 ├── items.py                 # Modelo de datos por tienda
 ├── pipelines.py             # Conversión de precios y upsert en Postgres
 ├── settings.py              # Configuración de Playwright, Scrapy y DATABASE_URL
-├── schema.sql               # Esquema de la base, con notas de modelado
+├── schema.sql               # Solo una nota: el esquema vive en db/
 ├── test_pipeline.py         # Prueba del pipeline sin red
 └── scrapy.cfg
+```
+
+El esquema **no** está aquí. Vive en [`db/`](../../db/), porque la tabla es
+compartida con la aplicación:
+
+```text
+db/
+├── schema.sql               # DDL del catálogo compartido
+├── seed.sql                 # Datos reales de la app (generado)
+├── generate-seed.mjs        # Genera seed.sql desde los JSON del mock
+└── README.md                # El modelo y a qué debe adaptarse el worker
 ```
 
 ---
@@ -145,30 +157,46 @@ categoría. Eso metía "de qué tienda es" y "de qué categoría es" dentro de l
 «los 10 portátiles más baratos del país» obligaba a recorrer seis bases y unir
 los resultados a mano.
 
-Con Postgres, `tienda` y `categoria` son dos columnas de una misma tabla:
+Con Postgres, la tienda y la categoría son relaciones de una misma tabla, y esa
+tabla es **la que consulta la aplicación**. Esa pregunta se vuelve una consulta:
 
 ```sql
-SELECT nombre, tienda, precio
-FROM productos
-WHERE categoria = 'portatiles'
-ORDER BY precio
+SELECT p.name, s.name AS tienda, p.price
+FROM products p
+JOIN shops s             ON s.id = p.shop_id
+JOIN category_product cp ON cp.product_id = p.id
+JOIN categories c        ON c.id = cp.category_id
+WHERE c.slug = 'laptop'
+  AND p.status = 'publish'
+  AND p.visibility = 'visibility_public'
+ORDER BY p.price
 LIMIT 10;
 ```
 
-Dos consecuencias que se ven directamente en el código:
+Tres consecuencias que se ven directamente en el código:
 
 - El diccionario en memoria que cargaba la base entera al arrancar cada spider
-  desapareció: ese trabajo lo hace el índice `UNIQUE (tienda, product_id)`.
+  desapareció: ese trabajo lo hace el índice único parcial sobre
+  `(source_store, source_product_id)`.
 - El `if/elif/else` de tres ramas (insertar / mover de colección / actualizar)
   se volvió un único `INSERT ... ON CONFLICT DO UPDATE`.
+- Ya no hay una tabla del scraper y otra de la app. Hay una, y las columnas
+  `source_*` marcan qué filas vinieron de aquí.
 
 ### Ejercicios sugeridos
 
 - **Histórico de precios.** Hoy cada corrida pisa el precio anterior. Una tabla
-  `precio_historico (producto_id, precio, capturado_en)` permitiría responder
+  `precio_historico (product_id, price, capturado_en)` permitiría responder
   «¿este descuento es real, o el precio subió justo antes del Black Friday?».
-- **Normalizar marcas y categorías** a sus propias tablas, con claves foráneas.
-- **Búsqueda de texto** con un índice `tsvector` sobre `nombre`.
+- **Rellenar `category_product` para los 1.200 productos del mock.** Vienen sin
+  categorías, así que hoy la navegación por categoría de la tienda devuelve
+  vacío para ellos, y solo funciona con lo que aporta el scraper.
+- **Emparejar el mismo producto entre tiendas.** Es la función del comparador:
+  reconocer que el portátil de Alkosto y el de Falabella son el mismo. No hay
+  clave común, así que hay que decidir cómo (nombre normalizado, marca +
+  modelo, EAN si aparece).
+- **Reconciliar la moneda.** Ver la decisión abierta en
+  [`db/README.md`](../../db/README.md).
 
 ---
 

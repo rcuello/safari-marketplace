@@ -1,0 +1,26 @@
+-- =====================================================================
+-- El scraper NO tiene esquema propio. A propósito.
+--
+-- Este archivo definía una tabla `productos` independiente, pensada para
+-- que el worker guardara ahí lo que recolectaba. Ese diseño se descartó:
+-- habría dejado los productos scrapeados en una tabla que la tienda no
+-- consulta nunca, con lo que el scraper y la aplicación seguirían siendo
+-- dos mundos separados (que es justo el problema que había que resolver).
+--
+-- El esquema vive ahora en un único sitio:
+--
+--     db/schema.sql     el DDL del catálogo compartido
+--     db/seed.sql       los datos reales de la aplicación (generado)
+--     db/README.md      el modelo, y a qué debe adaptarse el worker
+--
+-- El scraper escribe en la MISMA tabla `products` que consulta la tienda.
+-- Las columnas `source_store`, `source_product_id` y `source_url`
+-- distinguen sus filas de las de la app, y un índice único PARCIAL sobre
+-- (source_store, source_product_id) le permite hacer upsert idempotente
+-- sin competir con los productos que no vienen del scraper.
+--
+-- Para levantar la base:  just db-up
+--
+-- Este archivo se conserva como señal para quien busque un schema.sql
+-- aquí. No contiene DDL: aplicarlo no hace nada.
+-- =====================================================================
