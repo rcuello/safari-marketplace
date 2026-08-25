@@ -8,7 +8,6 @@ import {
   StripePaymentMethod,
 } from 'src/payment/entity/stripe.entity';
 import { StripePaymentService } from 'src/payment/stripe-payment.service';
-import { Setting } from 'src/settings/entities/setting.entity';
 import { SettingsService } from 'src/settings/settings.service';
 import { CreatePaymentMethodDto } from './dto/create-payment-method.dto';
 import { DefaultCart } from './dto/set-default-card.dto';
@@ -27,7 +26,6 @@ export class PaymentMethodService {
     private readonly stripeService: StripePaymentService,
     private readonly settingService: SettingsService,
   ) {}
-  private setting: Setting = this.settingService.findAll();
 
   async create(createPaymentMethodDto: CreatePaymentMethodDto) {
     try {

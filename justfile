@@ -67,6 +67,15 @@ env:
     sed -i 's|^NEXT_PUBLIC_ADMIN_URL=.*|NEXT_PUBLIC_ADMIN_URL="http://localhost:{{ADMIN_PORT}}"|' apps/shop/.env
     sed -i 's|^NEXTAUTH_URL=.*|NEXTAUTH_URL=http://localhost:{{SHOP_PORT}}|'                      apps/shop/.env
 
+    # La API necesita DATABASE_URL desde que /api/settings sale de Postgres.
+    # Se añade tambien a un .env que ya existiera: quien monto el entorno antes
+    # de esa migracion no lo tiene, y sin el la API arranca y falla al primer
+    # request.
+    if ! grep -q '^DATABASE_URL=' apps/api/rest/.env; then
+      printf '\n# Capa de datos (packages/db). Base local: `just db-up`\nDATABASE_URL={{DB_URL}}\n' >> apps/api/rest/.env
+      echo "  + DATABASE_URL añadido a apps/api/rest/.env"
+    fi
+
     just set-api-port
 
 # Sincroniza el puerto de la API en los tres .env (usar si el puerto esta ocupado)
