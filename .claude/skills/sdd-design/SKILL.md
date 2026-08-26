@@ -182,5 +182,5 @@ Ready for tasks (sdd-tasks).
 - Keep ASCII diagrams simple — clarity over beauty
 - Apply any `rules.design` from `openspec/config.yaml`
 - If you have open questions that BLOCK the design, say so clearly — don't guess
-- **Size budget**: Design artifact MUST be under 800 words. Architecture decisions as tables (option | tradeoff | decision). Code snippets only for non-obvious patterns.
+- **Size budget**: Design artifact MUST be under 3600 words — the ceiling of the archived designs in `openspec/changes/archive/` (measured: 3524 and 2111 words), whose per-field divergence tables and `path:line` citations are what `rules.design` and the DoD demand. The budget guards against padding, not against evidence: architecture decisions as tables (option | tradeoff | decision). Code snippets only for non-obvious patterns.
 - Return envelope per **Section D** from `skills/_shared/sdd-phase-common.md`.

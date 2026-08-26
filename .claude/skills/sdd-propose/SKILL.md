@@ -203,5 +203,5 @@ Ready for specs (sdd-spec) or design (sdd-design).
 - New Capabilities → each will become `openspec/specs/<name>/spec.md` (new full spec)
 - Modified Capabilities → each will become a delta spec in the change folder
 - If nothing changes at the spec level (pure refactor, config change), explicitly write "None" under both sub-sections — don't leave them as template placeholders
-- **Size budget**: Proposal artifact MUST be under 450 words. Use bullet points and tables over prose. Headers organize, not explain.
+- **Size budget**: Proposal artifact MUST be under 1450 words — the ceiling of the archived precedents in `openspec/changes/archive/` (measured: 839 and 1431 words), which already carry the rollback plan, scope table, and capability contract this repo requires. The budget guards against padding, not against evidence: use bullet points and tables over prose. Headers organize, not explain.
 - Return envelope per **Section D** from `skills/_shared/sdd-phase-common.md`.

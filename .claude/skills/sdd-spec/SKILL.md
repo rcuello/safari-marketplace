@@ -242,7 +242,7 @@ Ready for design (sdd-design). If design already exists, ready for tasks (sdd-ta
 - REMOVED requirements MUST include Reason and SHOULD include Migration when consumers, persisted behavior, docs, or tests are affected
 - RENAMED requirements MUST state both old and new names explicitly and SHOULD include Migration guidance for references/tests/docs
 - Apply any `rules.specs` from `openspec/config.yaml`
-- **Size budget**: Spec artifact MUST be under 650 words. Prefer requirement tables over narrative descriptions. Each scenario: 3-5 lines max.
+- **Size budget**: Spec artifact MUST be under 1000 words per capability — the ceiling of the specs already merged in `openspec/specs/` (measured: product-listing-api 966 words, product-detail-api 715), where Gherkin scenarios plus RFC 2119 requirements set the floor. The budget guards against padding, not against scenarios: prefer requirement tables over narrative descriptions. Each scenario: 3-5 lines max.
 - Return envelope per **Section D** from `skills/_shared/sdd-phase-common.md`.
 
 ## RFC 2119 Keywords Quick Reference

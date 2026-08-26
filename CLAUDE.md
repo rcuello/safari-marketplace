@@ -107,7 +107,13 @@ justfile            Todas las tareas, en español, agrupadas (setup/dev/build/ve
 - **Contratos HTTP preservados byte a byte** al migrar endpoints del mock a
   Postgres. La API publica snake_case (lo que el frontend consume); la capa
   de datos devuelve camelCase; la traducción vive en los servicios de Nest.
-  Precedente verificado: `/api/settings` (5503 bytes idénticos).
+  Precedente: `/api/settings` (5503 bytes antes y después — se verificó el
+  tamaño, no un diff byte a byte). Divergencia conocida, ya embarcada, que
+  toda migración debe esperar: `created_at`/`updated_at` — el seed no
+  inserta esas columnas (las filas toman `now()` del último `db-up`, no las
+  fechas por fila del mock) y `Date.toJSON()` emite 3 decimales donde el
+  JSON de Laravel trae 6; los timestamps ISO miden lo mismo, por eso el
+  conteo de bytes no lo detecta.
 - **El scraper no tiene esquema propio.** Escribe en la MISMA tabla
   `products` que consulta la tienda; sus filas se distinguen por
   `source_store`/`source_product_id`/`source_url` y un unique parcial que
