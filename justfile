@@ -322,11 +322,15 @@ db-build:
     npm run build
 
 # Typecheck + tests de integracion de packages/db
+# El `cd "$(pwd)"` re-normaliza la letra de unidad del cwd (c:\ -> C:\ via
+# MSYS): si el invocador tenia la unidad en minuscula, vitest carga dos
+# instancias del modulo (cache ESM de Node case-sensitive por URL) y falla
+# con "Vitest failed to find the current suite" / 0 tests.
 [group('bd')]
 [working-directory: 'packages/db']
 db-check:
     npm run typecheck
-    npm test
+    cd "$(pwd)" && npm test
 
 
 # ─────────────────────────── scraper ─────────────────────────
