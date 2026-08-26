@@ -48,25 +48,25 @@ Chain strategy: stacked-to-main
 
 ## Phase 4: PR#2 — Línea base del mock (PRIMERA tarea, antes de tocar código)
 
-- [ ] 4.1 Con `just api-dev` todavía en mock, capturar los 3 `curl` de `design.md` §Verification Plan Paso 0 en `openspec/changes/2026-08-26-categorias-arbol-postgres/mock-cat-{gadget,daily,dairy2}.json`. Si el servidor no está disponible, usar la réplica `node -e` con `fuse.js` real del mismo paso.
+- [x] 4.1 Con `just api-dev` todavía en mock, capturar los 3 `curl` de `design.md` §Verification Plan Paso 0 en `openspec/changes/2026-08-26-categorias-arbol-postgres/mock-cat-{gadget,daily,dairy2}.json`. Si el servidor no está disponible, usar la réplica `node -e` con `fuse.js` real del mismo paso.
 
 ## Phase 5: PR#2 — Servicio de Nest
 
-- [ ] 5.1 Reescribir `apps/api/rest/src/categories/categories.service.ts`: `getCategories`/`getCategory` → `async` sobre `@safari/db`; `rootsOnly = (parent === 'null')`; `parseCategorySearch(search)` traduce `type.slug:v`→`typeSlug` y `name:v`→`name`. `create`/`update`/`remove`, `categoriesJson`, `plainToClass`, `fuse` quedan intactos.
-- [ ] 5.2 Añadir mappers privados de módulo: `toCategoryDto` (16 claves uniformes, sin ramificar por `type_id` — V-2/D-5), `toAncestorDto` (14 claves), `toDescendantDto` (16 claves, sin `type`, `products_count: 0`), `toEmbeddedType` (10 claves).
-- [ ] 5.3 Envolver `getCategories` con `try/catch` 503/500 (`isPrismaConnectionError`/`getUserFriendlyMessage`, patrón `products.service.ts:197-210`); en `getCategory` el `try` cubre solo la llamada de I/O y el `NotFoundException` queda fuera (patrón `products.service.ts:213-230`).
-- [ ] 5.4 Correr `just db-build && just build-api` (o reiniciar `just api-dev`) y pegar la salida — sin esto la evidencia HTTP siguiente es inválida.
+- [x] 5.1 Reescribir `apps/api/rest/src/categories/categories.service.ts`: `getCategories`/`getCategory` → `async` sobre `@safari/db`; `rootsOnly = (parent === 'null')`; `parseCategorySearch(search)` traduce `type.slug:v`→`typeSlug` y `name:v`→`name`. `create`/`update`/`remove`, `categoriesJson`, `plainToClass`, `fuse` quedan intactos.
+- [x] 5.2 Añadir mappers privados de módulo: `toCategoryDto` (16 claves uniformes, sin ramificar por `type_id` — V-2/D-5), `toAncestorDto` (14 claves), `toDescendantDto` (16 claves, sin `type`, `products_count: 0`), `toEmbeddedType` (10 claves).
+- [x] 5.3 Envolver `getCategories` con `try/catch` 503/500 (`isPrismaConnectionError`/`getUserFriendlyMessage`, patrón `products.service.ts:197-210`); en `getCategory` el `try` cubre solo la llamada de I/O y el `NotFoundException` queda fuera (patrón `products.service.ts:213-230`).
+- [x] 5.4 Correr `just db-build && just build-api` (o reiniciar `just api-dev`) y pegar la salida — sin esto la evidencia HTTP siguiente es inválida.
 
 ## Phase 6: PR#2 — Evidencia HTTP
 
-- [ ] 6.1 CA-1: `curl` (puerto 9001) `pg-cat-gadget.json`/`pg-cat-daily.json`, diff con `node -e` contra los mock-* de 4.1 excluyendo `created_at`/`updated_at` (V-7); pegar salida confirmando que las únicas diferencias caen en V-1/V-2/V-6/V-8.
-- [ ] 6.2 CA-2: `node -e` de `design.md` sobre `pg-cat-daily.json` — confirma `124→163,164`, `163→169,170`, 2 nietas con 16 claves, cadena `169→163→124`, `JSON.stringify` no lanza.
-- [ ] 6.3 CA-2b: `curl /api/categories/dairy-2` y `/124` — mismo JSON; comparar key-set y orden contra `mock-cat-dairy2.json`.
-- [ ] 6.4 CA-2c: `curl -i /api/categories/no-existe-xyz` → 404; `curl /api/types` → 200 (proceso Nest vivo).
-- [ ] 6.5 `just db-down`; `curl /api/categories` → 503 con cuerpo legible; `curl /api/types` → 200 (vivo); `just db-up`.
-- [ ] 6.6 CA-4: `just shop-dev` + `just verify`; `curl /en/daily-needs` (grep `Dairy`) y `/en/grocery` (grep `Vegetables`).
-- [ ] 6.7 D-3: `docker exec -e PGPASSWORD=safari safari-postgres psql …` con el `WITH RECURSIVE` de `design.md` → `0|83 1|109 2|6`; `grep -n "nietas\|nietos"` en ambos archivos corregidos.
+- [x] 6.1 CA-1: `curl` (puerto 9001) `pg-cat-gadget.json`/`pg-cat-daily.json`, diff con `node -e` contra los mock-* de 4.1 excluyendo `created_at`/`updated_at` (V-7); pegar salida confirmando que las únicas diferencias caen en V-1/V-2/V-6/V-8.
+- [x] 6.2 CA-2: `node -e` de `design.md` sobre `pg-cat-daily.json` — confirma `124→163,164`, `163→169,170`, 2 nietas con 16 claves, cadena `169→163→124`, `JSON.stringify` no lanza.
+- [x] 6.3 CA-2b: `curl /api/categories/dairy-2` y `/124` — mismo JSON; comparar key-set y orden contra `mock-cat-dairy2.json`.
+- [x] 6.4 CA-2c: `curl -i /api/categories/no-existe-xyz` → 404; `curl /api/types` → 200 (proceso Nest vivo).
+- [x] 6.5 `just db-down`; `curl /api/categories` → 503 con cuerpo legible; `curl /api/types` → 200 (vivo); `just db-up`.
+- [x] 6.6 CA-4: `just shop-dev` + `just verify`; `curl /en/daily-needs` (grep `Dairy`) y `/en/grocery` (grep `Vegetables`).
+- [x] 6.7 D-3: `docker exec -e PGPASSWORD=safari safari-postgres psql …` con el `WITH RECURSIVE` de `design.md` → `0|83 1|109 2|6`; `grep -n "nietas\|nietos"` en ambos archivos corregidos.
 
 ## Phase 7: PR#2 — Documentación de la US
 
-- [ ] 7.1 Crear `docs/product/1-catalogo-desde-postgres/4b-categorias-arbol-postgres.md` con CA-1/CA-2/CA-4 y evidencia real pegada (Fases 6). NO tocar `4-migrar-catalogos-apoyo.md` ni el `README.md` del épico (dueños: US-4a).
+- [x] 7.1 Crear `docs/product/1-catalogo-desde-postgres/4b-categorias-arbol-postgres.md` con CA-1/CA-2/CA-4 y evidencia real pegada (Fases 6). NO tocar `4-migrar-catalogos-apoyo.md` ni el `README.md` del épico (dueños: US-4a).
