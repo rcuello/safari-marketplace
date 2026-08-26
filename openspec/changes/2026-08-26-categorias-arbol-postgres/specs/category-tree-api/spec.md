@@ -38,15 +38,29 @@ distinta a los nodos descendientes, para que la estructura no sea circular.
 
 ### Requirement: Semántica de `parent` — raíces vs. listado plano (D-4)
 
-Sin `parent` o con `parent='null'`, el listado MUST devolver solo las 83
-raíces (cada una con su subárbol anidado). Con `parent='all'` o cualquier
-otro valor, MUST devolver los 198 nodos planos en el nivel superior, cada
-uno con su propio subárbol.
+Solo con `parent='null'` literal el listado MUST devolver las 83 raíces
+(cada una con su subárbol anidado). Sin `parent`, con `parent='all'` o con
+cualquier otro valor, MUST devolver los 198 nodos planos en el nivel
+superior, cada uno con su propio subárbol.
 
-#### Scenario: Default — solo raíces
-- GIVEN `GET /api/categories?limit=1000` sin `parent`
+> El default `parent='null'` que declara `GetCategoriesDto` **nunca se
+> aplica**: `main.ts:9` instancia `new ValidationPipe()` sin `transform`, así
+> que una petición sin `parent` llega con `parent === undefined` y el filtro
+> de raíces no dispara. El mock hacía exactamente lo mismo
+> (`if (parent === 'null')`, ver `git show be778be^`), así que devolver 198 es
+> paridad de contrato, no un defecto. Una versión anterior de esta requirement
+> afirmaba 83 para el caso sin `parent`; `sdd-verify` la refutó contra el
+> endpoint real y se corrigió aquí.
+
+#### Scenario: `parent=null` — solo raíces
+- GIVEN `GET /api/categories?limit=1000&parent=null`
 - WHEN el endpoint responde
 - THEN `data` tiene 83 elementos, todos con `parent_id` nulo
+
+#### Scenario: Sin `parent` — listado plano de 198
+- GIVEN `GET /api/categories?limit=1000` sin el parámetro `parent`
+- WHEN el endpoint responde
+- THEN `data` tiene 198 elementos, igual que hacía el mock
 
 #### Scenario: `parent=all` no rompe la home de `daily-needs`
 - GIVEN `GET /api/categories?parent=all&search=type.slug:daily-needs`
@@ -114,13 +128,39 @@ mapper por id.
 
 ### Requirement: `products_count` constante en 0 — divergencia declarada (V-1)
 
-`products_count` MUST ser `0` en todos los nodos, porque `category_product`
-está vacía por diseño (fuera de alcance de este change).
+`products_count` MUST ser `0` en todo nodo **descendiente** (los que lo
+llevan), porque `category_product` está vacía por diseño (fuera de alcance
+de este change). Los 198 nodos de nivel superior NO llevan la clave, igual
+que el mock.
 
-#### Scenario: products_count siempre 0
-- GIVEN cualquier nodo del árbol
+#### Scenario: products_count siempre 0 en descendientes
+- GIVEN un nodo descendiente cualquiera (p. ej. `169`)
 - WHEN leo `products_count`
 - THEN el valor es `0`, aunque el mock traiga valores 0-22 en descendientes
+- AND los nodos de nivel superior no traen la clave, como en el mock
+
+### Requirement: Divergencias del objeto `type` embebido — declaradas
+
+El `type` embebido MUST servirse desde la fila canónica de `types` en
+Postgres, no desde la copia que `categories.json` tenía embebida. Estas
+diferencias se aceptan y se declaran:
+
+| Campo | Divergencia | Alcance | Ref. |
+|---|---|---|---|
+| `type.settings` | La copia del mock estaba obsoleta: 49 nodos de `type_id 1` pasan `isHome true→false` y `productCard "neon"→"helium"`; 8 de `type_id 8` ganan 7 claves | 57 de 198 nodos | V-11 |
+| `type.banners` | No se emite (el mapper de `type` embebido publica 10 claves fijas); el mock sí lo traía en gadget/medicine | 21 nodos | V-12 |
+
+> Ambas las levantó `sdd-verify`, no el diseño. Sin impacto de consumidor
+> medido: toda lectura de `type.settings`/`type.banners` en el frontend viene
+> de `/api/types` o de `product.type`, no de `category.type`. Es el análogo
+> directo de la V-25 (`tags.image`) de US-4a: dato del seed/canónico, no del
+> mapper.
+
+Las divergencias V-3/V-6/V-7/V-8/V-9/V-10 que `design.md` documenta
+(`image: []`→`null` en 101 nodos, el `parent` escalar en profundidad 2, las
+marcas de tiempo del seed, el `limit` ausente) MUST leerse como parte de
+este contrato: `design.md` no se fusiona en `openspec/specs/` al archivar, y
+esta referencia es lo que las mantiene alcanzables desde la spec publicada.
 
 ### Requirement: Comentarios de documentación corregidos (D-3)
 
