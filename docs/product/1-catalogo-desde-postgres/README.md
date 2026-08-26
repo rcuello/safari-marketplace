@@ -31,7 +31,7 @@
 | [US-2](./2-migrar-api-products-postgres.md) | Migrar /api/products a la capa de datos | Sí | ninguna | ~300 | ✅ Implementada |
 | [US-3](./3-detalle-producto-postgres.md) | Detalle de producto y relacionados desde Postgres | Sí | US-2 | ~200 | ✅ Implementada |
 | [US-4a](./4-migrar-catalogos-apoyo.md) | Migrar catálogos planos (types, tags, manufacturers, shops) | Sí | US-2 | ~590 | ✅ Implementada |
-| [US-4b](./4b-categorias-arbol-postgres.md) | Migrar el árbol de categorías | Sí | US-2 | pendiente | Pendiente |
+| [US-4b](./4b-categorias-arbol-postgres.md) | Migrar el árbol de categorías | Sí | US-2 | ~571 | ✅ Implementada |
 
 **Orden sugerido:** US-2 → (US-3 ∥ US-4a) → US-4b. US-4 original se partió en
 US-4a (catálogos planos, sin riesgo de diseño propio) y US-4b (árbol de
