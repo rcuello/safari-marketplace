@@ -146,10 +146,13 @@ export class ManufacturersService {
   async getManufacturesBySlug(slug: string): Promise<Manufacturer> {
     let record: ManufacturerRecord | null;
 
-    // El try envuelve SOLO la llamada de I/O. El 404 queda fuera a
+    let types: TypeRecord[];
+
+    // El try envuelve SOLO las llamadas de I/O. El 404 queda fuera a
     // propósito: dentro, este catch lo convertiría en un 500.
     try {
       record = await findManufacturerBySlug(slug);
+      types = await listTypes();
     } catch (error) {
       if (isPrismaConnectionError(error)) {
         throw new ServiceUnavailableException(getUserFriendlyMessage(error));
@@ -161,7 +164,6 @@ export class ManufacturersService {
       throw new NotFoundException(`No existe una marca con slug \`${slug}\`.`);
     }
 
-    const types = await listTypes();
     const typesById = new Map(types.map((t) => [t.id, t]));
     return toManufacturerDto(record, typesById);
   }

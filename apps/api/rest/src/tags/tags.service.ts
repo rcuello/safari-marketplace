@@ -105,12 +105,14 @@ export class TagsService {
   async findOne(param: string, language?: string): Promise<Tag> {
     let record: TagRecord | null;
 
-    // El try envuelve SOLO la llamada de I/O (mismo criterio que
+    // El try envuelve SOLO las llamadas de I/O (mismo criterio que
     // findAll()). El 404 queda fuera a propósito: dentro, este catch lo
     // convertiría en un 500. D-8: solo por slug — la rama numérica del
     // mock (`id === Number(param)`) pasa a 404.
+    let types: TypeRecord[];
     try {
       record = await findTagBySlug(param);
+      types = await listTypes();
     } catch (error) {
       if (isPrismaConnectionError(error)) {
         throw new ServiceUnavailableException(getUserFriendlyMessage(error));
@@ -122,7 +124,6 @@ export class TagsService {
       throw new NotFoundException(`No existe un tag con slug \`${param}\`.`);
     }
 
-    const types = await listTypes();
     const typesById = new Map(types.map((t) => [t.id, t]));
     return toTagDto(record, typesById);
   }

@@ -47,6 +47,16 @@ huérfano sin columna → valor constante, NUNCA se inventa una columna):
 | types | `promotional_sliders` | `null` constante | V-8 |
 | types/tags/manufacturers | `translated_languages` | `["en"]` constante | V-9 |
 | todos | `is_approved`/`is_active` | `Number(bool)` → `1`/`0` | V-11 |
+| tags | `image` | `null` donde el mock emite `[]` (10/10 filas) | V-25 |
+
+> V-25 se ratificó en `sdd-verify`, no en el diseño: el mock emite `image: []`
+> en las 10 filas y la columna es NULL en las 10 de Postgres porque
+> `db/generate-seed.mjs:212` normaliza a NULL cualquier `image` que llegue como
+> array (`g.image && !Array.isArray(g.image) ? g.image : null`). Es un hecho del
+> seed, no del mapper, y `db/` queda fuera del alcance de esta US. Sin impacto
+> funcional detectado: el admin lee `image` con optional chaining
+> (`apps/admin/rest/src/components/tag/tag-form.tsx:169-171`) y los componentes
+> de tags de la tienda no lo leen.
 
 #### Scenario: Key-set idéntico salvo divergencias declaradas
 - GIVEN un `curl` de cada catálogo
