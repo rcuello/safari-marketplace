@@ -72,9 +72,17 @@
     ],
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
+    "moduleNameMapper": {
+      "^@db/(.*)$": "<rootDir>/db/pickbazar/$1",
+      "^src/(.*)$": "<rootDir>/$1"
+    },
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },
+    "transformIgnorePatterns": [
+      "/node_modules/",
+      "packages[\\\\/]db[\\\\/]dist[\\\\/]"
+    ],
     "collectCoverageFrom": [
       "**/*.(t|j)s"
     ],
