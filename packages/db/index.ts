@@ -24,11 +24,13 @@ export type {
   TypeRecord,
 } from './src/records';
 export type {
-  CategoryWithChildren,
+  CategoryAncestor,
+  CategoryDescendant,
+  CategoryTreeNode,
   ListCategoriesInput,
 } from './src/repositories/categories.repository';
 export {
-  findCategoryBySlug,
+  findCategoryByIdOrSlug,
   getCategoryTree,
   listCategories,
 } from './src/repositories/categories.repository';

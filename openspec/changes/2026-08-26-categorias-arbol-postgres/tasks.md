@@ -25,26 +25,26 @@ Chain strategy: stacked-to-main
 
 ## Phase 1: PR#1 — Ensamblador del árbol (`categories.repository.ts`)
 
-- [ ] 1.1 Reescribir el comentario de cabecera de `packages/db/src/repositories/categories.repository.ts:1-6` con el texto de `design.md` (198 = 83+109+6, profundidad 2, la razón del bug viejo).
-- [ ] 1.2 Eliminar `CategoryWithChildren` (:22-25); añadir `CategoryAncestor`, `CategoryDescendant`, `CategoryTreeNode` (Decisión B) con la asimetría `parent`/`children` documentada en el JSDoc de cada interfaz.
-- [ ] 1.3 Cambiar `CATEGORY_INCLUDE` (:35-38) de `{ type: true, children: { orderBy } }` a `{ type: true }` — sin `include` anidado.
-- [ ] 1.4 Implementar `_assembleTree(rows)` privado y síncrono: índices `recs`/`types`/`kids`, `descend()`/`ascend()`/`_immediate()` memoizados, guarda de ciclo por `path: Set<number>` (Decisión A).
-- [ ] 1.5 Ampliar `ListCategoriesInput` con `rootsOnly?: boolean` (default `true`, Decisión D) y `name?: string` (Decisión G, `contains` + `mode: 'insensitive'`, patrón de `products.repository.ts:179-181`).
-- [ ] 1.6 Reescribir `listCategories()`: `findMany()` plano (con `where.type.slug`/`where.name` si aplica) → `_assembleTree` → top = raíces o todos según `rootsOnly` → slice de paginación después del ensamblaje.
-- [ ] 1.7 Reemplazar `findCategoryBySlug` por `findCategoryByIdOrSlug(param)` (Decisión E): una query, un `_assembleTree`, precedencia id-gana-sobre-slug.
-- [ ] 1.8 Reimplementar `getCategoryTree(typeSlug?)` sobre el ensamblador (~8 LOC); NO tocar el smoke de `products.integration.test.ts:256-261` que la consume.
+- [x] 1.1 Reescribir el comentario de cabecera de `packages/db/src/repositories/categories.repository.ts:1-6` con el texto de `design.md` (198 = 83+109+6, profundidad 2, la razón del bug viejo).
+- [x] 1.2 Eliminar `CategoryWithChildren` (:22-25); añadir `CategoryAncestor`, `CategoryDescendant`, `CategoryTreeNode` (Decisión B) con la asimetría `parent`/`children` documentada en el JSDoc de cada interfaz.
+- [x] 1.3 Cambiar `CATEGORY_INCLUDE` (:35-38) de `{ type: true, children: { orderBy } }` a `{ type: true }` — sin `include` anidado.
+- [x] 1.4 Implementar `_assembleTree(rows)` privado y síncrono: índices `recs`/`types`/`kids`, `descend()`/`ascend()`/`_immediate()` memoizados, guarda de ciclo por `path: Set<number>` (Decisión A).
+- [x] 1.5 Ampliar `ListCategoriesInput` con `rootsOnly?: boolean` (default `true`, Decisión D) y `name?: string` (Decisión G, `contains` + `mode: 'insensitive'`, patrón de `products.repository.ts:179-181`).
+- [x] 1.6 Reescribir `listCategories()`: `findMany()` plano (con `where.type.slug`/`where.name` si aplica) → `_assembleTree` → top = raíces o todos según `rootsOnly` → slice de paginación después del ensamblaje.
+- [x] 1.7 Reemplazar `findCategoryBySlug` por `findCategoryByIdOrSlug(param)` (Decisión E): una query, un `_assembleTree`, precedencia id-gana-sobre-slug.
+- [x] 1.8 Reimplementar `getCategoryTree(typeSlug?)` sobre el ensamblador (~8 LOC); NO tocar el smoke de `products.integration.test.ts:256-261` que la consume.
 
 ## Phase 2: PR#1 — Barrel y comentario de `db/schema.sql`
 
-- [ ] 2.1 Actualizar `packages/db/index.ts:26-34` (bloque `categories`): exportar `CategoryAncestor`/`CategoryDescendant`/`CategoryTreeNode`/`ListCategoriesInput`, `findCategoryByIdOrSlug`, `getCategoryTree`, `listCategories`; quitar `CategoryWithChildren` y `findCategoryBySlug`. Tocar solo ese bloque — este archivo es la base de rebase con US-4a.
-- [ ] 2.2 Corregir `db/schema.sql:130-136` (hoy: *"En el mock hay 198 categorías: 83 raíces y 115 hijas (2 niveles reales)"*) con el texto verificado de `design.md` §"Los dos comentarios corregidos": 83+109+6, ids 165-168/169-170, `type_id 7`, sin DDL nuevo.
+- [x] 2.1 Actualizar `packages/db/index.ts:26-34` (bloque `categories`): exportar `CategoryAncestor`/`CategoryDescendant`/`CategoryTreeNode`/`ListCategoriesInput`, `findCategoryByIdOrSlug`, `getCategoryTree`, `listCategories`; quitar `CategoryWithChildren` y `findCategoryBySlug`. Tocar solo ese bloque — este archivo es la base de rebase con US-4a.
+- [x] 2.2 Corregir `db/schema.sql:130-136` (hoy: *"En el mock hay 198 categorías: 83 raíces y 115 hijas (2 niveles reales)"*) con el texto verificado de `design.md` §"Los dos comentarios corregidos": 83+109+6, ids 165-168/169-170, `type_id 7`, sin DDL nuevo.
 
 ## Phase 3: PR#1 — Suite de integración y gate
 
-- [ ] 3.1 Correr `git grep -n "CategoryWithChildren\|findCategoryBySlug"` y pegar la salida: confirmar que solo aparecían en el barrel y su propia definición antes de borrarlos.
-- [ ] 3.2 Crear `packages/db/src/repositories/categories.integration.test.ts` con las 11 aserciones de `design.md` §Testing Strategy: conteos `rootsOnly` true/false (83/198), profundidad 3 explícita (`124→[163,164]`, `163→[169,170]`, `169.slug==='brown-eggs'`), 0 bisnietos, cadena ascendente (D-2), `JSON.stringify` sin lanzar (R-1), `typeSlug`+paginación, `name` case-insensitive, `findCategoryByIdOrSlug` id≡slug, nieta por slug, ausente→`null`, `getCategoryTree` (R-4).
-- [ ] 3.3 Correr `just db-check` y pegar la salida real en verde, incluida la aserción de profundidad 3.
-- [ ] 3.4 Correr `just db-build` (bloqueante: `dist/` gitignored, Nest lo consume vía `link:`) y pegar la salida — cierra PR#1.
+- [x] 3.1 Correr `git grep -n "CategoryWithChildren\|findCategoryBySlug"` y pegar la salida: confirmar que solo aparecían en el barrel y su propia definición antes de borrarlos.
+- [x] 3.2 Crear `packages/db/src/repositories/categories.integration.test.ts` con las 11 aserciones de `design.md` §Testing Strategy: conteos `rootsOnly` true/false (83/198), profundidad 3 explícita (`124→[163,164]`, `163→[169,170]`, `169.slug==='brown-eggs'`), 0 bisnietos, cadena ascendente (D-2), `JSON.stringify` sin lanzar (R-1), `typeSlug`+paginación, `name` case-insensitive, `findCategoryByIdOrSlug` id≡slug, nieta por slug, ausente→`null`, `getCategoryTree` (R-4).
+- [x] 3.3 Correr `just db-check` y pegar la salida real en verde, incluida la aserción de profundidad 3.
+- [x] 3.4 Correr `just db-build` (bloqueante: `dist/` gitignored, Nest lo consume vía `link:`) y pegar la salida — cierra PR#1.
 
 ## Phase 4: PR#2 — Línea base del mock (PRIMERA tarea, antes de tocar código)
 

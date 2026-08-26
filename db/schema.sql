@@ -130,9 +130,16 @@ CREATE TABLE IF NOT EXISTS shops (
 -- ---------------------------------------------------------------------
 -- categories — taxonomía de navegación, jerárquica por adyacencia.
 --
--- En el mock hay 198 categorías: 83 raíces y 115 hijas (2 niveles
--- reales). ON DELETE SET NULL para que borrar una madre no arrastre a
--- las hijas.
+-- 198 categorías en TRES niveles, no dos: 83 raíces + 109 hijas + 6
+-- NIETAS. Las nietas son 165,166,167,168 (bajo 164 "Dairy") y 169,170
+-- (bajo 163 "Eggs"); 163 y 164 cuelgan de la raíz 124 "Dairy & Eggs",
+-- toda la rama en type_id 7 (daily-needs). Profundidad máxima = 2
+-- saltos; 0 bisnietos. Medido con WITH RECURSIVE contra esta misma
+-- base, no leyendo el seed (el comentario anterior decía "2 niveles
+-- reales" y por eso packages/db perdía esas 6 filas — ver US-4b).
+-- ON DELETE SET NULL para que borrar una madre no arrastre a las hijas.
+-- El CHECK de abajo prohíbe la autorreferencia, pero NO un ciclo
+-- A->B->A: quien recorra el árbol necesita su propia guarda.
 -- ---------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS categories (
     id          bigserial    PRIMARY KEY,
