@@ -6,7 +6,7 @@
 > y la tienda consulta.
 
 **Fecha:** 2026-08-25
-**Status:** Refinado
+**Status:** En ejecución
 
 ## Contexto verificado
 
@@ -26,11 +26,11 @@
 
 ## Subdivisión en sub-historias
 
-| US | Título | Releasable solo | Depende de | LOC est. |
-|----|--------|-----------------|------------|----------|
-| [US-2](./2-migrar-api-products-postgres.md) | Migrar /api/products a la capa de datos | Sí | ninguna | ~300 |
-| [US-3](./3-detalle-producto-postgres.md) | Detalle de producto y relacionados desde Postgres | Sí | US-2 | ~200 |
-| [US-4](./4-migrar-catalogos-apoyo.md) | Migrar catálogos de apoyo (types, categories, tags, manufacturers, shops) | Sí | US-2 | ~350 |
+| US | Título | Releasable solo | Depende de | LOC est. | Status |
+|----|--------|-----------------|------------|----------|--------|
+| [US-2](./2-migrar-api-products-postgres.md) | Migrar /api/products a la capa de datos | Sí | ninguna | ~300 | ✅ Implementada |
+| [US-3](./3-detalle-producto-postgres.md) | Detalle de producto y relacionados desde Postgres | Sí | US-2 | ~200 | Listo para ejecución |
+| [US-4](./4-migrar-catalogos-apoyo.md) | Migrar catálogos de apoyo (types, categories, tags, manufacturers, shops) | Sí | US-2 | ~350 | Listo para ejecución |
 
 **Orden sugerido:** US-2 → (US-3 ∥ US-4). US-3 y US-4 no comparten archivos de
 servicio, pero ambas tocan módulos de Nest distintos; verificar antes de

@@ -6,7 +6,7 @@
 
 **Épico:** [Épico 1](./README.md)
 **Fecha:** 2026-08-25
-**Status:** Listo para ejecución
+**Status:** Implementada
 **Depende de:** ninguna
 **LOC est.:** ~300
 
@@ -87,11 +87,11 @@ Feature: Listado de productos desde Postgres
 | `packages/db/src/repositories/products.integration.test.ts` | cobertura de los filtros nuevos |
 
 ## Definición de Done
-- [ ] Salida real de `curl` del endpoint antes (mock) y después (Postgres) pegada, con el diff de claves comentado.
-- [ ] Salida real de `just verify` (los 3 servicios OK, cards:30).
-- [ ] Salida real de `just db-check` en verde.
-- [ ] Evidencia del CA-4 (UPDATE + curl + revert) pegada.
-- [ ] Status de esta US actualizado y fila del épico marcada.
+- [x] Salida real de `curl` del endpoint antes (mock) y después (Postgres) pegada, con el diff de claves comentado. Ver `apply-progress.md` del change `migrar-api-products-postgres`.
+- [x] Salida real de `just verify` (los 3 servicios OK, cards:30).
+- [x] Salida real de `just db-check` en verde.
+- [x] Evidencia del CA-4 (UPDATE + curl + revert) pegada.
+- [x] Status de esta US actualizado y fila del épico marcada.
 
 ## Notas para el agente ejecutor
 - Leer primero el servicio actual completo: `fuse.js` y los query params que

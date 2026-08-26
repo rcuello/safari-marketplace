@@ -1,5 +1,16 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
+import {
+  getUserFriendlyMessage,
+  isPrismaConnectionError,
+  listProducts,
+  type ListProductsInput,
+  type ProductRecord,
+} from '@safari/db';
 import { CreateProductDto } from './dto/create-product.dto';
 import { GetProductsDto, ProductPaginator } from './dto/get-products.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -32,6 +43,127 @@ const options = {
 };
 const fuse = new Fuse(products, options);
 
+/**
+ * `value` → number solo si es finito; si no (`'abc'`, `''`, `undefined`),
+ * `undefined` — el token se ignora en vez de colar un `NaN` hasta Prisma
+ * (regresión V-3: `Number('abc')` es `NaN`, que pasa el `!== undefined` de
+ * `buildWhere` y hace que Prisma lance, convirtiéndose en un 500).
+ *
+ * Replica el comportamiento de facto del mock: `parseInt('abc', 10)` daba
+ * `NaN`, `if (exactFilters.shop_id)` era falsy y el filtro se descartaba en
+ * silencio mientras el request seguía respondiendo 200. Aquí no hay 400:
+ * el contrato a preservar (CA-1) es que el mock respondía 200.
+ */
+function parseFiniteNumber(value: string | undefined): number | undefined {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+/**
+ * `search=key:value;key:value` → `ListProductsInput` de `@safari/db`.
+ *
+ * Trocea igual que hacía el mock (`split(';')`, luego el primer `:`); no
+ * "mejora" el parseo. `slug` se descarta explícitamente (igual que el
+ * mock); `author.slug` y cualquier clave desconocida se ignoran sin error
+ * — no hay columna ni campo que las soporte.
+ */
+function parseProductSearch(search?: string): ListProductsInput {
+  const input: ListProductsInput = {};
+  if (!search) return input;
+
+  for (const token of search.split(';')) {
+    const [key, value] = token.split(':');
+    switch (key) {
+      case 'type.slug':
+        input.typeSlug = value;
+        break;
+      case 'categories.slug':
+        input.categorySlug = value;
+        break;
+      case 'tags.slug':
+        input.tagSlug = value;
+        break;
+      case 'manufacturer.slug':
+        input.manufacturerSlug = value;
+        break;
+      case 'name':
+        input.name = value;
+        break;
+      case 'shop_id': {
+        const shopId = parseFiniteNumber(value);
+        if (shopId !== undefined) input.shopId = shopId;
+        break;
+      }
+      case 'min_price': {
+        const minPrice = parseFiniteNumber(value);
+        if (minPrice !== undefined) input.minPrice = minPrice;
+        break;
+      }
+      case 'max_price': {
+        const maxPrice = parseFiniteNumber(value);
+        if (maxPrice !== undefined) input.maxPrice = maxPrice;
+        break;
+      }
+      case 'status':
+        input.status = value;
+        break;
+      case 'visibility':
+        input.visibility = value;
+        break;
+      default:
+        // 'slug' descartado a propósito; el resto (author.slug, orderBy...)
+        // se ignora sin romper el request.
+        break;
+    }
+  }
+
+  return input;
+}
+
+/**
+ * `ProductRecord` (camelCase, `@safari/db`) → proyección de 20 claves
+ * snake_case que ya publicaba `products.json`. `type.logo` e
+ * `in_flash_sale` son constantes: no hay columna que los respalde
+ * (divergencias documentadas en `design.md`). Se castea a `Product`, igual
+ * que `settings.service.ts:39` — la entidad declara campos que este
+ * listado no emite.
+ */
+function toProductDto(record: ProductRecord): Product {
+  return {
+    id: record.id,
+    name: record.name,
+    slug: record.slug,
+    type: {
+      id: record.type.id,
+      name: record.type.name,
+      slug: record.type.slug,
+      logo: null,
+      settings: record.type.settings,
+    },
+    language: record.language,
+    translated_languages: record.translatedLanguages,
+    product_type: record.productType,
+    shop: {
+      id: record.shop.id,
+      name: record.shop.name,
+      slug: record.shop.slug,
+      logo: record.shop.logo,
+    },
+    sale_price: record.salePrice,
+    max_price: record.maxPrice,
+    min_price: record.minPrice,
+    image: record.image,
+    status: record.status,
+    price: record.price,
+    quantity: record.quantity,
+    unit: record.unit,
+    sku: record.sku,
+    sold_quantity: record.soldQuantity,
+    in_flash_sale: 0,
+    visibility: record.visibility,
+  } as unknown as Product;
+}
+
 @Injectable()
 export class ProductsService {
   private products: any = products;
@@ -42,44 +174,37 @@ export class ProductsService {
     return this.products[0];
   }
 
-  getProducts({ limit, page, search }: GetProductsDto): ProductPaginator {
+  async getProducts({
+    limit,
+    page,
+    search,
+  }: GetProductsDto): Promise<ProductPaginator> {
     if (!page) page = 1;
     if (!limit) limit = 30;
-    const startIndex = (page - 1) * limit;
-    const endIndex = page * limit;
-    let data: Product[] = this.products;
 
-    const parseSearchParams = search ? search.split(';') : [];
-    const exactFilters: { [key: string]: any } = {};
-    const fuzzyFilters: any[] = [];
-
-    for (const searchParam of parseSearchParams) {
-      const [key, value] = searchParam.split(':');
-
-      if (key === 'shop_id') {
-        exactFilters.shop_id = parseInt(value, 10);
-      } else if (key !== 'slug') {
-        fuzzyFilters.push({ [key]: value });
-      }
-    }
-    if (exactFilters.shop_id) {
-      data = data.filter((product) => product.shop.id === exactFilters.shop_id);
-    }
-
-    if (fuzzyFilters.length) {
-      data = fuse
-        .search({
-          $and: fuzzyFilters,
-        })
-        ?.map(({ item }) => item);
-    }
-
-    const results = data.slice(startIndex, endIndex);
-    const url = `/products?search=${search}&limit=${limit}`;
-    return {
-      data: results,
-      ...paginate(data.length, page, limit, results.length, url),
+    const input: ListProductsInput = {
+      ...parseProductSearch(search),
+      // listProducts() exige números (Prisma usa page/limit en skip/take);
+      // page/limit siguen crudos (sin convertir) para paginate() y la URL
+      // más abajo — ver Decision A / MUST-KEEP en design.md.
+      page: Number(page) || 1,
+      limit: Number(limit) || 30,
     };
+
+    try {
+      const { items, total } = await listProducts(input);
+      const data = items.map(toProductDto);
+      const url = `/products?search=${search}&limit=${limit}`;
+      return {
+        data,
+        ...paginate(total, page, limit, data.length, url),
+      };
+    } catch (error) {
+      if (isPrismaConnectionError(error)) {
+        throw new ServiceUnavailableException(getUserFriendlyMessage(error));
+      }
+      throw new InternalServerErrorException(getUserFriendlyMessage(error));
+    }
   }
 
   getProductBySlug(slug: string): Product {

@@ -7,7 +7,7 @@
  */
 
 import 'dotenv/config';
-import { afterAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { prisma } from '../client';
 import { buildPaginator } from '../pagination';
 import { getCategoryTree } from './categories.repository';
@@ -95,6 +95,86 @@ describe('listProducts', () => {
     expect(wrapper.current_page).toBe(2);
     expect(wrapper.last_page).toBe(lastPage);
     expect(wrapper.count).toBe(30);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Filtros de US-2 (migración de /api/products): shopId, manufacturerSlug,
+// tagSlug. El seed no vincula ningún producto a manufacturer/tag
+// (`manufacturer_id`/`product_tag` vacíos — ver db/generate-seed.mjs), así
+// que para manufacturerSlug/tagSlug hace falta una fixture: un slug "LIBRE"
+// (del seed, sin productos) debe dar total 0, y el slug de la fixture debe
+// dar total 1. Son dos slugs DISTINTOS, no la misma consulta con dos
+// resultados esperados.
+// ---------------------------------------------------------------------------
+describe('listProducts — filtros adicionales de US-2', () => {
+  it('filtra por shopId: todo item devuelto pertenece a ese shop', async () => {
+    const [sample] = (await listProducts({ limit: 1 })).items;
+    const { items, total } = await listProducts({ shopId: sample.shopId });
+    expect(total).toBeGreaterThan(0);
+    for (const p of items) expect(p.shopId).toBe(sample.shopId);
+  });
+
+  describe('manufacturerSlug / tagSlug — slug LIBRE (0) vs slug de la fixture (1)', () => {
+    let manufacturerLibreSlug: string;
+    let manufacturerFix: { id: number; slug: string };
+    let tagLibreSlug: string;
+    let tagFix: { id: number; slug: string };
+
+    beforeAll(async () => {
+      const [mLibreRow, mFixRow] = await prisma.manufacturer.findMany({
+        orderBy: { id: 'asc' },
+        take: 2,
+      });
+      const [tLibreRow, tFixRow] = await prisma.tag.findMany({
+        orderBy: { id: 'asc' },
+        take: 2,
+      });
+      manufacturerLibreSlug = mLibreRow.slug;
+      manufacturerFix = { id: Number(mFixRow.id), slug: mFixRow.slug };
+      tagLibreSlug = tLibreRow.slug;
+      tagFix = { id: Number(tFixRow.id), slug: tFixRow.slug };
+
+      const gadget = await findTypeBySlug('gadget');
+      const [shopSample] = (await listProducts({ limit: 1 })).items;
+      if (!gadget) throw new Error('type gadget no existe en el seed');
+
+      // Una sola fixture con manufacturer Y tag a la vez; price > 0 y
+      // salePrice < price para no chocar con products_rebaja_valida.
+      await upsertScrapedProduct({
+        sourceStore: TEST_STORE,
+        sourceProductId: 'sku-us2-manufacturer-tag',
+        name: 'Producto con manufacturer y tag (US-2)',
+        slug: 'producto-us2-manufacturer-tag-test',
+        typeId: gadget.id,
+        shopId: shopSample.shopId,
+        manufacturerId: manufacturerFix.id,
+        tagIds: [tagFix.id],
+        price: 100,
+        salePrice: 80,
+      });
+    });
+
+    it('manufacturerSlug: slug LIBRE → total 0, slug de la fixture → total 1', async () => {
+      const libre = await listProducts({
+        manufacturerSlug: manufacturerLibreSlug,
+      });
+      expect(libre.total).toBe(0);
+
+      const fix = await listProducts({
+        manufacturerSlug: manufacturerFix.slug,
+      });
+      expect(fix.total).toBe(1);
+      expect(fix.items[0].sourceStore).toBe(TEST_STORE);
+    });
+
+    it('tagSlug: slug LIBRE → total 0, slug de la fixture → total 1', async () => {
+      const libre = await listProducts({ tagSlug: tagLibreSlug });
+      expect(libre.total).toBe(0);
+
+      const fix = await listProducts({ tagSlug: tagFix.slug });
+      expect(fix.total).toBe(1);
+    });
   });
 });
 

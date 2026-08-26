@@ -1,0 +1,185 @@
+# DAG state del change. Sobrevive a la compactacion de contexto.
+change_name: migrar-api-products-postgres
+project: safari-marketplace
+artifact_store_mode: openspec
+execution_mode: auto
+delivery_strategy: ask-on-risk
+strict_tdd: false
+
+source:
+  epic: docs/product/1-catalogo-desde-postgres/README.md
+  user_story: docs/product/1-catalogo-desde-postgres/2-migrar-api-products-postgres.md
+
+phases:
+  explore:
+    status: done
+    artifact: openspec/changes/migrar-api-products-postgres/exploration.md
+  propose:
+    status: done
+    artifact: openspec/changes/migrar-api-products-postgres/proposal.md
+  spec:
+    status: done
+    artifact: openspec/changes/migrar-api-products-postgres/specs/product-listing-api/spec.md
+    # Revision: primera version se escribio contra design.md pre-gatekeeper.
+    # Tras el FAIL/correccion del design (ver nota en la fase `design`),
+    # el spec se actualizo para reflejar las 6 correcciones re-verificadas:
+    # divergencia `type` embebido (types 6+11, 86 filas), nueva divergencia
+    # de CARDINALIDAD en busqueda por nombre (fuse 20 vs contains 17, total:17
+    # es correcto), `shop_id`+filtro (mock 0 vs Postgres AND real),
+    # min_price/max_price (mock 0 vs Postgres 195 filas -- divergencia
+    # visible para el usuario, declarada explicitamente), split raw-vs-numerico
+    # de page/limit hacia listProducts() vs paginate()/URL, y la tension de
+    # CA-5 (500 en el path de lectura) con D-2 mencionada explicitamente.
+  design:
+    status: done
+    artifact: openspec/changes/migrar-api-products-postgres/design.md
+    # Gatekeeper: FAIL en el check de no-alucinacion -> 5 correcciones aplicadas
+    # y re-verificadas midiendo contra los archivos reales:
+    #   1. divergencia del `type` embebido: son types 6 Y 11, 86 filas (55+31),
+    #      no solo el 6 con 55. El type 11 flipea isHome false->true,
+    #      productCard xenon->helium, layoutType classic->modern.
+    #   2. la busqueda no solo cambia de ORDEN, cambia de CARDINALIDAD:
+    #      fuse 20 vs contains 17 para name:apple. R-2 no cubre esto -> fila
+    #      de divergencia propia + aviso en el paso CA-2.
+    #   3. MUST-KEEP explicito de `if (!page) page=1; if (!limit) limit=30`
+    #      + reglas de conversion a numero y caso no-numerico.
+    #   4. tests de manufacturerSlug/tagSlug reescritos: slug LIBRE (0) vs
+    #      slug de la FIXTURE (1); antes se contradecian.
+    #   5. drift: filas de divergencia para shop_id+fuzzy y min_price/max_price;
+    #      ruta correcta de validation.pipe.js; `with` NO esta en el DTO;
+    #      punto 5 de la DoD (status de la US + fila del epico) en el plan.
+    # Ademas: tension de la rama 500 con D-2 declarada en la Decision D.
+  tasks:
+    status: done
+    artifact: openspec/changes/migrar-api-products-postgres/tasks.md
+    # 6 fases, 24 tasks. Precondiciones+baseline mock ANTES del cambio (1.x),
+    # implementacion en products.service.ts (parser+mapper+split raw/numerico+
+    # try-catch CA-5), tests de integracion shopId/manufacturerSlug/tagSlug
+    # (M_LIBRE/T_LIBRE=0, M_FIX/T_FIX=1 via upsertScrapedProduct), verificacion
+    # literal de CA-1..CA-5, fase dedicada a las divergencias #8/#9/#10 para
+    # verify-report, cierre documental (Status US + fila del epico).
+    # Forecast: ~190-230 lineas, riesgo Low, sin chaining (PR unico).
+  apply:
+    status: done
+    artifact: openspec/changes/migrar-api-products-postgres/apply-progress.md
+    # Batch 1: 24/24 tasks (Phases 1-6). Cambio unico, PR unico (275 lineas:
+    # 229+/46-, dentro del presupuesto Low pronosticado). Gate just db-check
+    # en verde (14/14 tests: 11 previos + 3 nuevos). CA-1..CA-5 verificados
+    # con evidencia real pegada en apply-progress.md. jq no disponible en
+    # este Git Bash: las comparaciones "jq -S" del design se reprodujeron
+    # con node -e (mismo resultado semantico), declarado como sustitucion
+    # de herramienta, no como desviacion de criterio.
+    #
+    # Batch 2 (reapertura autorizada tras sdd-verify, ver verdict abajo):
+    #   Item 1 -- fix V-3 (regresion): parseFiniteNumber() en
+    #     products.service.ts. shop_id/min_price/max_price con valor no
+    #     numerico se IGNORA (Number.isFinite) en vez de colar NaN a Prisma
+    #     -> 500. Verificado: shop_id:abc/min_price:abc/max_price:abc ->
+    #     200 (antes 500); shop_id:6/min_price:50 siguen en 200. Sin test
+    #     unitario nuevo (parseProductSearch es privada, apps/api/rest sin
+    #     runner con specs; exportarla revocaria Decision C, fuera de
+    #     alcance del reopen) -- evidencia curl pegada en apply-progress.md
+    #     en su lugar, sin fingir cobertura (V-4 queda abierto).
+    #   Item 2 -- fix V-2 (cifra incorrecta): "mock 0 filas" para
+    #     shop_id+otro filtro era FALSO. Re-medido con stash/restore del
+    #     codigo original: mock name:apple;shop_id:6 = 20 (no 0),
+    #     shop_id:6 solo = 584, name:apple solo = 20; Postgres = 12. El
+    #     cambio real es 20->12, no 0->12. Corregido en design.md, spec.md,
+    #     tasks.md y la seccion original de apply-progress.md (batch 1).
+    #     Adicion: divergencia #3 aclarada 86 filas totales / 85
+    #     observables via el endpoint (id 454, type 6, status:draft, es la
+    #     unica no observable) -- verificado con SQL directo.
+    #   min_price/max_price (mock 0 vs Postgres 195) NO se tocaron --
+    #     confirmadas correctas por el coordinador.
+    #   V-1 (flakiness just db-check via `just`) y el resto de V-4 quedan
+    #     fuera de esta reapertura. Gate just db-check re-ejecutado: 14/14
+    #     verde (sin cambios en packages/db en este batch).
+    #   30/30 tasks (Phases 1-7). Siguiente paso recomendado: re-ejecutar
+    #     sdd-verify para confirmar V-2/V-3 cerrados.
+  verify:
+    status: done
+    artifact: openspec/changes/migrar-api-products-postgres/verify-report.md
+    verdict: PASS_WITH_WARNINGS
+    # CA-1..CA-5 y los 6 requirements del spec: verificados con evidencia real
+    # RE-EJECUTADA por verify (no copiada de apply-progress.md). CA-1 se validó
+    # con un censo de las 1199 filas contra products.json (mock.json de apply ya
+    # no existe): unicas diferencias = las divergencias ratificadas.
+    # Toda la evidencia de runtime se corrio DOS veces (PID 27700 heredado y
+    # PID 32672 levantado por verify tras una caida de entorno): resultados
+    # identicos hasta el byte. CA-3 re-verificado con shop/admin relevantados.
+    # Scope: 4 archivos, ninguna prohibicion del "NO incluye" violada.
+    # 4 reservas abiertas (ver seccion 10 del verify-report):
+    #   V-1 `just db-check` FALLA vía `just` (3/3, reproducible) y pasa vía
+    #       `npm test` (14/14, 5/5). DEMOSTRADO PRE-EXISTENTE: falla igual con
+    #       la version de HEAD del archivo de tests. Sospecha: cwd con letra de
+    #       unidad en minuscula en el spawn de just -> vitest 4 carga dos
+    #       instancias del modulo. Disputa el punto 3 de la DoD.
+    #   V-2 divergencia #9 MAL MEDIDA en design.md y apply-progress.md: el mock
+    #       NO daba 0 filas para name:apple;shop_id:6, daba 20. El cambio real
+    #       es 20 (todas las tiendas) -> 12 (tienda 6), no 0 -> 12.
+    #   V-3 divergencias NO documentadas: search=shop_id:abc y min_price:abc
+    #       devuelven 500 donde el mock daba 200 (Number(value) sin validar
+    #       deja pasar NaN a Prisma). Tension con D-2. Reportado, NO corregido.
+    #   V-4 cero cobertura automatizada del codigo nuevo de la API: los 3 tests
+    #       viven en packages/db y cubren el repositorio preexistente, no
+    #       toProductDto/parseProductSearch/try-catch. Riesgo para US-3/US-4,
+    #       que reutilizaran toProductDto.
+    # build: `just build` (shop+admin) NO ejecutado a proposito -- no compila
+    # ningun archivo del cambio y exige detener los dev. En su lugar:
+    # `just build-api` exit=0 + tsc --noEmit en apps/api/rest y packages/db.
+  archive:
+    status: pending
+    # Antes de archivar: propagar al spec principal las divergencias #8, #9
+    # (CON LA CIFRA CORREGIDA: mock 20, no 0) y #10, y ajustar la #3 a 85 filas
+    # observables en la respuesta (86 en el archivo; la 86a es el borrador
+    # id 454, que Postgres filtra). Registrar V-3 como item de backlog.
+
+capabilities:
+  new:
+    - product-listing-api
+  modified: []
+
+# Decisiones que sdd-design debia cerrar. TODAS CERRADAS en design.md.
+open_decisions: []
+
+closed_decisions:
+  - id: popular-best-selling
+    question: popular-products / best-selling-products entran a Postgres o quedan en mock
+    routed_by: US-2 ("inventariarlos y decidir en el design")
+    resolution: quedan en mock (recomendacion RATIFICADA)
+    closed_in: design.md -> "Decision B"
+    evidence: |
+      Verificado abriendo los dos JSON: popular-products.json = 10 filas,
+      best-selling-products.json = 5 filas (15 en total), las 15 con
+      sold_quantity = 0 -> la base no guarda senal de ranking que las
+      reproduzca. Shape de 46 claves en ambos (distinto del listado de 20;
+      ni siquiera coinciden entre si en orden, y `visibility` no aparece en
+      ninguno). Consecuencia vinculante: los imports productsJson /
+      popularProductsJson / bestSellingProductsJson y la instancia `fuse`
+      (products.service.ts:8-33) PERMANECEN.
+  - id: mapper-file-split
+    question: extraer products.mapper.ts a archivo propio
+    resolution: no en US-2 (recomendacion RATIFICADA); funciones privadas nombradas
+    closed_in: design.md -> "Decision C"
+    evidence: |
+      La proyeccion real es un literal de 20 claves con dos objetos anidados
+      pequenos (~35 LOC), no los 35 campos que estimaba la exploracion. Un
+      archivo nuevo tendria hoy un unico consumidor. `toProductDto` queda
+      exportable en US-3 sin mover nada.
+
+# Revocacion de una decision del proposal, cerrada tambien en el design.
+design_overrides:
+  - id: paginador
+    overrides: proposal.md tabla "Approach" fila 4 (usar buildPaginator de @safari/db)
+    resolution: se conserva paginate() de apps/api/rest/src/common/pagination/paginate.ts
+    closed_in: design.md -> "Decision A"
+    evidence: |
+      new ValidationPipe() (main.ts:9) NO transforma: verificado en el codigo
+      instalado
+      apps/api/rest/node_modules/@nestjs/common/pipes/validation.pipe.js:86-91
+      (validatorOptions = {forbidUnknownValues:false}, length===1 ->
+      shouldTransformToPlain=false -> devuelve el objeto crudo de la query).
+      Por tanto `limit` llega como string "30" y paginate() emite
+      per_page: "30" (string). buildPaginator tipa limit: number y
+      normalizaria per_page a 30 -> divergencia de TIPO que CA-1 prohibe.
+      buildPaginator no se toca ni se deprecia.
