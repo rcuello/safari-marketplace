@@ -9,6 +9,8 @@ import { _toManufacturerRecord, type ManufacturerRecord } from '../records';
 
 export interface ListManufacturersInput {
   typeSlug?: string;
+  /** Búsqueda parcial por nombre, case-insensitive. */
+  name?: string;
   /** 1-based. Default 1. */
   page?: number;
   /** Default 30, como el mock. */
@@ -23,6 +25,7 @@ export async function listManufacturers(
   const limit = input.limit ?? 30;
   const where: Prisma.ManufacturerWhereInput = {
     ...(input.typeSlug && { type: { slug: input.typeSlug } }),
+    ...(input.name && { name: { contains: input.name, mode: 'insensitive' as const } }),
   };
 
   const [rows, total] = await Promise.all([

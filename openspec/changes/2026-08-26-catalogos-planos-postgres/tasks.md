@@ -53,28 +53,28 @@ Chain strategy: stacked-to-main
 ## PR #2 — `tags` + `manufacturers` (~250 lines)
 
 ### Phase 2.1: Baseline
-- [ ] 2.1.1 Capture `curl :9001/api/tags?limit=100`, `/manufacturers?limit=30`, `/top-manufacturers?limit=10` into `$CH/mock-*.json` BEFORE editing (API still serves these from mock after PR #1)
+- [x] 2.1.1 Capture `curl :9001/api/tags?limit=100`, `/manufacturers?limit=30`, `/top-manufacturers?limit=10` into `$CH/mock-*.json` BEFORE editing (API still serves these from mock after PR #1)
 
 ### Phase 2.2: `packages/db`
-- [ ] 2.2.1 `tags.repository.ts`: add `name?: string` to `ListTagsInput`, `contains`/`insensitive` filter, flip `orderBy: { id: 'asc' }` (line 31) → `{ id: 'desc' }` (Decisión D)
-- [ ] 2.2.2 `manufacturers.repository.ts`: add `name?: string` to `ListManufacturersInput`, `contains`/`insensitive` filter — `orderBy` stays `asc`
-- [ ] 2.2.3 Create `packages/db/src/repositories/tags.integration.test.ts` (~45 lines): `listTags()` → total 10, first id 62 / last id 53 (desc); `{typeSlug:'medicine'}` → 10; `{typeSlug:'grocery'}` → 0; `{name:'baby'}` → 2; `findTagBySlug` hit/`null`
-- [ ] 2.2.4 Create `packages/db/src/repositories/manufacturers.integration.test.ts` (~40 lines): `listManufacturers()` → total 14, id asc; `{typeSlug:'books'}` → 9; `{name:'publication'}` → 9; `{limit:10}` → 10 items matching `slice(0,10)`; `findManufacturerBySlug` hit/`null`
-- [ ] 2.2.5 `cd packages/db && npm run typecheck && npm test` green
+- [x] 2.2.1 `tags.repository.ts`: add `name?: string` to `ListTagsInput`, `contains`/`insensitive` filter, flip `orderBy: { id: 'asc' }` (line 31) → `{ id: 'desc' }` (Decisión D)
+- [x] 2.2.2 `manufacturers.repository.ts`: add `name?: string` to `ListManufacturersInput`, `contains`/`insensitive` filter — `orderBy` stays `asc`
+- [x] 2.2.3 Create `packages/db/src/repositories/tags.integration.test.ts` (~45 lines): `listTags()` → total 10, first id 62 / last id 53 (desc); `{typeSlug:'medicine'}` → 10; `{typeSlug:'grocery'}` → 0; `{name:'baby'}` → 2; `findTagBySlug` hit/`null`
+- [x] 2.2.4 Create `packages/db/src/repositories/manufacturers.integration.test.ts` (~40 lines): `listManufacturers()` → total 14, id asc; `{typeSlug:'books'}` → 9; `{name:'publication'}` → 9; `{limit:10}` → 10 items matching `slice(0,10)`; `findManufacturerBySlug` hit/`null`
+- [x] 2.2.5 `cd packages/db && npm run typecheck && npm test` green
 
 ### Phase 2.3: Rebuild (blocking)
-- [ ] 2.3.1 `just db-build`
+- [x] 2.3.1 `just db-build`
 
 ### Phase 2.4: `apps/api/rest`
-- [ ] 2.4.1 `apps/api/rest/src/tags/tags.service.ts`: `findAll` (line 30) → async over `Promise.all([listTags(input), listTypes()])` + `parseSearch`, drop `console.log(value,'value')` (line 38) while rewriting the block, add `toTagDto` (9 keys incl. nested `type:{id,name,slug,logo:null}`); `findOne` (line 61) → async, **slug only** (D-8 — numeric branch now 404), try/404/503/500 pattern
-- [ ] 2.4.2 `apps/api/rest/src/manufacturers/manufacturers.service.ts`: `getManufactures` (line 32) → same `Promise.all` + `parseSearch` pattern, drop `console.log('search', search)` (line 43), add `toManufacturerDto` (13 keys incl. nested `type`, `products_count:0`, `socials:[]`, `cover_image:null`, `language:'en'`); `getTopManufactures` (line 59) unchanged signature but sourced from `listManufacturers`/`toManufacturerDto`, **ignores `search`** (V-20); `getManufacturesBySlug` (line 65) → async, try/404/503/500 pattern
-- [ ] 2.4.3 `packages/db/src/repositories/*` — verify `Map<number, TypeRecord>` built from `listTypes()` is used to resolve nested `type` in both mappers; `type: null` if `typeId` is `null` (V-23)
+- [x] 2.4.1 `apps/api/rest/src/tags/tags.service.ts`: `findAll` (line 30) → async over `Promise.all([listTags(input), listTypes()])` + `parseSearch`, drop `console.log(value,'value')` (line 38) while rewriting the block, add `toTagDto` (9 keys incl. nested `type:{id,name,slug,logo:null}`); `findOne` (line 61) → async, **slug only** (D-8 — numeric branch now 404), try/404/503/500 pattern
+- [x] 2.4.2 `apps/api/rest/src/manufacturers/manufacturers.service.ts`: `getManufactures` (line 32) → same `Promise.all` + `parseSearch` pattern, drop `console.log('search', search)` (line 43), add `toManufacturerDto` (13 keys incl. nested `type`, `products_count:0`, `socials:[]`, `cover_image:null`, `language:'en'`); `getTopManufactures` (line 59) unchanged signature but sourced from `listManufacturers`/`toManufacturerDto`, **ignores `search`** (V-20); `getManufacturesBySlug` (line 65) → async, try/404/503/500 pattern
+- [x] 2.4.3 `packages/db/src/repositories/*` — verify `Map<number, TypeRecord>` built from `listTypes()` is used to resolve nested `type` in both mappers; `type: null` if `typeId` is `null` (V-23)
 
 ### Phase 2.5: Verification
-- [ ] 2.5.1 `just db-check` green (14 previous + 2 new suites)
-- [ ] 2.5.2 `just build-api` green
-- [ ] 2.5.3 `curl :9001/api/tags?limit=100`, `/manufacturers?limit=30`, `/top-manufacturers?limit=10` → diff vs mock baseline with `node -e` template; assert `total`/`count` real (V-13), `type` nested with 4 keys, `products_count:0`
-- [ ] 2.5.4 `curl :9001/api/tags/62` → 404 (V-21, mock returned 200)
+- [x] 2.5.1 `just db-check` green (14 previous + 2 new suites)
+- [x] 2.5.2 `just build-api` green
+- [x] 2.5.3 `curl :9001/api/tags?limit=100`, `/manufacturers?limit=30`, `/top-manufacturers?limit=10` → diff vs mock baseline with `node -e` template; assert `total`/`count` real (V-13), `type` nested with 4 keys, `products_count:0`
+- [x] 2.5.4 `curl :9001/api/tags/62` → 404 (V-21, mock returned 200)
 
 ## PR #3 — `shops` + documentation close-out (~205 lines)
 
