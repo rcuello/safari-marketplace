@@ -79,34 +79,34 @@ Chain strategy: stacked-to-main
 ## PR #3 — `shops` + documentation close-out (~205 lines)
 
 ### Phase 3.1: Baseline
-- [ ] 3.1.1 Capture `curl :9001/api/shops?limit=30 > $CH/mock-shops.json` BEFORE editing (still mock after PR #2)
+- [x] 3.1.1 Capture `curl :9001/api/shops?limit=30 > $CH/mock-shops.json` BEFORE editing (still mock after PR #2)
 
 ### Phase 3.2: `packages/db`
-- [ ] 3.2.1 `shops.repository.ts`: add `name?: string` to `ListShopsInput`, `contains`/`insensitive` filter, flip `orderBy: { id: 'asc' }` (line 34) → `{ id: 'desc' }` (Decisión D)
-- [ ] 3.2.2 `shops.repository.ts` `listShops`: add filtered `_count` (`PUBLISHED_PRODUCT` where `status:'publish', visibility:'visibility_public'`), spread `productsCount: row._count.products` into the returned record (Decisión E)
-- [ ] 3.2.3 `shops.repository.ts` `findShopBySlug`: apply the **same** filtered `_count`/`include` so the detail also carries `productsCount` — without this, `/shops/:slug` silently drops to 15 keys (single easiest regression, own assertion required)
-- [ ] 3.2.4 `packages/db/src/records.ts`: add `ShopRecord.productsCount?: number` (optional, keeps `findOrCreateShopBySlug` compiling)
-- [ ] 3.2.5 Create `packages/db/src/repositories/shops.integration.test.ts` (~45 lines): `listShops()` → total 12, first id 15 (desc); 3 reconstructed rows present (`noaw`, `launchidea`, `tetetetet`); `productsCount` of `grocery-shop`=584, `makeup-shop`=82, `noaw`=188; `{name:'shop'}` → 7; `findShopBySlug('gadget').productsCount`=44; `findShopBySlug('no-existe')` → `null`
-- [ ] 3.2.6 `cd packages/db && npm run typecheck && npm test` green
+- [x] 3.2.1 `shops.repository.ts`: add `name?: string` to `ListShopsInput`, `contains`/`insensitive` filter, flip `orderBy: { id: 'asc' }` (line 34) → `{ id: 'desc' }` (Decisión D)
+- [x] 3.2.2 `shops.repository.ts` `listShops`: add filtered `_count` (`PUBLISHED_PRODUCT` where `status:'publish', visibility:'visibility_public'`), spread `productsCount: row._count.products` into the returned record (Decisión E)
+- [x] 3.2.3 `shops.repository.ts` `findShopBySlug`: apply the **same** filtered `_count`/`include` so the detail also carries `productsCount` — without this, `/shops/:slug` silently drops to 15 keys (single easiest regression, own assertion required)
+- [x] 3.2.4 `packages/db/src/records.ts`: add `ShopRecord.productsCount?: number` (optional, keeps `findOrCreateShopBySlug` compiling)
+- [x] 3.2.5 Create `packages/db/src/repositories/shops.integration.test.ts` (~45 lines): `listShops()` → total 12, first id 15 (desc); 3 reconstructed rows present (`noaw`, `launchidea`, `tetetetet`); `productsCount` of `grocery-shop`=584, `makeup-shop`=82, `noaw`=188; `{name:'shop'}` → 7; `findShopBySlug('gadget').productsCount`=44; `findShopBySlug('no-existe')` → `null`
+- [x] 3.2.6 `cd packages/db && npm run typecheck && npm test` green
 
 ### Phase 3.3: Rebuild (blocking)
-- [ ] 3.3.1 `just db-build`
+- [x] 3.3.1 `just db-build`
 
 ### Phase 3.4: `apps/api/rest`
-- [ ] 3.4.1 `apps/api/rest/src/shops/shops.service.ts`: **only** `getShops` (line 30) and `getShop` (line 97) migrate — async over `listShops`/`findShopBySlug` + `parseSearch` (`name`, `is_active:1` → `isActive:true`, V-15) + `toShopDto` (16 keys: `owner:null`, `orders_count:0`, `notifications:null`, `products_count: r.productsCount ?? 0`); try/404/503/500 pattern for `getShop`. `getNewShops`/`getStaffs`/`getNearByShop`/`approveShop`/`disapproveShop`/`update`/`remove`/`create` untouched — `shopsJson`/`nearShopJson`/`fuse`/`plainToClass` stay
+- [x] 3.4.1 `apps/api/rest/src/shops/shops.service.ts`: **only** `getShops` (line 30) and `getShop` (line 97) migrate — async over `listShops`/`findShopBySlug` + `parseSearch` (`name`, `is_active:1` → `isActive:true`, V-15) + `toShopDto` (16 keys: `owner:null`, `orders_count:0`, `notifications:null`, `products_count: r.productsCount ?? 0`); try/404/503/500 pattern for `getShop`. `getNewShops`/`getStaffs`/`getNearByShop`/`approveShop`/`disapproveShop`/`update`/`remove`/`create` untouched — `shopsJson`/`nearShopJson`/`fuse`/`plainToClass` stay
 
 ### Phase 3.5: Verification
-- [ ] 3.5.1 `just db-check` green (16 previous + 1 new suite)
-- [ ] 3.5.2 `just build-api` green
-- [ ] 3.5.3 `curl :9001/api/shops?limit=30` → 12 rows (mock: 9), diff vs baseline with `node -e` template — divergences limited to V-4/V-5/V-6/V-7 + 3 new rows + `makeup-shop` 81→82
-- [ ] 3.5.4 `docker exec -e PGPASSWORD=safari safari-postgres psql -h localhost -U safari -d safari_scraper -c "SELECT id, slug, description LIKE 'Reconstruido%' AS recon FROM shops ORDER BY id DESC"` → 12 rows, ids 15/14/12 `recon=t`, rest `recon=f` (CA-3)
-- [ ] 3.5.5 `curl :9001/api/shops/gadget` vs the same row in `pg-shops.json` → identical object, 16 keys, `products_count`=44
-- [ ] 3.5.6 `just db-down`; `curl` on all 4 catalogs + `top-manufacturers` → 5x 503; `curl :9001/api/settings` → 200 (process alive); `just db-up`
-- [ ] 3.5.7 `just verify`; `just shop-dev` (separate terminal) + `curl localhost:3003/en/shops` and `/en/shops/gadget` per design.md CA-4 checks
+- [x] 3.5.1 `just db-check` green (16 previous + 1 new suite)
+- [x] 3.5.2 `just build-api` green
+- [x] 3.5.3 `curl :9001/api/shops?limit=30` → 12 rows (mock: 9), diff vs baseline with `node -e` template — divergences limited to V-4/V-5/V-6/V-7 + 3 new rows + `makeup-shop` 81→82
+- [x] 3.5.4 `docker exec -e PGPASSWORD=safari safari-postgres psql -h localhost -U safari -d safari_scraper -c "SELECT id, slug, description LIKE 'Reconstruido%' AS recon FROM shops ORDER BY id DESC"` → 12 rows, ids 15/14/12 `recon=t`, rest `recon=f` (CA-3)
+- [x] 3.5.5 `curl :9001/api/shops/gadget` vs the same row in `pg-shops.json` → identical object, 16 keys, `products_count`=44
+- [x] 3.5.6 `just db-down`; `curl` on all 4 catalogs + `top-manufacturers` → 5x 503; `curl :9001/api/settings` → 200 (process alive); `just db-up`
+- [x] 3.5.7 `just verify`; `just shop-dev` (separate terminal) + `curl localhost:3003/en/shops` and `/en/shops/gadget` per design.md CA-4 checks
 
 ### Phase 3.6: Documentation close-out
-- [ ] 3.6.1 Rewrite `docs/product/1-catalogo-desde-postgres/4-migrar-catalogos-apoyo.md` into US-4a: title, scope without `categories`, CAs, DoD with pasted evidence, **Status**, LOC, split note pointing to `./4b-categorias-arbol-postgres.md`
-- [ ] 3.6.2 `docs/product/1-catalogo-desde-postgres/README.md` line 33 table: US-4a row (Implementada) + new US-4b row (pending); adjust "Orden sugerido" (line 35)
-- [ ] 3.6.3 `docs/product/README.md` line 196: `→ US-2, US-3, US-4a, US-4b`
+- [x] 3.6.1 Rewrite `docs/product/1-catalogo-desde-postgres/4-migrar-catalogos-apoyo.md` into US-4a: title, scope without `categories`, CAs, DoD with pasted evidence, **Status**, LOC, split note pointing to `./4b-categorias-arbol-postgres.md`
+- [x] 3.6.2 `docs/product/1-catalogo-desde-postgres/README.md` line 33 table: US-4a row (Implementada) + new US-4b row (pending); adjust "Orden sugerido" (line 35)
+- [x] 3.6.3 `docs/product/README.md` line 196: `→ US-2, US-3, US-4a, US-4b`
 
 Out of scope (unchanged): `apps/shop/**`/`apps/admin/**` beyond the curl smoke checks above, `db/schema.sql`, `packages/db/prisma/schema.prisma`, all 4 controllers, `categories`/US-4b files, jest specs for the 4 services (D-10).

@@ -82,6 +82,12 @@ export interface ShopRecord {
   settings: Prisma.JsonValue;
   createdAt: Date;
   updatedAt: Date;
+  /**
+   * Conteo de productos `publish`/`visibility_public` del shop (Decisión E,
+   * design.md). Opcional: `findOrCreateShopBySlug` (scraper) sigue
+   * compilando sin calcularlo — el mapper del servicio usa `?? 0`.
+   */
+  productsCount?: number;
 }
 
 export interface CategoryRecord {

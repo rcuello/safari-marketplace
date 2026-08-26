@@ -193,7 +193,7 @@ Feature: …
 ## Mapa del backlog (orden recomendado)
 
 ```
-Épico 1  Catálogo servido desde Postgres      → US-2, US-3, US-4
+Épico 1  Catálogo servido desde Postgres      → US-2, US-3, US-4a, US-4b
 Épico 5  Scraper al catálogo compartido       → US-6, US-7, US-8
 Épico 9  Gate de calidad y CI                 → US-10, US-11, US-12
 Épico 13 Orquestación local con Docker        → US-14, US-15
