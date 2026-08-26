@@ -63,4 +63,5 @@ export {
 } from './src/repositories/shops.repository';
 export type { ListTagsInput } from './src/repositories/tags.repository';
 export { findTagBySlug, listTags } from './src/repositories/tags.repository';
+export type { ListTypesInput } from './src/repositories/types.repository';
 export { findTypeBySlug, listTypes } from './src/repositories/types.repository';

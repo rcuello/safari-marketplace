@@ -29,26 +29,26 @@ Chain strategy: stacked-to-main
 ## PR #1 — `parse-search` + `types` (~135 lines)
 
 ### Phase 1.1: Baseline
-- [ ] 1.1.1 `just db-up`; capture `curl -s http://localhost:9001/api/types > openspec/changes/2026-08-26-catalogos-planos-postgres/mock-types.json` BEFORE any edit (fallback: `node -e` over `apps/api/rest/src/db/pickbazar/types.json` per design.md Verification Plan §Paso 0)
+- [x] 1.1.1 `just db-up`; capture `curl -s http://localhost:9001/api/types > openspec/changes/2026-08-26-catalogos-planos-postgres/mock-types.json` BEFORE any edit (fallback: `node -e` over `apps/api/rest/src/db/pickbazar/types.json` per design.md Verification Plan §Paso 0)
 
 ### Phase 1.2: `packages/db`
-- [ ] 1.2.1 `packages/db/src/repositories/types.repository.ts`: add `import type { Prisma } from '../../generated/prisma/client/client';`, export `ListTypesInput { name?: string }`, change `listTypes()` to `listTypes(input: ListTypesInput = {})` with `where: { ...(input.name && { name: { contains: input.name, mode: 'insensitive' as const } }) }`
-- [ ] 1.2.2 `packages/db/index.ts` line 66: add `export type { ListTypesInput } from './src/repositories/types.repository';` next to the existing `listTypes`/`findTypeBySlug` export — do not touch lines 26-34
-- [ ] 1.2.3 Create `packages/db/src/repositories/types.integration.test.ts` (~35 lines, pattern of `products.integration.test.ts`): `listTypes()` → 10 rows JSON-safe id asc; `listTypes({name:'gad'})` → 1 row `gadget`; `findTypeBySlug('gadget')` hit; `findTypeBySlug('no-existe')` → `null`
-- [ ] 1.2.4 `cd packages/db && npm run typecheck && npm test` green
+- [x] 1.2.1 `packages/db/src/repositories/types.repository.ts`: add `import type { Prisma } from '../../generated/prisma/client/client';`, export `ListTypesInput { name?: string }`, change `listTypes()` to `listTypes(input: ListTypesInput = {})` with `where: { ...(input.name && { name: { contains: input.name, mode: 'insensitive' as const } }) }`
+- [x] 1.2.2 `packages/db/index.ts` line 66: add `export type { ListTypesInput } from './src/repositories/types.repository';` next to the existing `listTypes`/`findTypeBySlug` export — do not touch lines 26-34
+- [x] 1.2.3 Create `packages/db/src/repositories/types.integration.test.ts` (~35 lines, pattern of `products.integration.test.ts`): `listTypes()` → 10 rows JSON-safe id asc; `listTypes({name:'gad'})` → 1 row `gadget`; `findTypeBySlug('gadget')` hit; `findTypeBySlug('no-existe')` → `null`
+- [x] 1.2.4 `cd packages/db && npm run typecheck && npm test` green
 
 ### Phase 1.3: Rebuild (blocking)
-- [ ] 1.3.1 `just db-build` — mandatory before touching `apps/api/rest`; `packages/db/dist/` is gitignored and consumed via `link:` (`apps/api/rest/package.json:31`)
+- [x] 1.3.1 `just db-build` — mandatory before touching `apps/api/rest`; `packages/db/dist/` is gitignored and consumed via `link:` (`apps/api/rest/package.json:31`)
 
 ### Phase 1.4: `apps/api/rest`
-- [ ] 1.4.1 Create `apps/api/rest/src/common/search/parse-search.ts`: `parseSearch(search?: string): Record<string,string>` per design.md Decisión A (~14 lines)
-- [ ] 1.4.2 `apps/api/rest/src/types/types.service.ts`: `getTypes` (line 22) → async over `listTypes({name})` via `parseSearch`, add module-level `toTypeDto` mapper (9 keys, `translated_languages:['en']`, `promotional_sliders:null`); `getTypeBySlug` (line 51) → async, `try` wraps only `findTypeBySlug(slug)`, 404 (`NotFoundException`) outside the try, 503/500 via `isPrismaConnectionError`/`getUserFriendlyMessage`. Keep `typesJson`/`fuse`/`plainToClass` (used by `create`/`update`)
+- [x] 1.4.1 Create `apps/api/rest/src/common/search/parse-search.ts`: `parseSearch(search?: string): Record<string,string>` per design.md Decisión A (~14 lines)
+- [x] 1.4.2 `apps/api/rest/src/types/types.service.ts`: `getTypes` (line 22) → async over `listTypes({name})` via `parseSearch`, add module-level `toTypeDto` mapper (9 keys, `translated_languages:['en']`, `promotional_sliders:null`); `getTypeBySlug` (line 51) → async, `try` wraps only `findTypeBySlug(slug)`, 404 (`NotFoundException`) outside the try, 503/500 via `isPrismaConnectionError`/`getUserFriendlyMessage`. Keep `typesJson`/`fuse`/`plainToClass` (used by `create`/`update`)
 
 ### Phase 1.5: Verification
-- [ ] 1.5.1 `just db-check` green
-- [ ] 1.5.2 `just build-api` green (or restart `just api-dev`)
-- [ ] 1.5.3 `curl :9001/api/types` → 10-row array, 9 keys, no `data` wrapper; diff vs `mock-types.json` with `node -e` template from design.md — only V-8/V-9 divergences
-- [ ] 1.5.4 `curl :9001/api/types/gadget` → 200; `curl :9001/api/types/no-existe-xyz` → 404 `{statusCode,message,error}`
+- [x] 1.5.1 `just db-check` green
+- [x] 1.5.2 `just build-api` green (or restart `just api-dev`)
+- [x] 1.5.3 `curl :9001/api/types` → 10-row array, 9 keys, no `data` wrapper; diff vs `mock-types.json` with `node -e` template from design.md — only V-8/V-9 divergences
+- [x] 1.5.4 `curl :9001/api/types/gadget` → 200; `curl :9001/api/types/no-existe-xyz` → 404 `{statusCode,message,error}`
 
 ## PR #2 — `tags` + `manufacturers` (~250 lines)
 
