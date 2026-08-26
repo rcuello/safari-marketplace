@@ -100,7 +100,7 @@ export interface ProductRecord {
 }
 
 export interface ProductDetail extends ProductRecord {
-  /** Productos del mismo type, visibles, excluyendo el propio. */
+  /** Productos del mismo type (incluye el propio; ver D-1 en findProductBySlug). */
   relatedProducts: ProductRecord[];
 }
 
@@ -222,7 +222,9 @@ export async function listProducts(input: ListProductsInput = {}): Promise<{
 
 /**
  * Detalle por slug, con relaciones cargadas y `relatedProducts` (mismo
- * type, visibles, hasta `relatedLimit`). `null` si no existe.
+ * type, hasta `relatedLimit`, SIN filtrar por `status`/`visibility` y sin
+ * excluir el propio producto — ver D-1 en el `where` de abajo).
+ * `null` si no existe.
  */
 export async function findProductBySlug(
   slug: string,
@@ -235,12 +237,13 @@ export async function findProductBySlug(
   if (!row) return null;
 
   const related = await prisma.product.findMany({
-    where: {
-      typeId: row.typeId,
-      id: { not: row.id },
-      status: 'publish',
-      visibility: 'visibility_public',
-    },
+    // D-1 (US-3, ratificada): paridad byte a byte con el mock, que hacía
+    // `products.filter(p => p.type.slug === product.type.slug).slice(0,20)`.
+    // NO es un bug ni un olvido: el filtro por `status`/`visibility` y la
+    // exclusión del propio producto (`id: { not: row.id }`) se ELIMINARON a
+    // propósito. Ver openspec/specs/product-detail-api/spec.md antes de
+    // "arreglarlo".
+    where: { typeId: row.typeId },
     include: PRODUCT_INCLUDE,
     orderBy: { id: 'asc' },
     take: relatedLimit,

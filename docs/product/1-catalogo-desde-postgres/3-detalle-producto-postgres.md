@@ -6,7 +6,7 @@
 
 **Épico:** [Épico 1](./README.md)
 **Fecha:** 2026-08-25
-**Status:** Listo para ejecución
+**Status:** Implementada
 **Depende de:** US-2
 **LOC est.:** ~200
 
@@ -65,11 +65,29 @@ Feature: Detalle de producto desde Postgres
 | `packages/db/src/repositories/products.integration.test.ts` | casos de slug existente/inexistente |
 
 ## Definición de Done
-- [ ] Salida real de `curl` del detalle (mock vs Postgres) pegada para el mismo slug.
-- [ ] Salida real del `curl` 404 pegada.
-- [ ] Captura o `curl` de `/products/{slug}` de la tienda en 200.
-- [ ] Salida real de `just db-check` en verde.
-- [ ] Status de esta US actualizado y fila del épico marcada.
+- [x] Salida real de `curl` del detalle (mock vs Postgres) pegada para el mismo slug.
+  Diff `node -e` (ver `apply-progress.md`, CA-1): raíz `21 -> 21`, mismo orden `true`,
+  `faltan: []`, `sobran: []`, `related n: 20` con los mismos ids `1..20` en ambos lados,
+  `items con shape malo: 0`.
+- [x] Salida real del `curl` 404 pegada.
+  `curl -i http://localhost:9001/api/products/no-existe-xyz` → `HTTP/1.1 404 Not Found`,
+  body `{"statusCode":404,"message":"No existe un producto con slug \`no-existe-xyz\`.","error":"Not Found"}`;
+  `GET /api/types` sigue en `200` después (proceso vivo).
+- [x] Captura o `curl` de `/products/{slug}` de la tienda en 200.
+  `curl -s -w '%{http_code}' http://localhost:3003/en/products/apples` → `200`,
+  HTML contiene `Apples` (`grep -c 'Apples'` → 1). Verificado en modo `just shop-dev`
+  (ISR corre por request; ver design.md, nota CA-4).
+- [x] Salida real de `just db-check` en verde.
+  ```
+  npm run typecheck
+  > tsc --noEmit
+   Test Files  1 passed (1)
+        Tests  14 passed (14)
+  ```
+  (EXIT=0. El gate corre limpio: la receta ya normaliza el cwd con
+  `cd "$(pwd)"` desde el commit `083d8e9`, así que el fallo de casing de
+  Windows descrito en US-2 no aplica aquí.)
+- [x] Status de esta US actualizado y fila del épico marcada.
 
 ## Notas para el agente ejecutor
 - Inventariar primero con `curl` el shape real del detalle del mock: los

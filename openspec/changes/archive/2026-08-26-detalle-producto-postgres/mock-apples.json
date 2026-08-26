@@ -1,0 +1,989 @@
+{
+  "id": 1,
+  "name": "Apples",
+  "slug": "apples",
+  "type": {
+    "id": 1,
+    "name": "Grocery",
+    "slug": "grocery",
+    "logo": null,
+    "settings": {
+      "isHome": false,
+      "productCard": "helium",
+      "layoutType": "classic"
+    }
+  },
+  "language": "en",
+  "translated_languages": [
+    "en"
+  ],
+  "product_type": "simple",
+  "shop": {
+    "id": 6,
+    "name": "Grocery Shop",
+    "slug": "grocery-shop",
+    "logo": {
+      "id": "893",
+      "original": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/891/Group-36321.png",
+      "thumbnail": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/891/conversions/Group-36321-thumbnail.jpg"
+    }
+  },
+  "sale_price": 1.6,
+  "max_price": 2,
+  "min_price": 2,
+  "image": {
+    "id": "1",
+    "original": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/1/Apples.jpg",
+    "thumbnail": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/1/conversions/Apples-thumbnail.jpg"
+  },
+  "status": "publish",
+  "price": 2,
+  "quantity": 16,
+  "unit": "kg",
+  "sku": "1",
+  "sold_quantity": 2,
+  "in_flash_sale": 0,
+  "visibility": "visibility_public",
+  "related_products": [
+    {
+      "id": 1,
+      "name": "Apples",
+      "slug": "apples",
+      "type": {
+        "id": 1,
+        "name": "Grocery",
+        "slug": "grocery",
+        "logo": null,
+        "settings": {
+          "isHome": false,
+          "productCard": "helium",
+          "layoutType": "classic"
+        }
+      },
+      "language": "en",
+      "translated_languages": [
+        "en"
+      ],
+      "product_type": "simple",
+      "shop": {
+        "id": 6,
+        "name": "Grocery Shop",
+        "slug": "grocery-shop",
+        "logo": {
+          "id": "893",
+          "original": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/891/Group-36321.png",
+          "thumbnail": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/891/conversions/Group-36321-thumbnail.jpg"
+        }
+      },
+      "sale_price": 1.6,
+      "max_price": 2,
+      "min_price": 2,
+      "image": {
+        "id": "1",
+        "original": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/1/Apples.jpg",
+        "thumbnail": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/1/conversions/Apples-thumbnail.jpg"
+      },
+      "status": "publish",
+      "price": 2,
+      "quantity": 16,
+      "unit": "kg",
+      "sku": "1",
+      "sold_quantity": 2,
+      "in_flash_sale": 0,
+      "visibility": "visibility_public"
+    },
+    {
+      "id": 2,
+      "name": "Baby Spinach",
+      "slug": "baby-spinach",
+      "type": {
+        "id": 1,
+        "name": "Grocery",
+        "slug": "grocery",
+        "logo": null,
+        "settings": {
+          "isHome": false,
+          "productCard": "helium",
+          "layoutType": "classic"
+        }
+      },
+      "language": "en",
+      "translated_languages": [
+        "en"
+      ],
+      "product_type": "simple",
+      "shop": {
+        "id": 6,
+        "name": "Grocery Shop",
+        "slug": "grocery-shop",
+        "logo": {
+          "id": "893",
+          "original": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/891/Group-36321.png",
+          "thumbnail": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/891/conversions/Group-36321-thumbnail.jpg"
+        }
+      },
+      "sale_price": null,
+      "max_price": 0.6,
+      "min_price": 0.6,
+      "image": {
+        "id": "2",
+        "original": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/2/BabySpinach.jpg",
+        "thumbnail": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/2/conversions/BabySpinach-thumbnail.jpg"
+      },
+      "status": "publish",
+      "price": 0.6,
+      "quantity": 8,
+      "unit": "2lb",
+      "sku": "2",
+      "sold_quantity": 2,
+      "in_flash_sale": 1,
+      "visibility": "visibility_public"
+    },
+    {
+      "id": 3,
+      "name": "Blueberries",
+      "slug": "blueberries",
+      "type": {
+        "id": 1,
+        "name": "Grocery",
+        "slug": "grocery",
+        "logo": null,
+        "settings": {
+          "isHome": false,
+          "productCard": "helium",
+          "layoutType": "classic"
+        }
+      },
+      "language": "en",
+      "translated_languages": [
+        "en"
+      ],
+      "product_type": "simple",
+      "shop": {
+        "id": 6,
+        "name": "Grocery Shop",
+        "slug": "grocery-shop",
+        "logo": {
+          "id": "893",
+          "original": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/891/Group-36321.png",
+          "thumbnail": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/891/conversions/Group-36321-thumbnail.jpg"
+        }
+      },
+      "sale_price": null,
+      "max_price": 3,
+      "min_price": 3,
+      "image": {
+        "id": "3",
+        "original": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/3/blueberries.jpg",
+        "thumbnail": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/3/conversions/blueberries-thumbnail.jpg"
+      },
+      "status": "publish",
+      "price": 3,
+      "quantity": 30,
+      "unit": "1lb",
+      "sku": "3",
+      "sold_quantity": 0,
+      "in_flash_sale": 0,
+      "visibility": "visibility_public"
+    },
+    {
+      "id": 4,
+      "name": "Brussels Sprout",
+      "slug": "brussels-sprout",
+      "type": {
+        "id": 1,
+        "name": "Grocery",
+        "slug": "grocery",
+        "logo": null,
+        "settings": {
+          "isHome": false,
+          "productCard": "helium",
+          "layoutType": "classic"
+        }
+      },
+      "language": "en",
+      "translated_languages": [
+        "en"
+      ],
+      "product_type": "simple",
+      "shop": {
+        "id": 6,
+        "name": "Grocery Shop",
+        "slug": "grocery-shop",
+        "logo": {
+          "id": "893",
+          "original": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/891/Group-36321.png",
+          "thumbnail": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/891/conversions/Group-36321-thumbnail.jpg"
+        }
+      },
+      "sale_price": 3,
+      "max_price": 5,
+      "min_price": 5,
+      "image": {
+        "id": "4",
+        "original": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/4/BrusselsSprouts.jpg",
+        "thumbnail": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/4/conversions/BrusselsSprouts-thumbnail.jpg"
+      },
+      "status": "publish",
+      "price": 5,
+      "quantity": 17,
+      "unit": "1lb",
+      "sku": "4",
+      "sold_quantity": 0,
+      "in_flash_sale": 0,
+      "visibility": "visibility_public"
+    },
+    {
+      "id": 5,
+      "name": "Celery Stick",
+      "slug": "celery-stick",
+      "type": {
+        "id": 1,
+        "name": "Grocery",
+        "slug": "grocery",
+        "logo": null,
+        "settings": {
+          "isHome": false,
+          "productCard": "helium",
+          "layoutType": "classic"
+        }
+      },
+      "language": "en",
+      "translated_languages": [
+        "en"
+      ],
+      "product_type": "simple",
+      "shop": {
+        "id": 6,
+        "name": "Grocery Shop",
+        "slug": "grocery-shop",
+        "logo": {
+          "id": "893",
+          "original": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/891/Group-36321.png",
+          "thumbnail": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/891/conversions/Group-36321-thumbnail.jpg"
+        }
+      },
+      "sale_price": 5,
+      "max_price": 6,
+      "min_price": 6,
+      "image": {
+        "id": "5",
+        "original": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/5/CelerySticks.jpg",
+        "thumbnail": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/5/conversions/CelerySticks-thumbnail.jpg"
+      },
+      "status": "publish",
+      "price": 6,
+      "quantity": 18,
+      "unit": "1lb",
+      "sku": "5",
+      "sold_quantity": 0,
+      "in_flash_sale": 0,
+      "visibility": "visibility_public"
+    },
+    {
+      "id": 6,
+      "name": "Clementines",
+      "slug": "clementines",
+      "type": {
+        "id": 1,
+        "name": "Grocery",
+        "slug": "grocery",
+        "logo": null,
+        "settings": {
+          "isHome": false,
+          "productCard": "helium",
+          "layoutType": "classic"
+        }
+      },
+      "language": "en",
+      "translated_languages": [
+        "en"
+      ],
+      "product_type": "simple",
+      "shop": {
+        "id": 6,
+        "name": "Grocery Shop",
+        "slug": "grocery-shop",
+        "logo": {
+          "id": "893",
+          "original": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/891/Group-36321.png",
+          "thumbnail": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/891/conversions/Group-36321-thumbnail.jpg"
+        }
+      },
+      "sale_price": 2.5,
+      "max_price": 3,
+      "min_price": 3,
+      "image": {
+        "id": "6",
+        "original": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/6/clementines.jpg",
+        "thumbnail": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/6/conversions/clementines-thumbnail.jpg"
+      },
+      "status": "publish",
+      "price": 3,
+      "quantity": 50,
+      "unit": "1lb",
+      "sku": "6",
+      "sold_quantity": 0,
+      "in_flash_sale": 0,
+      "visibility": "visibility_public"
+    },
+    {
+      "id": 7,
+      "name": "Sweet Corn",
+      "slug": "sweet-corn",
+      "type": {
+        "id": 1,
+        "name": "Grocery",
+        "slug": "grocery",
+        "logo": null,
+        "settings": {
+          "isHome": false,
+          "productCard": "helium",
+          "layoutType": "classic"
+        }
+      },
+      "language": "en",
+      "translated_languages": [
+        "en"
+      ],
+      "product_type": "simple",
+      "shop": {
+        "id": 6,
+        "name": "Grocery Shop",
+        "slug": "grocery-shop",
+        "logo": {
+          "id": "893",
+          "original": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/891/Group-36321.png",
+          "thumbnail": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/891/conversions/Group-36321-thumbnail.jpg"
+        }
+      },
+      "sale_price": 4,
+      "max_price": 5,
+      "min_price": 5,
+      "image": {
+        "id": "7",
+        "original": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/7/Corn.jpg",
+        "thumbnail": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/7/conversions/Corn-thumbnail.jpg"
+      },
+      "status": "publish",
+      "price": 5,
+      "quantity": 50,
+      "unit": "1lb",
+      "sku": "7",
+      "sold_quantity": 0,
+      "in_flash_sale": 0,
+      "visibility": "visibility_public"
+    },
+    {
+      "id": 8,
+      "name": "Cucumber",
+      "slug": "cucumber",
+      "type": {
+        "id": 1,
+        "name": "Grocery",
+        "slug": "grocery",
+        "logo": null,
+        "settings": {
+          "isHome": false,
+          "productCard": "helium",
+          "layoutType": "classic"
+        }
+      },
+      "language": "en",
+      "translated_languages": [
+        "en"
+      ],
+      "product_type": "simple",
+      "shop": {
+        "id": 6,
+        "name": "Grocery Shop",
+        "slug": "grocery-shop",
+        "logo": {
+          "id": "893",
+          "original": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/891/Group-36321.png",
+          "thumbnail": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/891/conversions/Group-36321-thumbnail.jpg"
+        }
+      },
+      "sale_price": null,
+      "max_price": 2.5,
+      "min_price": 2.5,
+      "image": {
+        "id": "8",
+        "original": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/8/Cucumber.jpg",
+        "thumbnail": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/8/conversions/Cucumber-thumbnail.jpg"
+      },
+      "status": "publish",
+      "price": 2.5,
+      "quantity": 25,
+      "unit": "2.5lb",
+      "sku": "8",
+      "sold_quantity": 0,
+      "in_flash_sale": 0,
+      "visibility": "visibility_public"
+    },
+    {
+      "id": 9,
+      "name": "Dates",
+      "slug": "dates",
+      "type": {
+        "id": 1,
+        "name": "Grocery",
+        "slug": "grocery",
+        "logo": null,
+        "settings": {
+          "isHome": false,
+          "productCard": "helium",
+          "layoutType": "classic"
+        }
+      },
+      "language": "en",
+      "translated_languages": [
+        "en"
+      ],
+      "product_type": "simple",
+      "shop": {
+        "id": 6,
+        "name": "Grocery Shop",
+        "slug": "grocery-shop",
+        "logo": {
+          "id": "893",
+          "original": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/891/Group-36321.png",
+          "thumbnail": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/891/conversions/Group-36321-thumbnail.jpg"
+        }
+      },
+      "sale_price": 8,
+      "max_price": 10,
+      "min_price": 10,
+      "image": {
+        "id": "10",
+        "original": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/10/Dates.jpg",
+        "thumbnail": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/10/conversions/Dates-thumbnail.jpg"
+      },
+      "status": "publish",
+      "price": 10,
+      "quantity": 50,
+      "unit": "1.5lb",
+      "sku": "9",
+      "sold_quantity": 0,
+      "in_flash_sale": 0,
+      "visibility": "visibility_public"
+    },
+    {
+      "id": 10,
+      "name": "French Green Beans",
+      "slug": "french-green-beans",
+      "type": {
+        "id": 1,
+        "name": "Grocery",
+        "slug": "grocery",
+        "logo": null,
+        "settings": {
+          "isHome": false,
+          "productCard": "helium",
+          "layoutType": "classic"
+        }
+      },
+      "language": "en",
+      "translated_languages": [
+        "en"
+      ],
+      "product_type": "simple",
+      "shop": {
+        "id": 6,
+        "name": "Grocery Shop",
+        "slug": "grocery-shop",
+        "logo": {
+          "id": "893",
+          "original": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/891/Group-36321.png",
+          "thumbnail": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/891/conversions/Group-36321-thumbnail.jpg"
+        }
+      },
+      "sale_price": 1.2,
+      "max_price": 1.5,
+      "min_price": 1.5,
+      "image": {
+        "id": "11",
+        "original": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/11/FrenchGreenBeans.jpg",
+        "thumbnail": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/11/conversions/FrenchGreenBeans-thumbnail.jpg"
+      },
+      "status": "publish",
+      "price": 1.5,
+      "quantity": 50,
+      "unit": "0.5lb",
+      "sku": "10",
+      "sold_quantity": 0,
+      "in_flash_sale": 0,
+      "visibility": "visibility_public"
+    },
+    {
+      "id": 11,
+      "name": "Green Beans",
+      "slug": "green-beans",
+      "type": {
+        "id": 1,
+        "name": "Grocery",
+        "slug": "grocery",
+        "logo": null,
+        "settings": {
+          "isHome": false,
+          "productCard": "helium",
+          "layoutType": "classic"
+        }
+      },
+      "language": "en",
+      "translated_languages": [
+        "en"
+      ],
+      "product_type": "simple",
+      "shop": {
+        "id": 6,
+        "name": "Grocery Shop",
+        "slug": "grocery-shop",
+        "logo": {
+          "id": "893",
+          "original": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/891/Group-36321.png",
+          "thumbnail": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/891/conversions/Group-36321-thumbnail.jpg"
+        }
+      },
+      "sale_price": 4,
+      "max_price": 5,
+      "min_price": 5,
+      "image": {
+        "id": "12",
+        "original": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/12/GreenBeans.jpg",
+        "thumbnail": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/12/conversions/GreenBeans-thumbnail.jpg"
+      },
+      "status": "publish",
+      "price": 5,
+      "quantity": 50,
+      "unit": "1lb",
+      "sku": "11",
+      "sold_quantity": 0,
+      "in_flash_sale": 0,
+      "visibility": "visibility_public"
+    },
+    {
+      "id": 12,
+      "name": "Lime",
+      "slug": "lime",
+      "type": {
+        "id": 1,
+        "name": "Grocery",
+        "slug": "grocery",
+        "logo": null,
+        "settings": {
+          "isHome": false,
+          "productCard": "helium",
+          "layoutType": "classic"
+        }
+      },
+      "language": "en",
+      "translated_languages": [
+        "en"
+      ],
+      "product_type": "simple",
+      "shop": {
+        "id": 6,
+        "name": "Grocery Shop",
+        "slug": "grocery-shop",
+        "logo": {
+          "id": "893",
+          "original": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/891/Group-36321.png",
+          "thumbnail": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/891/conversions/Group-36321-thumbnail.jpg"
+        }
+      },
+      "sale_price": 1.5,
+      "max_price": 2,
+      "min_price": 2,
+      "image": {
+        "id": "13",
+        "original": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/13/GreenLimes.jpg",
+        "thumbnail": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/13/conversions/GreenLimes-thumbnail.jpg"
+      },
+      "status": "publish",
+      "price": 2,
+      "quantity": 50,
+      "unit": "4pc(s)",
+      "sku": "12",
+      "sold_quantity": 0,
+      "in_flash_sale": 0,
+      "visibility": "visibility_public"
+    },
+    {
+      "id": 13,
+      "name": "Mango",
+      "slug": "mango",
+      "type": {
+        "id": 1,
+        "name": "Grocery",
+        "slug": "grocery",
+        "logo": null,
+        "settings": {
+          "isHome": false,
+          "productCard": "helium",
+          "layoutType": "classic"
+        }
+      },
+      "language": "en",
+      "translated_languages": [
+        "en"
+      ],
+      "product_type": "simple",
+      "shop": {
+        "id": 6,
+        "name": "Grocery Shop",
+        "slug": "grocery-shop",
+        "logo": {
+          "id": "893",
+          "original": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/891/Group-36321.png",
+          "thumbnail": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/891/conversions/Group-36321-thumbnail.jpg"
+        }
+      },
+      "sale_price": null,
+      "max_price": 2.5,
+      "min_price": 2.5,
+      "image": {
+        "id": "14",
+        "original": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/14/Mangoes.jpg",
+        "thumbnail": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/14/conversions/Mangoes-thumbnail.jpg"
+      },
+      "status": "publish",
+      "price": 2.5,
+      "quantity": 50,
+      "unit": "1lb",
+      "sku": "13",
+      "sold_quantity": 0,
+      "in_flash_sale": 0,
+      "visibility": "visibility_public"
+    },
+    {
+      "id": 14,
+      "name": "Pepper",
+      "slug": "pepper",
+      "type": {
+        "id": 1,
+        "name": "Grocery",
+        "slug": "grocery",
+        "logo": null,
+        "settings": {
+          "isHome": false,
+          "productCard": "helium",
+          "layoutType": "classic"
+        }
+      },
+      "language": "en",
+      "translated_languages": [
+        "en"
+      ],
+      "product_type": "simple",
+      "shop": {
+        "id": 6,
+        "name": "Grocery Shop",
+        "slug": "grocery-shop",
+        "logo": {
+          "id": "893",
+          "original": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/891/Group-36321.png",
+          "thumbnail": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/891/conversions/Group-36321-thumbnail.jpg"
+        }
+      },
+      "sale_price": 5,
+      "max_price": 6,
+      "min_price": 6,
+      "image": {
+        "id": "15",
+        "original": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/15/MiniPeppers.jpg",
+        "thumbnail": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/15/conversions/MiniPeppers-thumbnail.jpg"
+      },
+      "status": "publish",
+      "price": 6,
+      "quantity": 50,
+      "unit": "1lb",
+      "sku": "14",
+      "sold_quantity": 0,
+      "in_flash_sale": 0,
+      "visibility": "visibility_public"
+    },
+    {
+      "id": 15,
+      "name": "Pears",
+      "slug": "pears",
+      "type": {
+        "id": 1,
+        "name": "Grocery",
+        "slug": "grocery",
+        "logo": null,
+        "settings": {
+          "isHome": false,
+          "productCard": "helium",
+          "layoutType": "classic"
+        }
+      },
+      "language": "en",
+      "translated_languages": [
+        "en"
+      ],
+      "product_type": "simple",
+      "shop": {
+        "id": 6,
+        "name": "Grocery Shop",
+        "slug": "grocery-shop",
+        "logo": {
+          "id": "893",
+          "original": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/891/Group-36321.png",
+          "thumbnail": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/891/conversions/Group-36321-thumbnail.jpg"
+        }
+      },
+      "sale_price": 3.5,
+      "max_price": 4,
+      "min_price": 4,
+      "image": {
+        "id": "16",
+        "original": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/16/pears.jpg",
+        "thumbnail": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/16/conversions/pears-thumbnail.jpg"
+      },
+      "status": "publish",
+      "price": 4,
+      "quantity": 50,
+      "unit": "1lb",
+      "sku": "15",
+      "sold_quantity": 0,
+      "in_flash_sale": 0,
+      "visibility": "visibility_public"
+    },
+    {
+      "id": 16,
+      "name": "Peeled Baby Carrot",
+      "slug": "peeled-baby-carrot",
+      "type": {
+        "id": 1,
+        "name": "Grocery",
+        "slug": "grocery",
+        "logo": null,
+        "settings": {
+          "isHome": false,
+          "productCard": "helium",
+          "layoutType": "classic"
+        }
+      },
+      "language": "en",
+      "translated_languages": [
+        "en"
+      ],
+      "product_type": "simple",
+      "shop": {
+        "id": 6,
+        "name": "Grocery Shop",
+        "slug": "grocery-shop",
+        "logo": {
+          "id": "893",
+          "original": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/891/Group-36321.png",
+          "thumbnail": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/891/conversions/Group-36321-thumbnail.jpg"
+        }
+      },
+      "sale_price": 2.2,
+      "max_price": 2.5,
+      "min_price": 2.5,
+      "image": {
+        "id": "17",
+        "original": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/17/Peeled-Carrots.jpg",
+        "thumbnail": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/17/conversions/Peeled-Carrots-thumbnail.jpg"
+      },
+      "status": "publish",
+      "price": 2.5,
+      "quantity": 50,
+      "unit": "1lb",
+      "sku": "16",
+      "sold_quantity": 0,
+      "in_flash_sale": 0,
+      "visibility": "visibility_public"
+    },
+    {
+      "id": 17,
+      "name": "Cherry",
+      "slug": "cherry",
+      "type": {
+        "id": 1,
+        "name": "Grocery",
+        "slug": "grocery",
+        "logo": null,
+        "settings": {
+          "isHome": false,
+          "productCard": "helium",
+          "layoutType": "classic"
+        }
+      },
+      "language": "en",
+      "translated_languages": [
+        "en"
+      ],
+      "product_type": "simple",
+      "shop": {
+        "id": 6,
+        "name": "Grocery Shop",
+        "slug": "grocery-shop",
+        "logo": {
+          "id": "893",
+          "original": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/891/Group-36321.png",
+          "thumbnail": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/891/conversions/Group-36321-thumbnail.jpg"
+        }
+      },
+      "sale_price": 1.8,
+      "max_price": 2,
+      "min_price": 2,
+      "image": {
+        "id": "18",
+        "original": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/18/RedCherries.jpg",
+        "thumbnail": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/18/conversions/RedCherries-thumbnail.jpg"
+      },
+      "status": "publish",
+      "price": 2,
+      "quantity": 15,
+      "unit": "1lb",
+      "sku": "16",
+      "sold_quantity": 0,
+      "in_flash_sale": 0,
+      "visibility": "visibility_public"
+    },
+    {
+      "id": 18,
+      "name": "Strawberry",
+      "slug": "strawberry",
+      "type": {
+        "id": 1,
+        "name": "Grocery",
+        "slug": "grocery",
+        "logo": null,
+        "settings": {
+          "isHome": false,
+          "productCard": "helium",
+          "layoutType": "classic"
+        }
+      },
+      "language": "en",
+      "translated_languages": [
+        "en"
+      ],
+      "product_type": "simple",
+      "shop": {
+        "id": 6,
+        "name": "Grocery Shop",
+        "slug": "grocery-shop",
+        "logo": {
+          "id": "893",
+          "original": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/891/Group-36321.png",
+          "thumbnail": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/891/conversions/Group-36321-thumbnail.jpg"
+        }
+      },
+      "sale_price": 8,
+      "max_price": 10,
+      "min_price": 10,
+      "image": {
+        "id": "19",
+        "original": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/19/strawberry.jpg",
+        "thumbnail": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/19/conversions/strawberry-thumbnail.jpg"
+      },
+      "status": "publish",
+      "price": 10,
+      "quantity": 50,
+      "unit": "1lb",
+      "sku": "17",
+      "sold_quantity": 0,
+      "in_flash_sale": 0,
+      "visibility": "visibility_public"
+    },
+    {
+      "id": 19,
+      "name": "Mix Vegetable Platter",
+      "slug": "mix-vegetable-platter",
+      "type": {
+        "id": 1,
+        "name": "Grocery",
+        "slug": "grocery",
+        "logo": null,
+        "settings": {
+          "isHome": false,
+          "productCard": "helium",
+          "layoutType": "classic"
+        }
+      },
+      "language": "en",
+      "translated_languages": [
+        "en"
+      ],
+      "product_type": "simple",
+      "shop": {
+        "id": 6,
+        "name": "Grocery Shop",
+        "slug": "grocery-shop",
+        "logo": {
+          "id": "893",
+          "original": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/891/Group-36321.png",
+          "thumbnail": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/891/conversions/Group-36321-thumbnail.jpg"
+        }
+      },
+      "sale_price": 3.2,
+      "max_price": 4,
+      "min_price": 4,
+      "image": {
+        "id": "20",
+        "original": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/20/VeggiePlatter.jpg",
+        "thumbnail": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/20/conversions/VeggiePlatter-thumbnail.jpg"
+      },
+      "status": "publish",
+      "price": 4,
+      "quantity": 100,
+      "unit": "0.5lb",
+      "sku": "19",
+      "sold_quantity": 0,
+      "in_flash_sale": 0,
+      "visibility": "visibility_public"
+    },
+    {
+      "id": 20,
+      "name": "Lemon",
+      "slug": "lemon",
+      "type": {
+        "id": 1,
+        "name": "Grocery",
+        "slug": "grocery",
+        "logo": null,
+        "settings": {
+          "isHome": false,
+          "productCard": "helium",
+          "layoutType": "classic"
+        }
+      },
+      "language": "en",
+      "translated_languages": [
+        "en"
+      ],
+      "product_type": "simple",
+      "shop": {
+        "id": 6,
+        "name": "Grocery Shop",
+        "slug": "grocery-shop",
+        "logo": {
+          "id": "893",
+          "original": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/891/Group-36321.png",
+          "thumbnail": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/891/conversions/Group-36321-thumbnail.jpg"
+        }
+      },
+      "sale_price": 1.2,
+      "max_price": 1.5,
+      "min_price": 1.5,
+      "image": {
+        "id": "21",
+        "original": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/21/Yellow-Limes.jpg",
+        "thumbnail": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/21/conversions/Yellow-Limes-thumbnail.jpg"
+      },
+      "status": "publish",
+      "price": 1.5,
+      "quantity": 60,
+      "unit": "4pc(s)",
+      "sku": "20",
+      "sold_quantity": 0,
+      "in_flash_sale": 0,
+      "visibility": "visibility_public"
+    }
+  ]
+}

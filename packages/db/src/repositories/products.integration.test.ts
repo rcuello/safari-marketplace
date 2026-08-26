@@ -179,17 +179,19 @@ describe('listProducts — filtros adicionales de US-2', () => {
 });
 
 describe('findProductBySlug', () => {
-  it('trae el detalle con relaciones y related del mismo type', async () => {
+  it('trae el detalle con relaciones y related del mismo type, INCLUYENDO el propio producto (D-1)', async () => {
     const [sample] = (await listProducts({ limit: 1 })).items;
     const detail = await findProductBySlug(sample.slug);
     expect(detail).not.toBeNull();
     expect(detail?.id).toBe(sample.id);
     expect(detail?.shop.id).toBe(sample.shopId);
-    expect(detail?.relatedProducts.length).toBeGreaterThan(0);
-    expect(detail?.relatedProducts.length).toBeLessThanOrEqual(20);
+    const ids = detail?.relatedProducts.map((r) => r.id) ?? [];
+    expect(ids.length).toBeGreaterThan(0);
+    expect(ids.length).toBeLessThanOrEqual(20);
+    expect(ids).toContain(sample.id); // D-1: auto-inclusión
+    expect([...ids].sort((a, b) => a - b)).toEqual(ids); // orden ascendente
     for (const rel of detail?.relatedProducts ?? []) {
       expect(rel.type.slug).toBe(sample.type.slug);
-      expect(rel.id).not.toBe(sample.id);
     }
   });
 

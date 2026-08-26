@@ -19,11 +19,14 @@
 import 'reflect-metadata';
 import {
   InternalServerErrorException,
+  NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
 import {
+  findProductBySlug,
   listProducts,
   type ListProductsInput,
+  type ProductDetail,
   type ProductRecord,
 } from '@safari/db';
 import { ProductsService } from './products.service';
@@ -36,9 +39,11 @@ jest.mock('@safari/db', () => ({
   // datos.
   ...jest.requireActual<typeof import('@safari/db')>('@safari/db'),
   listProducts: jest.fn(),
+  findProductBySlug: jest.fn(),
 }));
 
 const listProductsMock = jest.mocked(listProducts);
+const findProductBySlugMock = jest.mocked(findProductBySlug);
 
 /**
  * `ValidationPipe` corre sin `transform` (Decision A del design de US-2):
@@ -115,6 +120,9 @@ const EXPECTED_KEYS = [
   'in_flash_sale',
   'visibility',
 ];
+
+/** Las 21 claves del detalle: las 20 del listado + `related_products` al final. */
+const EXPECTED_DETAIL_KEYS = [...EXPECTED_KEYS, 'related_products'];
 
 const NOW = new Date('2026-08-25T00:00:00Z');
 
@@ -195,6 +203,17 @@ function makeProductRecord(
     manufacturer: null,
     categories: [],
     tags: [],
+    ...overrides,
+  };
+}
+
+/** `ProductDetail` = `ProductRecord` + `relatedProducts` (US-3). */
+function makeProductDetail(
+  overrides: Partial<ProductDetail> = {},
+): ProductDetail {
+  return {
+    ...makeProductRecord(),
+    relatedProducts: [],
     ...overrides,
   };
 }
@@ -415,5 +434,115 @@ describe('ProductsService.getProducts (Postgres vía @safari/db, US-2)', () => {
         );
       }
     });
+  });
+});
+
+describe('ProductsService.getProductBySlug (Postgres vía @safari/db, US-3)', () => {
+  let service: ProductsService;
+
+  beforeEach(() => {
+    findProductBySlugMock.mockReset();
+    service = new ProductsService();
+  });
+
+  it('emite exactamente las 21 claves del detalle (20 del listado + related_products), en orden', async () => {
+    findProductBySlugMock.mockResolvedValue(
+      makeProductDetail({ relatedProducts: [makeProductRecord()] }),
+    );
+
+    const result = await service.getProductBySlug('apples');
+
+    expect(Object.keys(result)).toEqual(EXPECTED_DETAIL_KEYS);
+  });
+
+  it('cada relacionado trae las 20 claves del listado y ningún related_products propio', async () => {
+    findProductBySlugMock.mockResolvedValue(
+      makeProductDetail({
+        relatedProducts: [makeProductRecord({ id: 2, slug: 'oranges' })],
+      }),
+    );
+
+    const result = await service.getProductBySlug('apples');
+    const related = (result as unknown as { related_products: unknown[] })
+      .related_products;
+
+    expect(related).toHaveLength(1);
+    expect(Object.keys(related[0] as object)).toEqual(EXPECTED_KEYS);
+    expect('related_products' in (related[0] as object)).toBe(false);
+  });
+
+  it('pasa el slug crudo al repositorio', async () => {
+    findProductBySlugMock.mockResolvedValue(makeProductDetail());
+
+    await service.getProductBySlug('apples');
+
+    expect(findProductBySlugMock).toHaveBeenCalledWith('apples');
+    expect(findProductBySlugMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('relatedProducts: [] → related_products: [] y sigue con las 21 claves', async () => {
+    findProductBySlugMock.mockResolvedValue(
+      makeProductDetail({ relatedProducts: [] }),
+    );
+
+    const result = await service.getProductBySlug('apples');
+
+    expect(Object.keys(result)).toEqual(EXPECTED_DETAIL_KEYS);
+    expect(
+      (result as unknown as { related_products: unknown[] }).related_products,
+    ).toEqual([]);
+  });
+
+  it('slug inexistente (null) → NotFoundException 404 con el slug en el mensaje, no envuelto por el catch (D-5)', async () => {
+    findProductBySlugMock.mockResolvedValue(null);
+
+    expect.assertions(4);
+    try {
+      await service.getProductBySlug('no-existe-xyz');
+    } catch (error) {
+      expect(error).toBeInstanceOf(NotFoundException);
+      const http = error as NotFoundException;
+      expect(http.getStatus()).toBe(404);
+      expect(http.message).toContain('no-existe-xyz');
+      expect(error).not.toBeInstanceOf(InternalServerErrorException);
+    }
+  });
+
+  it('error de conexión de Prisma → 503 con mensaje amigable', async () => {
+    // Error con la forma real de PrismaClientInitializationError; lo
+    // clasifica el isPrismaConnectionError REAL (sin mockear).
+    const connectionError = new Error(
+      "Can't reach database server at `localhost:5433`",
+    );
+    connectionError.name = 'PrismaClientInitializationError';
+    findProductBySlugMock.mockRejectedValue(connectionError);
+
+    expect.assertions(3);
+    try {
+      await service.getProductBySlug('apples');
+    } catch (error) {
+      expect(error).toBeInstanceOf(ServiceUnavailableException);
+      const http = error as ServiceUnavailableException;
+      expect(http.getStatus()).toBe(503);
+      expect(http.message).toBe(
+        'No se puede conectar con el servicio. Por favor, intenta más tarde.',
+      );
+    }
+  });
+
+  it('cualquier otro error → 500 con mensaje amigable, sin crashear el proceso', async () => {
+    findProductBySlugMock.mockRejectedValue(new Error('boom inesperado'));
+
+    expect.assertions(3);
+    try {
+      await service.getProductBySlug('apples');
+    } catch (error) {
+      expect(error).toBeInstanceOf(InternalServerErrorException);
+      const http = error as InternalServerErrorException;
+      expect(http.getStatus()).toBe(500);
+      expect(http.message).toBe(
+        'Ocurrió un error inesperado. Por favor, contacta al administrador.',
+      );
+    }
   });
 });

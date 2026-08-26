@@ -1,0 +1,306 @@
+# DAG state del change. Sobrevive a la compactacion de contexto.
+change_name: detalle-producto-postgres
+project: safari-marketplace
+artifact_store_mode: openspec
+execution_mode: auto
+delivery_strategy: ask-on-risk
+strict_tdd: false
+
+source:
+  epic: docs/product/1-catalogo-desde-postgres/README.md
+  user_story: docs/product/1-catalogo-desde-postgres/3-detalle-producto-postgres.md
+  depends_on: US-2 (migrar-api-products-postgres, archivada 2026-08-25)
+
+phases:
+  explore:
+    status: done
+    artifact: openspec/changes/detalle-producto-postgres/exploration.md
+    # Hallazgo mayor: packages/db/src/repositories/products.repository.ts ya
+    # tiene findProductBySlug() + tipo ProductDetail + 2 tests de integracion,
+    # desde el commit fundacional de packages/db (1af514a), ANTES de US-2. La
+    # tabla "Archivos a crear/modificar" de la US-3 original esta
+    # desactualizada en ese punto.
+    # Hallazgo critico sin precedente en la US: la regla de "relacionados" del
+    # mock (products.service.ts:210-219) incluye al propio producto consultado
+    # y NO filtra status/visibility (siempre son los primeros 20 del mismo
+    # type en orden de id) -- verificado con dos anclas del type grocery,
+    # resultado identico byte a byte. findProductBySlug() YA implementa una
+    # regla mas correcta (excluye self, filtra publish/visible) que DIVERGE
+    # del mock en ambos ejes. Punto de decision explicito para proposal.md:
+    # replicar el mock exacto vs. aceptar y documentar la divergencia (patron
+    # ya usado en US-2 para shop_id/min_price).
+    # Shape del mock verificado por lectura directa (sin curl, sin arrancar
+    # servidor): 20 claves + related_products = 21 claves totales, mismo
+    # toProductDto() de US-2 sirve para el item principal y cada relacionado.
+    # BigInt/Decimal ya resueltos en packages/db/src/records.ts (_id/_dec),
+    # sin trabajo adicional para US-3. 404 de dominio: sin precedente en el
+    # repo (grep NotFoundException = 0 resultados); findProductBySlug ya
+    # devuelve null limpio, falta el `throw new NotFoundException` en Nest.
+    # Hallazgo de documentacion: CLAUDE.md dice que apps/api/rest no tiene
+    # *.spec.ts -- desactualizado, products.service.spec.ts existe (commit
+    # 4158798, jest, 15 tests) y es un gate adicional disponible para esta US.
+  propose:
+    status: done
+    artifact: openspec/changes/detalle-producto-postgres/proposal.md
+    # DECISION DEL USUARIO (vinculante, no reabrir) -- D-1: la regla de
+    # relacionados replica el mock EXACTO: mismo type_id, ORDER BY id ASC,
+    # LIMIT 20, INCLUYENDO el producto consultado y SIN filtro de
+    # status/visibility. CA-1 (paridad de contrato) gana sobre la correccion
+    # de UX en esta US. Consecuencias aceptadas y declaradas: (a) el producto
+    # aparece en su propio related_products -- siempre observable; (b) filas
+    # draft/no publicas pueden salir en related -- latente, NO observable con
+    # el seed actual (unica fila no-publish: id 454, type furniture; los 20
+    # primeros de ese type por id son 412-431; visibility_private = 0 filas).
+    # D-2: se cambia el comportamiento de findProductBySlug() SIN anadir
+    # parametros (borrar id:{not}, status y visibility del where en
+    # products.repository.ts:237-247). Verificado con `git grep`: los unicos
+    # consumidores son el barrel packages/db/index.ts:50 y su propio test;
+    # nadie depende del comportamiento actual, asi que un flag
+    # {excludeSelf,onlyPublic} seria configurabilidad especulativa.
+    # D-3: products.integration.test.ts:191 (expect(rel.id).not.toBe(sample.id))
+    # afirma el contrato equivocado tras D-1. NO se reescribe para ponerlo en
+    # verde: es un cambio de contrato deliberado y aprobado, y se actualiza
+    # como parte del change. Nuevas aserciones: relatedProducts contiene
+    # sample.id, ids ascendentes, length<=20, mismo type.slug. La asercion de
+    # exclusion se ELIMINA, no se relaja.
+    # D-4: primer 404 de dominio del repo (git grep NotFoundException en
+    # apps/api/rest/src = 0). Cuerpo por defecto de Nest
+    # {statusCode,message,error}, mensaje en espanol (precedente
+    # settings.service.ts:28). Sin ExceptionFilter global. Sienta precedente
+    # para US-4 y siguientes.
+    # D-5: try/catch 503/500 con isPrismaConnectionError, igual que
+    # getProducts(); no lo pide ninguna CA pero omitirlo seria regresion de
+    # robustez frente al listado ya migrado.
+    # Correccion factual sobre la exploracion: products.service.spec.ts tiene
+    # 13 tests jest, no 15 (contado en el archivo).
+    # Presupuesto: ~150 lineas cambiadas -> 400-line budget risk: Low, un solo PR.
+    # jq NO esta instalado: los diffs de JSON van con node -e.
+  spec:
+    status: done
+    artifact: openspec/changes/detalle-producto-postgres/specs/product-detail-api/spec.md
+    # Delta spec de capacidad nueva `product-detail-api` (Modified
+    # Capabilities: None en el proposal -> solo ADDED Requirements). 4
+    # requirements, cada uno con CA tageado: detalle por slug via
+    # findProductBySlug() (CA-1/CA-4, 21 claves = 20 de product-listing-api +
+    # related_products), regla de relacionados D-1 declarada como divergencia
+    # DELIBERADA Y RATIFICADA del mock (self incluido, sin filtro
+    # status/visibility) con las dos consecuencias aceptadas del proposal
+    # (self siempre observable; draft-exposure latente, no observable con el
+    # seed actual -- id 454 fuera de rango) (CA-3), 404 de dominio con cuerpo
+    # default de Nest (CA-2), errores de conexion 503/500 sin swallow del
+    # NotFoundException (D-5). No repite la proyeccion de 20 claves de
+    # product-listing-api/spec.md, la referencia. No incluye MODIFIED/REMOVED
+    # (no aplica). Fuera de alcance declarado igual que el proposal
+    # (reviews/wishlist, listado, US-4, frontend, ExceptionFilter global,
+    # popular/best-selling). 650 palabras (= budget del skill).
+    # GATE DEL ORQUESTADOR: la primera version tageaba CA-4 sin escenario que
+    # lo cubriera (CA-4 = la pagina del shop en 3003, no el endpoint). Se
+    # devolvio la fase con feedback; el agente anadio el escenario de CA-4 y
+    # consolido el de "cada relacionado trae 20 claves" dentro del primero
+    # para caber en el budget. El orquestador cerro dos detalles a mano:
+    # citacion del notFound corregida (product.ssr.ts:54-58, esta en el catch,
+    # no en 50-52) y el recorte final de palabras. Citas verificadas contra
+    # el codigo: db/seed.sql:447 (slug `apples`, publish/visibility_public),
+    # apps/shop/src/pages/products/[slug].tsx delega en product.ssr.ts.
+    # OJO para tasks/verify: la pagina del shop usa getStaticProps+ISR
+    # (revalidate 60), no SSR puro -> la evidencia de CA-4 se toma con el
+    # shop en modo dev, donde getStaticProps corre por request.
+  design:
+    status: done
+    artifact: openspec/changes/detalle-producto-postgres/design.md
+    # Traduce D-1..D-6 a codigo; NO reabre ninguna decision. Puntos que
+    # tasks/apply deben respetar literalmente:
+    # (A) products.repository.ts:237-247 -> where queda en `{ typeId: row.typeId }`
+    #     (se borran id:{not}, status, visibility) + comentario obligatorio que
+    #     cita D-1 (mitigacion R-1). ADEMAS: el comentario de
+    #     ProductDetail.relatedProducts (products.repository.ts:103) dice hoy
+    #     "excluyendo el propio" y pasa a ser falso -> se actualiza tambien.
+    #     Se conservan orderBy id asc, take relatedLimit (default 20) y la firma
+    #     publica (barrel index.ts:43,50 sin cambios).
+    # (B) DECISION B (lo mas facil de romper): el try envuelve SOLO
+    #     `await findProductBySlug(slug)`. El `if (!detail) throw new
+    #     NotFoundException(...)` va DESPUES del try/catch, fuera. Nada de
+    #     `instanceof HttpException` en el catch (solucion lista, descartada) y
+    #     NUNCA un try que envuelva todo el metodo (convertiria el 404 en 500 y
+    #     violaria D-5). El mapeo final tambien queda fuera del try; riesgo nulo
+    #     porque toProductDto es total sobre ProductRecord. tsconfig de la API no
+    #     tiene strict -> `let detail: ProductDetail | null;` sin inicializar no
+    #     da fricción de tipos.
+    # (C) toProductDto() NO se modifica: descarta relatedProducts por
+    #     construccion (no esta en su literal de 20 claves), asi que
+    #     related_products solo aparece por la linea explicita y queda en
+    #     posicion 21 del raiz. Cada relacionado = 20 claves, sin
+    #     related_products propio. Traduccion camelCase->snake_case que el
+    #     detalle anade sobre el listado: NINGUNA salvo relatedProducts ->
+    #     related_products (verificado contra el mapper real). La entidad ya
+    #     declara related_products?: Product[] (product.entity.ts:35).
+    # (D) Tests: integracion -> se BORRA products.integration.test.ts:192
+    #     (expect(rel.id).not.toBe(sample.id)); reemplazo con toContain(sample.id),
+    #     ids ascendentes, length<=20, mismo type.slug. El it de slug inexistente
+    #     (196-198) no se toca. Jest -> 7 tests nuevos en products.service.spec.ts
+    #     reutilizando EXPECTED_KEYS (mitigacion R-2), makeProductRecord() y el
+    #     factory jest.mock('@safari/db') al que se anade findProductBySlug.
+    # (E) Evidencia CA-1: node -e comparando Object.keys (21 raiz / 20 por
+    #     relacionado) y los ids de related_products contra mock-apples.json
+    #     capturado ANTES de tocar codigo (o derivado del JSON fuente). jq NO
+    #     existe. Gates: `cd packages/db && npm test`, `cd apps/api/rest &&
+    #     npx jest` (just db-check es rojo reproducible en esta maquina).
+    # (F) CA-4 se toma con el shop en modo DEV: la pagina usa
+    #     getStaticProps+getStaticPaths con revalidate 60 (ISR, no SSR puro,
+    #     product.ssr.ts:15-59); un build de produccion prerenderiza y
+    #     enmascararia una API caida. Comprobar 200 Y que el HTML trae "Apples".
+    # (G) SECUENCIA: capturar baseline del mock -> db-up -> packages/db ->
+    #     npm test -> **just db-build** (dist/ gitignored, Nest consume via
+    #     link:; sin este paso la API sigue con el where viejo) -> API + jest ->
+    #     build-api + curl CA-1..CA-3 -> shop-dev CA-4 -> cierre documental.
+    # El artefacto excede el budget de 800 palabras del skill a proposito, para
+    # igualar la profundidad del design de US-2 (instruccion del orquestador).
+  tasks:
+    status: done
+    artifact: openspec/changes/detalle-producto-postgres/tasks.md
+    # 8 fases, 26 tasks. Preserva literalmente la secuencia obligatoria del
+    # design (baseline ANTES de tocar codigo -> db-up -> packages/db (where +
+    # comentarios + test integracion) -> npm test -> just db-build BLOQUEANTE
+    # (dist/ gitignored, Nest via link:) -> apps/api/rest (servicio + 7 tests
+    # jest) -> npx jest -> build-api + curl CA-1..CA-3 -> shop-dev CA-4 ->
+    # cierre documental). Cada tarea de verificacion cita el comando runnable
+    # exacto del design (curl/node -e/npm/just), no una paraphrase. Evidencia
+    # en esta maquina: `cd packages/db && npm run typecheck && npm test` y
+    # `cd apps/api/rest && npx jest` -- NO `just db-check` (rojo reproducible,
+    # cwd en unidad minuscula). CA tageado por task para que sdd-verify pueda
+    # trazar: CA-1 (5.3/5.4/5.6/6.2), CA-2 (5.7/6.3), CA-3 (2.4/6.4), CA-4
+    # (7.1); tests 5.8/5.9 (D-5) marcados "sin CA" porque el requirement de
+    # errores de conexion no trae tag CA en el spec. Forecast: ~150 lineas
+    # (coincide con el proposal), Low risk, PR unico, Decision needed before
+    # apply: No, Chained PRs recommended: No (bajo el 400-line budget con
+    # margen amplio). Citas repository.ts:103/237-247, service.ts:1-13/
+    # 210-219, integration.test.ts:181-199, service.spec.ts:33-39/380-417
+    # re-verificadas abriendo el codigo real antes de escribir el artefacto.
+  apply:
+    status: done
+    artifact: openspec/changes/detalle-producto-postgres/apply-progress.md
+    # Las 8 fases / 26 tasks de tasks.md se ejecutaron en el orden obligatorio
+    # del design (baseline -> db-up -> packages/db -> npm test -> just
+    # db-build BLOQUEANTE -> apps/api/rest -> npx jest -> api-dev + curl
+    # CA-1..CA-3 -> shop-dev CA-4 -> cierre documental). Sin desviaciones de
+    # diseno. Toda la evidencia (typecheck, vitest 14/14, jest 20/20 [13
+    # previos + 7 nuevos], diff node -e de CA-1, curl de CA-2/CA-3, curl+grep
+    # de CA-4) es salida real, pegada en apply-progress.md; ningun comando fue
+    # reconstruido. `just db-check` NO se ejecuto (rojo reproducible conocido
+    # en esta maquina, cwd con unidad en minuscula): se uso el sustituto
+    # documentado en tasks.md/design.md (`cd packages/db && npm run
+    # typecheck && npm test`). No se hizo commit ni push (regla de la sesion);
+    # el arbol de trabajo queda con los cambios sin confirmar para revision
+    # del usuario. Archivos evidencia nuevos en el directorio del change:
+    # mock-apples.json (linea base del mock, capturada via fallback via 2
+    # porque la API no estaba levantada en 9001 al momento del paso 0) y
+    # pg-apples.json (respuesta real de Postgres para 'apples', usada en el
+    # diff de CA-1) -- este ultimo no estaba en la tabla File Changes del
+    # design pero es evidencia directa del comando de tasks.md 6.2, no codigo
+    # de produccion.
+  verify:
+    status: done
+    verdict: PASS WITH FINDINGS
+    artifact: openspec/changes/detalle-producto-postgres/verify-report.md
+    # Validacion adversarial e independiente: NADA se copio de apply-progress.md,
+    # todos los comandos se re-ejecutaron. Gates reproducidos: packages/db
+    # typecheck limpio + vitest 14/14; apps/api/rest jest 20/20. Las 4 CA y los
+    # 4 requirements del delta spec quedan COMPLIANT con evidencia de runtime
+    # observada por el verificador. Cero desviaciones de diseno en el codigo:
+    # D-1 (where={typeId}+comentario), D-2 (firma y barrel intactos,
+    # relatedLimit default 20), D-3 (asercion de exclusion BORRADA, no relajada),
+    # D-4 (NotFoundException, grep ExceptionFilter=0), D-5/Decision B (el throw
+    # esta FUERA del try; verificado en codigo Y en runtime), D-6/Decision C
+    # (toProductDto intacto, sin products.mapper.ts, related sin anidamiento).
+    # Disciplina de alcance OK: 6 archivos, todos en la tabla File Changes;
+    # CERO cambios en apps/shop/**. Volumen real 215 lineas (+189/-26) vs ~150
+    # pronosticadas -- bajo el budget de 400.
+    #
+    # HALLAZGO MAYOR (H-1, contradice al apply Y al brief del orquestador):
+    # `just db-check` esta VERDE (14 passed, EXIT=0), ejecutado desde un cwd con
+    # la unidad en MINUSCULA -- el caso que supuestamente falla. El bug ya estaba
+    # corregido en HEAD por el commit 083d8e9 (justfile:333 es
+    # `cd "$(pwd)" && npm test`). La DoD de la US
+    # (3-detalle-producto-postgres.md:80-85) cierra ese item con una
+    # justificacion FALSA ("falso-rojo por el casing"). La premisa obsoleta esta
+    # propagada en openspec/config.yaml, design.md, tasks.md, apply-progress.md
+    # y la memoria `vitest-falla-con-unidad-en-minuscula`. Corregir la prosa; el
+    # codigo no esta afectado.
+    #
+    # H-2 (WARNING): JSDoc obsoleto sobrevivio al cambio.
+    # products.repository.ts:225 sigue diciendo "(mismo type, VISIBLES, hasta
+    # relatedLimit)" -- falso tras borrar status/visibility del where. La task
+    # 2.2 solo actualizo el comentario de la linea 103. Es exactamente el riesgo
+    # R-1 del proposal. Unico resultado del grep en todo el repo.
+    #
+    # H-3 (WARNING, corregir ANTES de sdd-archive): el requirement del spec
+    # (specs/product-detail-api/spec.md:35-37) afirma como MUST absoluto
+    # "incluyendo el producto consultado". Medido sobre el catalogo real:
+    # 1005 de 1200 slugs (83,75%) NO se incluyen a si mismos (contraejemplo
+    # verificado en vivo: signature-salmon, id 181, type grocery -> related
+    # 1..20, self false). La tabla de consecuencias y el escenario Gherkin SI lo
+    # acotan correctamente; la frase normativa no. El CODIGO es correcto: se
+    # verifico paridad exacta con el mock para los 1200 slugs (0 divergencias).
+    # Esa frase se fusiona tal cual en openspec/specs/ al archivar.
+    #
+    # SUGGESTIONs: H-4 el comentario D-1 (repository.ts:243) apunta a
+    # openspec/specs/product-detail-api/spec.md, que aun NO existe (referencia
+    # colgante hasta el archive). H-5 el 404 refleja el slug crudo sin sanear ni
+    # acotar longitud (Content-Type json + comillas escapadas -> riesgo bajo,
+    # pero D-4 declara este 404 como patron para US-4+). H-6 el proceso
+    # `nest start --watch` del orquestador seguia VIVO en 9001 pese a que el
+    # brief lo daba por detenido; se termino y se levanto instancia propia.
+    #
+    # HUECOS DEL APPLY CERRADOS AQUI (evidencia nueva, no reciclada):
+    # (1) Escenario "Postgres caido -> 503" del requirement D-5: NUNCA se
+    #     ejecuto en apply. Verificado con `docker compose stop postgres` -> 503
+    #     real en detalle/404-slug/listado, y tras `start` -> 404 y 200 reales.
+    #     Volumen intacto, base restaurada healthy.
+    # (2) `just build-api` (saltado en Phase 6.1): ejecutado, EXIT=0.
+    # (3) Diff PROFUNDO de valores mock vs Postgres (el node -e del design solo
+    #     compara nombres/orden de claves): objeto raiz 100% identico, unica
+    #     divergencia related[1].in_flash_sale mock=1 pg=0 -- la heredada de
+    #     US-2, ya declarada. CA-1 es mas fuerte de lo que su evidencia decia.
+    # (4) Paridad de la regla D-1 extendida a los 1200 slugs (no solo apples):
+    #     0 diferencias. Edge cases verificados: type con 15 productos (bags,
+    #     15 related, paridad de ids true) y producto fuera de los 20 primeros.
+    # (5) Dientes de la asercion D-3 PROBADOS, no razonados: SQL con el where
+    #     viejo para type_id=1 devuelve 2..20,181 (sin el id 1) y con el nuevo
+    #     1..20 -> toContain(sample.id) fallaria contra el codigo pre-cambio.
+    #     sample es determinista (listProducts ordena por id asc).
+    # (6) Respuesta viva byte-identica al pg-apples.json comiteado
+    #     (Buffer.compare === 0, 19722 bytes): la evidencia del apply es
+    #     reproducible, no reconstruida.
+    #
+    # NO VERIFICADO (declarado, no inferido): `just build` (el design argumenta
+    # que un build de produccion enmascara CA-4 por ISR; esta US no toca
+    # apps/shop), cobertura (coverage_command vacio, threshold 0), `just verify`
+    # (exige el admin en 3002, ajeno a esta US), `just db-test` (roto de base,
+    # US-6), linter biome (no esta en rules.verify).
+    #
+    # Entorno al cerrar: Postgres Up (healthy); API 9001 y shop 3003 DETENIDOS
+    # (incluido el huerfano del orquestador); apps/api/rest/dist reconstruido;
+    # working tree sin commitear con los mismos 6 archivos modificados.
+    findings:
+      critical: 0
+      warning: 3     # H-1 (DoD con justificacion falsa sobre just db-check),
+                     # H-2 (JSDoc obsoleto repository.ts:225),
+                     # H-3 (el requirement del spec sobre-afirma la auto-inclusion)
+      suggestion: 4  # H-4 referencia colgante, H-5 eco del slug en el 404,
+                     # H-6 proceso huerfano del orquestador, H-7 volumen +43% vs forecast
+    ca_matrix:
+      CA-1: PASS   # paridad de contrato: claves + valores + byte-identidad
+      CA-2: PASS   # 404 de dominio + proceso vivo + 4 casos limite
+      CA-3: PASS   # regla D-1 en vivo + vitest con dientes + paridad en 1200 slugs
+      CA-4: PASS   # shop 200, title, pageProps.product con 21 claves y 20 related
+      D-5: PASS    # sin CA: 503 con la base caida y 404 con la base viva (runtime real)
+    blocking_for_archive: false
+    # Recomendacion: atender H-1, H-2 y H-3 (los tres son de prosa, no de codigo)
+    # o aceptarlos explicitamente ANTES de ejecutar sdd-archive.
+  archive:
+    status: done
+    artifact: openspec/changes/archive/2026-08-26-detalle-producto-postgres/archive-report.md
+    # Sync completado: delta spec (ADDED Requirements only, no destructivo) fusionado
+    # en openspec/specs/product-detail-api/spec.md. Folder movido a archive con fecha
+    # 2026-08-26. Reporte de archive con evidencia de gates, hallazgos H-1/H-2/H-3
+    # corregidos antes del archive, 4 suggestions llevadas adelante. SDD cycle completo.

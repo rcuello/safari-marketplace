@@ -1,14 +1,17 @@
 import {
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
 import {
+  findProductBySlug,
   getUserFriendlyMessage,
   isPrismaConnectionError,
   listProducts,
   type ListProductsInput,
+  type ProductDetail,
   type ProductRecord,
 } from '@safari/db';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -207,15 +210,29 @@ export class ProductsService {
     }
   }
 
-  getProductBySlug(slug: string): Product {
-    const product = this.products.find((p) => p.slug === slug);
-    const related_products = this.products
-      .filter((p) => p.type.slug === product.type.slug)
-      .slice(0, 20);
+  async getProductBySlug(slug: string): Promise<Product> {
+    let detail: ProductDetail | null;
+
+    // El try envuelve SOLO la llamada al repositorio (mismo criterio que
+    // getProducts(), líneas 194-207). El 404 de abajo queda fuera a
+    // propósito: si se lanzara dentro, este catch lo convertiría en un 500.
+    try {
+      detail = await findProductBySlug(slug);
+    } catch (error) {
+      if (isPrismaConnectionError(error)) {
+        throw new ServiceUnavailableException(getUserFriendlyMessage(error));
+      }
+      throw new InternalServerErrorException(getUserFriendlyMessage(error));
+    }
+
+    if (!detail) {
+      throw new NotFoundException(`No existe un producto con slug \`${slug}\`.`);
+    }
+
     return {
-      ...product,
-      related_products,
-    };
+      ...toProductDto(detail),
+      related_products: detail.relatedProducts.map(toProductDto),
+    } as unknown as Product;
   }
 
   getPopularProducts({ limit, type_slug }: GetPopularProductsDto): Product[] {

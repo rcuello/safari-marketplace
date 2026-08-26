@@ -29,7 +29,7 @@
 | US | Título | Releasable solo | Depende de | LOC est. | Status |
 |----|--------|-----------------|------------|----------|--------|
 | [US-2](./2-migrar-api-products-postgres.md) | Migrar /api/products a la capa de datos | Sí | ninguna | ~300 | ✅ Implementada |
-| [US-3](./3-detalle-producto-postgres.md) | Detalle de producto y relacionados desde Postgres | Sí | US-2 | ~200 | Listo para ejecución |
+| [US-3](./3-detalle-producto-postgres.md) | Detalle de producto y relacionados desde Postgres | Sí | US-2 | ~200 | ✅ Implementada |
 | [US-4](./4-migrar-catalogos-apoyo.md) | Migrar catálogos de apoyo (types, categories, tags, manufacturers, shops) | Sí | US-2 | ~350 | Listo para ejecución |
 
 **Orden sugerido:** US-2 → (US-3 ∥ US-4). US-3 y US-4 no comparten archivos de
