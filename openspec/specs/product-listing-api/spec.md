@@ -128,5 +128,6 @@ proceso Nest MUST NOT crashear.
 ## Out of Scope
 
 - Detalle por slug (US-3); catálogos de apoyo (US-4).
-- `popular-products`/`best-selling-products`: quedan en mock (Decision B).
+- `popular-products`/`best-selling-products`: migrados a Postgres — ver
+  `derived-catalog-api` (US-5).
 - `category_product` (vacía por diseño del seed); `db/schema.sql`; frontend.

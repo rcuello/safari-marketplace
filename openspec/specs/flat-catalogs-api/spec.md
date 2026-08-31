@@ -213,6 +213,8 @@ db-check` y `just verify` antes de considerarse cerrado.
 `categories` (US-4b) · `authors`/`top-authors` · endpoints de escritura del
 admin (`POST`/`PUT`/`DELETE` de los 4 catálogos) · `category_product` ·
 `apps/shop/**`, `apps/admin/**` · `GET /staffs`, `POST /approve-shop`,
-`POST /disapprove-shop`, `GET /new-shops`, `GET /near-by-shop/:lat/:lng` ·
-retrofit de `products.service.ts` al helper de búsqueda compartido (D-7) ·
-specs de jest para los 4 servicios (D-10).
+`POST /disapprove-shop` · `GET /new-shops` y
+`GET /near-by-shop/:lat/:lng`: migrados a Postgres — ver
+`derived-catalog-api` (US-5) · retrofit de `products.service.ts` al
+helper de búsqueda compartido (D-7) · specs de jest para los 4 servicios
+(D-10).
