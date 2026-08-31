@@ -29,6 +29,8 @@ const categories = leer('categories');
 const manufacturers = leer('manufacturers');
 const tags = leer('tags');
 const products = leer('products');
+const popularProducts = leer('popular-products');
+const bestSellingProducts = leer('best-selling-products');
 
 // ── Literales SQL ────────────────────────────────────────────────────────
 const txt = (v) =>
@@ -215,6 +217,25 @@ L.push(
     .join(',\n') + '\nON CONFLICT (id) DO NOTHING;'
 );
 
+// ranking (US-5) ───────────────────────────────────────────────────────
+// `products.json` no trae `ratings`/`total_reviews`/`sold_quantity` para
+// ningún producto: sin esto no hay criterio por el que ordenar "popular" ni
+// "más vendido" (0 filas con ratings>0, 2/1200 con sold_quantity>0). Los dos
+// JSON de ranking curado del mock SÍ los traen, para 15 ids concretos. Se
+// fusiona por CAMPO, no por fila: primero `popular-products.json` aporta
+// `ratings`/`total_reviews`, después `best-selling-products.json` aporta
+// `sold_quantity` (de `total_sales`). El id 888 está en los dos JSON y
+// termina con datos de ambos. `orders_count` (solo en popular) se descarta:
+// no hay columna destino y crearla es DDL, fuera de scope de este generador.
+const ranking = new Map();
+for (const p of popularProducts) {
+  ranking.set(p.id, { ratings: p.ratings, totalReviews: p.total_reviews });
+}
+for (const p of bestSellingProducts) {
+  const previo = ranking.get(p.id) ?? {};
+  ranking.set(p.id, { ...previo, soldQuantity: p.total_sales });
+}
+
 // products ---------------------------------------------------------------
 const variables = products.filter((p) => p.product_type === 'variable').length;
 bloque(`products — ${products.length} (${products.length - variables} simple, ${variables} variable)`);
@@ -225,24 +246,32 @@ L.push(
   '--',
   '-- Los `variable` van sin price (lo derivan de sus variaciones) pero con el',
   '-- rango min/max, que es lo que el mock trae.',
+  '--',
+  '-- `ratings`/`total_reviews`/`sold_quantity` NO salen de este JSON: lo llena',
+  '-- el mapa `ranking` (arriba), fusionado desde los dos JSON de ranking',
+  '-- curado. Para los 1185 productos sin ranking, caen al `p.X ?? 0` de',
+  '-- siempre (products.json no trae ninguna de las tres claves).',
   'INSERT INTO products (',
   '  id, name, slug, type_id, shop_id, product_type,',
   '  price, sale_price, min_price, max_price,',
   '  quantity, in_stock, sold_quantity, sku, unit,',
-  '  status, visibility, image, ratings, language, translated_languages',
+  '  status, visibility, image, ratings, total_reviews, language, translated_languages',
   ') VALUES'
 );
 L.push(
   products
-    .map(
-      (p) =>
+    .map((p) => {
+      const r = ranking.get(p.id) ?? {};
+      return (
         `  (${p.id}, ${txt(p.name)}, ${txt(p.slug)}, ${p.type.id}, ${p.shop.id}, ${txt(p.product_type)}, ` +
         `${num(p.price)}, ${num(p.sale_price)}, ${num(p.min_price)}, ${num(p.max_price)}, ` +
-        `${num(p.quantity ?? 0)}, ${bool((p.quantity ?? 0) > 0)}, ${num(p.sold_quantity ?? 0)}, ` +
+        `${num(p.quantity ?? 0)}, ${bool((p.quantity ?? 0) > 0)}, ${num(r.soldQuantity ?? p.sold_quantity ?? 0)}, ` +
         `${txt(p.sku)}, ${txt(p.unit || '1 pc')}, ${txt(p.status)}, ${txt(p.visibility)}, ` +
         `${json(p.image && !Array.isArray(p.image) ? p.image : null)}, ` +
-        `${num(p.ratings ?? 0)}, ${txt(p.language ?? 'en')}, ${arr(p.translated_languages ?? ['en'])})`
-    )
+        `${num(r.ratings ?? p.ratings ?? 0)}, ${num(r.totalReviews ?? p.total_reviews ?? 0)}, ` +
+        `${txt(p.language ?? 'en')}, ${arr(p.translated_languages ?? ['en'])})`
+      );
+    })
     .join(',\n') + '\nON CONFLICT (id) DO NOTHING;'
 );
 
