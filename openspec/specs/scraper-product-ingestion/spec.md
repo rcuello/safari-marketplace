@@ -6,8 +6,12 @@
 compartido de Postgres (`products`, `shops`, `manufacturers`), identificados
 por procedencia (`source_store`, `source_product_id`) para que re-scrapear
 no duplique filas y queden visibles por los canales del catálogo. Cubre
-idempotencia, descarte/saneo ante datos inválidos y no regresión del seed.
-NO cubre categorización, spiders, ni `normalizar_enlace`.
+idempotencia, descarte/saneo ante datos inválidos, no regresión del seed y
+— desde US-7 — la extensión de `fallidos` cuando el insert puente hacia
+`category_product` (ejecutado bajo el mismo `try` de `process_item`, NO en
+una transacción: la conexión es `autocommit`) falla. La traducción de la etiqueta cruda a un slug del catálogo y la
+materialización de esa relación viven en `scraper-product-categorization`,
+no aquí. NO cubre spiders ni `normalizar_enlace`.
 
 ## Requirements
 
@@ -91,11 +95,22 @@ Un item con `sale_price >= price` MUST persistirse igualmente, con
 
 Cualquier error de Postgres no cubierto por las precondiciones anteriores
 (p. ej. overflow en `price`) MUST capturarse, loguearse, incrementar
-`stats["fallidos"]`, y la corrida MUST continuar.
+`stats["fallidos"]`, y la corrida MUST continuar. Esta captura MUST también
+cubrir el fallo del insert puente hacia `category_product`
+(`scraper-product-categorization`), que corre dentro de la misma frontera
+de captura (el `try` de `process_item`) que el upsert de `products` — una
+frontera de manejo de errores, NO transaccional: si ese insert falla, MUST
+contarse en `fallidos` aun cuando la fila de `products` ya haya sido
+confirmada por `autocommit`.
 
 #### Scenario: Un item con datos fuera de rango no aborta la corrida
 - WHEN se procesa un item cuyo precio produce overflow numérico
 - THEN el item se descarta, el error queda logueado y el siguiente se procesa con éxito
+
+#### Scenario: Fallo del insert puente cuenta en fallidos aunque el producto ya esté persistido
+- GIVEN un item cuyo upsert en `products` se confirma correctamente
+- WHEN el insert subsiguiente en `category_product` falla
+- THEN el item incrementa `stats["fallidos"]`, la fila de `products` permanece persistida, y la corrida continúa con el siguiente item
 
 ### Requirement: Arranque fail-fast si falta la taxonomía base
 
@@ -132,6 +147,7 @@ scraper.
 
 ## Out of Scope
 
-Categorías (US-7) · `test_pipeline.py`/`justfile` (US-8) · spiders,
-`items.py`, moneda · `db/schema.sql` · `packages/db` · `normalizar_enlace`
-(D-5, elevada al dueño del repo).
+La traducción de etiqueta a slug y la fila de `category_product`
+(capability `scraper-product-categorization`, US-7) · `test_pipeline.py`/
+`justfile` (US-8) · spiders, `items.py`, moneda · `db/schema.sql` ·
+`packages/db` · `normalizar_enlace` (D-5, elevada al dueño del repo).
