@@ -6,7 +6,7 @@
 
 **Épico:** [Épico 5](./README.md)
 **Fecha:** 2026-08-25
-**Status:** Listo para ejecución
+**Status:** Implementada
 **Depende de:** US-6
 **LOC est.:** ~200
 
@@ -68,10 +68,35 @@ Feature: Categorización contra el catálogo compartido
 | `services/scraper-worker/spiders/*.py` | `categorizar()` alineado al mapeo (si el design lo pone en los spiders) |
 
 ## Definición de Done
-- [ ] Corrida sintética con items de las ~9 categorías del mapeo y salida real pegada.
-- [ ] `SELECT c.slug, count(*) FROM category_product cp JOIN categories c ON c.id=cp.category_id GROUP BY 1` pegado.
-- [ ] Evidencia del CA-2 (reproceso sin duplicados) pegada.
-- [ ] Status de esta US actualizado y fila del épico marcada.
+- [x] Corrida sintética con items de las ~9 categorías del mapeo y salida real pegada.
+  ```
+  [warning] Item 'Licuadora Oster': categoria 'electrodomesticos' no mapea a un slug conocido, se usa el resto (accessories-gfa)
+  [warning] Item 'Item sin categoria': categoria None no mapea a un slug conocido, se usa el resto (accessories-gfa)
+  stats finales: {'insertados': 12, 'actualizados': 0, 'fallidos': 0, 'promociones_descartadas': 0}
+  ```
+- [x] `SELECT c.slug, count(*) FROM category_product cp JOIN categories c ON c.id=cp.category_id GROUP BY 1` pegado.
+  ```
+        slug       | count
+  -----------------+-------
+   accessories-gfa |     6
+   console         |     1
+   headphone       |     1
+   laptop          |     1
+   mobiles         |     1
+   monitor         |     1
+   sound-box       |     1
+  ```
+- [x] Evidencia del CA-2 (reproceso sin duplicados) pegada: reproceso con los mismos
+  12 items dio `stats finales: {'insertados': 0, 'actualizados': 12, 'fallidos': 0, ...}`
+  y el `GROUP BY` anterior salió idéntico (sin duplicar filas). Prueba adicional de
+  saneo (D-9): al renombrar un item de `audio` con etiqueta `sound-box` a un nombre
+  con término de audífono, `sound-box` bajó a 0, `headphone` subió a 2 y el total en
+  `category_product` se mantuvo en 12 (no 13) — el `DELETE` de saneo quita la fila
+  vieja en vez de acumularla.
+- [x] Status de esta US actualizado y fila del épico marcada.
+
+Evidencia completa (las 3 corridas, CA-3 por SQL y HTTP, limpieza y `just db-check`)
+en `openspec/changes/2026-08-28-categorizacion-slugs-catalogo/apply-progress.md`.
 
 ## Notas para el agente ejecutor
 - Preferir el mapeo centralizado en el pipeline si los `categorizar()` de los
