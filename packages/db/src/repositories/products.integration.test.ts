@@ -22,6 +22,14 @@ import { findTypeBySlug } from './types.repository';
 
 const TEST_STORE = 'TestStore-integration';
 
+// Limpieza de ENTRADA, no solo de salida: una corrida abortada (Ctrl-C,
+// EADDRINUSE, timeout) deja filas de prueba vivas y la siguiente pasada
+// cuenta 12 donde asserta 11. Con esto los conteos absolutos dejan de
+// depender de que la corrida anterior terminara bien.
+beforeAll(async () => {
+  await prisma.product.deleteMany({ where: { sourceStore: TEST_STORE } });
+});
+
 afterAll(async () => {
   await prisma.product.deleteMany({ where: { sourceStore: TEST_STORE } });
   await prisma.$disconnect();
@@ -95,6 +103,78 @@ describe('listProducts', () => {
     expect(wrapper.current_page).toBe(2);
     expect(wrapper.last_page).toBe(lastPage);
     expect(wrapper.count).toBe(30);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// US-5: orderBy tipado (desempate id asc), maxQuantity, opt-out del default
+// de vitrina. Cifras exactas verificadas contra el seed enriquecido
+// (design.md, "Resultados esperados"). Colocado ANTES de los bloques que
+// crean fixtures vía upsertScrapedProduct (US-2 más abajo): esos fixtures
+// quedan con quantity 0 por defecto y contaminarían el total === 11 de
+// maxQuantity si se contaran productos de prueba con stock bajo.
+// ---------------------------------------------------------------------------
+describe('listProducts — orderBy (US-5)', () => {
+  it("orderBy: 'ratings' → ids en el orden del ranking curado, desempate id asc", async () => {
+    const { items } = await listProducts({ orderBy: 'ratings', limit: 10 });
+    expect(items.map((p) => p.id)).toEqual([4, 1, 3, 2, 5, 25, 6, 7, 8, 9]);
+    // Monotonía: nunca sube.
+    for (let i = 1; i < items.length; i++) {
+      expect(items[i].ratings).toBeLessThanOrEqual(items[i - 1].ratings);
+    }
+  });
+
+  it("orderBy: 'soldQuantity' → ids en el orden del ranking curado, desempate id asc", async () => {
+    const { items } = await listProducts({ orderBy: 'soldQuantity', limit: 5 });
+    expect(items.map((p) => p.id)).toEqual([888, 1, 2, 883, 887]);
+    for (let i = 1; i < items.length; i++) {
+      expect(items[i].soldQuantity).toBeLessThanOrEqual(items[i - 1].soldQuantity);
+    }
+  });
+
+  it('orderBy ausente sigue siendo id asc (no-regresión)', async () => {
+    const { items } = await listProducts({ limit: 3 });
+    expect(items.map((p) => p.id)).toEqual([1, 2, 3]);
+  });
+});
+
+describe('listProducts — maxQuantity (US-5)', () => {
+  it('maxQuantity:9 con applyStorefrontDefaults:false → total 11, todo item con quantity <= 9', async () => {
+    const { items, total } = await listProducts({
+      maxQuantity: 9,
+      applyStorefrontDefaults: false,
+      limit: 30,
+    });
+    expect(total).toBe(11);
+    expect(items.map((p) => p.id).sort((a, b) => a - b)).toEqual([
+      2, 190, 1014, 1015, 1017, 1018, 1021, 1022, 1023, 1024, 1028,
+    ]);
+    for (const p of items) expect(p.quantity).toBeLessThanOrEqual(9);
+  });
+});
+
+describe('listProducts — applyStorefrontDefaults opt-out (US-5 Decision C)', () => {
+  it('opt-out + status:draft → total 1, id 454 (el default seguiría ocultándolo)', async () => {
+    const { items, total } = await listProducts({
+      applyStorefrontDefaults: false,
+      status: 'draft',
+    });
+    expect(total).toBe(1);
+    expect(items[0].id).toBe(454);
+  });
+
+  it('contraste: el opt-out es la ÚNICA diferencia — sin él, el borrador no se cuenta', async () => {
+    // OJO: la aserción tiene que DISCRIMINAR. Comprobar que la rama con
+    // status:'draft' devuelve la fila 454 con visibility_public pasa
+    // igual esté vivo o muerto el default (el único borrador del seed YA
+    // es visibility_public), así que no probaría nada. Lo que sí falla si
+    // el default se debilita es la DIFERENCIA entre las dos ramas: al
+    // desactivarlo aparece exactamente esa fila de más.
+    const conDefault = await listProducts({});
+    const sinDefault = await listProducts({ applyStorefrontDefaults: false });
+
+    expect(sinDefault.total).toBe(conDefault.total + 1);
+    expect(conDefault.total).toBe(1199);
   });
 });
 

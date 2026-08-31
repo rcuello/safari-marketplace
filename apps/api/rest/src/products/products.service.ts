@@ -20,31 +20,13 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { Product } from './entities/product.entity';
 import { paginate } from 'src/common/pagination/paginate';
 import productsJson from '@db/products.json';
-import popularProductsJson from '@db/popular-products.json';
-import bestSellingProductsJson from '@db/best-selling-products.json';
-import Fuse from 'fuse.js';
 import { GetPopularProductsDto } from './dto/get-popular-products.dto';
 import { GetBestSellingProductsDto } from './dto/get-best-selling-products.dto';
 
+// Solo sostiene los stubs de escritura (create()/update()) — el listado y
+// los 4 endpoints derivados (popular, best-selling, stock, draft) ya salen
+// de Postgres vía listProducts() (US-5).
 const products = plainToClass(Product, productsJson);
-const popularProducts = plainToClass(Product, popularProductsJson);
-const bestSellingProducts = plainToClass(Product, bestSellingProductsJson);
-
-const options = {
-  keys: [
-    'name',
-    'type.slug',
-    'categories.slug',
-    'status',
-    'shop_id',
-    'author.slug',
-    'tags',
-    'manufacturer.slug',
-    'visibility',
-  ],
-  threshold: 0.3,
-};
-const fuse = new Fuse(products, options);
 
 /**
  * `value` → number solo si es finito; si no (`'abc'`, `''`, `undefined`),
@@ -170,8 +152,6 @@ function toProductDto(record: ProductRecord): Product {
 @Injectable()
 export class ProductsService {
   private products: any = products;
-  private popularProducts: any = popularProducts;
-  private bestSellingProducts: any = bestSellingProducts;
 
   create(createProductDto: CreateProductDto) {
     return this.products[0];
@@ -235,94 +215,129 @@ export class ProductsService {
     } as unknown as Product;
   }
 
-  getPopularProducts({ limit, type_slug }: GetPopularProductsDto): Product[] {
-    let data: any = this.popularProducts;
-    if (type_slug) {
-      data = fuse.search(type_slug)?.map(({ item }) => item);
-    }
-    return data?.slice(0, limit);
-  }
-  getBestSellingProducts({
+  /**
+   * `type_slug` filtra DENTRO del ranking ya ordenado por `ratings desc`
+   * (B-2), no vía búsqueda difusa sobre todo el catálogo. Default `limit`
+   * ausente: 10 (Decision H). `type_slug` vacío/ausente → `undefined`, sin
+   * filtro.
+   */
+  async getPopularProducts({
     limit,
     type_slug,
-  }: GetBestSellingProductsDto): Product[] {
-    let data: any = this.bestSellingProducts;
-    if (type_slug) {
-      data = fuse.search(type_slug)?.map(({ item }) => item);
+  }: GetPopularProductsDto): Promise<Product[]> {
+    try {
+      const { items } = await listProducts({
+        orderBy: 'ratings',
+        typeSlug: type_slug,
+        // El query param llega como string (sin ValidationPipe transform,
+        // igual que page/limit en getProducts()); Prisma exige `take`
+        // numérico. `Number('abc') || 10` cae al default, igual que el
+        // resto del archivo.
+        limit: Number(limit) || 10,
+      });
+      return items.map(toProductDto);
+    } catch (error) {
+      if (isPrismaConnectionError(error)) {
+        throw new ServiceUnavailableException(getUserFriendlyMessage(error));
+      }
+      throw new InternalServerErrorException(getUserFriendlyMessage(error));
     }
-    return data?.slice(0, limit);
   }
 
-  getProductsStock({ limit, page, search }: GetProductsDto): ProductPaginator {
-    if (!page) page = 1;
-    if (!limit) limit = 30;
-    const startIndex = (page - 1) * limit;
-    const endIndex = page * limit;
-    let data: Product[] = this.products.filter((item) => item.quantity <= 9);
-
-    if (search) {
-      const parseSearchParams = search.split(';');
-      const searchText: any = [];
-      for (const searchParam of parseSearchParams) {
-        const [key, value] = searchParam.split(':');
-        // TODO: Temp Solution
-        if (key !== 'slug') {
-          searchText.push({
-            [key]: value,
-          });
-        }
+  /** Idéntico criterio que popular, orden `soldQuantity desc`, default 5. */
+  async getBestSellingProducts({
+    limit,
+    type_slug,
+  }: GetBestSellingProductsDto): Promise<Product[]> {
+    try {
+      const { items } = await listProducts({
+        orderBy: 'soldQuantity',
+        typeSlug: type_slug,
+        limit: Number(limit) || 5,
+      });
+      return items.map(toProductDto);
+    } catch (error) {
+      if (isPrismaConnectionError(error)) {
+        throw new ServiceUnavailableException(getUserFriendlyMessage(error));
       }
-
-      data = fuse
-        .search({
-          $and: searchText,
-        })
-        ?.map(({ item }) => item);
+      throw new InternalServerErrorException(getUserFriendlyMessage(error));
     }
-
-    const results = data.slice(startIndex, endIndex);
-    const url = `/products-stock?search=${search}&limit=${limit}`;
-    return {
-      data: results,
-      ...paginate(data.length, page, limit, results.length, url),
-    };
   }
 
-  getDraftProducts({ limit, page, search }: GetProductsDto): ProductPaginator {
+  /**
+   * Vista de inventario (`quantity <= 9`), sin el default `publish`/
+   * `visibility_public` del listado principal (Decision C): el mock tampoco
+   * lo aplicaba aquí. `search` se combina con AND sobre `maxQuantity` (B-5),
+   * no reemplaza el filtro base como hacía el `fuse.search($and)` del mock.
+   */
+  async getProductsStock({
+    limit,
+    page,
+    search,
+  }: GetProductsDto): Promise<ProductPaginator> {
     if (!page) page = 1;
     if (!limit) limit = 30;
-    const startIndex = (page - 1) * limit;
-    const endIndex = page * limit;
-    let data: Product[] = this.products.filter(
-      (item) => item.status === 'draft',
-    );
 
-    if (search) {
-      const parseSearchParams = search.split(';');
-      const searchText: any = [];
-      for (const searchParam of parseSearchParams) {
-        const [key, value] = searchParam.split(':');
-        // TODO: Temp Solution
-        if (key !== 'slug') {
-          searchText.push({
-            [key]: value,
-          });
-        }
-      }
-
-      data = fuse
-        .search({
-          $and: searchText,
-        })
-        ?.map(({ item }) => item);
-    }
-
-    const results = data.slice(startIndex, endIndex);
-    const url = `/draft-products?search=${search}&limit=${limit}`;
-    return {
-      data: results,
-      ...paginate(data.length, page, limit, results.length, url),
+    const input: ListProductsInput = {
+      ...parseProductSearch(search),
+      applyStorefrontDefaults: false,
+      maxQuantity: 9,
+      page: Number(page) || 1,
+      limit: Number(limit) || 30,
     };
+
+    try {
+      const { items, total } = await listProducts(input);
+      const data = items.map(toProductDto);
+      const url = `/products-stock?search=${search}&limit=${limit}`;
+      return {
+        data,
+        ...paginate(total, page, limit, data.length, url),
+      };
+    } catch (error) {
+      if (isPrismaConnectionError(error)) {
+        throw new ServiceUnavailableException(getUserFriendlyMessage(error));
+      }
+      throw new InternalServerErrorException(getUserFriendlyMessage(error));
+    }
+  }
+
+  /**
+   * Borradores (`status = 'draft'`), mismo criterio sin default de vitrina
+   * (Decision C). `status: 'draft'` va DESPUÉS del spread de
+   * `parseProductSearch` a propósito: es el filtro base, no negociable —
+   * un `search=status:publish` no debe hacerlo desaparecer (B-5).
+   */
+  async getDraftProducts({
+    limit,
+    page,
+    search,
+  }: GetProductsDto): Promise<ProductPaginator> {
+    if (!page) page = 1;
+    if (!limit) limit = 30;
+
+    const input: ListProductsInput = {
+      ...parseProductSearch(search),
+      applyStorefrontDefaults: false,
+      status: 'draft',
+      page: Number(page) || 1,
+      limit: Number(limit) || 30,
+    };
+
+    try {
+      const { items, total } = await listProducts(input);
+      const data = items.map(toProductDto);
+      const url = `/draft-products?search=${search}&limit=${limit}`;
+      return {
+        data,
+        ...paginate(total, page, limit, data.length, url),
+      };
+    } catch (error) {
+      if (isPrismaConnectionError(error)) {
+        throw new ServiceUnavailableException(getUserFriendlyMessage(error));
+      }
+      throw new InternalServerErrorException(getUserFriendlyMessage(error));
+    }
   }
 
   update(id: number, updateProductDto: UpdateProductDto) {

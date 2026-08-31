@@ -32,8 +32,9 @@
 | [US-3](./3-detalle-producto-postgres.md) | Detalle de producto y relacionados desde Postgres | Sí | US-2 | ~200 | ✅ Implementada |
 | [US-4a](./4-migrar-catalogos-apoyo.md) | Migrar catálogos planos (types, tags, manufacturers, shops) | Sí | US-2 | ~590 | ✅ Implementada |
 | [US-4b](./4b-categorias-arbol-postgres.md) | Migrar el árbol de categorías | Sí | US-2 | ~571 | ✅ Implementada |
+| [US-5](./5-endpoints-derivados-postgres.md) | Endpoints derivados del catálogo desde Postgres | Sí | US-2, US-4a | ~250 | ✅ Implementada |
 
-**Orden sugerido:** US-2 → (US-3 ∥ US-4a) → US-4b. US-4 original se partió en
+**Orden sugerido:** US-2 → (US-3 ∥ US-4a) → US-4b → US-5. US-4 original se partió en
 US-4a (catálogos planos, sin riesgo de diseño propio) y US-4b (árbol de
 categorías, 3 niveles reales); US-4b rebasea sobre `packages/db/index.ts` tal
 como lo dejó US-4a.

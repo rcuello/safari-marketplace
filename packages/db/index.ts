@@ -57,11 +57,15 @@ export {
   upsertScrapedProduct,
 } from './src/repositories/products.repository';
 export { getSettings } from './src/repositories/settings.repository';
-export type { ListShopsInput } from './src/repositories/shops.repository';
+export type {
+  ListShopsInput,
+  ShopNearRecord,
+} from './src/repositories/shops.repository';
 export {
   findOrCreateShopBySlug,
   findShopBySlug,
   listShops,
+  listShopsNear,
 } from './src/repositories/shops.repository';
 export type { ListTagsInput } from './src/repositories/tags.repository';
 export { findTagBySlug, listTags } from './src/repositories/tags.repository';

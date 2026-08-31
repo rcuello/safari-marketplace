@@ -10,27 +10,24 @@ import {
   getUserFriendlyMessage,
   isPrismaConnectionError,
   listShops,
+  listShopsNear,
   type ListShopsInput,
+  type ShopNearRecord,
   type ShopRecord,
 } from '@safari/db';
 import { CreateShopDto } from './dto/create-shop.dto';
 import { UpdateShopDto } from './dto/update-shop.dto';
 import { Shop } from './entities/shop.entity';
 import shopsJson from '@db/shops.json';
-import nearShopJson from '@db/near-shop.json';
-import Fuse from 'fuse.js';
 import { GetShopsDto, ShopPaginator } from './dto/get-shops.dto';
 import { paginate } from 'src/common/pagination/paginate';
 import { GetStaffsDto } from './dto/get-staffs.dto';
 import { parseSearch } from 'src/common/search/parse-search';
 
+// Solo sostiene create()/update()/getStaffs()/dis-/approveShop() — el
+// listado y los 2 endpoints derivados (new-shops, near-by-shop) ya salen de
+// Postgres vía listShops()/listShopsNear() (US-5).
 const shops = plainToClass(Shop, shopsJson);
-const nearShops = plainToClass(Shop, nearShopJson);
-const options = {
-  keys: ['name', 'type.slug', 'is_active'],
-  threshold: 0.3,
-};
-const fuse = new Fuse(shops, options);
 
 /**
  * `ShopRecord` (camelCase, `@safari/db`) → proyección de 16 claves
@@ -63,10 +60,36 @@ function toShopDto(record: ShopRecord): Shop {
   } as unknown as Shop;
 }
 
+/**
+ * `ShopNearRecord` → proyección de las 14 claves EN ORDEN de
+ * `near-shop.json` (US-5 Decision E) — NO reutiliza `toShopDto`: le faltan
+ * `orders_count`/`products_count`/`owner` y trae `distance`, obligatoria
+ * (`near-shop.tsx:38-41` la renderiza). `distance` se emite **number**
+ * (`record.distanceKm`), no el `string` que declara la entidad: el
+ * frontend hace `.toFixed(2)`.
+ */
+function toNearShopDto(record: ShopNearRecord): Shop {
+  return {
+    id: record.id,
+    owner_id: record.ownerId,
+    name: record.name,
+    slug: record.slug,
+    description: record.description,
+    cover_image: record.coverImage,
+    logo: record.logo,
+    is_active: Number(record.isActive),
+    address: record.address,
+    settings: record.settings,
+    notifications: null,
+    created_at: record.createdAt,
+    updated_at: record.updatedAt,
+    distance: record.distanceKm,
+  } as unknown as Shop;
+}
+
 @Injectable()
 export class ShopsService {
   private shops: Shop[] = shops;
-  private nearShops: Shop[] = shops;
 
   create(createShopDto: CreateShopDto) {
     return this.shops[0];
@@ -106,28 +129,42 @@ export class ShopsService {
     };
   }
 
-  getNewShops({ search, limit, page }: GetShopsDto) {
+  /**
+   * Calca `getShops` (I): reutiliza `ListShopsInput.isActive`, cero código
+   * nuevo en el repositorio. `isActive: false` es el filtro base, fijo — el
+   * search solo aporta `name` (B-7: filtro exacto, ya no `fuse` difuso
+   * sobre `name`/`type.slug`/`is_active`).
+   */
+  async getNewShops({
+    search,
+    limit,
+    page,
+  }: GetShopsDto): Promise<ShopPaginator> {
     if (!page) page = 1;
 
-    const startIndex = (page - 1) * limit;
-    const endIndex = page * limit;
-    let data: Shop[] = this.shops.filter(
-      (shopItem) => Boolean(shopItem.is_active) === false,
-    );
+    const tokens = parseSearch(search);
+    const input: ListShopsInput = {
+      name: tokens.name,
+      isActive: false,
+      page: Number(page) || 1,
+      limit: Number(limit) || 30,
+    };
 
-    if (search) {
-      const parseSearchParams = search.split(';');
-      for (const searchParam of parseSearchParams) {
-        const [key, value] = searchParam.split(':');
-        data = fuse.search(value)?.map(({ item }) => item);
+    let result: { items: ShopRecord[]; total: number };
+    try {
+      result = await listShops(input);
+    } catch (error) {
+      if (isPrismaConnectionError(error)) {
+        throw new ServiceUnavailableException(getUserFriendlyMessage(error));
       }
+      throw new InternalServerErrorException(getUserFriendlyMessage(error));
     }
-    const results = data.slice(startIndex, endIndex);
-    const url = `/new-shops?search=${search}&limit=${limit}`;
 
+    const data = result.items.map(toShopDto);
+    const url = `/new-shops?search=${search}&limit=${limit}`;
     return {
-      data: results,
-      ...paginate(data.length, page, limit, results.length, url),
+      data,
+      ...paginate(result.total, page, limit, data.length, url),
     };
   }
 
@@ -168,8 +205,23 @@ export class ShopsService {
     return toShopDto(record);
   }
 
-  getNearByShop(lat: string, lng: string) {
-    return nearShops;
+  /**
+   * Cercanía real por haversine (B-1: ya no ignora `lat`/`lng` devolviendo
+   * 6 tiendas fijas). `Number('undefined')`/`Number('abc')` → `NaN`; el
+   * guard vive en `listShopsNear` (repositorio) y responde `[]` con 200,
+   * no 400 (B-4) — la tienda dispara esta ruta con `undefined/undefined`
+   * en cada carga de `/shops` sin guard `enabled`.
+   */
+  async getNearByShop(lat: string, lng: string): Promise<Shop[]> {
+    try {
+      const items = await listShopsNear(Number(lat), Number(lng));
+      return items.map(toNearShopDto);
+    } catch (error) {
+      if (isPrismaConnectionError(error)) {
+        throw new ServiceUnavailableException(getUserFriendlyMessage(error));
+      }
+      throw new InternalServerErrorException(getUserFriendlyMessage(error));
+    }
   }
 
   update(id: number, updateShopDto: UpdateShopDto) {

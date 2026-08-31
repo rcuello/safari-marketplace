@@ -546,3 +546,83 @@ describe('ProductsService.getProductBySlug (Postgres vía @safari/db, US-3)', ()
     }
   });
 });
+
+/**
+ * Mapeo de errores de base en los 4 endpoints derivados migrados en US-5.
+ *
+ * Cierra el MUST "Errores de conexión a Postgres" de la spec
+ * `derived-catalog-api`, que hasta ahora solo tenía cobertura efímera: los
+ * cuatro métodos replican el mismo `try/catch` a mano, así que sin esto una
+ * regresión del mapeo 503/500 en cualquiera de ellos pasaba inadvertida.
+ * Mismo arnés que los tests de `getProducts`: `listProducts` mockeado y
+ * `isPrismaConnectionError` REAL.
+ */
+describe('endpoints derivados — mapeo de errores de base (US-5)', () => {
+  let service: ProductsService;
+
+  beforeEach(() => {
+    listProductsMock.mockReset();
+    service = new ProductsService();
+  });
+
+  const connectionError = () => {
+    const error = new Error("Can't reach database server at `localhost:5433`");
+    error.name = 'PrismaClientInitializationError';
+    return error;
+  };
+
+  // Cada entrada invoca el método por su superficie pública real; los DTO
+  // llegan como strings crudos porque `ValidationPipe` corre sin `transform`.
+  const casos: ReadonlyArray<[string, (s: ProductsService) => Promise<unknown>]> =
+    [
+      [
+        'getPopularProducts',
+        (s) => s.getPopularProducts({ limit: '10' } as never),
+      ],
+      [
+        'getBestSellingProducts',
+        (s) => s.getBestSellingProducts({ limit: '5' } as never),
+      ],
+      [
+        'getProductsStock',
+        (s) => s.getProductsStock(rawQuery({ limit: '30', page: '1' })),
+      ],
+      [
+        'getDraftProducts',
+        (s) => s.getDraftProducts(rawQuery({ limit: '30', page: '1' })),
+      ],
+    ];
+
+  it.each(casos)('%s: error de conexión → 503', async (_nombre, invocar) => {
+    listProductsMock.mockRejectedValue(connectionError());
+
+    expect.assertions(3);
+    try {
+      await invocar(service);
+    } catch (error) {
+      expect(error).toBeInstanceOf(ServiceUnavailableException);
+      expect((error as ServiceUnavailableException).getStatus()).toBe(503);
+      expect((error as ServiceUnavailableException).message).toBe(
+        'No se puede conectar con el servicio. Por favor, intenta más tarde.',
+      );
+    }
+  });
+
+  it.each(casos)(
+    '%s: cualquier otro error → 500, sin crashear el proceso',
+    async (_nombre, invocar) => {
+      listProductsMock.mockRejectedValue(new Error('boom inesperado'));
+
+      expect.assertions(3);
+      try {
+        await invocar(service);
+      } catch (error) {
+        expect(error).toBeInstanceOf(InternalServerErrorException);
+        expect((error as InternalServerErrorException).getStatus()).toBe(500);
+        expect((error as InternalServerErrorException).message).toBe(
+          'Ocurrió un error inesperado. Por favor, contacta al administrador.',
+        );
+      }
+    },
+  );
+});

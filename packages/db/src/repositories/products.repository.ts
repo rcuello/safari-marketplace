@@ -121,6 +121,22 @@ export interface ListProductsInput {
   tagSlug?: string;
   status?: string;
   visibility?: string;
+  /** `where: quantity: { lte: … }` — vistas de inventario (products-stock). */
+  maxQuantity?: number;
+  /**
+   * Criterio de orden. Ausente/`'id'` → `id asc` (hoy). `'ratings'` /
+   * `'soldQuantity'` → desc por esa columna con desempate `id asc`
+   * INCORPORADO: 1194/1200 filas empatan en `ratings = 0.00`, sin el
+   * desempate la cola del top-N no es determinista (US-5 Decision B).
+   */
+  orderBy?: 'id' | 'ratings' | 'soldQuantity';
+  /**
+   * Default `true`: aplica `status`/`visibility` de vitrina como hoy. En
+   * `false`, esos dos filtros solo se aplican si el llamador los envía
+   * explícitamente — para vistas de admin/inventario que el mock tampoco
+   * filtraba (US-5 Decision C). No debilita el default para nadie más.
+   */
+  applyStorefrontDefaults?: boolean;
   /** 1-based. Default 1. */
   page?: number;
   /** Default 30, como el mock. */
@@ -166,11 +182,24 @@ function buildWhere(input: ListProductsInput): Prisma.ProductWhereInput {
   if (input.minPrice !== undefined) priceFilter.gte = input.minPrice;
   if (input.maxPrice !== undefined) priceFilter.lte = input.maxPrice;
 
+  // El shop manda status/visibility en TODAS las consultas de catálogo; son
+  // el default para que un caller distraído no liste borradores. Con
+  // `applyStorefrontDefaults: false` (vistas de admin/inventario, US-5
+  // Decision C) esos dos filtros SOLO se aplican si el llamador los envía.
+  const applyDefaults = input.applyStorefrontDefaults !== false;
+
   return {
-    // El shop manda estos dos en TODAS las consultas de catálogo; son el
-    // default para que un caller distraído no liste borradores.
-    status: input.status ?? 'publish',
-    visibility: input.visibility ?? 'visibility_public',
+    ...(applyDefaults
+      ? {
+          status: input.status ?? 'publish',
+          visibility: input.visibility ?? 'visibility_public',
+        }
+      : {
+          ...(input.status !== undefined && { status: input.status }),
+          ...(input.visibility !== undefined && {
+            visibility: input.visibility,
+          }),
+        }),
     ...(input.typeSlug && { type: { slug: input.typeSlug } }),
     ...(input.categorySlug && {
       categories: { some: { category: { slug: input.categorySlug } } },
@@ -188,7 +217,29 @@ function buildWhere(input: ListProductsInput): Prisma.ProductWhereInput {
     ...((input.minPrice !== undefined || input.maxPrice !== undefined) && {
       price: priceFilter,
     }),
+    ...(input.maxQuantity !== undefined && {
+      quantity: { lte: input.maxQuantity },
+    }),
   };
+}
+
+/**
+ * Traduce `ListProductsInput.orderBy` al `orderBy` de Prisma, con el
+ * desempate `id asc` INCORPORADO (US-5 Decision B) — no se delega al
+ * llamador porque se olvida.
+ */
+function buildOrderBy(
+  orderBy: ListProductsInput['orderBy']
+): Prisma.ProductOrderByWithRelationInput | Prisma.ProductOrderByWithRelationInput[] {
+  switch (orderBy) {
+    case 'ratings':
+      return [{ ratings: 'desc' }, { id: 'asc' }];
+    case 'soldQuantity':
+      return [{ soldQuantity: 'desc' }, { id: 'asc' }];
+    case 'id':
+    default:
+      return { id: 'asc' };
+  }
 }
 
 /**
@@ -208,9 +259,11 @@ export async function listProducts(input: ListProductsInput = {}): Promise<{
     prisma.product.findMany({
       where,
       include: PRODUCT_INCLUDE,
-      // Orden estable = paginación estable. El mock sirve los productos en
-      // el orden del JSON, que coincide con id ascendente.
-      orderBy: { id: 'asc' },
+      // Orden estable = paginación estable. Default: el mock sirve los
+      // productos en el orden del JSON, que coincide con id ascendente.
+      // `orderBy: 'ratings'|'soldQuantity'` trae su propio desempate `id asc`
+      // (buildOrderBy, US-5 Decision B).
+      orderBy: buildOrderBy(input.orderBy),
       skip: (page - 1) * limit,
       take: limit,
     }),
