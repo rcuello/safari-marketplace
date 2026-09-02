@@ -23,7 +23,7 @@ que si el mock violara alguna restricción del esquema falla en vez de producir
 SQL inaplicable.
 
 ```
-10 types · 12 shops · 198 categorías · 14 manufacturers · 10 tags · 1200 productos
+10 types · 12 shops · 198 categorías · 14 manufacturers · 10 tags · 1200 productos · 3 usuarios · 4 permisos
 ```
 
 **Los ids del mock se preservan** para no romper las relaciones, y al final se
@@ -38,6 +38,49 @@ adelantan las secuencias. Dos cosas que el generador resuelve y conviene saber:
   del mock trae categorías, aunque la entidad las declara y el buscador filtra
   por `categories.slug`. En la app original, hoy, buscar por categoría devuelve
   cero resultados. No se inventan enlaces.
+
+## Identidad: usuarios, perfiles y permisos
+
+Desde US-20, `users.json` (el mismo mock) siembra 6 tablas: `users`, `profiles`
+(1:1), `permissions`, el pivote `permission_user`, y `password_reset_tokens` /
+`otp_codes` (vacías, sin consumidor todavía). El login del mock sigue
+aceptando cualquier contraseña hasta US-22 — este dato solo queda sembrado y
+disponible.
+
+**Credencial demo**: los 3 usuarios comparten la contraseña `demodemo`,
+guardada como hash bcrypt (costo 10). El literal vive en
+`generate-seed.mjs` como constante `HASH_DEMO`, con el comando de
+regeneración en un comentario junto a ella — nunca se hashea en tiempo de
+generación, porque el salt aleatorio de bcrypt rompería el determinismo del
+seed.
+
+**Matriz de permisos** (`guard_name = 'api'`, 4 filas: `super_admin`,
+`customer`, `store_owner`, `staff`):
+
+| Usuario | id | Permisos |
+|---|---|---|
+| `admin@demo.com` | 3 | `super_admin` + `customer` + `store_owner` |
+| `store_owner@demo.com` | 1 | `customer` + `store_owner` |
+| `customer@demo.com` | 2 | `customer` |
+| — | 4 | `staff` existe en el catálogo, sin asignar hasta US-25 |
+
+**Por qué `lower(email)` y no `citext`**: el índice único vive sobre
+`lower(email)`, no sobre la columna `email` (que sigue siendo `text` plano).
+Consistente con `products_nombre_trgm_idx`, que ya indexa `lower(name)`, y
+sin introducir el primer `CREATE EXTENSION` del DDL versionado. La
+consecuencia práctica: **todo lookup por email debe escribirse
+`WHERE lower(email) = lower($1)`**, o Postgres no usa el índice — un
+`WHERE email = $1` hace table scan igual de correcto pero sin aprovecharlo.
+
+**Por qué `otp_codes` no tiene FK a `users`**: se clave por `phone` en texto
+plano porque `POST /api/send-otp-code` recibe un teléfono, no un id de
+usuario, y no existe una columna de teléfono única en `users`/`profiles`
+(solo `profile.contact`, texto libre). Es la única tabla de identidad que se
+aparta del estilo FK-everywhere del resto del archivo.
+
+Ninguna de las 6 tablas tiene consumidor en código de aplicación todavía:
+el login sigue siendo mock (US-22) y recuperación/OTP no tienen endpoint
+real (US-24).
 
 ## Cómo se adapta el scraper
 

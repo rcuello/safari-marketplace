@@ -10,9 +10,10 @@
 -- filtros que el frontend envía de verdad
 -- (apps/shop/src/framework/rest/client/index.ts).
 --
--- Fuera de alcance deliberado: órdenes, usuarios, carritos, reviews y
--- pagos. Este esquema cubre el catálogo, que es lo que el scraper
--- alimenta y la tienda consulta.
+-- Fuera de alcance deliberado: wallets, direcciones, órdenes, carritos
+-- y reviews. Identidad SÍ entra (US-20): usuarios, perfiles, permisos y
+-- recuperación de contraseña/OTP, lo mínimo para autenticación real. El
+-- resto del dominio transaccional sigue fuera.
 --
 -- Idempotente: todo va con IF NOT EXISTS, así que aplicarlo dos veces no
 -- rompe nada. OJO: por eso mismo NO aplica cambios a tablas que ya existan.
@@ -100,6 +101,117 @@ CREATE TABLE IF NOT EXISTS types (
 );
 
 
+-- =====================================================================
+-- users — identidad para autenticación (US-20).
+--
+-- Hasta esta US no existía tabla de usuarios: el login del mock acepta
+-- cualquier contraseña. Este esquema deja sembrados los 3 usuarios demo
+-- de users.json con un hash bcrypt real; el login en sí sigue mock hasta
+-- US-22, que es quien lo consulta.
+--
+-- Sin columna `email_verified`: el mock trae ambas (booleano y
+-- timestamp) pero son redundantes -- email_verified_at ya dice si y
+-- cuándo.
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS users (
+    id                  bigserial    PRIMARY KEY,
+    name                text         NOT NULL,
+    email               text         NOT NULL,  -- unicidad vía el índice funcional de abajo
+    password_hash       text         NOT NULL,  -- bcrypt costo 10; demo: `demodemo`
+    is_active           boolean      NOT NULL DEFAULT true,
+    email_verified_at   timestamptz,
+    created_at          timestamptz  NOT NULL DEFAULT now(),
+    updated_at          timestamptz  NOT NULL DEFAULT now()
+);
+
+-- Case-insensitive sin `citext`: consistente con products_nombre_trgm_idx
+-- (ya indexa lower(name)) y sin introducir el primer CREATE EXTENSION del
+-- DDL versionado (las extensiones se activan en justfile). Consecuencia:
+-- todo lookup por email debe escribirse `WHERE lower(email) = lower($1)`
+-- o este índice no se usa -- lo hereda US-21.
+CREATE UNIQUE INDEX IF NOT EXISTS users_email_lower_idx ON users (lower(email));
+
+
+-- ---------------------------------------------------------------------
+-- profiles — datos de perfil, 1:1 con users.
+--
+-- La PK es user_id, no un id propio: el mock (`profile.id`) colisiona
+-- entre usuarios (admin y customer declaran ambos profile.id = 2) y no
+-- aporta nada que user_id no resuelva ya.
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS profiles (
+    user_id         bigint       PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    avatar          jsonb,
+    bio             text,
+    socials         jsonb,
+    contact         text,
+    notifications   jsonb,
+    created_at      timestamptz  NOT NULL DEFAULT now(),
+    updated_at      timestamptz  NOT NULL DEFAULT now()
+);
+
+
+-- ---------------------------------------------------------------------
+-- permissions — catálogo estático de roles (4 filas, ver seed).
+--
+-- guard_name viene del origen Laravel del mock; se conserva porque
+-- hasAccess() en ambos frontends compara el nombre en snake_case, no el
+-- guard. `staff` (id 4) es nueva: no está en users.json pero el
+-- universo de 4 valores es lo que comparan los frontends -- queda sin
+-- asignar hasta US-25.
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS permissions (
+    id           bigserial    PRIMARY KEY,
+    name         text         NOT NULL UNIQUE,
+    guard_name   text         NOT NULL DEFAULT 'api',
+    created_at   timestamptz  NOT NULL DEFAULT now(),
+    updated_at   timestamptz  NOT NULL DEFAULT now()
+);
+
+-- permission_user — pivote puro user<->permission. Comparte el banner de
+-- permissions, como product_tag comparte el de category_product.
+CREATE TABLE IF NOT EXISTS permission_user (
+    user_id         bigint       NOT NULL REFERENCES users(id)       ON DELETE CASCADE,
+    permission_id   bigint       NOT NULL REFERENCES permissions(id) ON DELETE CASCADE,
+    created_at      timestamptz  NOT NULL DEFAULT now(),
+    PRIMARY KEY (user_id, permission_id)
+);
+
+
+-- ---------------------------------------------------------------------
+-- password_reset_tokens — sin consumidor todavía (llega en US-24).
+--
+-- Por user_id, no por email al estilo Laravel: todos los usuarios ya
+-- existen en el seed, no hay flujo de pre-existencia que resolver.
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    id            bigserial    PRIMARY KEY,
+    user_id       bigint       NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token         text         NOT NULL UNIQUE,
+    expires_at    timestamptz  NOT NULL,
+    consumed_at   timestamptz,
+    created_at    timestamptz  NOT NULL DEFAULT now()
+);
+
+
+-- ---------------------------------------------------------------------
+-- otp_codes — sin consumidor todavía (llega en US-24).
+--
+-- Única tabla de identidad SIN FK a users: se clave por teléfono en
+-- texto plano porque POST /api/send-otp-code recibe un teléfono, no un
+-- id, y no existe columna de teléfono en users/profiles (solo
+-- profile.contact, texto libre sin unicidad).
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS otp_codes (
+    id            bigserial    PRIMARY KEY,
+    phone         text         NOT NULL,
+    code          text         NOT NULL,
+    expires_at    timestamptz  NOT NULL,
+    consumed_at   timestamptz,
+    created_at    timestamptz  NOT NULL DEFAULT now()
+);
+
+
 -- ---------------------------------------------------------------------
 -- shops — el vendedor.
 --
@@ -108,15 +220,20 @@ CREATE TABLE IF NOT EXISTS types (
 -- Éxito, Falabella...) los crea él en tiempo de ejecución, porque no
 -- forman parte de los datos de la app.
 --
--- owner_id se queda sin clave foránea: el mock usaba 1 para todos y la
--- tabla `users` está fuera de alcance.
+-- owner_id referencia users(id) ON DELETE RESTRICT (US-20): el default 1
+-- ya no es relleno, es un hecho -- store_owner@demo.com. Se queda porque
+-- pipelines.py:187-190 crea shops con `INSERT INTO shops (name, slug)
+-- VALUES (...)`, sin owner_id; sin el DEFAULT ese INSERT violaría el
+-- NOT NULL. Nunca CASCADE aquí: products.shop_id ya es CASCADE, así que
+-- borrar el usuario 1 arrastraría en cadena las 12 tiendas y sus 1200
+-- productos.
 -- ---------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS shops (
     id             bigserial    PRIMARY KEY,
     name           text         NOT NULL,
     slug           text         NOT NULL UNIQUE,
     description    text,
-    owner_id       bigint       NOT NULL DEFAULT 1,
+    owner_id       bigint       NOT NULL DEFAULT 1 REFERENCES users(id) ON DELETE RESTRICT,
     is_active      boolean      NOT NULL DEFAULT true,
     logo           jsonb,
     cover_image    jsonb,
@@ -351,6 +468,11 @@ CREATE INDEX IF NOT EXISTS categories_type_idx    ON categories (type_id);
 CREATE INDEX IF NOT EXISTS category_product_categoria_idx ON category_product (category_id);
 CREATE INDEX IF NOT EXISTS product_tag_tag_idx            ON product_tag (tag_id);
 
+-- El inverso del pivote de permisos: lo pide US-25 CA-2.
+CREATE INDEX IF NOT EXISTS permission_user_permiso_idx    ON permission_user (permission_id);
+CREATE INDEX IF NOT EXISTS password_reset_tokens_user_idx ON password_reset_tokens (user_id);
+CREATE INDEX IF NOT EXISTS otp_codes_phone_idx            ON otp_codes (phone);
+
 
 -- ---------------------------------------------------------------------
 -- updated_at automático.
@@ -368,6 +490,13 @@ CREATE OR REPLACE TRIGGER products_updated_at   BEFORE UPDATE ON products
 CREATE OR REPLACE TRIGGER categories_updated_at BEFORE UPDATE ON categories
     FOR EACH ROW EXECUTE FUNCTION tocar_updated_at();
 CREATE OR REPLACE TRIGGER shops_updated_at      BEFORE UPDATE ON shops
+    FOR EACH ROW EXECUTE FUNCTION tocar_updated_at();
+-- users y profiles reciben UPDATE de verdad (US-25 block-user/unblock-user,
+-- PUT /api/users/:id): igual criterio que products/categories/shops.
+-- permissions NO: 4 filas de catálogo estático, el perfil de types/tags.
+CREATE OR REPLACE TRIGGER users_updated_at      BEFORE UPDATE ON users
+    FOR EACH ROW EXECUTE FUNCTION tocar_updated_at();
+CREATE OR REPLACE TRIGGER profiles_updated_at   BEFORE UPDATE ON profiles
     FOR EACH ROW EXECUTE FUNCTION tocar_updated_at();
 
 
