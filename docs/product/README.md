@@ -198,6 +198,7 @@ Feature: …
 Épico 9  Gate de calidad y CI                 → US-10, US-11, US-12
 Épico 13 Orquestación local con Docker        → US-14, US-15
 Épico 16 Despliegue y observabilidad          → US-17, US-18   ← Terraform: el README lo promete, hoy no existe
+Épico 19 Autenticación y autorización         → US-20 … US-25  ← el login es hoy un mock: cualquier contraseña entra
 ```
 
 **US recomendada para arrancar: US-6** (el pipeline del scraper escribe hoy en
