@@ -17,6 +17,11 @@
 //   · El índice de expresión products_nombre_trgm_idx
 //     (gin (lower(name) gin_trgm_ops)) que acelera la búsqueda por
 //     nombre con `contains/insensitive`.
+//   · El índice único parcial de expresión users_email_lower_idx
+//     (unique btree (lower(email))): garantiza el email case-insensitive
+//     (US-20). `User.email` por eso NO lleva `@unique` aquí — el
+//     `$queryRaw` de `findUserCredentialsByEmail` es lo único que lo
+//     ejercita (ver users.repository.ts).
 //   · El índice único PARCIAL products_procedencia_key sí aparece abajo,
 //     pero solo gracias al preview feature "partialIndexes" que la
 //     introspección activó. No quitar el preview: sin él Prisma trataría
@@ -76,6 +81,7 @@ model Shop {
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt   DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
 
+  owner    User      @relation(fields: [ownerId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   products Product[]
 
   @@map("shops")
@@ -214,4 +220,100 @@ model ProductTag {
   @@id([productId, tagId])
   @@index([tagId], map: "product_tag_tag_idx")
   @@map("product_tag")
+}
+
+// =====================================================================
+// Identidad (US-20/US-21). Sembrada por db/seed.sql; sirve las 6 tablas
+// del Épico 19. `PasswordResetToken` y `OtpCode` entran como MODELOS
+// para que el gate de drift (`prisma migrate diff --exit-code`) cierre
+// en 0 — sus REPOSITORIOS llegan en US-24, no en esta US: no son un
+// olvido.
+// =====================================================================
+
+model User {
+  id              BigInt    @id @default(autoincrement())
+  name            String
+  email           String
+  passwordHash    String    @map("password_hash")
+  isActive        Boolean   @default(true) @map("is_active")
+  emailVerifiedAt DateTime? @map("email_verified_at") @db.Timestamptz(6)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  profile             Profile?
+  permissions         PermissionUser[]
+  passwordResetTokens PasswordResetToken[]
+  shops               Shop[]
+
+  @@map("users")
+}
+
+model Profile {
+  userId        BigInt   @id @map("user_id")
+  avatar        Json?
+  bio           String?
+  socials       Json?
+  contact       String?
+  notifications Json?
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("profiles")
+}
+
+model Permission {
+  id        BigInt   @id @default(autoincrement())
+  name      String   @unique
+  guardName String   @default("api") @map("guard_name")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  users PermissionUser[]
+
+  @@map("permissions")
+}
+
+model PermissionUser {
+  userId       BigInt   @map("user_id")
+  permissionId BigInt   @map("permission_id")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([userId, permissionId])
+  @@index([permissionId], map: "permission_user_permiso_idx")
+  @@map("permission_user")
+}
+
+/// Modelo presente para que el gate de drift cierre; su repositorio
+/// llega en US-24 (no consumido por esta US).
+model PasswordResetToken {
+  id         BigInt    @id @default(autoincrement())
+  userId     BigInt    @map("user_id")
+  token      String    @unique
+  expiresAt  DateTime  @map("expires_at") @db.Timestamptz(6)
+  consumedAt DateTime? @map("consumed_at") @db.Timestamptz(6)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([userId], map: "password_reset_tokens_user_idx")
+  @@map("password_reset_tokens")
+}
+
+/// Modelo presente para que el gate de drift cierre; su repositorio
+/// llega en US-24 (no consumido por esta US).
+model OtpCode {
+  id         BigInt    @id @default(autoincrement())
+  phone      String
+  code       String
+  expiresAt  DateTime  @map("expires_at") @db.Timestamptz(6)
+  consumedAt DateTime? @map("consumed_at") @db.Timestamptz(6)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([phone], map: "otp_codes_phone_idx")
+  @@map("otp_codes")
 }
