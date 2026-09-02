@@ -54,7 +54,7 @@
 | US | Título | Releasable solo | Depende de | LOC est. | Status |
 |----|--------|-----------------|------------|----------|--------|
 | [US-20](./20-esquema-identidad-postgres.md) | Esquema de identidad en Postgres | Sí | ninguna | ~380 | ✅ Implementada |
-| [US-21](./21-capa-datos-identidad.md) | Capa de datos de identidad en `@safari/db` | Sí | US-20 | ~450 | Listo para ejecución |
+| [US-21](./21-capa-datos-identidad.md) | Capa de datos de identidad en `@safari/db` | Sí | US-20 | ~450 | ✅ Implementada |
 | [US-22](./22-login-jwt-postgres.md) | Login, registro y `/me` reales con JWT | Sí | US-21 | ~360 | Listo para ejecución |
 | [US-23](./23-guards-autorizacion-api.md) | Autorización: guard global y permisos por ruta | Sí | US-22 | ~400 | Listo para ejecución |
 | [US-24](./24-recuperacion-password-otp.md) | Recuperación de contraseña y OTP contra la base | Sí | US-22 | ~300 | Listo para ejecución |

@@ -119,6 +119,45 @@ No usar `prisma migrate dev` ni `prisma db push` contra esta base.
   búsqueda por nombre usa `contains` + `mode: 'insensitive'`, que Postgres
   resuelve con ese índice.
 
+### Identidad (US-21, Épico 19) — `users.repository.ts`
+
+Mismo agregado por introspección que el catálogo: `users`, `profiles`,
+`permissions`, `permission_user` (sembrados por US-20) sirven ahora
+`UserRecord`/`ProfileRecord`/`PermissionRecord` y siete funciones planas
+en `src/repositories/users.repository.ts`. `PasswordResetToken` y
+`OtpCode` entran como **modelos** de `schema.prisma` solo para que el
+gate de drift cierre en 0 — sus repositorios llegan en US-24, no aquí.
+
+**La frontera del hash es estructural, no de convención (D-2 del
+épico).** `passwordHash` cruza en un único tipo, `UserCredentials`, que
+vive en `users.repository.ts` y **no** en `records.ts` — así la frontera
+de serialización del paquete ni siquiera nombra el campo. La única
+función que lo devuelve es `findUserCredentialsByEmail`; las otras dos
+escrituras (`createUser`, `updateUserPasswordHash`) lo reciben ya
+hasheado. Hashear y verificar sigue siendo de `apps/api/rest` (US-22):
+`bcryptjs` no entra a este paquete.
+
+**Por qué `findUserCredentialsByEmail` usa `$queryRaw`.** `users.email`
+no tiene un índice único total: la unicidad case-insensitive vive en
+`users_email_lower_idx`, un índice **de expresión** sobre `lower(email)`
+que Prisma no modela (como el trgm de `products`). Evidencia contra
+Postgres real: ni `mode: 'insensitive'` (genera `ILIKE`) ni normalizar el
+email en JS antes de un `equals` plano (genera `email = $1`) usan ese
+índice — solo `WHERE lower(email) = lower($1)` explícito lo hace. Es el
+único SQL crudo de dominio del paquete (el precedente ya existente es
+`health.ts:21`); `${email}` interpola como parámetro del tagged
+template, nunca concatenado. Cualquier consumidor nuevo que necesite
+comparar por email hereda esta misma regla (`lower(email) = lower($1)`,
+`identity-schema/spec.md`).
+
+`listUsers` sigue el contrato del paquete (D-2 del proposal): devuelve
+`{ items, total }`, no el envoltorio de `buildPaginator` — el caller
+(el servicio de Nest de US-25) arma el envoltorio con su `baseUrl`.
+`createUser` traduce el P2002 del email duplicado a `DuplicateEmailError`
+(el índice que lo dispara es de expresión, invisible para Prisma, así
+que el código crudo no basta); `updateUserPasswordHash`/`setUserActive`
+traducen P2025 a `null`.
+
 ### Cómo lo consumirá `apps/api/rest` (paso posterior, NO hecho)
 
 `apps/api/rest` tiene su propio `yarn install` fuera del workspace de

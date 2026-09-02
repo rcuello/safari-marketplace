@@ -6,7 +6,7 @@
 
 **Épico:** [Épico 19](./README.md)
 **Fecha:** 2026-08-31
-**Status:** Listo para ejecución
+**Status:** ✅ Implementada
 **Depende de:** US-20
 **LOC est.:** ~450
 
@@ -106,14 +106,16 @@ Feature: Capa de datos de identidad
 
 ## Definición de Done
 
-- [ ] `just db-check` verde con los tests nuevos, con el recuento pegado
-      (hoy: 6 archivos / 57 tests — debe subir).
-- [ ] `prisma validate` sin drift, con la salida pegada.
-- [ ] `just db-build` limpio (tsup genera CJS + `.d.ts` sin errores).
-- [ ] Salida pegada del test que demuestra que el `UserRecord` público no
+- [x] `just db-check` verde con los tests nuevos, con el recuento pegado
+      (hoy: 6 archivos / 57 tests — debe subir). → **7 archivos / 73 tests**
+      (ver `apply-progress.md`).
+- [x] `prisma validate` sin drift, con la salida pegada. → `prisma validate`
+      verde + `migrate diff --exit-code` → `EXIT=0`.
+- [x] `just db-build` limpio (tsup genera CJS + `.d.ts` sin errores).
+- [x] Salida pegada del test que demuestra que el `UserRecord` público no
       expone el hash (CA-2).
-- [ ] `packages/db/README.md` actualizado.
-- [ ] Status de esta US actualizado y fila del épico marcada.
+- [x] `packages/db/README.md` actualizado.
+- [x] Status de esta US actualizado y fila del épico marcada.
 
 ## Notas para el agente ejecutor
 
