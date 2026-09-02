@@ -18,10 +18,13 @@ export { buildPaginator } from './src/pagination';
 export type {
   CategoryRecord,
   ManufacturerRecord,
+  PermissionRecord,
+  ProfileRecord,
   SettingRecord,
   ShopRecord,
   TagRecord,
   TypeRecord,
+  UserRecord,
 } from './src/records';
 export type {
   CategoryAncestor,
@@ -71,3 +74,19 @@ export type { ListTagsInput } from './src/repositories/tags.repository';
 export { findTagBySlug, listTags } from './src/repositories/tags.repository';
 export type { ListTypesInput } from './src/repositories/types.repository';
 export { findTypeBySlug, listTypes } from './src/repositories/types.repository';
+export type {
+  CreateUserInput,
+  ListUsersInput,
+  UserCredentials,
+  UserWithRelations,
+} from './src/repositories/users.repository';
+export {
+  createUser,
+  DuplicateEmailError,
+  findUserById,
+  findUserCredentialsByEmail,
+  findUserWithRelations,
+  listUsers,
+  setUserActive,
+  updateUserPasswordHash,
+} from './src/repositories/users.repository';

@@ -20,11 +20,14 @@
 import type {
   Category,
   Manufacturer,
+  Permission,
   Prisma,
+  Profile,
   Setting,
   Shop,
   Tag,
   Type,
+  User,
 } from '../generated/prisma/client/client';
 
 // ---------------------------------------------------------------------------
@@ -130,6 +133,44 @@ export interface TagRecord {
   updatedAt: Date;
 }
 
+/**
+ * Usuario, SIN `passwordHash` (frontera D-2 del Épico 19: el hash solo
+ * cruza en `UserCredentials`, declarado en `users.repository.ts`, nunca
+ * aquí).
+ */
+export interface UserRecord {
+  id: number;
+  name: string;
+  email: string;
+  isActive: boolean;
+  emailVerifiedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/**
+ * 1:1 con `users`, clavado por `userId` (la tabla no tiene `id` propio —
+ * US-20 Decisión D-4).
+ */
+export interface ProfileRecord {
+  userId: number;
+  avatar: Prisma.JsonValue | null;
+  bio: string | null;
+  socials: Prisma.JsonValue | null;
+  contact: string | null;
+  notifications: Prisma.JsonValue | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface PermissionRecord {
+  id: number;
+  name: string;
+  guardName: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 // ---------------------------------------------------------------------------
 // Mappers (internos del paquete)
 // ---------------------------------------------------------------------------
@@ -216,6 +257,46 @@ export function _toTagRecord(row: Tag): TagRecord {
     image: row.image,
     typeId: _id(row.typeId),
     language: row.language,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+/**
+ * `row` tipado como `User` completo (incluye `passwordHash`) porque así
+ * llega de cualquier `include`/`select` sin proyección — pero el mapper es
+ * el choke point: nunca lo copia al `UserRecord` de salida (frontera D-2).
+ */
+export function _toUserRecord(row: User): UserRecord {
+  return {
+    id: _id(row.id),
+    name: row.name,
+    email: row.email,
+    isActive: row.isActive,
+    emailVerifiedAt: row.emailVerifiedAt,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+export function _toProfileRecord(row: Profile): ProfileRecord {
+  return {
+    userId: _id(row.userId),
+    avatar: row.avatar,
+    bio: row.bio,
+    socials: row.socials,
+    contact: row.contact,
+    notifications: row.notifications,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+export function _toPermissionRecord(row: Permission): PermissionRecord {
+  return {
+    id: _id(row.id),
+    name: row.name,
+    guardName: row.guardName,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
