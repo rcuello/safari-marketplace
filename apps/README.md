@@ -93,13 +93,34 @@ en el primer request.
 
 ### 4. Credenciales
 
-La API es un **mock**: `login` ignora la contraseña y decide el rol por el email.
+`login`, `register`, `/me` y `change-password` son reales (US-22): la contraseña
+se verifica contra el hash bcrypt de Postgres y el token es un JWT firmado.
+**La única contraseña válida es `demodemo`** (la del seed, `db/seed.sql:50-54`);
+cualquier otra contraseña memorizada de antes deja de servir.
 
 | Email | Rol |
 |---|---|
 | `admin@demo.com` | `super_admin` |
-| `store_owner@demo.com` / `vendor@demo.com` | `store_owner` |
-| cualquier otro | `customer` |
+| `store_owner@demo.com` | `store_owner` |
+| `customer@demo.com` | `customer` |
+
+> `vendor@demo.com` **no existe** en la base sembrada — es un resto de la
+> documentación del mock. Usa `store_owner@demo.com` para el rol `store_owner`.
+
+**Variables nuevas en `apps/api/rest/.env`** (`JWT_SECRET`, `JWT_EXPIRES_IN`):
+`just setup`/`just env` las generan solas en un `.env` nuevo (copiado de
+`.env.example`). Si tu `.env` es **anterior a esta US**, la línea `JWT_SECRET=`
+no existe y `just setup` no la crea sola (mismo criterio que con
+`DATABASE_URL`: no se pisa un `.env` existente). Agrégala a mano una vez:
+
+```bash
+printf '\nJWT_SECRET=%s\nJWT_EXPIRES_IN=7d\n' "$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")" >> apps/api/rest/.env
+```
+
+Sin `JWT_SECRET` (o vacío) la API falla al arrancar con un mensaje claro — no
+levanta un servidor firmando tokens con un secreto por defecto. Rotar
+`JWT_SECRET` invalida todas las cookies vivas (R-7): esperado, sin mitigación
+en esta US.
 
 ## Verificación
 

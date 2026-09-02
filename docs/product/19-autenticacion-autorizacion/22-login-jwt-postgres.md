@@ -6,7 +6,7 @@
 
 **Épico:** [Épico 19](./README.md)
 **Fecha:** 2026-08-31
-**Status:** Listo para ejecución
+**Status:** ✅ Implementada (pendiente verificación en navegador, CA-6)
 **Depende de:** US-21
 **LOC est.:** ~360
 
@@ -125,22 +125,26 @@ Feature: Autenticacion real contra Postgres
 
 ## Definición de Done
 
-- [ ] `curl` pegado de `POST /api/token`: caso correcto (token + permissions +
+- [x] `curl` pegado de `POST /api/token`: caso correcto (token + permissions +
       role), contraseña incorrecta (401) y email inexistente (401 con idéntico
-      mensaje).
-- [ ] Payload del JWT decodificado y pegado, mostrando `sub`, `email`,
+      mensaje). Ver `apply-progress.md`.
+- [x] Payload del JWT decodificado y pegado, mostrando `sub`, `email`,
       `permissions` y la expiración.
-- [ ] `curl` pegado de `GET /api/me` con dos tokens distintos, demostrando que
+- [x] `curl` pegado de `GET /api/me` con dos tokens distintos, demostrando que
       devuelve usuarios distintos.
-- [ ] `curl` pegado de la secuencia de CA-5: cambio de contraseña, login con la
+- [x] `curl` pegado de la secuencia de CA-5: cambio de contraseña, login con la
       vieja (401), login con la nueva (200).
-- [ ] Comparación de key-sets de `/api/me` mock vs Postgres, con las
+- [x] Comparación de key-sets de `/api/me` mock vs Postgres, con las
       divergencias declaradas una por una.
-- [ ] `just build-api` limpio y `just verify` verde (los 3 frontends con
+- [x] `just build-api` limpio y `just verify` verde (los 3 frontends con
       contenido real).
-- [ ] Login del admin verificado en el navegador con la credencial demo
-      (captura o descripción del dashboard cargado) — CA-6.
-- [ ] Status de esta US actualizado y fila del épico marcada.
+- [x] Login del admin verificado en el navegador con la credencial demo
+      (captura o descripción del dashboard cargado) — CA-6. Captura en
+      `openspec/changes/login-jwt-postgres/evidence-admin-dashboard.png` y
+      detalle en la sección §14 de `apply-progress.md`: `hasAccess()` dejó
+      pasar, la cabecera renderizó **"Jhon Doe · Super Admin"** resuelto desde
+      `/api/me`, y la consola no reportó ni un error de auth.
+- [x] Status de esta US actualizado y fila del épico marcada.
 
 ## Notas para el agente ejecutor
 
