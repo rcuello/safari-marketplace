@@ -31,6 +31,7 @@ const tags = leer('tags');
 const products = leer('products');
 const popularProducts = leer('popular-products');
 const bestSellingProducts = leer('best-selling-products');
+const users = leer('users');
 
 // ── Literales SQL ────────────────────────────────────────────────────────
 const txt = (v) =>
@@ -44,6 +45,40 @@ const arr = (v) =>
     ? `ARRAY[]::text[]`
     : `ARRAY[${v.map(txt).join(',')}]::text[]`;
 const ts = (v) => (v ? txt(v) : 'now()');
+
+// ── Credencial demo compartida por los 3 usuarios (Decision E) ───────────
+// Los tres usuarios de users.json comparten la contraseña `demodemo`.
+// bcrypt embebe un salt aleatorio: hashear en tiempo de generación haría
+// que cada corrida produjera un seed.sql distinto sin que nada cambiara,
+// rompiendo el chequeo de determinismo. Por eso el hash es un LITERAL fijo,
+// producido una única vez fuera del repo (no hay bcryptjs en ningún
+// package.json del monorepo, y así se queda):
+//
+//   cd "$(mktemp -d)" && npm install --no-save bcryptjs \
+//     && node -e "console.log(require('bcryptjs').hashSync('demodemo', 10))"
+//
+// Regenerarlo produce OTRA cadena igual de válida (el salt cambia); lo
+// importante es que quede fijo, no que sea reproducible byte a byte.
+const HASH_DEMO = '$2b$10$j/.1t7ZmKUU4qHu8Elw3dO6N4udivEj1oxeVxA1m6HOnp7D4J761S';
+
+// ── Catálogo de permisos y su matriz de asignación (D-5, D-9) ────────────
+// guard_name = 'api' para las 4, como en el origen Laravel. `staff` (4) es
+// nueva -- no está en users.json pero hasAccess() en ambos frontends
+// compara contra un universo de 4 valores -- y queda sin asignar hasta
+// que US-25 la reparta.
+const permissionsCatalogo = [
+  { id: 1, name: 'super_admin', guard_name: 'api' },
+  { id: 2, name: 'customer', guard_name: 'api' },
+  { id: 3, name: 'store_owner', guard_name: 'api' },
+  { id: 4, name: 'staff', guard_name: 'api' },
+];
+
+// user_id sale del `id` real del usuario iterado, NUNCA de
+// `permissions[].pivot.model_id`: el de admin vale 6, que no es un usuario
+// real y violaría la FK de permission_user.user_id (R-1).
+const asignaciones = users.flatMap((u) =>
+  (u.permissions ?? []).map((p) => ({ user_id: u.id, permission_id: p.id }))
+);
 
 // ── Recuperación de los shops que shops.json no trae ─────────────────────
 // 190 de los 1.200 productos apuntan a shop_id 12, 14 y 15, que NO existen
@@ -80,6 +115,30 @@ for (const p of products) {
 for (const c of categories) {
   if (!idsDeTypes.has(c.type_id)) problemas.push(`categoria ${c.id}: type_id ${c.type_id} inexistente`);
 }
+
+// ── Validación de identidad (US-20, Decision F) ──────────────────────────
+const idsDeUsers = new Set(users.map((u) => u.id));
+const idsDePermisos = new Set(permissionsCatalogo.map((p) => p.id));
+
+for (const a of asignaciones) {
+  if (!idsDeUsers.has(a.user_id))
+    problemas.push(`permission_user: user_id ${a.user_id} inexistente`);
+  if (!idsDePermisos.has(a.permission_id))
+    problemas.push(`permission_user: permission_id ${a.permission_id} inexistente`);
+}
+if (idsDeUsers.has(4)) problemas.push(`permissions: el id 4 ('staff') ya lo usa un usuario del mock`);
+for (const s of shopsTodos) {
+  if (!idsDeUsers.has(s.owner_id ?? 1))
+    problemas.push(`shop ${s.id}: owner_id ${s.owner_id ?? 1} inexistente entre los usuarios`);
+}
+const emailsVistos = new Set();
+for (const u of users) {
+  const clave = String(u.email).toLowerCase();
+  if (emailsVistos.has(clave)) problemas.push(`users: email duplicado (case-insensitive) ${u.email}`);
+  emailsVistos.add(clave);
+}
+if (!HASH_DEMO.startsWith('$2')) problemas.push(`HASH_DEMO no parece un hash bcrypt (prefijo esperado '$2')`);
+
 if (problemas.length) {
   console.error(`\nEl mock viola ${problemas.length} restriccion(es) del esquema:`);
   problemas.slice(0, 20).forEach((p) => console.error('  - ' + p));
@@ -104,7 +163,8 @@ L.push(
   '-- (los retailers como shops, las marcas como manufacturers).',
   '--',
   `-- ${types.length} types · ${shopsTodos.length} shops · ${categories.length} categorías · ` +
-    `${manufacturers.length} manufacturers · ${tags.length} tags · ${products.length} productos`,
+    `${manufacturers.length} manufacturers · ${tags.length} tags · ${products.length} productos · ` +
+    `${users.length} usuarios · ${permissionsCatalogo.length} permisos`,
   '-- =====================================================================',
   '',
   'BEGIN;'
@@ -135,6 +195,66 @@ L.push(
         `${json(t.settings ?? {})}, ${json(t.banners ?? [])}, ${txt(t.language ?? 'en')})`
     )
     .join(',\n') + '\nON CONFLICT (id) DO NOTHING;'
+);
+
+// users --------------------------------------------------------------------
+// Identidad antes que shops (US-20): shops.owner_id ahora es una FK real.
+bloque(`users — ${users.length} usuarios demo (ids preservados del mock)`);
+L.push(
+  '-- password_hash usa HASH_DEMO (arriba): los 3 comparten la contraseña',
+  "-- `demodemo`. is_active llega como entero 1 en el mock -> bool(). El",
+  '-- índice de unicidad case-insensitive vive en el DDL (users_email_lower_idx).',
+  'INSERT INTO users (id, name, email, password_hash, is_active, email_verified_at) VALUES'
+);
+L.push(
+  users
+    .map(
+      (u) =>
+        `  (${u.id}, ${txt(u.name)}, ${txt(u.email)}, ${txt(HASH_DEMO)}, ` +
+        `${bool(u.is_active)}, ${txt(u.email_verified_at)})`
+    )
+    .join(',\n') + '\nON CONFLICT (id) DO NOTHING;'
+);
+
+// profiles -------------------------------------------------------------
+bloque(`profiles — ${users.filter((u) => u.profile).length} (1:1 con users, PK = user_id)`);
+L.push(
+  '-- `profile.id` del mock NO se persiste: admin y customer declaran ambos',
+  '-- profile.id = 2, y la PK real es user_id (D-4).',
+  'INSERT INTO profiles (user_id, avatar, bio, socials, contact, notifications) VALUES'
+);
+L.push(
+  users
+    .filter((u) => u.profile)
+    .map(
+      (u) =>
+        `  (${u.id}, ${json(u.profile.avatar ?? null)}, ${txt(u.profile.bio)}, ` +
+        `${json(u.profile.socials ?? null)}, ${txt(u.profile.contact)}, ` +
+        `${json(u.profile.notifications ?? null)})`
+    )
+    .join(',\n') + '\nON CONFLICT (user_id) DO NOTHING;'
+);
+
+// permissions ------------------------------------------------------------
+bloque(`permissions — ${permissionsCatalogo.length} (catálogo estático, incluye 'staff' sin asignar)`);
+L.push('INSERT INTO permissions (id, name, guard_name) VALUES');
+L.push(
+  permissionsCatalogo
+    .map((p) => `  (${p.id}, ${txt(p.name)}, ${txt(p.guard_name)})`)
+    .join(',\n') + '\nON CONFLICT (id) DO NOTHING;'
+);
+
+// permission_user ----------------------------------------------------------
+bloque(`permission_user — ${asignaciones.length} asignaciones reales (D-5: user_id del usuario iterado)`);
+L.push(
+  '-- NUNCA permissions[].pivot.model_id: el de admin vale 6, que no es un',
+  '-- usuario real y violaría esta misma FK (R-1).',
+  'INSERT INTO permission_user (user_id, permission_id) VALUES'
+);
+L.push(
+  asignaciones
+    .map((a) => `  (${a.user_id}, ${a.permission_id})`)
+    .join(',\n') + '\nON CONFLICT (user_id, permission_id) DO NOTHING;'
 );
 
 // shops ------------------------------------------------------------------
@@ -294,7 +414,7 @@ L.push(
   '-- mock, así que hay que adelantar las secuencias o el primer INSERT nuevo',
   '-- chocaría con una clave existente.'
 );
-for (const t of ['types', 'shops', 'categories', 'manufacturers', 'tags', 'products']) {
+for (const t of ['types', 'users', 'permissions', 'shops', 'categories', 'manufacturers', 'tags', 'products']) {
   L.push(`SELECT setval('${t}_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM ${t}), 1));`);
 }
 
@@ -306,5 +426,6 @@ console.log(
   `db/seed.sql generado (${kb} KB)\n` +
     `  ${types.length} types · ${shopsTodos.length} shops (${recuperados.size} recuperados) · ` +
     `${categories.length} categorías · ${manufacturers.length} manufacturers · ` +
-    `${tags.length} tags · ${products.length} productos`
+    `${tags.length} tags · ${products.length} productos · ` +
+    `${users.length} usuarios · ${permissionsCatalogo.length} permisos`
 );

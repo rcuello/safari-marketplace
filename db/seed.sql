@@ -9,7 +9,7 @@
 -- ya existen, y creando en tiempo de ejecución únicamente lo que es suyo
 -- (los retailers como shops, las marcas como manufacturers).
 --
--- 10 types · 12 shops · 198 categorías · 14 manufacturers · 10 tags · 1200 productos
+-- 10 types · 12 shops · 198 categorías · 14 manufacturers · 10 tags · 1200 productos · 3 usuarios · 4 permisos
 -- =====================================================================
 
 BEGIN;
@@ -40,6 +40,53 @@ INSERT INTO types (id, name, slug, icon, settings, banners, language) VALUES
   (9, 'Gadget', 'gadget', 'Gadgets', '{"isHome":false,"productCard":"neon","layoutType":"modern"}'::jsonb, '[{"id":78,"title":"Gadget","type_id":9,"description":"Add your banner image with title and description from here. Dimension of the banner should be 1920 x 1080 px for full screen banner and 1500 x 450 px for small banner","image":{"id":2149,"thumbnail":"https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/2146/conversions/Gadget-banners-thumbnail.jpg","original":"https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/2146/Gadget-banners.png"}}]'::jsonb, 'en'),
   (11, 'Medicine', 'medicine', 'MedicineIcon', '{"isHome":false,"productCard":"xenon","layoutType":"classic"}'::jsonb, '[{"id":117,"title":"Medicine Delivered in 90 Minutes","type_id":11,"description":"Get your medicine delivered at your doorsteps all day everyday","image":{"id":2297,"thumbnail":"https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/2294/conversions/Untitled-thumbnail.jpg","original":"https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/2294/Untitled.png"}}]'::jsonb, 'en')
 ON CONFLICT (id) DO NOTHING;
+
+-- ────────────────────────────────────────────────────────────────────
+-- users — 3 usuarios demo (ids preservados del mock)
+-- ────────────────────────────────────────────────────────────────────
+-- password_hash usa HASH_DEMO (arriba): los 3 comparten la contraseña
+-- `demodemo`. is_active llega como entero 1 en el mock -> bool(). El
+-- índice de unicidad case-insensitive vive en el DDL (users_email_lower_idx).
+INSERT INTO users (id, name, email, password_hash, is_active, email_verified_at) VALUES
+  (3, 'Jhon Doe', 'admin@demo.com', '$2b$10$j/.1t7ZmKUU4qHu8Elw3dO6N4udivEj1oxeVxA1m6HOnp7D4J761S', true, '2023-11-12T10:59:14.000000Z'),
+  (2, 'Customer', 'customer@demo.com', '$2b$10$j/.1t7ZmKUU4qHu8Elw3dO6N4udivEj1oxeVxA1m6HOnp7D4J761S', true, NULL),
+  (1, 'Store Owner', 'store_owner@demo.com', '$2b$10$j/.1t7ZmKUU4qHu8Elw3dO6N4udivEj1oxeVxA1m6HOnp7D4J761S', true, NULL)
+ON CONFLICT (id) DO NOTHING;
+
+-- ────────────────────────────────────────────────────────────────────
+-- profiles — 3 (1:1 con users, PK = user_id)
+-- ────────────────────────────────────────────────────────────────────
+-- `profile.id` del mock NO se persiste: admin y customer declaran ambos
+-- profile.id = 2, y la PK real es user_id (D-4).
+INSERT INTO profiles (user_id, avatar, bio, socials, contact, notifications) VALUES
+  (3, '{"id":1691,"original":"https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/2449/man.png","thumbnail":"https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/2449/conversions/man-thumbnail.jpg"}'::jsonb, NULL, NULL, '19365141641631', NULL),
+  (2, '{"id":1692,"original":"https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/1692/author-img-%281%29.jpg","thumbnail":"https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/1692/conversions/author-img-%281%29-thumbnail.jpg"}'::jsonb, NULL, NULL, '19365141641631', NULL),
+  (1, '{"id":"883","original":"https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/881/aatik-tasneem-7omHUGhhmZ0-unsplash%402x.png","thumbnail":"https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/881/conversions/aatik-tasneem-7omHUGhhmZ0-unsplash%402x-thumbnail.jpg"}'::jsonb, 'This is the store owner and we have 6 shops under our banner. We are running all the shops to give our customers hassle-free service and quality products. Our goal is to provide best possible customer service and products for our clients', NULL, '12365141641631', NULL)
+ON CONFLICT (user_id) DO NOTHING;
+
+-- ────────────────────────────────────────────────────────────────────
+-- permissions — 4 (catálogo estático, incluye 'staff' sin asignar)
+-- ────────────────────────────────────────────────────────────────────
+INSERT INTO permissions (id, name, guard_name) VALUES
+  (1, 'super_admin', 'api'),
+  (2, 'customer', 'api'),
+  (3, 'store_owner', 'api'),
+  (4, 'staff', 'api')
+ON CONFLICT (id) DO NOTHING;
+
+-- ────────────────────────────────────────────────────────────────────
+-- permission_user — 6 asignaciones reales (D-5: user_id del usuario iterado)
+-- ────────────────────────────────────────────────────────────────────
+-- NUNCA permissions[].pivot.model_id: el de admin vale 6, que no es un
+-- usuario real y violaría esta misma FK (R-1).
+INSERT INTO permission_user (user_id, permission_id) VALUES
+  (3, 1),
+  (3, 2),
+  (3, 3),
+  (2, 2),
+  (1, 2),
+  (1, 3)
+ON CONFLICT (user_id, permission_id) DO NOTHING;
 
 -- ────────────────────────────────────────────────────────────────────
 -- shops — 9 de shops.json + 3 recuperados de los productos
@@ -1669,6 +1716,8 @@ ON CONFLICT (id) DO NOTHING;
 -- mock, así que hay que adelantar las secuencias o el primer INSERT nuevo
 -- chocaría con una clave existente.
 SELECT setval('types_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM types), 1));
+SELECT setval('users_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM users), 1));
+SELECT setval('permissions_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM permissions), 1));
 SELECT setval('shops_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM shops), 1));
 SELECT setval('categories_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM categories), 1));
 SELECT setval('manufacturers_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM manufacturers), 1));

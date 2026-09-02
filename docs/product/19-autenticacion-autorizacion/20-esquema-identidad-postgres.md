@@ -7,7 +7,7 @@
 
 **Épico:** [Épico 19](./README.md)
 **Fecha:** 2026-08-31
-**Status:** Listo para ejecución
+**Status:** ✅ Implementada
 **Depende de:** ninguna
 **LOC est.:** ~380
 
@@ -116,16 +116,19 @@ Feature: Esquema de identidad en Postgres
 
 ## Definición de Done
 
-- [ ] `just db-reset` completo sin errores, con la salida pegada.
-- [ ] `SELECT` pegado mostrando: 3 usuarios con sus ids originales, 3 perfiles,
+- [x] `just db-reset` completo sin errores, con la salida pegada.
+- [x] `SELECT` pegado mostrando: 3 usuarios con sus ids originales, 3 perfiles,
       las filas de `permission_user`, y **0** tiendas con `owner_id` huérfano.
-- [ ] Verificación del hash pegada: `bcryptjs.compare('demodemo', hash)` = `true`
+- [x] Verificación del hash pegada: `bcryptjs.compare('demodemo', hash)` = `true`
       para los 3 usuarios.
-- [ ] `just db-check` verde (los tests del catálogo no se tocan pero deben
+- [x] `just db-check` verde (los tests del catálogo no se tocan pero deben
       seguir pasando tras regenerar el seed).
-- [ ] Conteos del catálogo pegados: 1200 productos, 12 shops, 198 categorías.
-- [ ] `db/README.md` actualizado con el modelo y la credencial demo.
-- [ ] Status de esta US actualizado y fila del épico marcada.
+- [x] Conteos del catálogo pegados: 1200 productos, 12 shops, 198 categorías.
+- [x] `db/README.md` actualizado con el modelo y la credencial demo.
+- [x] Status de esta US actualizado y fila del épico marcada.
+
+Evidencia completa (salidas de comandos pegadas) en
+`openspec/changes/esquema-identidad-postgres/apply-progress.md`.
 
 ## Notas para el agente ejecutor
 
