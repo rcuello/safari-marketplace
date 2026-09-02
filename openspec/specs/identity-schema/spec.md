@@ -130,8 +130,10 @@ hash bcrypt de `demodemo` MUST ser literal fijo en `generate-seed.mjs`
 
 ## Out of Scope
 
-`packages/db`/Prisma (US-21) · `apps/api/rest` (US-22) · wallets,
-direcciones, órdenes, reviews · `apps/README.md` (D-2, hand-off a US-22) ·
-`services/scraper-worker/**` · frontends · `test_pipeline.py` (US-6,
-ajeno) · consumir `password_reset_tokens`/`otp_codes` (US-24) · asignar
-`staff` a un usuario (US-25).
+`apps/api/rest` (US-22) · wallets, direcciones, órdenes, reviews ·
+`apps/README.md` (D-2, hand-off a US-22) · `services/scraper-worker/**` ·
+frontends · `test_pipeline.py` (US-6, ajeno) · repositorios de
+`password_reset_tokens`/`otp_codes` (US-24 — sus **modelos** Prisma sí se
+introspeccionan en `capa-datos-identidad`/US-21 para que el gate de drift
+cierre en verde; sus repositorios siguen sin consumidor) ·
+`grantPermission`/asignar `staff` a un usuario (US-25).
