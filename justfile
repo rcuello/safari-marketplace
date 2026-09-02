@@ -76,6 +76,18 @@ env:
       echo "  + DATABASE_URL añadido a apps/api/rest/.env"
     fi
 
+    # JWT_SECRET (US-22): mismo patron que el SECRET del shop, arriba. Solo
+    # rellena la variable si la linea ya existe vacia (viene de un .env
+    # copiado de .env.example). Un `.env` de la API previo a esta US no
+    # tiene la linea `JWT_SECRET=`: `just setup` no la crea sola (igual que
+    # no pisa un `.env` existente) — se documenta el alta manual en
+    # apps/README.md.
+    if ! grep -q '^JWT_SECRET=.\+' apps/api/rest/.env; then
+      JWT_SECRET=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
+      sed -i "s|^JWT_SECRET=.*|JWT_SECRET=${JWT_SECRET}|" apps/api/rest/.env
+      echo "  * JWT_SECRET generado en apps/api/rest/.env"
+    fi
+
     just set-api-port
 
 # Sincroniza el puerto de la API en los tres .env (usar si el puerto esta ocupado)

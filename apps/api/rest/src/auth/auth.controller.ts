@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Body } from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { CurrentUser, CurrentUserPayload } from './current-user.decorator';
 import {
   ChangePasswordDto,
   ForgetPasswordDto,
@@ -50,11 +51,17 @@ export class AuthController {
     return this.authService.resetPassword(resetPasswordDto);
   }
   @Post('change-password')
-  changePassword(@Body() changePasswordDto: ChangePasswordDto) {
-    return this.authService.changePassword(changePasswordDto);
+  changePassword(
+    @Body() changePasswordDto: ChangePasswordDto,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
+    return this.authService.changePassword(changePasswordDto, user.email);
   }
   @Post('logout')
   async logout(): Promise<boolean> {
+    // D-9: sin refresh tokens ni denylist. El JWT sigue siendo válido hasta su
+    // `exp`; la sesión se cierra porque el frontend borra la cookie. Revocar
+    // exigiría estado servidor que esta US no introduce.
     return true;
   }
   @Post('verify-forget-password-token')
@@ -65,12 +72,12 @@ export class AuthController {
   }
 
   @Get('me')
-  me() {
-    return this.authService.me();
+  me(@CurrentUser() user: CurrentUserPayload) {
+    return this.authService.me(user.sub);
   }
   @Post('add-points')
-  addWalletPoints(@Body() addPointsDto: any) {
-    return this.authService.me();
+  addWalletPoints(@Body() addPointsDto: any, @CurrentUser() user: CurrentUserPayload) {
+    return this.authService.me(user.sub);
   }
   @Post('contact-us')
   contactUs(@Body() addPointsDto: any) {

@@ -340,7 +340,13 @@ export class OrdersService {
    * @param paymentGateway
    */
   async savePaymentIntent(order: Order, paymentGateway?: string): Promise<any> {
-    const me = this.authService.me();
+    // Ripple no anticipado por US-22: `me()` deja de aceptar llamadas sin
+    // contexto de token (D-8 del proposal). Este método no tiene un
+    // request/token disponible (se llama servicio-a-servicio, no desde un
+    // controller), así que se usa `order.customer_id`, el único id de
+    // usuario ya disponible en este alcance — no se hilvana un token nuevo
+    // a través de la cadena de llamadas, fuera del alcance de esta US.
+    const me = await this.authService.me(order.customer_id);
     switch (order.payment_gateway) {
       case PaymentGatewayType.STRIPE:
         const paymentIntentParam =

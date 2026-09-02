@@ -39,7 +39,10 @@ const shops = plainToClass(Shop, shopsJson);
  * `Shop`, igual que `toProductDto` — la entidad declara campos que este
  * listado no emite (`staffs`, `balance`, `distance`, `lat`, `lng`).
  */
-function toShopDto(record: ShopRecord): Shop {
+// Exportada para `auth.service.ts` (D-9 del proposal de US-22): `/me`
+// traduce `UserWithRelations.shops` con esta misma función en vez de
+// duplicar el shape de tienda.
+export function toShopDto(record: ShopRecord): Shop {
   return {
     id: record.id,
     owner_id: record.ownerId,
