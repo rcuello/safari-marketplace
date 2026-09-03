@@ -408,7 +408,7 @@ cambio: el WebSocket de Pusher contra la key placeholder
 a la tienda, y dos warnings de `rc-table` (`expandedRowRender` anidado y
 `defaultProps` en componentes de función).
 
-Captura: `openspec/changes/login-jwt-postgres/evidence-admin-dashboard.png`.
+Captura: `openspec/changes/archive/2026-09-02-login-jwt-postgres/evidence-admin-dashboard.png`.
 
 Cierre: los tres puertos (9001, 3002, 3003) quedaron libres y la base con sus
 3 usuarios sembrados, los 3 activos.

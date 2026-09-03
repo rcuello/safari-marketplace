@@ -6,7 +6,7 @@
 
 **Épico:** [Épico 19](./README.md)
 **Fecha:** 2026-08-31
-**Status:** ✅ Implementada (pendiente verificación en navegador, CA-6)
+**Status:** ✅ Implementada
 **Depende de:** US-21
 **LOC est.:** ~360
 
@@ -140,7 +140,7 @@ Feature: Autenticacion real contra Postgres
       contenido real).
 - [x] Login del admin verificado en el navegador con la credencial demo
       (captura o descripción del dashboard cargado) — CA-6. Captura en
-      `openspec/changes/login-jwt-postgres/evidence-admin-dashboard.png` y
+      `openspec/changes/archive/2026-09-02-login-jwt-postgres/evidence-admin-dashboard.png` y
       detalle en la sección §14 de `apply-progress.md`: `hasAccess()` dejó
       pasar, la cabecera renderizó **"Jhon Doe · Super Admin"** resuelto desde
       `/api/me`, y la consola no reportó ni un error de auth.
