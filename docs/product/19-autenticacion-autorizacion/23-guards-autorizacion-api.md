@@ -7,7 +7,7 @@
 
 **Épico:** [Épico 19](./README.md)
 **Fecha:** 2026-08-31
-**Status:** Listo para ejecución
+**Status:** ✅ Implementada
 **Depende de:** US-22
 **LOC est.:** ~400
 
@@ -113,19 +113,30 @@ Feature: Autorizacion en la API
 
 ## Definición de Done
 
-- [ ] Inventario pegado: total de rutas, cuántas públicas, cuántas protegidas,
-      cuántas con permiso exigido. Los números deben sumar 249 (o el total
-      real medido en el momento).
-- [ ] `curl` pegado de los 4 casos: pública sin token (200), protegida sin
+- [x] Inventario pegado: total de rutas, cuántas públicas, cuántas protegidas,
+      cuántas con permiso exigido. Los números suman 250 (conteo real medido
+      con `route-audit.mjs --check`: `total=250 public=67 perm=117 auth=63
+      esp=3`).
+- [x] `curl` pegado de los 4 casos: pública sin token (200), protegida sin
       token (401), protegida con token insuficiente (403), protegida con token
-      correcto (200).
-- [ ] `just verify` verde con la salida pegada (product-cards contadas).
-- [ ] Navegación anónima verificada en el navegador: home, listado, detalle,
-      búsqueda y categoría. CA-3 no se cierra solo con `curl`.
-- [ ] Comparación byte a byte de un endpoint público antes y después del guard
-      (`/api/settings` es el precedente: 5503 bytes).
-- [ ] `just build-api` limpio.
-- [ ] Status de esta US actualizado y fila del épico marcada.
+      correcto (200). Ver evidencia en
+      `openspec/changes/archive/2026-09-03-guards-autorizacion-api/apply-progress.md`.
+- [x] `just verify` verde con la salida pegada (product-cards contadas: shop
+      30, admin 1).
+- [x] Navegación anónima verificada en el navegador: home, listado, detalle,
+      búsqueda y categoría. Cerrada por el orquestador (herramienta de
+      navegador): las 5 rutas sin sesión, y de las 30 peticiones a la API
+      capturadas en el recorrido, **todas 200 o 304 — cero 401, cero 403**.
+      Detalle en la sección §CA-3 de `apply-progress.md`.
+- [x] Comparación de `/api/settings` antes y después del guard: **idéntica**.
+      El precedente "5503" no son bytes sino unidades UTF-16 (así lo mide la
+      receta de `just verify`, que concatena chunks en un string); el cuerpo
+      tiene un solo carácter no-ASCII (`©`), de ahí 5504 bytes UTF-8 frente a
+      5503 unidades UTF-16. Medido en la misma unidad que el precedente, da
+      **5503 antes y 5503 después** — no hay desfase. Confirmado además
+      idéntico con el guard activo e inactivo en el mismo proceso.
+- [x] `just build-api` limpio.
+- [x] Status de esta US actualizado y fila del épico marcada.
 
 ## Notas para el agente ejecutor
 
