@@ -27,6 +27,22 @@ export type {
   UserRecord,
 } from './src/records';
 export type {
+  CreateOtpCodeInput,
+  CreatePasswordResetTokenInput,
+  OtpCodeSecret,
+  PasswordResetTokenSecret,
+} from './src/repositories/auth-tokens.repository';
+export {
+  consumeOtpCode,
+  consumePasswordResetToken,
+  createOtpCode,
+  createPasswordResetToken,
+  findLiveOtpCodeById,
+  findLivePasswordResetTokens,
+  findUserIdByProfileContact,
+  purgeExpiredAuthTokens,
+} from './src/repositories/auth-tokens.repository';
+export type {
   CategoryAncestor,
   CategoryDescendant,
   CategoryTreeNode,
