@@ -10,16 +10,20 @@ import {
 } from '@nestjs/common';
 import { NotifyLogsService } from './notify-logs.service';
 import { GetNotifyLogsDto } from './dto/get-notify-logs.dto';
+import { Public } from 'src/auth/decorators/public.decorator';
 
 @Controller('notify-logs')
 export class NotifyLogsController {
   constructor(private notifyLogsService: NotifyLogsService) {}
 
+  // Prefetch anónimo en notify-logs.ssr.ts (hallazgo de la exploración, proposal.md).
+  @Public()
   @Get()
   findAll(@Query() query: GetNotifyLogsDto) {
     return this.notifyLogsService.findAllNotifyLogs(query);
   }
 
+  @Public()
   @Get(':param')
   getNotifyLog(
     @Param('param') param: string,

@@ -1,7 +1,10 @@
 import { MessagesModule } from './messages/messages.module';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
 import { StripeModule } from 'nestjs-stripe';
+import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { PermissionsGuard } from './auth/guards/permissions.guard';
 import { AddressesModule } from './addresses/addresses.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { AttributesModule } from './attributes/attributes.module';
@@ -98,6 +101,14 @@ import { OwnershipTransferModule } from './ownership-transfer/ownership-transfer
     OwnershipTransferModule,
   ],
   controllers: [],
-  providers: [],
+  providers: [
+    // El ORDEN importa: Nest ejecuta los guards globales secuencialmente y
+    // corta en el primero que devuelve false (guards-consumer.js). JwtAuthGuard
+    // debe poblar `request.user` ANTES de que PermissionsGuard lo lea.
+    // Invertirlos produce 403 (o 401) para todas las rutas (design.md,
+    // Decisión A).
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: PermissionsGuard },
+  ],
 })
 export class AppModule {}

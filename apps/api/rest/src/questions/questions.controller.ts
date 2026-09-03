@@ -12,6 +12,7 @@ import { CreateQuestionDto } from './dto/create-question.dto';
 import { GetQuestionDto } from './dto/get-questions.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
 import { QuestionService } from './questions.service';
+import { Public } from 'src/auth/decorators/public.decorator';
 
 @Controller('questions')
 export class QuestionController {
@@ -19,11 +20,13 @@ export class QuestionController {
   // show all
   // TODO: there is a bug in displaying all questions
   // In product single page front-end all the questions apperaed. It should be based on product ID.
+  @Public()
   @Get()
   findAll(@Query() query: GetQuestionDto) {
     return this.questionService.findAllQuestions(query);
   }
   // show one
+  @Public()
   @Get(':id')
   find(@Param('id') id: string) {
     return this.questionService.findQuestion(+id);

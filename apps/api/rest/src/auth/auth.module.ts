@@ -13,6 +13,10 @@ import { resolveJwtOptions } from './jwt-options';
   imports: [JwtModule.registerAsync({ useFactory: resolveJwtOptions })],
   controllers: [AuthController],
   providers: [AuthService],
-  exports: [AuthService],
+  // JwtModule también se exporta (Decisión A, design.md): los guards
+  // globales de la Fase 3 se instancian en el contexto de AppModule, y
+  // JwtAuthGuard inyecta JwtService. Sin este export, el arranque falla con
+  // "Nest can't resolve dependencies of JwtAuthGuard (?, Reflector)".
+  exports: [AuthService, JwtModule],
 })
 export class AuthModule {}

@@ -12,6 +12,7 @@ import { CreateReviewDto } from './dto/create-review.dto';
 import { GetReviewsDto, ReviewPaginator } from './dto/get-reviews.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
 import { ReviewService } from './reviews.service';
+import { Public } from 'src/auth/decorators/public.decorator';
 
 @Controller('reviews')
 export class ReviewController {
@@ -21,12 +22,14 @@ export class ReviewController {
   // TODO: there is a bug in displaying all reviews
   // front-end a issue ase with pobon paul
   // In product single page front-end all the reviews apperaed. It should be based on product ID.
+  @Public()
   @Get()
   async findAll(@Query() query: GetReviewsDto) {
     return this.reviewService.findAllReviews(query);
   }
 
   //   find one review by ID
+  @Public()
   @Get(':id')
   find(@Param('id') id: string) {
     return this.reviewService.findReview(+id);

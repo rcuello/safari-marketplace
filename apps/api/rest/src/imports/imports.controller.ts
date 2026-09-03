@@ -1,7 +1,9 @@
 import { Controller, Post, Body } from '@nestjs/common';
 import { ImportsService } from './imports.service';
 import { ImportDto } from './dto/create-import.dto';
+import { ADMIN_ONLY, Permissions } from 'src/auth/decorators/permissions.decorator';
 
+@Permissions(...ADMIN_ONLY)
 @Controller()
 export class ImportsController {
   constructor(private readonly importsService: ImportsService) {}

@@ -10,17 +10,20 @@ import {
 import { CreateFeedBackDto } from './dto/create-feedback.dto';
 import { UpdateFeedBackDto } from './dto/update-feedback.dto';
 import { FeedbackService } from './feedbacks.service';
+import { Public } from 'src/auth/decorators/public.decorator';
 
 @Controller('feedbacks')
 export class FeedbackController {
   constructor(private feedbackService: FeedbackService) {}
 
+  @Public()
   @Get()
   async findAll() {
     return this.feedbackService.findAllFeedBacks();
   }
 
   // get single feedback
+  @Public()
   @Get(':id')
   find(@Param('id') id: number) {
     return this.feedbackService.findFeedBack(id);

@@ -13,7 +13,12 @@ import { OwnershipTransferService } from './ownership-transfer.service';
 import { CreateOwnershipTransferDto } from './dto/create-ownership-transfer.dto';
 import { GetOwnershipTransferDto } from './dto/get-ownership-transfer.dto';
 import { UpdateOwnershipTransferDto } from './dto/update-ownership-transfer.dto';
+import {
+  ADMIN_AND_OWNER,
+  Permissions,
+} from 'src/auth/decorators/permissions.decorator';
 
+@Permissions(...ADMIN_AND_OWNER)
 @Controller('ownership-transfer')
 export class OwnershipTransferController {
   constructor(private ownershipTransferService: OwnershipTransferService) {}

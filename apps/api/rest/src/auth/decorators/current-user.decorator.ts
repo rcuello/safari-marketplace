@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
-import { resolveJwtOptions } from './jwt-options';
+import { resolveJwtOptions } from '../jwt-options';
 
 export const INVALID_TOKEN_MESSAGE = 'Token de autenticación ausente o inválido.';
 
@@ -17,6 +17,8 @@ export interface CurrentUserPayload {
   exp: number;
 }
 
+export type AuthenticatedRequest = Request & { user?: CurrentUserPayload };
+
 /**
  * `JwtService` de ámbito de módulo, construido de forma DIFERIDA (en el
  * primer request, no al importar este archivo) y memoizado. No puede
@@ -24,6 +26,9 @@ export interface CurrentUserPayload {
  * `RouteParamsFactory` con `(data, ctx)`, fuera del contenedor de DI
  * (Decisión C, design.md). Diferir la construcción evita leer
  * `JWT_SECRET` antes de que `.env` esté cargado.
+ *
+ * Solo se usa en el fallback de abajo: el camino normal ya no verifica nada
+ * aquí, lee `request.user`, poblado por `JwtAuthGuard`.
  */
 let jwtService: JwtService | undefined;
 
@@ -43,18 +48,23 @@ function extractBearerToken(request: Request): string | undefined {
 }
 
 /**
- * Extrae y verifica el bearer token del header `Authorization`, y devuelve
- * el payload (`sub`, `email`, `permissions`, `iat`, `exp`). NO consulta la
- * base: cargar el usuario aquí duplicaría la consulta de `/me` y añadiría
- * una inútil en `change-password`, que solo necesita el email.
+ * Devuelve el payload del usuario autenticado (`sub`, `email`,
+ * `permissions`, `iat`, `exp`). Contrato con el guard (US-23): el camino
+ * normal es `request.user`, poblado por `JwtAuthGuard`, sin volver a
+ * verificar el token.
  *
- * Es un decorador de parámetro puro, sin clase de autorización asociada
- * (D-1 del proposal, Decisión C del diseño): la protección de rutas es
- * US-23, no este cambio.
+ * Fallback deliberado (D-3, design.md): si `request.user` no está —los
+ * guards globales no están registrados, p. ej. tras un rollback de
+ * emergencia— este decorador verifica el bearer por su cuenta, igual que en
+ * US-22. Es lo que hace que quitar los dos guards globales de
+ * `app.module.ts` sea un rollback de una línea sin romper `/me`,
+ * `change-password` ni `add-points`.
  */
 export const CurrentUser = createParamDecorator(
   (_data: unknown, ctx: ExecutionContext): CurrentUserPayload => {
-    const request = ctx.switchToHttp().getRequest<Request>();
+    const request = ctx.switchToHttp().getRequest<AuthenticatedRequest>();
+    if (request.user) return request.user;
+
     const token = extractBearerToken(request);
     if (!token) {
       throw new UnauthorizedException(INVALID_TOKEN_MESSAGE);

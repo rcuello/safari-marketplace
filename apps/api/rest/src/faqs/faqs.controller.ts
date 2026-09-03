@@ -12,26 +12,32 @@ import { FaqsService } from './faqs.service';
 import { GetFaqsDto } from './dto/get-faqs.dto';
 import { CreateFaqDto } from './dto/create-faq.dto';
 import { UpdateFaqDto } from './dto/update-faq.dto';
+import { Public } from 'src/auth/decorators/public.decorator';
+import { ADMIN_ONLY, Permissions } from 'src/auth/decorators/permissions.decorator';
 
 @Controller('faqs')
 export class FaqsController {
   constructor(private faqService: FaqsService) {}
 
+  @Permissions(...ADMIN_ONLY)
   @Post()
   createFaq(@Body() createFaqDto: CreateFaqDto) {
     return this.faqService.create(createFaqDto);
   }
 
+  @Public()
   @Get()
   findAll(@Query() query: GetFaqsDto) {
     return this.faqService.findAllFaqs(query);
   }
 
+  @Public()
   @Get(':param')
   getFaq(@Param('param') param: string, @Query('language') language: string) {
     return this.faqService.getFaq(param, language);
   }
 
+  @Permissions(...ADMIN_ONLY)
   @Put(':id')
   update(
     @Param('id') id: string,
@@ -41,6 +47,7 @@ export class FaqsController {
     return this.faqService.update(+id, updateFaqDto);
   }
 
+  @Permissions(...ADMIN_ONLY)
   @Delete(':id')
   deleteFaq(@Param('id') id: string) {
     return this.faqService.remove(+id);

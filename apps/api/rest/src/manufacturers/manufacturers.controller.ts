@@ -17,16 +17,23 @@ import {
 } from './dto/get-manufactures.dto';
 import { CreateManufacturerDto } from './dto/create-manufacturer.dto';
 import { UpdateManufacturerDto } from './dto/update-manufacturer.dto';
+import { Public } from 'src/auth/decorators/public.decorator';
+import {
+  ADMIN_OWNER_AND_STAFF,
+  Permissions,
+} from 'src/auth/decorators/permissions.decorator';
 
 @Controller('manufacturers')
 export class ManufacturersController {
   constructor(private readonly manufacturersService: ManufacturersService) {}
 
+  @Permissions(...ADMIN_OWNER_AND_STAFF)
   @Post()
   createProduct(@Body() createManufactureDto: CreateManufacturerDto) {
     return this.manufacturersService.create(createManufactureDto);
   }
 
+  @Public()
   @Get()
   async getManufactures(
     @Query() query: GetManufacturersDto,
@@ -34,6 +41,7 @@ export class ManufacturersController {
     return this.manufacturersService.getManufactures(query);
   }
 
+  @Public()
   @Get(':slug')
   async getManufactureBySlug(
     @Param('slug') slug: string,
@@ -41,6 +49,7 @@ export class ManufacturersController {
     return this.manufacturersService.getManufacturesBySlug(slug);
   }
 
+  @Permissions(...ADMIN_OWNER_AND_STAFF)
   @Put(':id')
   update(
     @Param('id') id: string,
@@ -49,12 +58,14 @@ export class ManufacturersController {
     return this.manufacturersService.update(+id, updateManufacturerDto);
   }
 
+  @Permissions(...ADMIN_OWNER_AND_STAFF)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.manufacturersService.remove(+id);
   }
 }
 
+@Public()
 @Controller('top-manufacturers')
 export class TopManufacturersController {
   constructor(private readonly manufacturersService: ManufacturersService) {}

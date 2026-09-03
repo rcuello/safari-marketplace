@@ -14,7 +14,12 @@ import { CreateStoreNoticeDto } from './dto/create-store-notice.dto';
 import { GetStoreNoticesDto } from './dto/get-store-notices.dto';
 import { UpdateStoreNoticeDto } from './dto/update-store-notice.dto';
 import { StoreNoticesService } from './store-notices.service';
+import {
+  ADMIN_AND_OWNER,
+  Permissions,
+} from 'src/auth/decorators/permissions.decorator';
 
+@Permissions(...ADMIN_AND_OWNER)
 @Controller('store-notices')
 export class StoreNoticesController {
   constructor(

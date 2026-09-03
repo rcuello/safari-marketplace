@@ -14,7 +14,10 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { CreateProfileDto } from './dto/create-profile.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { GetUsersDto } from './dto/get-users.dto';
+import { ADMIN_ONLY, Permissions } from 'src/auth/decorators/permissions.decorator';
 
+// Plataforma (design.md, Decisión B): gestión de usuarios es ADMIN_ONLY.
+@Permissions(...ADMIN_ONLY)
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
@@ -80,6 +83,7 @@ export class ProfilesController {
   }
 }
 
+@Permissions(...ADMIN_ONLY)
 @Controller('admin/list')
 export class AdminController {
   constructor(private readonly usersService: UsersService) {}
@@ -90,6 +94,7 @@ export class AdminController {
   }
 }
 
+@Permissions(...ADMIN_ONLY)
 @Controller('vendors/list')
 export class VendorController {
   constructor(private readonly usersService: UsersService) {}
@@ -100,6 +105,7 @@ export class VendorController {
   }
 }
 
+@Permissions(...ADMIN_ONLY)
 @Controller('my-staffs')
 export class MyStaffsController {
   constructor(private readonly usersService: UsersService) {}
@@ -109,6 +115,7 @@ export class MyStaffsController {
     return this.usersService.getMyStaffs(query);
   }
 }
+@Permissions(...ADMIN_ONLY)
 @Controller('all-staffs')
 export class AllStaffsController {
   constructor(private readonly usersService: UsersService) {}
@@ -119,6 +126,7 @@ export class AllStaffsController {
   }
 }
 
+@Permissions(...ADMIN_ONLY)
 @Controller('customers/list')
 export class AllCustomerController {
   constructor(private readonly usersService: UsersService) {}

@@ -11,7 +11,12 @@ import { WithdrawsService } from './withdraws.service';
 import { CreateWithdrawDto } from './dto/create-withdraw.dto';
 import { ApproveWithdrawDto } from './dto/approve-withdraw.dto';
 import { GetWithdrawsDto, WithdrawPaginator } from './dto/get-withdraw.dto';
+import {
+  ADMIN_AND_OWNER,
+  Permissions,
+} from 'src/auth/decorators/permissions.decorator';
 
+@Permissions(...ADMIN_AND_OWNER)
 @Controller('withdraws')
 export class WithdrawsController {
   constructor(private readonly withdrawsService: WithdrawsService) {}

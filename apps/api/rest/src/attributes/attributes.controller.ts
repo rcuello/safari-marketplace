@@ -10,7 +10,11 @@ import {
 import { AttributesService } from './attributes.service';
 import { CreateAttributeDto } from './dto/create-attribute.dto';
 import { UpdateAttributeDto } from './dto/update-attribute.dto';
+import { ADMIN_ONLY, Permissions } from 'src/auth/decorators/permissions.decorator';
 
+// Taxonomía global (design.md, Decisión B): ninguna de sus rutas está en el
+// inventario de catálogo público (proposal.md, CA-1) — homogéneo, ADMIN_ONLY.
+@Permissions(...ADMIN_ONLY)
 @Controller('attributes')
 export class AttributesController {
   constructor(private readonly attributesService: AttributesService) {}

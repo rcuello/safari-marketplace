@@ -122,12 +122,74 @@ levanta un servidor firmando tokens con un secreto por defecto. Rotar
 `JWT_SECRET` invalida todas las cookies vivas (R-7): esperado, sin mitigación
 en esta US.
 
+## Autorización (US-23): guard global + permisos por ruta
+
+Desde US-23 la API exige JWT del lado del servidor: dos guards globales
+(`APP_GUARD` en `api/rest/src/app.module.ts`) corren antes de cada
+controller. **Deny-by-default**: una ruta sin `@Public()` exige un bearer
+token válido; una ruta con `@Permissions(...)` exige además que el token
+traiga alguno de esos permisos (semántica *any-of*, igual que `hasAccess()`
+del admin).
+
+| Situación | Respuesta |
+|---|---|
+| Ruta pública (catálogo, contenido, `web-hook`) | `200`, sin token |
+| Ruta protegida sin `Authorization` | `401` |
+| Token válido, permiso insuficiente | `403` |
+| Token válido, permiso suficiente (o ruta sin `@Permissions()`) | `200` |
+
+### Probar con token
+
+```bash
+# 1. Login → token JWT (mismo endpoint y credenciales de US-22, "Credenciales" arriba)
+TOKEN=$(curl -s -X POST http://localhost:9001/api/token \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@demo.com","password":"demodemo"}' \
+  | node -e "process.stdin.on('data',d=>console.log(JSON.parse(d).token))")
+
+# 2. Ruta protegida con permiso (admin@demo.com trae super_admin)
+curl -i http://localhost:9001/api/users -H "Authorization: Bearer $TOKEN"
+
+# 3. Sin token → 401
+curl -i http://localhost:9001/api/users
+
+# 4. Con token de customer@demo.com (permiso insuficiente) → 403
+```
+
+### Auditor de rutas
+
+`node apps/api/rest/scripts/route-audit.mjs` lista las 250 rutas y su
+clasificación efectiva (`public` / `perm(...)` / `auth`); `--check` valida
+que el set de rutas públicas coincida con el inventario esperado (exit 1 si
+no) — es la forma reproducible de confirmar que ninguna ruta pública quedó
+sin anotar antes de tocar los guards.
+
+### Caveats declarados (no son defectos a arreglar aquí)
+
+- **Checkout de invitado vivo (R-2)**: `POST /api/orders` y
+  `POST /api/orders/checkout/verify` quedan `@Public()` a propósito
+  (`guestCheckout: true`). `OrdersService.create` muta un objeto compartido
+  en memoria (`this.orders[0]`); no hay rate limiting (fuera de alcance de
+  esta US).
+- **Webhooks sin validación de firma (R-6)**: las 3 GET de
+  `web-hook.controller.ts` (Stripe/Razorpay/PayPal) son `@Public()` porque
+  las llamadas de terceros no traen JWT; no verifican firma — son stubs.
+- **`/docs` (Swagger) sigue abierto**: `SwaggerModule` registra sus handlers
+  directo en el adaptador HTTP, fuera del pipeline de controllers, así que
+  los guards globales no corren ahí. Cerrarlo es otra US.
+- **`GET /orders` y `GET /refunds` no aíslan datos de punta a punta todavía**:
+  `GET /orders` fuerza `customer_id` al `sub` del token en el borde
+  (`orders.controller.ts`), pero `OrdersService.getOrders` hoy ignora ese
+  campo y solo filtra por `shop_id`. `GET /refunds` queda autenticado sin
+  filtro cableable (`RefundsService.findAll()` no acepta argumentos). Ambos
+  quedan para US-25, cuando el servicio deje de ser un mock en memoria.
+
 ## Verificación
 
 ```bash
 curl http://localhost:9001/api/settings      # 200, ~5.5 KB JSON
 curl http://localhost:9001/api/products      # 200, catálogo
-open  http://localhost:9001/docs             # Swagger
+open  http://localhost:9001/docs             # Swagger (sigue abierto, ver arriba)
 ```
 
 - `http://localhost:3003/en` → home con 30 product cards.

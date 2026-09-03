@@ -14,47 +14,62 @@ import { UpdateShopDto } from './dto/update-shop.dto';
 import { GetShopsDto, ShopPaginator } from './dto/get-shops.dto';
 import { GetStaffsDto } from './dto/get-staffs.dto';
 import { UserPaginator } from 'src/users/dto/get-users.dto';
+import { Public } from 'src/auth/decorators/public.decorator';
+import {
+  ADMIN_AND_OWNER,
+  ADMIN_ONLY,
+  Permissions,
+} from 'src/auth/decorators/permissions.decorator';
 
 @Controller('shops')
 export class ShopsController {
   constructor(private readonly shopsService: ShopsService) {}
 
+  @Permissions(...ADMIN_AND_OWNER)
   @Post()
   create(@Body() createShopDto: CreateShopDto) {
     return this.shopsService.create(createShopDto);
   }
 
+  @Public()
   @Get()
   async getShops(@Query() query: GetShopsDto): Promise<ShopPaginator> {
     return this.shopsService.getShops(query);
   }
 
+  @Public()
   @Get(':slug')
   async getShop(@Param('slug') slug: string) {
     return this.shopsService.getShop(slug);
   }
 
+  @Permissions(...ADMIN_AND_OWNER)
   @Put(':id')
   update(@Param('id') id: string, @Body() updateShopDto: UpdateShopDto) {
     return this.shopsService.update(+id, updateShopDto);
   }
 
+  @Permissions(...ADMIN_AND_OWNER)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.shopsService.remove(+id);
   }
 
+  // Moderación (toda aprobación es ADMIN_ONLY, design.md Decisión B).
+  @Permissions(...ADMIN_ONLY)
   @Post('approve')
   approveShop(@Param('id') id: string) {
     return this.shopsService.approve(+id);
   }
 
+  @Permissions(...ADMIN_ONLY)
   @Post('disapprove')
   disapproveShop(@Param('id') id: string) {
     return this.shopsService.approve(+id);
   }
 }
 
+@Permissions(...ADMIN_AND_OWNER)
 @Controller('staffs')
 export class StaffsController {
   constructor(private readonly shopsService: ShopsService) {}
@@ -85,6 +100,7 @@ export class StaffsController {
   }
 }
 
+@Permissions(...ADMIN_ONLY)
 @Controller('disapprove-shop')
 export class DisapproveShopController {
   constructor(private shopsService: ShopsService) {}
@@ -95,6 +111,7 @@ export class DisapproveShopController {
   }
 }
 
+@Permissions(...ADMIN_ONLY)
 @Controller('approve-shop')
 export class ApproveShopController {
   constructor(private shopsService: ShopsService) {}
@@ -105,6 +122,7 @@ export class ApproveShopController {
   }
 }
 
+@Public()
 @Controller('near-by-shop')
 export class NearByShopController {
   constructor(private shopsService: ShopsService) {}
@@ -115,6 +133,8 @@ export class NearByShopController {
   }
 }
 
+// Cola de aprobación del admin (cierre del usuario, proposal.md).
+@Permissions(...ADMIN_ONLY)
 @Controller('new-shops')
 export class NewShopsController {
   constructor(private shopsService: ShopsService) {}
