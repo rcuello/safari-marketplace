@@ -184,6 +184,55 @@ sin anotar antes de tocar los guards.
   filtro cableable (`RefundsService.findAll()` no acepta argumentos). Ambos
   quedan para US-25, cuando el servicio deje de ser un mock en memoria.
 
+## Recuperación de contraseña y OTP (US-24)
+
+`forget-password`, `verify-forget-password-token`, `reset-password`,
+`send-otp-code`, `verify-otp-code` y `otp-login` son reales: persisten un
+token/código hasheado con vencimiento en `password_reset_tokens`/`otp_codes`
+y lo consumen una sola vez. **No hay proveedor de correo ni de SMS** (fuera
+de alcance de esta US): el secreto en claro se emite únicamente al log del
+proceso de la API, con una advertencia explícita.
+
+### Leer el secreto del log
+
+`forget-password` y `send-otp-code` escriben una línea `WARN` con el secreto
+en claro y la advertencia en la misma emisión:
+
+```
+[Nest] ... WARN [AuthService] [forget-password] Implementación de desarrollo, SIN envío real de correo. Token en claro para admin@demo.com: 3f9c...b21 (expira 2026-09-03T15:47:00.000Z)
+[Nest] ... WARN [AuthService] [send-otp-code] Implementación de desarrollo, SIN envío real de SMS. Código en claro para 12365141641631: 048213 (expira 2026-09-03T14:37:00.000Z)
+```
+
+Copia el token/código de esa línea para llamar a `verify-forget-password-token`
+/ `reset-password` / `verify-otp-code` / `otp-login` a mano.
+
+### Variables de TTL
+
+`PASSWORD_RESET_TTL_MINUTES` (default `60`) y `OTP_CODE_TTL_MINUTES` (default
+`10`), en `apps/api/rest/.env`. Se leen de forma diferida y memoizada
+(`recovery-options.ts`): a diferencia de `JWT_SECRET`, un valor ausente o
+inválido **no impide el arranque** — se registra un `warn` y se usa el
+default.
+
+### Purga manual
+
+`purgeExpiredAuthTokens()` (`@safari/db`) borra las filas vencidas o ya
+consumidas de las dos tablas. No hay scheduler (fuera de alcance): es
+mantenimiento manual, pensado para invocarse desde un script o una consola
+de Node cuando haga falta liberar espacio.
+
+### Caveats declarados (no son defectos a arreglar aquí)
+
+- **Sin rate limiting (R-2 del épico)**: estos seis endpoints son públicos
+  por naturaleza y no tienen límite de intentos. Enumerar teléfonos/emails o
+  fuerza bruta contra un token/código de 6 dígitos es un hueco conocido,
+  deliberadamente no atendido en esta US.
+- **Oráculo temporal en `forget-password` (V-3)**: la rama con email
+  existente tarda ~60-100 ms más que la de email inexistente (el `bcrypt.hash`
+  del token nuevo) — la respuesta es byte-idéntica, pero la latencia no se
+  nivela a propósito, para no convertir un endpoint sin rate limiting en un
+  amplificador de CPU de coste fijo.
+
 ## Verificación
 
 ```bash

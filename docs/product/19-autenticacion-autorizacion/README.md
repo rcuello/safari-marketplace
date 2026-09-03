@@ -57,7 +57,7 @@
 | [US-21](./21-capa-datos-identidad.md) | Capa de datos de identidad en `@safari/db` | Sí | US-20 | ~450 | ✅ Implementada |
 | [US-22](./22-login-jwt-postgres.md) | Login, registro y `/me` reales con JWT | Sí | US-21 | ~360 | ✅ Implementada |
 | [US-23](./23-guards-autorizacion-api.md) | Autorización: guard global y permisos por ruta | Sí | US-22 | ~400 | ✅ Implementada |
-| [US-24](./24-recuperacion-password-otp.md) | Recuperación de contraseña y OTP contra la base | Sí | US-22 | ~300 | Listo para ejecución |
+| [US-24](./24-recuperacion-password-otp.md) | Recuperación de contraseña y OTP contra la base | Sí | US-22 | ~300 | ✅ Implementada |
 | [US-25](./25-endpoints-usuarios-postgres.md) | Endpoints de usuarios y staff desde Postgres | Sí | US-21, US-23 | ~420 | Listo para ejecución |
 
 **Orden sugerido:** US-20 → US-21 → US-22 → (US-23 ∥ US-24) → US-25.

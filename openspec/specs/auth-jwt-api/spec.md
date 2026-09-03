@@ -158,15 +158,22 @@ defecto.
 
 ### Requirement: Los stubs declarados no cambian su comportamiento observable
 
-`forgetPassword`, `resetPassword`, `verifyForgetPasswordToken`,
-`verifyOtpCode`, `sendOtpCode`, `socialLogin` y `otpLogin` MUST seguir
-devolviendo exactamente la misma respuesta fija que devuelven hoy, byte a
-byte. `POST /api/logout` MUST seguir devolviendo `true` sin invalidar ni
-revocar ningún token (D-9: sin refresh tokens ni denylist).
+De los 7 stubs originales, esta US-24 convierte 6 en mecanismo real
+(`forgetPassword`, `resetPassword`, `verifyForgetPasswordToken`,
+`verifyOtpCode`, `sendOtpCode`, `otpLogin` — capability
+`password-recovery-otp`). Solo `socialLogin` MUST seguir devolviendo
+exactamente la misma respuesta fija que devuelve hoy, byte a byte (D-11 del
+épico: social login real queda fuera de alcance). `POST /api/logout` MUST
+seguir devolviendo `true` sin invalidar ni revocar ningún token (D-9: sin
+refresh tokens ni denylist).
 
-#### Scenario: Un stub declarado no cambia su respuesta
+(Previously: los 7 stubs — incluyendo los 6 de recuperación/OTP — debían
+devolver la misma respuesta fija byte a byte; US-24 los reemplaza por
+comportamiento real y estrecha este requirement a `socialLogin` únicamente.)
 
-- GIVEN cualquiera de los 7 stubs declarados
+#### Scenario: socialLogin sigue siendo un stub declarado
+
+- GIVEN el único stub restante, `socialLogin`
 - WHEN se invoca su endpoint con cualquier body
 - THEN la respuesta es byte-idéntica a la que devuelve el mock de hoy
 

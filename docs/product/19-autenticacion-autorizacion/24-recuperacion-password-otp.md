@@ -6,7 +6,7 @@
 
 **Épico:** [Épico 19](./README.md)
 **Fecha:** 2026-08-31
-**Status:** Listo para ejecución
+**Status:** ✅ Implementada
 **Depende de:** US-22
 **LOC est.:** ~300
 
@@ -119,16 +119,18 @@ Feature: Recuperacion de contrasena y OTP
 
 ## Definición de Done
 
-- [ ] `curl` pegado del flujo completo: forget → (token leído del log) →
-      verify → reset → login con la nueva contraseña.
-- [ ] `curl` pegado del reintento con el token ya consumido (falla) y con un
+- [x] `curl` pegado del flujo completo: forget → (token leído del log) →
+      verify → reset → login con la nueva contraseña. Ver evidencia en
+      `openspec/changes/2026-09-03-recuperacion-password-otp/apply-progress.md`.
+- [x] `curl` pegado del reintento con el token ya consumido (falla) y con un
       token vencido (falla).
-- [ ] `curl` pegado de las dos respuestas de CA-2, mostrando que son idénticas.
-- [ ] `curl` pegado del flujo OTP: send → verify con código correcto y con uno
+- [x] `curl` pegado de las dos respuestas de CA-2, mostrando que son idénticas.
+- [x] `curl` pegado del flujo OTP: send → verify con código correcto y con uno
       incorrecto → `otp-login` devolviendo un JWT verificable.
-- [ ] `just db-check` verde con los tests nuevos, recuento pegado.
-- [ ] `just build-api` limpio.
-- [ ] Status de esta US actualizado y fila del épico marcada.
+- [x] `just db-check` verde con los tests nuevos, recuento pegado (84/84,
+      8 archivos).
+- [x] `just build-api` limpio.
+- [x] Status de esta US actualizado y fila del épico marcada.
 
 ## Notas para el agente ejecutor
 
