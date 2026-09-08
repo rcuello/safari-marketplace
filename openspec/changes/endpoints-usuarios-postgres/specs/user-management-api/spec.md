@@ -12,16 +12,24 @@ guardas de auto-bloqueo.
 ### Requirement: Listado paginado de usuarios desde la base (CA-1)
 
 `GET /api/users` MUST devolver usuarios de Postgres con el envoltorio
-Laravel de `buildPaginator`, invocado siempre con `baseUrl` (las 4
-`*_page_url` son strings, nunca `null`; `prev_page_url` apunta a la página
-actual, rareza ya documentada). `text` MUST filtrar por nombre o email
-insensible a mayúsculas.
+Laravel de `buildPaginator`, invocado siempre con `baseUrl`. Con `baseUrl`,
+`first_page_url` y `last_page_url` MUST ser strings; `next_page_url` y
+`prev_page_url` son strings solo cuando existe página siguiente y `null`
+en caso contrario, exactamente como el mock
+(`apps/api/rest/src/common/pagination/paginate.ts:66-73`) — con el seed de
+3 usuarios hay una sola página, así que ambas son `null`. Cuando
+`next_page_url` no es `null`, `prev_page_url` apunta a la página ACTUAL,
+no a la anterior: rareza del mock reproducida a propósito. `text` MUST
+filtrar por nombre o email insensible a mayúsculas.
 
 #### Scenario: Listado trae usuarios reales con envoltorio completo
 
 - GIVEN un token `super_admin`
 - WHEN se consulta `GET /api/users`
-- THEN trae los 3 usuarios sembrados y las 4 `*_page_url` son strings
+- THEN trae los 3 usuarios sembrados
+- AND `first_page_url` y `last_page_url` son strings
+- AND `next_page_url` y `prev_page_url` son `null` (una sola página)
+- AND `per_page` es la string cruda de la query, no un number
 
 ### Requirement: Listas por rol filtran por permiso, con las cifras reales del seed (CA-2)
 

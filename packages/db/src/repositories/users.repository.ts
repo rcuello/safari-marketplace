@@ -263,7 +263,7 @@ export async function listUsersWithRelations(
 }
 
 // ---------------------------------------------------------------------------
-// Escrituras (CA-4) — exactamente tres; `grantPermission` es de US-25
+// Escrituras (CA-4) — exactamente cuatro; `grantPermission` la sumó US-25
 // ---------------------------------------------------------------------------
 
 /**
