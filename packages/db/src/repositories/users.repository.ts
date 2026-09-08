@@ -80,6 +80,20 @@ export class DuplicateEmailError extends Error {
   }
 }
 
+/**
+ * Permiso fuera del catálogo `permissions` (US-25, D-D). NO exportada — ni
+ * de este archivo ni del barrel: sin requirement de spec que pida
+ * superficie pública, e inalcanzable por HTTP porque el único caller fija
+ * `'super_admin'`. `grantPermission` la lanza en vez de dejar propagar el
+ * error crudo de Prisma (P2003/P2025).
+ */
+class UnknownPermissionError extends Error {
+  constructor(permissionName: string) {
+    super(`El permiso '${permissionName}' no existe en el catálogo.`);
+    this.name = 'UnknownPermissionError';
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Lectura de credenciales — el único SQL crudo de dominio (D-1)
 // ---------------------------------------------------------------------------
@@ -176,19 +190,14 @@ function _toUserWithRelations(
 // ---------------------------------------------------------------------------
 
 /**
- * Listado paginado. `{ items, total }`; el caller (servicio de Nest de
- * US-25) arma el envoltorio con `buildPaginator`. Filtra por nombre de
- * permiso (`permissionName`, vía el índice inverso del pivote) y busca
- * por nombre o email (`text`, `contains`/`insensitive` — NO usa
+ * `where` compartido por `listUsers` y `listUsersWithRelations` (US-25,
+ * D-C) — evita que las dos listas diverjan en el filtro. Filtra por
+ * nombre de permiso (`permissionName`, vía el índice inverso del pivote)
+ * y busca por nombre o email (`text`, `contains`/`insensitive` — NO usa
  * `users_email_lower_idx`, que sirve a la igualdad exacta de D-1).
  */
-export async function listUsers(input: ListUsersInput = {}): Promise<{
-  items: UserRecord[];
-  total: number;
-}> {
-  const page = Math.max(1, input.page ?? 1);
-  const limit = input.limit ?? 30;
-  const where: Prisma.UserWhereInput = {
+function _usersWhere(input: ListUsersInput): Prisma.UserWhereInput {
+  return {
     ...(input.permissionName && {
       permissions: { some: { permission: { name: input.permissionName } } },
     }),
@@ -199,6 +208,19 @@ export async function listUsers(input: ListUsersInput = {}): Promise<{
       ],
     }),
   };
+}
+
+/**
+ * Listado paginado. `{ items, total }`; el caller (servicio de Nest de
+ * US-25) arma el envoltorio con `buildPaginator`.
+ */
+export async function listUsers(input: ListUsersInput = {}): Promise<{
+  items: UserRecord[];
+  total: number;
+}> {
+  const page = Math.max(1, input.page ?? 1);
+  const limit = input.limit ?? 30;
+  const where = _usersWhere(input);
 
   const [rows, total] = await Promise.all([
     prisma.user.findMany({
@@ -211,6 +233,33 @@ export async function listUsers(input: ListUsersInput = {}): Promise<{
   ]);
 
   return { items: rows.map(_toUserRecord), total };
+}
+
+/**
+ * Listado paginado con relaciones (US-25, D-C): mismo filtro que
+ * `listUsers` vía `_usersWhere`, un solo `include` (`USER_RELATIONS`) y
+ * un solo `findMany` + `count` — cero N+1. Alimenta los seis listados de
+ * administración que renderizan avatar y chips de permiso por fila.
+ */
+export async function listUsersWithRelations(
+  input: ListUsersInput = {}
+): Promise<{ items: UserWithRelations[]; total: number }> {
+  const page = Math.max(1, input.page ?? 1);
+  const limit = input.limit ?? 30;
+  const where = _usersWhere(input);
+
+  const [rows, total] = await Promise.all([
+    prisma.user.findMany({
+      where,
+      include: USER_RELATIONS,
+      orderBy: { id: 'asc' },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.user.count({ where }),
+  ]);
+
+  return { items: rows.map(_toUserWithRelations), total };
 }
 
 // ---------------------------------------------------------------------------
@@ -295,6 +344,40 @@ export async function setUserActive(
     if (_isRecordNotFound(error)) return null;
     throw error;
   }
+}
+
+/**
+ * Concede un permiso a un usuario existente (US-25, D-D — p. ej.
+ * `make-admin`). Idempotente: repetirla no crea una fila duplicada en el
+ * pivote `permission_user` (PK compuesta `[userId, permissionId]`,
+ * `schema.prisma:286`) — se resuelve con `upsert({ update: {} })` sobre esa
+ * clave compuesta, sin tocar `created_at` en la segunda llamada. `null` si
+ * el usuario no existe (misma convención que `setUserActive`). Lanza
+ * `UnknownPermissionError` (no exportado) si `permissionName` no está en el
+ * catálogo — nunca el error crudo de Prisma. Sin reglas de autorización
+ * (D-1): el caller decide quién puede conceder qué a quién.
+ */
+export async function grantPermission(
+  userId: number,
+  permissionName: string
+): Promise<UserWithRelations | null> {
+  const permission = await prisma.permission.findUnique({
+    where: { name: permissionName },
+  });
+  if (!permission) {
+    throw new UnknownPermissionError(permissionName);
+  }
+
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) return null;
+
+  await prisma.permissionUser.upsert({
+    where: { userId_permissionId: { userId, permissionId: permission.id } },
+    create: { userId, permissionId: permission.id },
+    update: {},
+  });
+
+  return findUserWithRelations(userId);
 }
 
 function _isRecordNotFound(error: unknown): boolean {

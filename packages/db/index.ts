@@ -102,7 +102,9 @@ export {
   findUserById,
   findUserCredentialsByEmail,
   findUserWithRelations,
+  grantPermission,
   listUsers,
+  listUsersWithRelations,
   setUserActive,
   updateUserPasswordHash,
 } from './src/repositories/users.repository';

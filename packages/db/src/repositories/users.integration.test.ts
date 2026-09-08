@@ -23,7 +23,9 @@ import {
   findUserById,
   findUserCredentialsByEmail,
   findUserWithRelations,
+  grantPermission,
   listUsers,
+  listUsersWithRelations,
   setUserActive,
   updateUserPasswordHash,
 } from './users.repository';
@@ -121,6 +123,37 @@ describe('listUsers', () => {
   });
 });
 
+describe('listUsersWithRelations', () => {
+  it('filtra por permissionName y trae profile + permissions[] sin N+1 (un solo usuario tiene super_admin)', async () => {
+    const { items, total } = await listUsersWithRelations({
+      permissionName: 'super_admin',
+    });
+    expect(total).toBe(1);
+    expect(items).toHaveLength(1);
+    const admin = items[0];
+    expect(admin?.email).toBe('admin@demo.com');
+    expect(admin?.profile).not.toBeNull();
+    expect(admin?.permissions.length).toBeGreaterThan(0);
+    // Ninguna relación anidada filtra el hash (D-2, R-4).
+    expect(JSON.stringify(items)).not.toContain('$2');
+  });
+
+  it('el usuario 1 trae perfil, sus 2 permisos y las 12 tiendas de las que es dueño', async () => {
+    const { items } = await listUsersWithRelations({ text: 'store_owner@demo.com' });
+    const owner = items.find((u) => u.email === 'store_owner@demo.com');
+    expect(owner).toBeDefined();
+    expect(owner?.profile).not.toBeNull();
+    expect(owner?.permissions).toHaveLength(2);
+    expect(owner?.shops).toHaveLength(12);
+  });
+
+  it('un permiso sin titulares (staff) devuelve total 0, no un error', async () => {
+    const { items, total } = await listUsersWithRelations({ permissionName: 'staff' });
+    expect(total).toBe(0);
+    expect(items).toEqual([]);
+  });
+});
+
 describe('escrituras de identidad (CA-4) — dominio centinela, nunca los sembrados', () => {
   it('createUser crea usuario + perfil + permiso inicial', async () => {
     const email = `Create-User${TEST_DOMAIN}`;
@@ -194,6 +227,67 @@ describe('escrituras de identidad (CA-4) — dominio centinela, nunca los sembra
 
   it('setUserActive(999999, …) devuelve null (P2025)', async () => {
     expect(await setUserActive(999999, false)).toBeNull();
+  });
+});
+
+describe('grantPermission — idempotente, dominio centinela con store_owner (nunca super_admin/staff)', () => {
+  it('concede un permiso nuevo: findUserWithRelations lo ve entre sus permissions[]', async () => {
+    const email = `Grant-Permission${TEST_DOMAIN}`;
+    const user = await createUser({
+      name: 'Concede permiso',
+      email,
+      passwordHash: 'hash-de-prueba',
+    });
+
+    const result = await grantPermission(user.id, 'store_owner');
+    expect(result?.permissions.map((p) => p.name)).toContain('store_owner');
+
+    const withRelations = await findUserWithRelations(user.id);
+    expect(withRelations?.permissions.map((p) => p.name)).toContain('store_owner');
+  });
+
+  it('conceder un permiso ya poseído es idempotente: sin error, sin fila duplicada en permission_user', async () => {
+    const email = `Grant-Idempotent${TEST_DOMAIN}`;
+    const user = await createUser({
+      name: 'Concede dos veces',
+      email,
+      passwordHash: 'hash-de-prueba',
+    });
+
+    await grantPermission(user.id, 'store_owner');
+    await expect(grantPermission(user.id, 'store_owner')).resolves.not.toThrow();
+
+    const pivotRows = await prisma.permissionUser.findMany({
+      where: { userId: BigInt(user.id) },
+    });
+    expect(pivotRows).toHaveLength(1);
+
+    const withRelations = await findUserWithRelations(user.id);
+    expect(
+      withRelations?.permissions.filter((p) => p.name === 'store_owner')
+    ).toHaveLength(1);
+  });
+
+  it('un nombre de permiso inexistente falla como error de dominio, no como error crudo de Prisma', async () => {
+    const email = `Grant-Unknown${TEST_DOMAIN}`;
+    const user = await createUser({
+      name: 'Permiso inexistente',
+      email,
+      passwordHash: 'hash-de-prueba',
+    });
+
+    await expect(grantPermission(user.id, 'permiso-que-no-existe')).rejects.toThrow(
+      /no existe en el catálogo/
+    );
+
+    const pivotRows = await prisma.permissionUser.findMany({
+      where: { userId: BigInt(user.id) },
+    });
+    expect(pivotRows).toHaveLength(0);
+  });
+
+  it('devuelve null si el usuario no existe', async () => {
+    expect(await grantPermission(999999, 'store_owner')).toBeNull();
   });
 });
 
