@@ -225,3 +225,166 @@ divergencia de arriba).
 6/6 tareas de Fase 2 completas. Fases 3 y 4 quedan pendientes (`[ ]` en
 `tasks.md`), sin iniciar. Listo para `sdd-verify` de PR2 o para continuar
 con PR3.
+
+---
+
+## PR3 — migración de `users.service.ts`/`users.controller.ts` (rama `pr3/users-postgres`, base `pr2/extract-user-mapper`)
+
+### Alcance ejecutado
+
+Fase 3 completa, tareas 3.1 a 3.17, todas marcadas `[x]` en `tasks.md`.
+Fase 4 (evidencia/cierre) queda intacta (`[ ]`), fuera del alcance de esta
+sesión (la orden explícita fue "PR3 ONLY").
+
+### Archivos tocados
+
+| Archivo | Acción | Qué |
+|---|---|---|
+| `apps/api/rest/src/users/users.service.ts` | Reescrito | Deja de leer `users.json`/`fuse.js` (`this.users` eliminado); las 13 tareas de negocio pasan a `@safari/db` (`listUsersWithRelations`, `findUserWithRelations`, `setUserActive`, `listUsers`, `grantPermission`, `createUser`) + `buildPaginator` + `toUserDto`. Sigue sin constructor (D-E). |
+| `apps/api/rest/src/users/users.controller.ts` | Modificado | `banUser` (block-user) gana `@CurrentUser()`; `makeAdmin` pasa de `@Param('user_id')` a `@Body('user_id')` (D-H); `ProfilesController` gana `@Permissions(...ADMIN_ONLY)` de clase (D-G/CA-5). Resto de rutas sin cambios de firma HTTP. |
+| `apps/api/rest/src/users/users.service.spec.ts` | Creado | Gate portante de la slice (task 3.14): 27 tests nuevos — envoltorio de `getUsers` clave por clave y por TIPO contra `paginate()` real (`per_page` string "20"); `total=0` clamp (`current_page`/`last_page` 0, `lastItem` -1); alias `my-staffs`≡`all-staffs` con `url` propia; filtros de permiso de las 3 listas restantes; `getUsersNotify` con `take` numérico (D-B guarda #2); 404 en `findOne`/`update`/`block-user` con id inexistente y no numérico; 409 en auto-bloqueo y en el único `super_admin` (con contraejemplo de >1 admin); `make-admin` convierte string→number y 404 si no existe; `create` con permiso `customer` fijo, 409 en email duplicado, 503/500 en errores de conexión/genéricos; `update`/`remove` como stubs declarados. |
+
+### Divergencias respecto al design
+
+Ninguna de fondo. Una nota de implementación: `_listByPermission` recibe
+`url` como el PREFIJO de ruta (`/users`, `/admin/list`, etc.) y arma
+`${url}?limit=${limit}` internamente — el design no fija literalmente la
+forma del segundo parámetro del helper, pero el resultado final coincide
+byte a byte con la tabla de `url` por endpoint del design (`/my-staffs/list?limit=`,
+`/all-staffs/list?limit=`, etc., cada uno con su propia string).
+
+### Riesgo de presupuesto de revisión (Review Workload Guard) — reportado, no accionado
+
+`git diff --stat` sobre `users.service.ts`+`users.controller.ts`: **281
+inserciones / 191 borrados = 472 líneas**; sumando el `users.service.spec.ts`
+nuevo (493 líneas) el total de PR3 ronda **965 líneas**, muy por encima del
+presupuesto de 400 y del estimado `~447 LOC` de `tasks.md`/`design.md`. El
+`tasks.md` (task 3.17) preveía un fallback 3a (lecturas)/3b (escrituras) si
+esto ocurría, pero el prompt de esta sesión asignó explícitamente "PR3
+ONLY" como una única unidad de trabajo dentro de la cadena `stacked-to-main`
+ya resuelta (`Delivery strategy: ask-on-risk`, ya decidido antes de esta
+sesión) — no se partió retroactivamente. Se documenta como riesgo para que
+`sdd-verify`/la revisión humana lo tenga en cuenta; la mayor parte del
+exceso es el propio test suite (493 de las ~965 líneas), no lógica de
+negocio adicional.
+
+### Incidente de entorno durante el apply (no atribuible al código de esta US)
+
+A mitad de sesión, todas las peticiones HTTP a la API (incluidas rutas
+públicas y sin relación con `users`, p. ej. `/api/types`, `/api/settings`,
+`/api/token`) empezaron a colgarse indefinidamente con 0 bytes de
+respuesta y 0% CPU en el proceso Node — sin relación con el código de PR3
+(reproducía incluso en rutas de otros módulos ya migrados). Diagnóstico:
+`wsl -l -v` mostró la distro `docker-desktop` en estado `Stopped` — el
+backend de Docker Desktop se había caído (posible causa: el propio `docker
+ps` de diagnóstico quedó colgado varios minutos, señal de que el daemon ya
+estaba degradado). Recuperación: se reinició Docker Desktop
+(`Stop-Process` de sus procesos + relanzamiento), se corrió `just db-up`
+(recrea el contenedor y reaplica `schema.sql`/`seed.sql` — mismos datos de
+seed, sin cambios de esquema) y se re-verificó `just db-check` (91/91,
+verde) antes de continuar con la evidencia de `curl`. No se tocó ningún
+archivo de `packages/db` ni configuración de Docker; el `docker-compose.yml`
+sigue igual. Mencionado por transparencia, no por ser un hallazgo de esta
+US.
+
+### Evidencia de cierre (real, no "debería funcionar")
+
+#### `cd apps/api/rest && npx jest`
+
+```
+PASS src/users/user-dto.mapper.spec.ts
+PASS src/shops/shops.service.spec.ts
+PASS src/products/products.service.spec.ts
+PASS src/users/users.service.spec.ts
+
+Test Suites: 4 passed, 4 total
+Tests:       65 passed, 65 total
+Snapshots:   0 total
+Time:        67.249 s
+```
+
+65/65 verdes — sube desde el baseline de 38 (+27 tests nuevos de
+`users.service.spec.ts`).
+
+#### `just db-check` (antes y después del incidente de Docker)
+
+Antes del incidente (mismo contenedor de sesiones previas):
+
+```
+Test Files  8 passed (8)
+     Tests  91 passed (91)
+```
+
+Después de recrear el contenedor (`just db-up` + reseed):
+
+```
+Test Files  8 passed (8)
+     Tests  91 passed (91)
+  Duration  4.21s
+```
+
+91/91 en ambos casos — PR3 no toca `packages/db`, así que el conteo se
+mantiene idéntico al baseline de PR1.
+
+#### `just build-api`
+
+```
+yarn build
+$ rimraf dist
+$ nest build
+Done in 49.80s.
+```
+
+Compila limpio, 0 errores.
+
+#### Evidencia `curl` (API real, Postgres real, contenedor recreado tras el incidente)
+
+Login admin (`admin@demo.com`/`demodemo`) y token de 245 caracteres
+obtenido. `GET /api/users` sin `limit` explícito: `total=3, current_page=1,
+per_page=30 (number, default sin query)`. Con `?limit=20` explícito:
+`per_page="20"` (string) y `current_page=1` (number) — el triple camino de
+D-B confirmado en vivo, no solo por unit test.
+
+Los 5 listados por rol, cifras reales del seed:
+
+```
+admin/list      => HTTP 200  total=1 current_page=1 last_page=1 lastItem=0  url=.../admin/list?limit=30&page=1
+vendors/list    => HTTP 200  total=2 current_page=1 last_page=1 lastItem=1  url=.../vendors/list?limit=30&page=1
+customers/list  => HTTP 200  total=3 current_page=1 last_page=1 lastItem=2  url=.../customers/list?limit=30&page=1
+my-staffs       => HTTP 200  total=0 current_page=0 last_page=0 lastItem=-1 url=.../my-staffs/list?limit=30&page=1
+all-staffs      => HTTP 200  total=0 current_page=0 last_page=0 lastItem=-1 url=.../all-staffs/list?limit=30&page=1
+```
+
+`GET /api/users/3`: HTTP 200, 15 claves exactas (`id, name, email,
+email_verified_at, created_at, updated_at, is_active, shop_id,
+email_verified, profile, permissions, wallet, shops, last_order,
+address`), `wallet: null`, `last_order: null`, `address: []`.
+
+```
+GET /api/users/99999 => HTTP 404 {"message":"No existe un usuario con id 99999."}
+GET /api/users/abc   => HTTP 404 {"message":"No existe un usuario con id NaN."}
+GET /api/users (sin token)            => HTTP 401 {"message":"Token de autenticación ausente o inválido."}
+GET /api/users (token customer)       => HTTP 403 {"message":"No tienes permisos suficientes para esta operación."}
+POST /api/profiles (token customer)   => HTTP 403 {"message":"No tienes permisos suficientes para esta operación."}
+POST /api/users/block-user {id:3} (admin se bloquea a sí mismo) => HTTP 409 {"message":"No puedes bloquearte a ti mismo."}
+```
+
+Secuencia CA-4 completa sobre `customer@demo.com` (id 2), nunca el admin:
+
+```
+1) block-user {id:2}   => HTTP 201, is_active=0
+2) POST /api/token (customer, bloqueado) => HTTP 401 "Las credenciales no son válidas."
+3) block-user {id:2} otra vez           => HTTP 201, is_active=0 (NO se invierte, sigue bloqueado)
+4) unblock-user {id:2}                  => HTTP 201, is_active=1
+5) POST /api/token (customer)           => HTTP 201, token válido emitido
+GET /api/users/2 (verificación final)   => HTTP 200, is_active=1  (dejado desbloqueado y funcionando)
+```
+
+Puerto 9001 liberado al cierre (`just check-ports` → `libre 9001`), proceso
+de `just api-dev` terminado con `taskkill`.
+
+## Estado (PR3)
+
+17/17 tareas de Fase 3 completas. Fase 4 (Definición de Done, cierre de
+US-25/Épico 19) queda pendiente (`[ ]` en `tasks.md`), fuera del alcance
+"PR3 ONLY" de esta sesión.

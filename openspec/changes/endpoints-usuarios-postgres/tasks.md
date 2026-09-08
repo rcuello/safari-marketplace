@@ -53,23 +53,23 @@ real a partirse en 3a/3b si el diff se confirma grande al abrirlo.
 
 ## Phase 3: PR3 — migración de `users.service.ts`/`users.controller.ts` (~447 LOC; fallback 3a/3b) — gate `users.service.spec.ts` + `npx jest` + `curl`
 
-- [ ] 3.1 Quitar el import de `users.json` y el índice `fuse.js` de `users.service.ts` (`:1-17`).
-- [ ] 3.2 Helper privado `_listByPermission(query, url, permissionName?)`: llama `listUsersWithRelations` + `buildPaginator(baseUrl)` (D-B); base de los 5 wrappers de 3 líneas (A1).
-- [ ] 3.3 D-B guarda #1: `Number(page)||1` y `Number(limit)||30` numéricos hacia el repositorio y hacia `buildPaginator({page})`; `limit` crudo (string) + `baseUrl` hacia `buildPaginator({limit, baseUrl})`.
-- [ ] 3.4 Implementar `GET /api/users`, `admin/list`, `vendors/list`, `customers/list`, `my-staffs`, `all-staffs` sobre el helper con `permissionName` `super_admin`/`store_owner`/`customer`/`staff` (x2); `my-staffs`/`all-staffs` conservan cada uno su propia `url`.
-- [ ] 3.5 Implementar `GET /api/users/:id` (`findOne`) vía `findUserWithRelations` + `toUserDto`; `404` si `null`.
-- [ ] 3.6 D-B guarda #3: en `findOne`/`update`/`banUser`/`activeUser`/`makeAdmin`, `if (!Number.isInteger(id)) throw new NotFoundException(...)` antes de llamar al repositorio (hoy `+id` en `users.controller.ts:36-38` produce `NaN` → 500).
-- [ ] 3.7 `block-user`/`unblock-user` vía `setUserActive(id, bool explícito)`, sin invertir; `block-user` `409` si `@CurrentUser().sub === id` o si el objetivo es el único `super_admin` (`listUsers({permissionName:'super_admin'}).total<=1`); `unblock-user` sin guardas pero lee `findUserWithRelations` antes (404 + relaciones).
-- [ ] 3.8 Añadir `@CurrentUser()` a la ruta/servicio de `block-user` para soportar la guarda de auto-bloqueo.
-- [ ] 3.9 `make-admin`: cambiar `users.controller.ts:61` de `@Param('user_id')` a `@Body('user_id')`; el servicio hace `Number(user_id)` + guarda `Number.isInteger` (D-B guarda #4; `MakeAdminInput.user_id` es string) y llama `grantPermission(id,'super_admin')`; comentar que el permiso no aplica al guard hasta el siguiente login (D-5, sin lookup nuevo).
-- [ ] 3.10 `POST /api/users` (create) vía `createUser` (bcrypt costo 10) + `permissionNames:['customer']`; ignorar `address`/`profile`/`permission` del DTO; `DuplicateEmailError` → `409`.
-- [ ] 3.11 `PUT /api/users/:id` stub: leer y devolver vía `findUserWithRelations` (404 si `null`), sin persistir.
-- [ ] 3.12 `@Permissions(...ADMIN_ONLY)` de clase en `ProfilesController` (`users.controller.ts:66`); dejar los `console.log` y el bug de `DELETE /profiles/:id` intactos.
-- [ ] 3.13 Reimplementar `getUsersNotify` sobre `listUsersWithRelations({page:1, limit: Number(limit)||30})` (D-B guarda #2) + `toUserDto`, mismo array plano; confirmar que `UsersService` sigue sin dependencias de constructor (D-E) para que la segunda instancia de `StoreNoticesModule` siga resolviendo.
-- [ ] 3.14 Escribir `users.service.spec.ts` (`new UsersService()` + `jest.mock('@safari/db')` con `requireActual`, arnés de `shops.service.spec.ts:21-38,57`): envoltorio de `getUsers` igual clave por clave y **por tipo** a `{data,...paginate()}` con `limit="20"` (`per_page:"20"`), `total=0` clamp; `404` en id inexistente y no numérico; `409` en auto-bloqueo/último admin; `getUsersNotify` con `?limit=5` recibe `take:5`, no `"5"`.
-- [ ] 3.15 `cd apps/api/rest && npx jest`; pegar el conteo de pruebas pasadas.
-- [ ] 3.16 `just build-api`; pegar salida limpia.
-- [ ] 3.17 Fallback documentado (sin acción salvo que el diff real lo exija): si PR3 supera 400 líneas al abrirse, partir en 3a lecturas (~270: 6 listados + detalle) y 3b escrituras (~180: block/unblock/make-admin/create + guardas).
+- [x] 3.1 Quitar el import de `users.json` y el índice `fuse.js` de `users.service.ts` (`:1-17`).
+- [x] 3.2 Helper privado `_listByPermission(query, url, permissionName?)`: llama `listUsersWithRelations` + `buildPaginator(baseUrl)` (D-B); base de los 5 wrappers de 3 líneas (A1).
+- [x] 3.3 D-B guarda #1: `Number(page)||1` y `Number(limit)||30` numéricos hacia el repositorio y hacia `buildPaginator({page})`; `limit` crudo (string) + `baseUrl` hacia `buildPaginator({limit, baseUrl})`.
+- [x] 3.4 Implementar `GET /api/users`, `admin/list`, `vendors/list`, `customers/list`, `my-staffs`, `all-staffs` sobre el helper con `permissionName` `super_admin`/`store_owner`/`customer`/`staff` (x2); `my-staffs`/`all-staffs` conservan cada uno su propia `url`.
+- [x] 3.5 Implementar `GET /api/users/:id` (`findOne`) vía `findUserWithRelations` + `toUserDto`; `404` si `null`.
+- [x] 3.6 D-B guarda #3: en `findOne`/`update`/`banUser`/`activeUser`/`makeAdmin`, `if (!Number.isInteger(id)) throw new NotFoundException(...)` antes de llamar al repositorio (hoy `+id` en `users.controller.ts:36-38` produce `NaN` → 500).
+- [x] 3.7 `block-user`/`unblock-user` vía `setUserActive(id, bool explícito)`, sin invertir; `block-user` `409` si `@CurrentUser().sub === id` o si el objetivo es el único `super_admin` (`listUsers({permissionName:'super_admin'}).total<=1`); `unblock-user` sin guardas pero lee `findUserWithRelations` antes (404 + relaciones).
+- [x] 3.8 Añadir `@CurrentUser()` a la ruta/servicio de `block-user` para soportar la guarda de auto-bloqueo.
+- [x] 3.9 `make-admin`: cambiar `users.controller.ts:61` de `@Param('user_id')` a `@Body('user_id')`; el servicio hace `Number(user_id)` + guarda `Number.isInteger` (D-B guarda #4; `MakeAdminInput.user_id` es string) y llama `grantPermission(id,'super_admin')`; comentar que el permiso no aplica al guard hasta el siguiente login (D-5, sin lookup nuevo).
+- [x] 3.10 `POST /api/users` (create) vía `createUser` (bcrypt costo 10) + `permissionNames:['customer']`; ignorar `address`/`profile`/`permission` del DTO; `DuplicateEmailError` → `409`.
+- [x] 3.11 `PUT /api/users/:id` stub: leer y devolver vía `findUserWithRelations` (404 si `null`), sin persistir.
+- [x] 3.12 `@Permissions(...ADMIN_ONLY)` de clase en `ProfilesController` (`users.controller.ts:66`); dejar los `console.log` y el bug de `DELETE /profiles/:id` intactos.
+- [x] 3.13 Reimplementar `getUsersNotify` sobre `listUsersWithRelations({page:1, limit: Number(limit)||30})` (D-B guarda #2) + `toUserDto`, mismo array plano; confirmar que `UsersService` sigue sin dependencias de constructor (D-E) para que la segunda instancia de `StoreNoticesModule` siga resolviendo.
+- [x] 3.14 Escribir `users.service.spec.ts` (`new UsersService()` + `jest.mock('@safari/db')` con `requireActual`, arnés de `shops.service.spec.ts:21-38,57`): envoltorio de `getUsers` igual clave por clave y **por tipo** a `{data,...paginate()}` con `limit="20"` (`per_page:"20"`), `total=0` clamp; `404` en id inexistente y no numérico; `409` en auto-bloqueo/último admin; `getUsersNotify` con `?limit=5` recibe `take:5`, no `"5"`.
+- [x] 3.15 `cd apps/api/rest && npx jest`; pegar el conteo de pruebas pasadas.
+- [x] 3.16 `just build-api`; pegar salida limpia.
+- [x] 3.17 Fallback evaluado: el diff real de `users.service.ts`+`users.controller.ts` es 281(+)/191(-) = 472 líneas (`git diff --stat`), y el nuevo `users.service.spec.ts` aporta 493 líneas adicionales — **sí supera los 400** del presupuesto. No se partió en 3a/3b: el orquestador ya resolvió esta sesión como "PR3 ONLY", un solo work-unit dentro de la cadena `stacked-to-main` ya decidida (proposal.md, `Delivery strategy: ask-on-risk (ya resuelto)`). Riesgo reportado al orquestador para la fase de verify/revisión, no acción de split retroactiva.
 
 ## Phase 4: Evidencia y cierre (Definición de Done)
 
