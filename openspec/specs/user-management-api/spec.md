@@ -14,8 +14,8 @@ guardas de auto-bloqueo.
 `GET /api/users` MUST devolver usuarios de Postgres con el envoltorio
 Laravel de `buildPaginator`, invocado siempre con `baseUrl`. Con `baseUrl`,
 `first_page_url` y `last_page_url` MUST ser strings; `next_page_url` y
-`prev_page_url` son strings solo cuando existe página siguiente y `null`
-en caso contrario, exactamente como el mock
+`prev_page_url` MUST ser strings cuando existe página siguiente/anterior
+respectivamente, y `null` en caso contrario, exactamente como el mock
 (`apps/api/rest/src/common/pagination/paginate.ts:66-73`) — con el seed de
 3 usuarios hay una sola página, así que ambas son `null`. Cuando
 `next_page_url` no es `null`, `prev_page_url` apunta a la página ACTUAL,

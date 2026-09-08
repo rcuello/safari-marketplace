@@ -53,15 +53,18 @@ su suma MUST ser 250:
 |---|---|---|
 | Pública | `@Public()` | 64 |
 | Autenticada | ninguna (token válido basta) | 63 |
-| Con permiso | `@Permissions(...)` | 117 |
-| Especial | `web-hook` público + `profiles` sin anotar | 6 |
+| Con permiso | `@Permissions(...)` | 120 |
+| Especial | `web-hook` público | 3 |
 
 Los permisos usados MUST ser únicamente los 4 existentes: `super_admin`,
 `store_owner`, `staff`, `customer`. Dentro de "Especial": las 3 GET de
 `web-hook` (Stripe, Razorpay, PayPal) MUST llevar `@Public()` con comentario
-sobre la llamada de terceros sin JWT (firma fuera de alcance, D-7); las 3
-`profiles` (stubs muertos) MUST quedar sin anotar, cayendo en el
-deny-by-default sin que el sistema elimine el controller.
+sobre la llamada de terceros sin JWT (firma fuera de alcance, D-7). Las 3
+rutas de `profiles` (`POST /`, `PUT /:id`, `DELETE /:id`), único grupo del
+módulo de usuarios sin `@Permissions()` hasta esta US, MUST llevar
+`@Permissions(...ADMIN_ONLY)` — salen del bucket "Especial" y entran al
+bucket "Con permiso", cerrando el único hueco de anotación que quedaba en
+`users.controller.ts`.
 
 #### Scenario: El inventario cuadra con las rutas medidas
 
@@ -72,7 +75,13 @@ deny-by-default sin que el sistema elimine el controller.
 #### Scenario: Un webhook responde sin token, profiles no
 
 - WHEN `GET /api/web-hook/stripe` y `POST /api/profiles` se llaman sin `Authorization`
-- THEN el webhook no es `401` y `profiles` sí lo es, por ausencia de anotación
+- THEN el webhook no es `401` y `profiles` sí lo es
+
+#### Scenario: profiles con token customer ya no entra, solo con permiso admin
+
+- GIVEN un token `customer` y otro `super_admin`
+- WHEN ambos hacen `POST /api/profiles`
+- THEN el primero recibe `403` y el segundo no es rechazado por autorización
 
 ### Requirement: El catálogo y el contenido de referencia permanecen públicos
 
@@ -120,11 +129,12 @@ para cuando US-25 conecte el servicio real.
 
 ### Requirement: Las rutas de administración exigen el permiso equivalente
 
-Las 117 rutas "Con permiso" (`/api/users`, todo `*/list`, escrituras de
-catálogo/tiendas/cupones/taxes, moderación) MUST llevar `@Permissions()`
-con el conjunto correspondiente (`[super_admin]`, `[super_admin,
-store_owner]` o `[super_admin, store_owner, staff]`, `auth-utils.ts:13-18`).
-Un token con únicamente `customer` MUST recibir `403`, nunca `200`.
+Las 120 rutas "Con permiso" (`/api/users`, `/api/profiles`, todo `*/list`,
+escrituras de catálogo/tiendas/cupones/taxes, moderación) MUST llevar
+`@Permissions()` con el conjunto correspondiente (`[super_admin]`,
+`[super_admin, store_owner]` o `[super_admin, store_owner, staff]`,
+`auth-utils.ts:13-18`). Un token con únicamente `customer` MUST recibir
+`403`, nunca `200`.
 
 #### Scenario: customer no lista usuarios, admin sí escribe
 
