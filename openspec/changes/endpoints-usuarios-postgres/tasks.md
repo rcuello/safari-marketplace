@@ -44,12 +44,12 @@ real a partirse en 3a/3b si el diff se confirma grande al abrirlo.
 
 ## Phase 2: PR2 — extracción del mapper, refactor puro (~155 LOC) — gate `user-dto.mapper.spec.ts` + diff byte a byte de `/api/me`
 
-- [ ] 2.1 Crear `apps/api/rest/src/users/user-dto.mapper.ts` con `toProfileDto` (ex `auth.service.ts:81-93`), `toPermissionDto` (ex `:101-114`), `toUserDto` (ex `toMeDto`, `:123-141`) — movidas verbatim.
-- [ ] 2.2 Repuntar `auth.service.ts` a importar las tres funciones; único call site de `toUserDto` es `:525` dentro de `me()` — mismo comportamiento.
-- [ ] 2.3 Borrar los 4 imports huérfanos en `auth.service.ts`: `toShopDto` (`:48`), `type PermissionRecord` (`:27`), `type ProfileRecord` (`:28`), `type UserWithRelations` (`:29`). Mantener `User` (`:47`, usado en `:521`).
-- [ ] 2.4 Escribir `apps/api/rest/src/users/user-dto.mapper.spec.ts`: `toUserDto` emite las 15 claves en orden desde un fixture `UserWithRelations`; `toProfileDto`/`toPermissionDto` sintetizan `id`/`customer_id`/`pivot`.
-- [ ] 2.5 `cd apps/api/rest && npx jest`; confirmar que las 33 pruebas previas siguen verdes junto al spec nuevo.
-- [ ] 2.6 `just build-api`; `curl GET /api/me` antes/después y comparar byte a byte (o tamaño) para probar cero cambio observable.
+- [x] 2.1 Crear `apps/api/rest/src/users/user-dto.mapper.ts` con `toProfileDto` (ex `auth.service.ts:81-93`), `toPermissionDto` (ex `:101-114`), `toUserDto` (ex `toMeDto`, `:123-141`) — movidas verbatim.
+- [x] 2.2 Repuntar `auth.service.ts` a importar las tres funciones; único call site de `toUserDto` es `:525` dentro de `me()` — mismo comportamiento.
+- [x] 2.3 Borrar los 4 imports huérfanos en `auth.service.ts`: `toShopDto` (`:48`), `type PermissionRecord` (`:27`), `type ProfileRecord` (`:28`), `type UserWithRelations` (`:29`). Mantener `User` (`:47`, usado en `:521`).
+- [x] 2.4 Escribir `apps/api/rest/src/users/user-dto.mapper.spec.ts`: `toUserDto` emite las 15 claves en orden desde un fixture `UserWithRelations`; `toProfileDto`/`toPermissionDto` sintetizan `id`/`customer_id`/`pivot`.
+- [x] 2.5 `cd apps/api/rest && npx jest`; confirmar que las 33 pruebas previas siguen verdes junto al spec nuevo.
+- [x] 2.6 `just build-api`; `curl GET /api/me` antes/después y comparar byte a byte (o tamaño) para probar cero cambio observable.
 
 ## Phase 3: PR3 — migración de `users.service.ts`/`users.controller.ts` (~447 LOC; fallback 3a/3b) — gate `users.service.spec.ts` + `npx jest` + `curl`
 

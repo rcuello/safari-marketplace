@@ -24,9 +24,6 @@ import {
   getUserFriendlyMessage,
   isPrismaConnectionError,
   updateUserPasswordHash,
-  type PermissionRecord,
-  type ProfileRecord,
-  type UserWithRelations,
 } from '@safari/db';
 import {
   AuthResponse,
@@ -45,7 +42,7 @@ import {
 } from './dto/create-auth.dto';
 import { resolveRecoveryOptions } from './recovery-options';
 import { User } from 'src/users/entities/user.entity';
-import { toShopDto } from 'src/shops/shops.service';
+import { toUserDto } from 'src/users/user-dto.mapper';
 
 // Un solo mensaje para los tres casos que no deben distinguirse (D-4 del
 // épico, extendido por el spec): contraseña mala, email inexistente,
@@ -70,74 +67,6 @@ const ROLE_PRECEDENCE = ['super_admin', 'store_owner', 'staff', 'customer'] as c
 
 function deriveRole(permissions: string[]): string {
   return ROLE_PRECEDENCE.find((r) => permissions.includes(r)) ?? 'customer';
-}
-
-/**
- * `ProfileRecord` (camelCase) → shape Laravel. `id` y `customer_id` no
- * existen en la tabla (la PK real es `user_id`, US-20 Decisión D-4): se
- * sintetizan ambas = `userId` (V-5 del design). Clave preservada porque
- * `shop/src/pages/profile.tsx:26` lee `me.profile?.id!`.
- */
-function toProfileDto(p: ProfileRecord) {
-  return {
-    id: p.userId,
-    avatar: p.avatar,
-    bio: p.bio,
-    socials: p.socials,
-    contact: p.contact,
-    notifications: p.notifications,
-    customer_id: p.userId,
-    created_at: p.createdAt,
-    updated_at: p.updatedAt,
-  };
-}
-
-/**
- * `PermissionRecord` → shape Laravel con `pivot` sintetizado (V-3 del
- * design: `PermissionRecord` no modela `pivot`, no hay tabla intermedia
- * que serializar). `model_id` pasa de `6` fijo (Laravel) al id real del
- * usuario.
- */
-function toPermissionDto(p: PermissionRecord, userId: number) {
-  return {
-    id: p.id,
-    name: p.name,
-    guard_name: p.guardName,
-    created_at: p.createdAt,
-    updated_at: p.updatedAt,
-    pivot: {
-      model_id: userId,
-      permission_id: p.id,
-      model_type: 'Marvel\\Database\\Models\\User',
-    },
-  };
-}
-
-/**
- * `UserWithRelations` → las 15 claves de `/me` (Decisión E, design.md), en
- * el mismo orden que publicaba `users.json`. `wallet`, `last_order` y
- * `address` son constantes (D-13/V-7): el mock traía un pedido completo y
- * dos direcciones para el usuario 3, pero no hay tablas que los respalden
- * todavía. `managed_shop` no se emite (V-11: el mock tampoco lo emitía).
- */
-function toMeDto(record: UserWithRelations): User {
-  return {
-    id: record.id,
-    name: record.name,
-    email: record.email,
-    email_verified_at: record.emailVerifiedAt,
-    created_at: record.createdAt,
-    updated_at: record.updatedAt,
-    is_active: Number(record.isActive),
-    shop_id: null,
-    email_verified: record.emailVerifiedAt !== null,
-    profile: record.profile ? toProfileDto(record.profile) : null,
-    permissions: record.permissions.map((p) => toPermissionDto(p, record.id)),
-    wallet: null,
-    shops: record.shops.map(toShopDto),
-    last_order: null,
-    address: [],
-  } as unknown as User;
 }
 
 @Injectable()
@@ -522,7 +451,7 @@ export class AuthService {
     const record = await this.withPrismaErrorTranslation(() =>
       findUserWithRelations(userId),
     );
-    return toMeDto(record);
+    return toUserDto(record);
   }
 
   /**

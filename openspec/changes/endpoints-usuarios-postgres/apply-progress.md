@@ -1,9 +1,12 @@
 # Apply Progress: Endpoints de usuarios y staff desde Postgres (US-25)
 
-> PR1 de la cadena `stacked-to-main` (PR1 `packages/db` → PR2 mapper → PR3
-> servicio). Rama `pr1/db-users-relations`, base `main`. Este documento
-> cubre EXCLUSIVAMENTE la Fase 1 de `tasks.md`. Fases 2-4 quedan intactas
-> (`- [ ]`), pendientes de sesiones futuras.
+> Cadena `stacked-to-main` (PR1 `packages/db` → PR2 mapper → PR3 servicio).
+> Este documento acumula el progreso de PR1 y PR2. Fases 3-4 quedan
+> intactas (`- [ ]`), pendientes de sesiones futuras.
+
+---
+
+## PR1 — `packages/db` (rama `pr1/db-users-relations`, base `main`)
 
 ## Alcance ejecutado
 
@@ -113,6 +116,112 @@ regresión de PR1; `just db-check` (el gate real de esta US, `openspec/config.ya
 - Ningún cambio de DDL; `db/schema.sql` intacto.
 - `apps/` no fue tocado en absoluto en esta sesión (scope binding respetado).
 
-## Estado
+## Estado (PR1)
 
-9/9 tareas de Fase 1 completas. Fases 2, 3 y 4 quedan pendientes (`[ ]` en `tasks.md`), sin iniciar. Listo para `sdd-verify` de PR1 o para continuar con PR2.
+9/9 tareas de Fase 1 completas.
+
+---
+
+## PR2 — extracción del mapper, refactor puro (rama `pr2/extract-user-mapper`, base `pr1/db-users-relations`)
+
+### Alcance ejecutado
+
+Fase 2 completa, tareas 2.1 a 2.6, todas marcadas `[x]` en `tasks.md`. Cero
+cambio observable en `/api/me` (evidencia abajo).
+
+### Archivos tocados
+
+| Archivo | Acción | Qué |
+|---|---|---|
+| `apps/api/rest/src/users/user-dto.mapper.ts` | Creado | `toProfileDto`, `toPermissionDto`, `toUserDto` (ex `toMeDto`) movidas verbatim desde `auth.service.ts:81-141`, según D-A del design |
+| `apps/api/rest/src/users/user-dto.mapper.spec.ts` | Creado | Gate portante de la slice: 15 claves en orden desde un fixture `UserWithRelations`; `wallet`/`last_order` `null`, `address` `[]`; `profile: null` sin perfil; `toProfileDto` sintetiza `id`/`customer_id`; `toPermissionDto` sintetiza `pivot` |
+| `apps/api/rest/src/auth/auth.service.ts` | Modificado | Repuntado a `import { toUserDto } from 'src/users/user-dto.mapper'`; borrados los 3 mappers movidos y los 4 imports huérfanos (`toShopDto`, `type PermissionRecord`, `type ProfileRecord`, `type UserWithRelations`); `User` (`:44`) se mantiene — sigue en uso en `me(): Promise<User>` (`:450`); único call site de `toUserDto` sigue siendo dentro de `me()` |
+
+### Divergencias respecto al design
+
+Una, de compilación, no de comportamiento: `toProfileDto`/`toPermissionDto`
+necesitaron una anotación de retorno explícita (`Record<string, unknown>`),
+ausente en la firma del design (`Interfaces / Contracts`, sin tipo de
+retorno). Al exportarlas desde un archivo nuevo, `tsc --declaration` (activo
+en `apps/api/rest/tsconfig.json`) exige un tipo nombrable para la
+declaración pública; el tipo inferido referenciaba `runtime.JsonValue` de
+`@prisma/client`, no portable fuera de `@safari/db` (`TS2742`). Cuando
+vivían como funciones privadas de `auth.service.ts`, TS no necesitaba emitir
+esa declaración porque no eran exportadas. Es una anotación de tipos en
+tiempo de compilación — el objeto que se construye y se serializa en
+runtime es idéntico, confirmado por el diff byte a byte de abajo.
+
+Ninguna otra divergencia: D-A del design (ruta `src/users/user-dto.mapper.ts`,
+dependencia de `toShopDto` vía `shops.service.ts` sin ciclo) se siguió tal
+cual.
+
+### Evidencia de cierre (real, no "debería funcionar")
+
+#### Diff byte a byte de `/api/me` (antes/después del refactor)
+
+Login con `admin@demo.com`/`demodemo` (`POST /api/token`), luego
+`GET /api/me` con el token, ANTES de tocar código y DESPUÉS del refactor +
+`just build-api` + reinicio de la API:
+
+```
+KEYS_EQUAL_AND_SAME_ORDER: true
+before keys: [ 'id','name','email','email_verified_at','created_at','updated_at',
+  'is_active','shop_id','email_verified','profile','permissions','wallet',
+  'shops','last_order','address' ]
+after  keys: [ idéntico ]
+DEEP_EQUAL_IGNORING_TIMESTAMPS: true
+before raw length: 1345 after raw length: 1345
+```
+
+Mismo key-set, mismo orden, mismo tamaño de payload en bytes (1345 antes y
+después — no hubo `db-up` entre medias, así que ni siquiera los timestamps
+cambiaron). Cero cambio observable confirmado, no solo "debería".
+
+#### `cd apps/api/rest && npx jest`
+
+```
+PASS src/users/user-dto.mapper.spec.ts
+PASS src/shops/shops.service.spec.ts
+PASS src/products/products.service.spec.ts
+
+Test Suites: 3 passed, 3 total
+Tests:       38 passed, 38 total
+Snapshots:   0 total
+Time:        23.268 s
+```
+
+38/38 verdes — sube desde el baseline de 33 (+5 tests nuevos del mapper).
+Las 33 suites previas (`shops`/`products`) no importan `auth`/`users`; su
+verde solo prueba que no se rompió compilación/importación. El gate
+portante real de esta slice es `user-dto.mapper.spec.ts`.
+
+#### `just build-api`
+
+```
+yarn build
+$ rimraf dist
+$ nest build
+Done in 32.33s.
+```
+
+Compila limpio, 0 errores (tras la anotación de retorno explícita de la
+divergencia de arriba).
+
+### Riesgos / notas para PR3
+
+- PR3 (`users.service.ts`/`users.controller.ts`) puede importar `toUserDto`
+  desde `apps/api/rest/src/users/user-dto.mapper.ts` sin ciclo — `auth` y
+  `users` ya no compiten por la propiedad del mapper.
+- El patrón de anotación explícita (`Record<string, unknown>`) puede
+  repetirse si PR3 exporta más funciones que construyan objetos con campos
+  `Prisma.JsonValue` sin tipar — vale la pena revisarlo si `tsc --declaration`
+  vuelve a fallar con `TS2742`.
+- La API quedó DETENIDA al cierre de esta sesión (el proceso de
+  `just api-dev` lanzado para las pruebas de antes/después se mató con
+  `taskkill` tras confirmar el diff).
+
+## Estado (PR2)
+
+6/6 tareas de Fase 2 completas. Fases 3 y 4 quedan pendientes (`[ ]` en
+`tasks.md`), sin iniciar. Listo para `sdd-verify` de PR2 o para continuar
+con PR3.
