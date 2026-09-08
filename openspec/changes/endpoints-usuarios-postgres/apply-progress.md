@@ -1,8 +1,8 @@
 # Apply Progress: Endpoints de usuarios y staff desde Postgres (US-25)
 
 > Cadena `stacked-to-main` (PR1 `packages/db` → PR2 mapper → PR3 servicio).
-> Este documento acumula el progreso de PR1 y PR2. Fases 3-4 quedan
-> intactas (`- [ ]`), pendientes de sesiones futuras.
+> Este documento acumula el progreso de PR1, PR2, PR3 y el cierre de Fase 4
+> (evidencia y Definición de Done). Las cuatro fases están completas.
 
 ---
 
@@ -388,3 +388,210 @@ de `just api-dev` terminado con `taskkill`.
 17/17 tareas de Fase 3 completas. Fase 4 (Definición de Done, cierre de
 US-25/Épico 19) queda pendiente (`[ ]` en `tasks.md`), fuera del alcance
 "PR3 ONLY" de esta sesión.
+
+---
+
+## Fase 4 — Evidencia y cierre (Definición de Done)
+
+### Alcance ejecutado
+
+Tareas 4.1 a 4.10, todas marcadas `[x]` en `tasks.md`. Trabajo puramente de
+verificación y documentación — **cero código de producción tocado**
+(`apps/`, `packages/`, `db/` solo se leyeron). Sigue en la rama
+`pr3/users-postgres` (sin commit, sin push — instrucción explícita de la
+sesión).
+
+### Reutilización de evidencia ya capturada (4.1, 4.3, 4.4, 4.5)
+
+La sesión de PR3 ya había capturado en vivo, contra Postgres real: los 7
+grupos con token `super_admin` (4.1), la secuencia completa CA-4 bloquear→
+login 401→desbloquear→login 200 (4.3), 401 sin token / 403 con token
+`customer` incluyendo `/profiles` (4.4), y el 409 de auto-bloqueo (4.5,
+sección "PR3 — Evidencia `curl`" arriba). Esta sesión no repitió esos
+`curl` — verificó que seguían frescos re-corriendo solo los 5 listados por
+rol (ver abajo) y los gates (`db-check`, `build-api`, `verify`).
+
+**Nota sobre 4.5**: el único `super_admin` sembrado (id 3) es el mismo
+admin que ejecuta las pruebas, así que el `curl` de auto-bloqueo (`409
+"No puedes bloquearte a ti mismo."`) y el de "último `super_admin`" son,
+con el seed actual, la MISMA condición observable por HTTP — no hay un
+segundo `super_admin` distinto para bloquear y así aislar la segunda rama
+de la guarda por `curl`. Esa rama sí tiene cobertura aislada: el contraejemplo
+con >1 admin vive en `users.service.spec.ts` (test unitario con
+`jest.mock('@safari/db')`), no en un `curl` real. Declarado explícitamente,
+no oculto.
+
+### Recuento fresco de las 5 listas por rol (esta sesión, API + Postgres reales)
+
+```
+admin/list      => total=1 current_page=1 per_page=30
+vendors/list    => total=2 current_page=1 per_page=30
+customers/list  => total=3 current_page=1 per_page=30
+my-staffs       => total=0 current_page=0 per_page=30
+all-staffs      => total=0 current_page=0 per_page=30
+```
+
+**Cifras reales: `admin/list`=1, `vendors/list`=2, `customers/list`=3,
+`my-staffs`=0, `all-staffs`=0.** El texto de la US-25
+(`docs/product/19-autenticacion-autorizacion/25-endpoints-usuarios-postgres.md:34-35`)
+dice "1 cada una" — es un error del texto de la US, no una regresión de esta
+implementación: es un hecho del seed de US-20/US-21 (`db/seed.sql:70-75`
+concede `store_owner`/`super_admin`, `:82-89` concede `customer`/`staff`),
+verificado ya en la sesión de PR3 y reconfirmado aquí en vivo.
+
+### 4.2 — Diff de key-sets mock vs Postgres (`node -e`, sin `jq`)
+
+**Mock (`apps/api/rest/src/db/pickbazar/users.json`), NO uniforme entre
+los 3 usuarios**:
+
+```
+id 3  keys(15) ["id","name","email","email_verified_at","created_at","updated_at",
+                "is_active","shop_id","email_verified","profile","permissions",
+                "wallet","shops","last_order","address"]
+id 2  keys(13) ["id","name","email","email_verified_at","created_at","updated_at",
+                "is_active","shop_id","email_verified","profile","address",
+                "permissions","wallet"]                      (sin shops, sin last_order)
+id 1  keys(14) ["id","name","email","email_verified_at","created_at","updated_at",
+                "is_active","shop_id","email_verified","profile","address",
+                "permissions","wallet","shops"]               (sin last_order)
+```
+
+**Postgres, `GET /api/users` (token `super_admin`, API real, `just api-dev`)** —
+los 3 ítems normalizados a las MISMAS 15 claves, mismo orden:
+
+```
+data.length: 3   total: 3
+id 1  keys(15) [...15 claves idénticas al patrón de arriba...]
+id 2  keys(15) [...idem...]
+id 3  keys(15) [...idem...]
+```
+
+**`GET /api/users/3` (Postgres) vs mock id 3** — comparación directa:
+
+```
+mock3 keys(15): ["address","created_at","email","email_verified","email_verified_at",
+  "id","is_active","last_order","name","permissions","profile","shop_id","shops",
+  "updated_at","wallet"]
+pg3   keys(15): [idéntico, mismo set]
+KEYS_SET_EQUAL: true
+mock3.shops.length: 9      pg3.shops.length: 0
+mock3.wallet: null         pg3.wallet: null
+mock3.last_order: {...objeto real del mock...}     pg3.last_order: null
+mock3.created_at: 2023-11-12T10:59:14.000000Z (6 decimales)
+pg3.created_at:   2026-09-02T15:33:36.102Z     (3 decimales, now() del último db-up)
+```
+
+**Divergencias declaradas (todas ya previstas en la tabla V- de `design.md`,
+ninguna es un hallazgo nuevo)**:
+
+| # | Divergencia | Confirmado en esta sesión |
+|---|---|---|
+| V-1 | `created_at`/`updated_at`: el seed no las inserta (`now()` del último `db-up`) y `Date.toJSON()` da 3 decimales donde el mock trae 6 | Sí — ver `created_at` de arriba |
+| V-2 | El mock **no** es uniforme entre usuarios (15/14/13 claves); `toUserDto` normaliza los 3 a 15 claves en un solo orden — aditivo, ya embarcado por `/me` (US-22) | Sí — key-sets pegados arriba |
+| V-3 | `shops` sale de la base real: usuario 3 → 0 tiendas (mock: 9), porque las 12 tiendas sembradas tienen `owner_id = 1` | Sí — `pg3.shops.length: 0` |
+| V-4 | Orden de filas: mock `[3,2,1]` (orden del JSON) vs Postgres `[1,2,3]` (`orderBy: {id:'asc'}`); ningún CA ordena | Sí — `data` de la lista sale `[1,2,3]` |
+| — | `wallet`/`last_order` → `null`, `address` → `[]`: decisión 13 del épico, no hay tablas de wallet/órdenes | Sí — `pg3.wallet: null`, `pg3.last_order: null` |
+
+### 4.6 — `just db-check` (reconfirmado, esta sesión)
+
+```
+$ just db-check
+npm run typecheck
+> tsc --noEmit
+
+npm test
+> vitest run
+
+ Test Files  8 passed (8)
+      Tests  91 passed (91)
+   Duration  4.65s
+```
+
+91/91 — sin cambios respecto al baseline de PR1/PR3 (Fase 4 no tocó
+`packages/db`).
+
+### 4.7 — `just build-api` (reconfirmado, esta sesión)
+
+```
+$ just build-api
+yarn build
+$ rimraf dist
+$ nest build
+Done in 20.48s.
+```
+
+Compila limpio, 0 errores.
+
+### 4.7 — `just verify` (corrido de verdad, con los 3 servicios reales)
+
+A diferencia de las sesiones de PR1-PR3 (donde solo la API estaba arriba),
+esta sesión levantó los 3 procesos que `just verify` necesita:
+`just api-dev` (9001), `just shop-dev` (3003) y `just admin-dev` (3002), y
+corrió el recipe real:
+
+```
+$ just verify
+OK   API    :9001/api/settings  200  5503B  26ms
+OK   Shop   :3003/en  200  190788B  58203ms  cards:30
+OK   Admin  :3002/en/login  200  72821B  23245ms  cards:1
+```
+
+Verde, 0 fallos. **Nota de alcance sin editar (ya en `design.md:353-355`)**:
+`justfile:182-189` solo sondea `/api/settings`, `/en` y `/en/login` —
+ninguna ruta de `users`. Este verde prueba liveness general (SSR de shop y
+admin siguen funcionando con el guard global activo), no ningún CA de esta
+US; los CA reales están cubiertos por los `curl` de 4.1/4.3/4.4/4.5 y por
+`users.service.spec.ts`.
+
+Al terminar, los 3 procesos se mataron por PID (`taskkill //F //T`) y se
+reconfirmó `just check-ports` → **libre 9001, libre 3003, libre 3002**.
+
+### 4.9 — Nota documental sobre US-5 (`getStaffs`)
+
+Se agregó una nota fechada (2026-09-08) en
+`docs/product/1-catalogo-desde-postgres/5-endpoints-derivados-postgres.md`,
+inmediatamente después del "NO incluye" original, apuntando a US-25 como el
+lugar donde `getStaffs`-equivalentes (`admin/list`, `vendors/list`,
+`customers/list`, `my-staffs`, `all-staffs`) ya se migraron. **No se
+reescribió** el "NO incluye" ni ningún otro texto de US-5: la instrucción
+explícita de esta sesión de apply fue no tocar el scope/historia de una US
+archivada, solo añadir la referencia. Esto es una desviación deliberada
+respecto a la redacción literal de la tarea 4.9 de `tasks.md` (que pedía
+"corregir la razón" del diferimiento) — se documenta como tal, no se oculta.
+
+### 4.10 — Cierre de status
+
+- `docs/product/19-autenticacion-autorizacion/25-endpoints-usuarios-postgres.md`:
+  `Status` → `✅ Implementada`; Definición de Done con las 8 casillas
+  marcadas `[x]`, cada una con su nota de evidencia o de dónde vive.
+- `docs/product/19-autenticacion-autorizacion/README.md`: fila de US-25 →
+  `✅ Implementada`; `Status` del épico → `Completado`. **Nota**: ningún otro
+  épico del repo está cerrado todavía (`grep` sobre `docs/product/*/README.md`
+  → todos en `Refinado` o `En ejecución`), así que no había wording de
+  precedente real; se usó `Completado`, el valor que el propio template de
+  `docs/product/README.md:149` ya lista (`{Refinado | En ejecución |
+  Completado}`).
+- `docs/product/1-catalogo-desde-postgres/5-endpoints-derivados-postgres.md`:
+  nota de forward-reference agregada (ver 4.9). US-5 sigue con su `Status:
+  ✅ Implementada` original, sin tocar.
+
+### Archivos tocados en Fase 4
+
+| Archivo | Acción |
+|---|---|
+| `docs/product/19-autenticacion-autorizacion/25-endpoints-usuarios-postgres.md` | Modificado: Status + DoD |
+| `docs/product/19-autenticacion-autorizacion/README.md` | Modificado: fila US-25 + Status del épico |
+| `docs/product/1-catalogo-desde-postgres/5-endpoints-derivados-postgres.md` | Modificado: nota de forward-reference tras el "NO incluye" |
+| `openspec/changes/endpoints-usuarios-postgres/tasks.md` | Modificado: Fase 4 marcada `[x]` |
+| `openspec/changes/endpoints-usuarios-postgres/apply-progress.md` | Modificado: esta sección |
+
+Ningún archivo de `apps/`, `packages/` o `db/` fue modificado en esta
+sesión — solo leídos para las comparaciones de key-sets.
+
+## Estado (Fase 4 / US-25 completa)
+
+10/10 tareas de Fase 4 completas. **42/42 tareas de `tasks.md` completas**
+(Fase 1: 9 + Fase 2: 6 + Fase 3: 17 + Fase 4: 10 = 42). US-25 y Épico 19
+cerrados. Rama `pr3/users-postgres` sigue sin commit de este cierre
+documental — pendiente de que el orquestador decida si el cierre de Fase 4
+va en un commit propio o junto al merge final de la cadena PR1→PR2→PR3.

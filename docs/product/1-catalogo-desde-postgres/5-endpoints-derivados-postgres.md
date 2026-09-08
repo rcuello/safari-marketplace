@@ -54,6 +54,12 @@ transaccional, de otro épico), escrituras reales (`create`/`update`/`remove`
 siguen siendo stubs del mock en toda la API), tablas nuevas, cambios al DDL,
 el árbol de categorías, el frontend, ni los servicios que hoy son 100% mock.
 
+> **Nota (2026-09-08):** la tabla de usuarios ya existe (US-20/US-21, Épico 19)
+> y [US-25](../19-autenticacion-autorizacion/25-endpoints-usuarios-postgres.md)
+> migró `admin/list`, `vendors/list`, `customers/list`, `my-staffs` y
+> `all-staffs` a Postgres. Esta nota es solo un forward-reference; no reabre el
+> scope de esta US, que quedó cerrada y archivada tal como se ejecutó.
+
 ## Criterios de aceptación
 
 ### CA-1 — Destacados con datos reales de ranking

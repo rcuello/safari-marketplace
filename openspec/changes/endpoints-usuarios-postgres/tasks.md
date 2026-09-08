@@ -73,13 +73,13 @@ real a partirse en 3a/3b si el diff se confirma grande al abrirlo.
 
 ## Phase 4: Evidencia y cierre (Definición de Done)
 
-- [ ] 4.1 `curl` de los 7 grupos con token `super_admin`; pegar salida con datos reales y envoltorio de paginación intacto (4 `*_page_url` como strings).
-- [ ] 4.2 Diff de key-sets mock vs Postgres para `GET /api/users` y `GET /api/users/:id` con `node -e` (jq no disponible en Git Bash); declarar divergencia `created_at`/`updated_at`.
-- [ ] 4.3 `curl` CA-4: bloquear → login `401` → desbloquear → login `200`.
-- [ ] 4.4 `curl` CA-5: sin token `401`, token `customer` `403` (incluido `/profiles`).
-- [ ] 4.5 `curl` de las guardas A8: auto-bloqueo `409`, último `super_admin` `409`.
-- [ ] 4.6 `just db-check` verde; pegar el recuento.
-- [ ] 4.7 `just build-api` limpio (evidencia final) y `just verify` verde (solo liveness, no prueba ningún CA).
-- [ ] 4.8 Nota en el reporte: cifras reales de las listas **1/2/3/0/0** (no el 1/1/1 de la US) — hecho del seed de US-20/21, no regresión.
-- [ ] 4.9 Tarea documental: corregir en `docs/product/1-catalogo-desde-postgres/5-endpoints-derivados-postgres.md:52-53` la razón por la que `getStaffs` sigue diferido — ya no es "no existe tabla de usuarios" (existe), sino que falta la relación staff↔tienda (`shops.service.ts:174-181`).
-- [ ] 4.10 Actualizar el status de US-25, la fila del épico, y cerrar **Épico 19**.
+- [x] 4.1 `curl` de los 7 grupos con token `super_admin`; pegar salida con datos reales y envoltorio de paginación intacto (4 `*_page_url` como strings). Evidencia capturada en la sesión de PR3 (`apply-progress.md`); recontada en el cierre de Fase 4 (1/2/3/0/0, fresca, misma sesión de este cierre).
+- [x] 4.2 Diff de key-sets mock vs Postgres para `GET /api/users` y `GET /api/users/:id` con `node -e` (jq no disponible en Git Bash); declarar divergencia `created_at`/`updated_at`. Ejecutado en esta sesión — ver Fase 4 de `apply-progress.md`.
+- [x] 4.3 `curl` CA-4: bloquear → login `401` → desbloquear → login `200`. Evidencia capturada en la sesión de PR3 (`apply-progress.md`).
+- [x] 4.4 `curl` CA-5: sin token `401`, token `customer` `403` (incluido `/profiles`). Evidencia capturada en la sesión de PR3 (`apply-progress.md`).
+- [x] 4.5 `curl` de las guardas A8: auto-bloqueo `409`. Evidencia capturada en la sesión de PR3 (`apply-progress.md`) — el único `super_admin` sembrado coincide con el propio admin, así que ese mismo `curl` cubre a la vez la guarda de auto-bloqueo y la de "último `super_admin`" (son la misma condición con el seed actual); la distinción explícita ("último admin, no el que llama") solo tiene cobertura por test unitario (`users.service.spec.ts`, con contraejemplo de >1 admin), declarado así en el cierre de Fase 4.
+- [x] 4.6 `just db-check` verde; pegar el recuento. Reconfirmado en esta sesión: 91/91, 8 archivos.
+- [x] 4.7 `just build-api` limpio (evidencia final) y `just verify` verde (solo liveness, no prueba ningún CA). Ambos corridos en esta sesión con los 3 servicios reales (API 9001, shop 3003, admin 3002) arriba.
+- [x] 4.8 Nota en el reporte: cifras reales de las listas **1/2/3/0/0** (no el 1/1/1 de la US) — hecho del seed de US-20/21, no regresión. Ver Fase 4 de `apply-progress.md` y la DoD de US-25.
+- [x] 4.9 Tarea documental: se agregó una nota fechada de forward-reference en `docs/product/1-catalogo-desde-postgres/5-endpoints-derivados-postgres.md` apuntando a US-25, **sin reescribir** el "NO incluye" original de US-5 (US-5 está archivada; el prompt de esta sesión de apply pidió explícitamente no tocar su scope/historia, solo agregar la nota). Desviación declarada respecto a la redacción literal de esta tarea (que pedía "corregir la razón"): se prioriza la instrucción explícita del prompt de sesión sobre el texto de esta tarea.
+- [x] 4.10 Actualizar el status de US-25, la fila del épico, y cerrar **Épico 19**. Hecho: US-25 → `✅ Implementada`, fila del épico → `✅ Implementada`, Épico 19 → `Completado` (primer épico cerrado del repo; sin precedente de wording previo, se usó el valor del propio template de `docs/product/README.md`).

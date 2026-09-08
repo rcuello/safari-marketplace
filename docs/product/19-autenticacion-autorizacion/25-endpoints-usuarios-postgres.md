@@ -7,7 +7,7 @@
 
 **Épico:** [Épico 19](./README.md)
 **Fecha:** 2026-08-31
-**Status:** Listo para ejecución
+**Status:** ✅ Implementada
 **Depende de:** US-21, US-23
 **LOC est.:** ~420
 
@@ -115,18 +115,30 @@ Feature: Usuarios y staff desde Postgres
 
 ## Definición de Done
 
-- [ ] `curl` pegado de los 7 grupos de rutas con token de admin, mostrando
-      datos de la base y el envoltorio de paginación intacto.
-- [ ] Comparación de key-sets mock vs Postgres para `GET /api/users` y
-      `GET /api/users/:id`, con las divergencias declaradas.
-- [ ] `curl` pegado de la secuencia de CA-4: bloquear → login (401) →
+- [x] `curl` pegado de los 7 grupos de rutas con token de admin, mostrando
+      datos de la base y el envoltorio de paginación intacto. Ver evidencia en
+      `openspec/changes/endpoints-usuarios-postgres/apply-progress.md` (PR3 y
+      cierre de Fase 4).
+- [x] Comparación de key-sets mock vs Postgres para `GET /api/users` y
+      `GET /api/users/:id`, con las divergencias declaradas. Ver Fase 4 de
+      `apply-progress.md`: mismo key-set (15 claves) en ambos, `shops` vacío
+      para el usuario 3 en Postgres, `wallet`/`last_order` `null`, orden de
+      filas `[1,2,3]` vs `[3,2,1]` del mock, y `created_at`/`updated_at` con
+      formato distinto (ya embarcada desde `/api/settings`).
+- [x] `curl` pegado de la secuencia de CA-4: bloquear → login (401) →
       desbloquear → login (200).
-- [ ] `curl` pegado de CA-5: sin token (401) y con token de `customer` (403).
-- [ ] `just db-check` verde con los tests nuevos, recuento pegado.
-- [ ] `just build-api` limpio y `just verify` verde.
-- [ ] Nota explícita en el reporte sobre las cifras de las listas (3 usuarios
-      en total), para que no se lea como regresión.
-- [ ] Status de esta US actualizado, fila del épico marcada y **épico cerrado**.
+- [x] `curl` pegado de CA-5: sin token (401) y con token de `customer` (403,
+      incluida `/profiles`).
+- [x] `just db-check` verde con los tests nuevos, recuento pegado (91/91,
+      8 archivos; reconfirmado en el cierre de Fase 4).
+- [x] `just build-api` limpio y `just verify` verde (reconfirmado en el cierre
+      de Fase 4 con los 3 servicios arriba: API, shop, admin).
+- [x] Nota explícita en el reporte sobre las cifras de las listas: con el seed
+      actual son **`admin/list`=1, `vendors/list`=2, `customers/list`=3,
+      `my-staffs`=0, `all-staffs`=0** (no "1 cada una" como dice el texto de
+      esta US más arriba) — hecho del seed de US-20/US-21
+      (`db/seed.sql:70-75,82-89`), no una regresión de esta US.
+- [x] Status de esta US actualizado, fila del épico marcada y **épico cerrado**.
 
 ## Notas para el agente ejecutor
 
