@@ -9,12 +9,12 @@
 | Chained PRs recommended | Yes |
 | Suggested split | PR#1a → PR#1b → PR#2 (confirms design boundary; PR#2 independently estimated ~80 lines above the design's ~330, still one cohesive, jest-provable unit — no further split needed) |
 | Delivery strategy | ask-on-risk |
-| Chain strategy | pending — orchestrator asks user |
+| Chain strategy | **stacked-to-main** — resuelto por el usuario 2026-09-09 (cadena de 3 slices, sin `size:exception`) |
 
 ```text
-Decision needed before apply: Yes
+Decision needed before apply: RESOLVED (chained PRs, stacked-to-main)
 Chained PRs recommended: Yes
-Chain strategy: pending
+Chain strategy: stacked-to-main
 400-line budget risk: High
 ```
 
@@ -28,11 +28,11 @@ Chain strategy: pending
 
 ## Phase 1: Foundation — slug helper + domain errors (`packages/db`, PR#1a)
 
-- [ ] 1.1 Create `packages/db/src/slug.ts`: `normalizeSlug(text, aggregate)` (`typeof/trim` guard → `EmptySlugError`, then `SELECT slugify($1)` tagged template, `''` → `EmptySlugError`) + `generateSlug(source, lookup, aggregate)` (in-memory first-gap over `lookup(prefix)`); export `SlugSource`/`ExistingSlugLookup`. No `if (aggregate === …)`. [CA-4, CA-7]
-- [ ] 1.2 Create `packages/db/src/domain-errors.ts`: `CATALOG_ERROR_CODES`, abstract `CatalogWriteError`, 5 classes (`EmptySlugError`, `InvalidReferenceError`, `RecordNotFoundError`, `DependentRowsError`, `SlugConflictError`) with `aggregate`/`field`/`id` as constructor params (no `types`-specific text), structural `isCatalogWriteError` guard (by `code`, not `instanceof`), `translateCatalogWriteError(error, {aggregate, id, uniqueField})` (P2002→SlugConflict, P2003→InvalidReference, P2025→RecordNotFound, else return error intact). Do not touch `packages/db/src/errors.ts`. [CA-4, CA-7]
-- [ ] 1.3 Modify `packages/db/index.ts`: barrel-export `normalizeSlug`, `generateSlug`, `SlugSource`, `ExistingSlugLookup`, `CATALOG_ERROR_CODES`, the 5 error classes, `isCatalogWriteError`, `translateCatalogWriteError`. [no CA — plumbing]
-- [ ] 1.4 Create `packages/db/src/slug.integration.test.ts`: tildes vs `SELECT slugify($1)` (`"Café & Té"`, `"Acción!"`, `"Niño Grande"`); explicit `slug` wins over `name`; `"!!!"` and `""`/`undefined` → `EmptySlugError`; `gadget`→`gadget-2`, then `gadget`+`gadget-2`→`gadget-3`. Inject `ExistingSlugLookup` **as an in-memory array only** — this file MUST NOT read or write the `types` table (B4). [CA-4, CA-7]
-- [ ] 1.5 Verify PR#1a standalone: `just db-up` (if not running) then `just db-check` green — closes PR#1a by itself.
+- [x] 1.1 Create `packages/db/src/slug.ts`: `normalizeSlug(text, aggregate)` (`typeof/trim` guard → `EmptySlugError`, then `SELECT slugify($1)` tagged template, `''` → `EmptySlugError`) + `generateSlug(source, lookup, aggregate)` (in-memory first-gap over `lookup(prefix)`); export `SlugSource`/`ExistingSlugLookup`. No `if (aggregate === …)`. [CA-4, CA-7]
+- [x] 1.2 Create `packages/db/src/domain-errors.ts`: `CATALOG_ERROR_CODES`, abstract `CatalogWriteError`, 5 classes (`EmptySlugError`, `InvalidReferenceError`, `RecordNotFoundError`, `DependentRowsError`, `SlugConflictError`) with `aggregate`/`field`/`id` as constructor params (no `types`-specific text), structural `isCatalogWriteError` guard (by `code`, not `instanceof`), `translateCatalogWriteError(error, {aggregate, id, uniqueField})` (P2002→SlugConflict, P2003→InvalidReference, P2025→RecordNotFound, else return error intact). Do not touch `packages/db/src/errors.ts`. [CA-4, CA-7]
+- [x] 1.3 Modify `packages/db/index.ts`: barrel-export `normalizeSlug`, `generateSlug`, `SlugSource`, `ExistingSlugLookup`, `CATALOG_ERROR_CODES`, the 5 error classes, `isCatalogWriteError`, `translateCatalogWriteError`. [no CA — plumbing]
+- [x] 1.4 Create `packages/db/src/slug.integration.test.ts`: tildes vs `SELECT slugify($1)` (`"Café & Té"`, `"Acción!"`, `"Niño Grande"`); explicit `slug` wins over `name`; `"!!!"` and `""`/`undefined` → `EmptySlugError`; `gadget`→`gadget-2`, then `gadget`+`gadget-2`→`gadget-3`. Inject `ExistingSlugLookup` **as an in-memory array only** — this file MUST NOT read or write the `types` table (B4). [CA-4, CA-7]
+- [x] 1.5 Verify PR#1a standalone: `just db-up` (if not running) then `just db-check` green — closes PR#1a by itself.
 
 ## Phase 2: Repository writes (`packages/db`, PR#1b)
 

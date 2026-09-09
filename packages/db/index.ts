@@ -1,6 +1,18 @@
 export type { Prisma, PrismaClient } from './generated/prisma/client/client';
 export { prisma } from './src/client';
 export { _setNowProvider, now } from './src/clock';
+export type { CatalogErrorCode } from './src/domain-errors';
+export {
+  CATALOG_ERROR_CODES,
+  CatalogWriteError,
+  DependentRowsError,
+  EmptySlugError,
+  InvalidReferenceError,
+  isCatalogWriteError,
+  RecordNotFoundError,
+  SlugConflictError,
+  translateCatalogWriteError,
+} from './src/domain-errors';
 export type { PrismaErrorInfo } from './src/errors';
 export {
   formatPrismaError,
@@ -108,3 +120,5 @@ export {
   setUserActive,
   updateUserPasswordHash,
 } from './src/repositories/users.repository';
+export type { ExistingSlugLookup, SlugSource } from './src/slug';
+export { generateSlug, normalizeSlug } from './src/slug';
