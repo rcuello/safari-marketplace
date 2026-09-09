@@ -1,0 +1,529 @@
+# DAG state del change. Sobrevive a la compactacion de contexto.
+change_name: escrituras-types-fundaciones
+project: safari-marketplace
+artifact_store_mode: openspec
+execution_mode: auto
+delivery_strategy: ask-on-risk
+strict_tdd: false
+
+source:
+  epic: docs/product/26-escrituras-catalogo-postgres/README.md
+  user_story: docs/product/26-escrituras-catalogo-postgres/27-escrituras-types-fundaciones.md
+  depends_on: ninguna (US-27a es la primera del Epico 26; introduce D-3 slug helper y D-4 mapeo de errores que consumen US-27b/28/29/30)
+
+# PARTICION DE US-27 (2026-09-09, decision del usuario a cierre de /sdd-new)
+# El proposal pronostico ~1500 (+-200) lineas frente a las ~500 estimadas por
+# la US, superando el umbral de ~900 que el propio epico marca como "senal de
+# partir la US, no de apretar" (R-8). El usuario eligio PARTIR.
+# Corte elegido: VERTICAL (types | tags+manufacturers), no por capas.
+#   Se descarto "fundaciones vs. servicios" -- objecion del orquestador, que
+#   contradijo su propia propuesta inicial: habria dejado una US-27a con
+#   packages/db escrito y verde pero SIN consumidor, el admin todavia sin
+#   persistir nada, y por tanto NO releasable, rompiendo la columna
+#   "Releasable solo" que las cinco filas del epico mantienen en "Si".
+#   Ademas la evidencia de la DoD (POST -> reinicio -> GET) habria sido
+#   imposible de tomar hasta la segunda US.
+# Ventajas del corte vertical: US-27a se lleva el riesgo alto del epico (R-1,
+# el 409 del borrado protegido de types, porque types.type_id es el unico
+# CASCADE de los tres); US-27b hereda piezas compartidas ya probadas contra un
+# recurso real; y US-27b queda como PAR de US-28/29/30 (todas dependen solo de
+# US-27a), en vez de ser un cuello de botella intermedio.
+# ESTE change cubre US-27a. US-27b tendra su propio change.
+#
+# Cambios en docs/ ejecutados por el orquestador:
+#   git mv 27-escrituras-catalogos-planos.md -> 27-escrituras-types-fundaciones.md
+#   nuevo 27b-escrituras-tags-manufacturers.md (US-27b, ~825 LOC, depende de US-27a)
+#   epic README: tabla a 5 filas, orden sugerido, seccion "Particion de US-27",
+#     D-3/D-4 atribuidos a US-27a, R-8 marcado como materializado, "cuatro"->"cinco"
+#   docs/product/README.md: mapa del backlog y "US recomendada para arrancar"
+#   US-28/29/30: "Depende de: US-27" -> "US-27a" (+2 menciones en prosa)
+# Precedente de nomenclatura seguido: US-4a/US-4b del Epico 1
+#   (4-migrar-catalogos-apoyo.md + 4b-categorias-arbol-postgres.md).
+
+phases:
+  explore:
+    status: done
+    artifact: openspec/changes/escrituras-catalogos-planos/exploration.md
+    # SIN DRIFT MATERIAL: las file:line citadas por la US y el epic README
+    # coinciden con el codigo actual (offsets +-1-2 lineas, contenido exacto).
+    # Baselines MEDIDOS, no asumidos: `just db-check` -> 8 files / 91 tests
+    # passed (coincide con la US); `cd apps/api/rest && npx jest` -> 4 suites /
+    # 65 tests passed (el grep naive de `it(` da 57 porque
+    # products.service.spec.ts usa dos it.each sobre un array de 4 casos).
+    # Key-sets confirmados: toTypeDto 9, toTagDto 9, toManufacturerDto 13 ->
+    # CA-1 es alcanzable reutilizando los mappers existentes, sin mapper nuevo
+    # (D-6 ratificado por evidencia).
+    # apps/api/rest/src/common/errors/ NO EXISTE: D-4 es codigo 100% nuevo, no
+    # un refactor. El patron isPrismaConnectionError aparece en 10 archivos /
+    # ~26 sitios y NO se toca (alcance del epico).
+    # slugify() SQL citada verbatim (db/schema.sql:39-61, incluye
+    # unaccent_simple con tabla de 51 caracteres). Las dos estrategias
+    # (reimplementar en TS vs. delegar `SELECT slugify($1)`) quedan sopesadas
+    # con tabla de tradeoffs, SIN decidir: la US manda decidirlo en el design.
+    # R-1 confirmado en el DDL vigente: categories.type_id (:269) y
+    # products.type_id (:331) son ON DELETE CASCADE -> deleteType debe contar
+    # dependientes antes de borrar. tags.type_id/manufacturers.type_id son SET
+    # NULL (borrado libre, consistente con decision 7).
+    # Triggers tocar_updated_at (:480-500) confirmados SIN types/tags/
+    # manufacturers -> updatedAt a mano con now() de packages/db/src/clock.ts
+    # (decision 9).
+    #
+    # HALLAZGO NUEVO 1 (R-4): types.integration.test.ts NO tiene hoy ningun
+    # toBe(N) de conteo total (tags tiene toBe(10) x2, manufacturers toBe(14)).
+    # Para `types` la unica red contra basura de una corrida abortada es la
+    # disciplina del centinela. RESUELTO POR EL ORQUESTADOR: ese archivo YA
+    # esta en la tabla "Archivos a crear/modificar" de la US, asi que anadirle
+    # el assert de conteo cae DENTRO del alcance -> se pasa como decision
+    # cerrada a propose (no se consulto al usuario).
+    #
+    # HALLAZGO NUEVO 2: el toggle de aprobacion de manufacturer-list.tsx:134-142
+    # NO envia {id, is_approved} como dice la nota del agente ejecutor de la US
+    # -- envia {id, name, is_approved, type_id, language} (el record completo de
+    # la fila). Simplifica updateManufacturer: no hace falta soportar partial
+    # update de un solo campo.
+    #
+    # HALLAZGO NUEVO 3 (fuera de alcance, solo mencionado): create-tag.dto.ts
+    # declara `type` en vez de `type_id` -- mismo defecto de documentacion que
+    # motivo la decision 15, pero NO esta en la lista de archivos de la US.
+    # Verificado a mano por el orquestador (gate): confirmado.
+  propose:
+    status: done
+    artifact: openspec/changes/escrituras-catalogos-planos/proposal.md
+    # 12 decisiones cerradas con prefijo D27-N (para no colisionar con las
+    # D-1..D-6 del epico, que se referencian, no se reabren), 9 riesgos,
+    # rollback plan y Success Criteria 1:1 con la DoD de la US.
+    #
+    # D27-1 (drive sdd-spec): el delta va sobre `flat-catalogs-api` (ADDED los
+    # requirements de escritura + MODIFIED su Out of Scope, que hoy parquea
+    # "endpoints de escritura del admin (POST/PUT/DELETE de los 4 catalogos)"
+    # y queda reducido a `shops`/US-30) MAS una capability NUEVA
+    # `catalog-write-foundations` para las dos piezas compartidas (slug D-3 +
+    # dominio->HTTP D-4), porque no pertenecen a los catalogos planos: las
+    # consumen US-28/29/30. Ningun requirement de LECTURA cambia (D-6 obliga a
+    # reutilizar los mappers: key-sets 9/9/13, paginacion, `type` anidado y 503
+    # se preservan verbatim).
+    #
+    # D27-2 ES LA UNICA DECISION ABIERTA -- la ratifica `sdd-design`, por
+    # mandato explicito de la US ("Decidirlo en el design"): slug reimplementado
+    # en TS vs. delegado a Postgres (`SELECT slugify($1)`).
+    # RECOMENDACION REGISTRADA: delegar a Postgres -- mata R-3 de raiz (mapa de
+    # 51 caracteres de translate(), orden de las regex) y sigue el principio ya
+    # aplicado por _translateCheckViolation. Coste: +1 round-trip, mitigable en
+    # la misma transaccion. La resolucion de colision exige una query por tabla
+    # en AMBAS opciones, asi que no es un diferenciador.
+    #
+    # D27-3 (cerrada por el agente, la US dejaba ambas puertas abiertas): las
+    # clases de error compartidas van en un packages/db/src/domain-errors.ts
+    # NUEVO, no apendizadas a src/errors.ts (242 lineas de helpers de Prisma
+    # consumidos por 10-11 archivos de la API). Patron: InvalidSalePriceError.
+    # D27-5: POST/PUT/DELETE llaman a toTypeDto/toTagDto/toManufacturerDto tal
+    # cual; DELETE devuelve el registro borrado igual proyectado; se preserva
+    # Number(record.isApproved). D27-6/D27-7: las dos decisiones cerradas por el
+    # orquestador, registradas con su fundamento. D27-9: deleteType cuenta
+    # categories.type_id + products.type_id -> 409. D27-11: inputs tipados campo
+    # a campo; settings/banners se OMITEN si no llegan (son jsonb NOT NULL
+    # DEFAULT: mandar null falla).
+    #
+    # PRESUPUESTO -- EL PUNTO CALIENTE: pronostico ~1500 (+-200) lineas
+    # desglosado por area (fundaciones ~165, repos+barrel ~315, integracion
+    # ~245, common/errors+servicios+DTOs ~450, 3 specs de jest ~400 con
+    # shops.service.spec.ts=143 lineas como ancla verificada). La US estima ~500
+    # y no contempla las tres specs de jest que su propia tabla exige.
+    # 400-line budget risk: High / Chained PRs recommended: Yes / Decision
+    # needed before apply: Yes. SUPERA el umbral de ~900 lineas que el epico
+    # marca como "senal de partir la US, no de apretar" (R-8) -> decision de
+    # PRODUCTO elevada al usuario al cierre de /sdd-new.
+    #
+    # GATE DEL ORQUESTADOR (1a corrida): pasado. Re-verificadas a mano las tres
+    # afirmaciones cuantitativas del agente: packages/db/src/errors.ts = 242
+    # lineas (exacto), apps/api/rest/src/shops/shops.service.spec.ts = 143
+    # lineas (exacto), y el Out of Scope de
+    # openspec/specs/flat-catalogs-api/spec.md:211-214 parquea literalmente los
+    # endpoints de escritura de los 4 catalogos. Discrepancia inmaterial:
+    # isPrismaConnectionError aparece en 11 archivos por `grep -l`, la
+    # exploracion y el proposal dicen 10.
+    #
+    # === RE-CORRIDA (reencuadre a US-27a, no un gate fallido) ===
+    # El pronostico de ~1500 lineas de la 1a corrida fue justamente lo que
+    # motivo la particion. Tras ella se re-corrio la fase con el alcance nuevo.
+    # Pronostico nuevo: ~725 (+-120) lineas -- POR DEBAJO del umbral de ~900,
+    # asi que el alcance ya no es una decision de producto pendiente.
+    # 400-line budget risk: High / Chained PRs: Yes / Decision before apply: Yes.
+    # Cadena de 2 PRs con frontera NATURAL (cada mitad la verifica un runner
+    # distinto, no un corte arbitrario por conteo de lineas):
+    #   PR#1 packages/db (~395): slug.ts + domain-errors.ts + types.repository +
+    #        integracion + barrel. Se verifica con `just db-check` SOLO; la API
+    #        no se toca. Revertir solo apps/api/rest deja exactamente este
+    #        estado, y esta verde.
+    #   PR#2 API (~330): common/errors/ + types.service + CreateTypeDto + spec
+    #        de jest. Produce los curl de la DoD + build-api + verify.
+    # Ambas mitades caben en el presupuesto de 400.
+    #
+    # LIBRO MAYOR DE DECISIONES (numeracion estable, referenciada desde aqui):
+    #   Sin cambios:      D27-1, D27-3, D27-7, D27-8, D27-9, D27-11
+    #   ABIERTA:          D27-2 (slug TS vs. Postgres) -- la unica; la cierra
+    #                     sdd-design por mandato de la US y eleccion del usuario
+    #   Acotadas en sitio (fila editada, NO renumerada):
+    #                     D27-4 (mapper en 3 catch, no 9), D27-5 (solo
+    #                     toTypeDto; la clausula Number(record.isApproved) se
+    #                     fue con manufacturers), D27-10 (solo updateType),
+    #                     D27-12 (solo CreateTypeDto)
+    #   Diferida a US-27b: D27-6 (sin partial update en updateManufacturer) --
+    #                     fila conservada y tachada, con puntero, para no
+    #                     perder el hallazgo de manufacturer-list.tsx:134-142
+    #   NUEVA:            D27-13 -- el juicio mas dificil del change: las piezas
+    #                     compartidas son GENERICAS POR FIRMA e integradas SOLO
+    #                     con types. El helper recibe la tabla; el mapper es una
+    #                     tabla exhaustiva code->status sobre el conjunto CERRADO
+    #                     que enumera la decision 6 del epico (EmptySlug,
+    #                     InvalidReference -> 400; RecordNotFound -> 404;
+    #                     DependentRows, SlugConflict -> 409). Los cinco codigos
+    #                     se declaran y los cubre el spec del propio mapper aunque
+    #                     types solo pueda ejercitar tres por HTTP
+    #                     (InvalidReference y SlugConflict no tienen ruta en
+    #                     types). PROHIBIDO: wrappers por agregado, adaptadores o
+    #                     ramas `if (aggregate === ...)`. Anadir tags debe ser un
+    #                     CALL SITE, no una edicion. Eso es lo que hace alcanzable
+    #                     la CA-7 de US-27b (`git diff` limpio en los archivos
+    #                     compartidos) sin generalidad especulativa: una fila de
+    #                     datos con test unitario directo no es una rama sin
+    #                     probar.
+    #
+    # Capabilities corregidas respecto a la 1a corrida: el Out of Scope de
+    # flat-catalogs-api se acota a tags/manufacturers (US-27b) Y shops (US-30),
+    # no solo a shops. `catalog-write-foundations` se mantiene y queda mejor
+    # justificada: es la unica parte del change que consumen otras cuatro US.
+    #
+    # RIESGO NUEVO, ALTO: piezas compartidas demasiado pegadas a types ->
+    # US-27b/28/29/30 tendrian que editarlas y romperian la CA-7. Mitiga D27-13.
+    #
+    # GATE DEL ORQUESTADOR (re-corrida): pasado. Verificados
+    # packages/db/src/repositories/types.repository.ts = 32 lineas,
+    # packages/db/src/clock.ts presente, apps/api/rest/src/common/ SIN
+    # subdirectorio errors/ (D-4 es codigo 100% nuevo), y `git status` limpio de
+    # codigo: solo los docs del orquestador + el change sin trackear.
+    #
+    # PENDIENTE DE GOBERNANZA (no bloquea, es del duenio del skill): el agente
+    # reporta que .claude/skills/sdd-propose/SKILL.md fija un techo de 1450
+    # palabras justificandolo como "el techo de los precedentes archivados
+    # (medidos: 839 y 1431)", pero esos son los dos changes archivados mas
+    # ANTIGUOS. Medido sobre los 13 archivados, el rango es 839-3511 con mediana
+    # ~1900, y los dos precedentes mas cercanos son US-25 (2142) y US-23 (2286).
+    # La premisa de la regla ya no describe el repo. El proposal quedo en 1876
+    # palabras: el agente recorto dos veces y paro antes de borrar contenido
+    # protegido (las 12 filas D27-N que este state.yaml referencia, el
+    # fundamento de D27-13, o los 10 criterios espejo de la DoD). Decision
+    # correcta a mi juicio; recalibrar el techo del skill es tarea aparte.
+  spec:
+    status: done
+    artifacts:
+      - openspec/changes/escrituras-types-fundaciones/specs/flat-catalogs-api/spec.md
+      - openspec/changes/escrituras-types-fundaciones/specs/catalog-write-foundations/spec.md
+    # Dos capabilities, segun D27-1. flat-catalogs-api: 6 requirements ADDED /
+    # 12 escenarios (escritura de types) + un bloque `MODIFIED Out of Scope`.
+    # catalog-write-foundations: capability NUEVA, 6 requirements / 11
+    # escenarios (regla de slug + contrato cerrado de 5 codigos -> HTTP).
+    # 968 y 991 palabras (techo del skill: ~1000).
+    #
+    # COBERTURA DE CA -- completa por union de los dos archivos:
+    #   flat-catalogs-api:        CA-1 CA-2 CA-3 CA-4 CA-5 CA-6
+    #   catalog-write-foundations: CA-2 CA-4 CA-7
+    # Ninguna CA queda sin requirement ni sin escenario. Este self-check es
+    # obligatorio porque el gate del orquestador ya pillo exactamente ese fallo
+    # en un change anterior del repo (detalle-producto-postgres: CA-4 tageada
+    # sin escenario que la cubriera).
+    #
+    # D27-2 SIGUE ABIERTA y el spec es AGNOSTICO de implementacion sobre ella:
+    # especifica el comportamiento observable del slug (la regla, el sufijo de
+    # colision, el 400, la inmutabilidad) sin mandatar TS ni `SELECT slugify($1)`.
+    #
+    # DOS DESVIACIONES de la redaccion literal del orquestador, ambas a favor
+    # del precedente del repo -- VERIFICADAS A MANO por el gate y ACEPTADAS:
+    #  (1) catalog-write-foundations se escribio como spec COMPLETO
+    #      (`# ... Specification` / `## Purpose` / `## Requirements`), no como
+    #      `## ADDED Requirements`. Es lo que manda sdd-spec/SKILL.md paso 4
+    #      para las "New Capabilities" y coincide con el unico precedente de
+    #      capability nueva del repo: archive/2026-09-02-capa-datos-identidad/
+    #      specs/identity-data-layer/spec.md (verificado: mismo encabezado).
+    #      Un `## ADDED Requirements` sin spec previo al que "anadir" romperia
+    #      el merge de sdd-archive.
+    #  (2) El estrechamiento del Out of Scope usa la seccion NO ESTANDAR
+    #      `## MODIFIED Out of Scope (no-estandar - ver nota)`, no un
+    #      `## MODIFIED Requirements`. openspec-convention.md no define
+    #      mecanismo de merge para prosa de cabecera. Precedente verificado 3
+    #      veces en el archivo, y una de ellas sobre flat-catalogs-api MISMO
+    #      (archive/2026-08-31-endpoints-derivados-postgres/specs/
+    #      flat-catalogs-api/spec.md:13). Nota: el archive-report de US-7
+    #      propuso formalizar estas secciones en openspec-convention.md; sigue
+    #      siendo deuda de convencion del repo, no de este change.
+    #
+    # GATE DEL ORQUESTADOR: pasado. Ademas de los dos precedentes y del mapa de
+    # CA, se verifico el punto de riesgo real de un delta de prosa: que el
+    # bloque MODIFIED reproduzca la seccion INTEGRA. Comparado contra
+    # openspec/specs/flat-catalogs-api/spec.md:211-219 -> reproduce los 9 items
+    # verbatim y solo acota la clausula de escrituras del admin ("de los 4
+    # catalogos" -> "de tags/manufacturers (US-27b) y shops (US-30)"). Merge no
+    # destructivo. OJO PARA sdd-archive: este reemplazo se aplica A MANO, como
+    # en los dos precedentes.
+  design:
+    status: done
+    artifact: openspec/changes/escrituras-types-fundaciones/design.md
+    gate: PASS (2a corrida; la 1a fue FAIL con revisor de contexto fresco)
+    # D27-2 CERRADA -> OPCION B: delegar a Postgres.
+    #   packages/db/src/slug.ts normaliza con
+    #   prisma.$queryRaw`SELECT slugify(${texto})` (tagged template, parametro
+    #   $1; $queryRawUnsafe PROHIBIDO -- grep repo-wide = 0 ocurrencias).
+    #   Fundamento verificado: el SQL crudo por tagged template ya es patron
+    #   establecido y documentado en el paquete (src/health.ts:21;
+    #   users.repository.ts:118-135, que existe precisamente porque la API
+    #   tipada no puede expresar `lower(email) = lower($1)` -- misma situacion
+    #   que slugify()). Y como el slug es INMUTABLE en update, el round-trip se
+    #   paga una vez por fila creada en una ruta ADMIN_ONLY, nunca en lectura.
+    #   Lo que costaba la opcion A: portar a mano la tabla de translate() (48
+    #   caracteres, NO 51 -- la cifra de la US estaba mal, medida con node -e)
+    #   mas el orden exacto de las regex, y el test comparativo contra la
+    #   funcion SQL seguia siendo obligatorio, asi que ni evitaba depender de
+    #   Postgres. Sin transaccion interactiva: la unicidad la garantiza
+    #   types_slug_key, no el nivel de aislamiento.
+    #
+    # D27-13 resuelto de forma mas fuerte que lo pedido: generateSlug recibe
+    # una FUNCION de lookup (ExistingSlugLookup), no el nombre de la tabla ->
+    # la inyeccion SQL es imposible por construccion, no por escapado. Es una
+    # desviacion literal del spec y de D27-13 ("el helper recibe la tabla"),
+    # endosada por el gate y DECLARADA en Divergencias (N7).
+    #
+    # === GATE 1: FAIL (revisor de contexto fresco, opus) ===
+    # 7 hallazgos bloqueantes. El orquestador re-verifico a mano los tres que
+    # eran contradicciones codigo/spec antes de re-correr la fase:
+    #  B1 CONFIRMADO -- packages/db/src/errors.ts:62: isPrismaConnectionError
+    #     devuelve true para CUALQUIER PrismaClientKnownRequestError (P2002/
+    #     P2003/P2011/P2025 incluidos). El "resto -> 500" del diseno era falso:
+    #     todo error de escritura no traducido habria salido 503 ("servicio no
+    #     disponible" para una violacion de NOT NULL en slug), y el test del
+    #     ramo 500 pasaba en vacio porque usaba `new Error('x')`.
+    #  B2 CONFIRMADO -- el spec exige 400 en POST **y PUT** con name vacio o
+    #     que slugifica a vacio; el diseno solo calculaba slug en createType,
+    #     y types.name es `text NOT NULL` donde '' es legal -> PUT con name ""
+    #     habria devuelto 200 y persistido un nombre vacio.
+    #  B6 CONFIRMADO, y era defecto DEL SPEC, no del diseno: exigia que
+    #     `updated_at` de la RESPUESTA avanzara, pero toTypeDto emite 9 claves
+    #     sin timestamps y una decima habria roto la CA-1 de esa misma
+    #     Requirement. Sobre-especificacion de la fase de specs.
+    #  B3 (absent name -> 503), B4 (slug.integration.test.ts insertaba en
+    #     `types` en paralelo con el toHaveLength(10) existente -> rojo
+    #     intermitente, que es exactamente R-4), B5 (el curl de colision de la
+    #     DoD dejaba una fila `gadget-2` que la limpieza por centinela
+    #     `zz-test-%` NO borraba, y seed.sql usa ON CONFLICT DO NOTHING, asi
+    #     que el unico rescate era `just db-reset` -- prohibido por la decision
+    #     1 del epico), B7 (de las cinco clases de error solo DependentRows
+    #     tenia firma; una sin parametro de agregado forzaria la edicion que la
+    #     CA-7 de US-27b prohibe).
+    #
+    # ACCION DEL ORQUESTADOR ante B6: corregido A MANO el spec (es artefacto de
+    # otra fase, el diseno no podia arreglarlo). El MUST ahora dice "la columna
+    # `updated_at`", lleva nota de contrato citando toTypeDto:39-51, y el
+    # escenario CA-2 asserta "la respuesta sigue teniendo 9 claves (sin
+    # updated_at)" + `SELECT updated_at FROM types WHERE id = :id` posterior.
+    # La evidencia de CA-2 se toma por psql, NO por curl.
+    #
+    # === GATE 2: PASS (verificacion inline de cada fix) ===
+    #  B1 -> predicado privado isConnectionFailure en el mapper nuevo (init
+    #        error por nombre, code en {P1001,P1002,P1008,P1011,P1017,P2024}, o
+    #        patrones de mensaje), que NUNCA mira
+    #        PrismaClientKnownRequestError. errors.ts no se toca (D27-3).
+    #        DEFECTO DE 2o ORDEN que encontro el propio agente y VERIFIQUE:
+    #        el ramo 500 no debe llamar a getUserFriendlyMessage, porque pasa
+    #        por parsePrismaError -> isPrismaConnectionError (errors.ts:132) y
+    #        etiquetaria un P2011 como "No se puede conectar a la base de
+    #        datos" (confirmado leyendo :131-140). Ahora usa literal fijo.
+    #        El spec del mapper asserta 500 con {name:'PrismaClient
+    #        KnownRequestError', code:'P2011'} + un assert de caracterizacion
+    #        de que el helper viejo devuelve true para ese mismo fixture.
+    #  B2/B3 -> dos capas (Decision 7 nueva). Capa 1: @IsString/@IsNotEmpty en
+    #        CreateTypeDto.name; UpdateTypeDto es PartialType de
+    #        @nestjs/mapped-types (VERIFICADO en update-type.dto.ts:1), cuyo
+    #        helper aplica IsOptional por clave -> `name` ausente sigue siendo
+    #        no-op legal y "" da 400. Capa 2: normalizeSlug valida
+    #        `typeof text !== 'string' || text.trim() === ''` antes de
+    #        cualquier query (necesaria porque el tsconfig de la API no tiene
+    #        strict, y porque @IsOptional salta `null`, no solo `undefined`).
+    #        Justificado por escrito contra la decision 5: whitelist es una
+    #        opcion global del pipe sobre campos NO declarados en ~250 rutas;
+    #        esto restringe UN campo declarado en dos rutas, y la decision 6
+    #        del epico ya manda 400 para nombre vacio. main.ts y
+    #        type.entity.ts no se tocan.
+    #  B4 -> el caso de colision inyecta el lookup EN MEMORIA: el test ya no
+    #        lee ni escribe `types` (solo necesita Postgres para SELECT
+    #        slugify). Premisa re-verificada, no afirmada: los unicos
+    #        prisma.type.* de packages/db/src son types.repository.ts:24,30,
+    #        ambos lecturas. Regla nueva: prefijo centinela DISTINTO por
+    #        archivo (zz-types-, zz-tags-, ...).
+    #  B5 -> limpieza POR ID: `DELETE FROM types WHERE id > 11` + check de
+    #        count. VERIFICADO en db/seed.sql:31-41 (ids 1-9 y 11 = 10 filas,
+    #        max=11) y :1718 (setval GREATEST(max(id),1)). Atrapa el gadget-2
+    #        sin centinela. Ningun db-reset en ninguna parte.
+    #  B7 -> las cinco firmas fijadas con aggregate/field/id como parametros
+    #        (ningun mensaje menciona `types`), y translateCatalogWriteError(
+    #        error, {aggregate, id, uniqueField}) ADOPTADO en domain-errors.ts
+    #        como el unico sitio que conoce codigos de Prisma (P2002/P2003/
+    #        P2025), devolviendo `unknown` como _translateCheckViolation.
+    #        isPrismaConstraintError (errors.ts:83-88) rechazado por escrito:
+    #        agrupa P2002/P2003/P2025 y no puede discriminar.
+    #  N1-N10 corregidos. N3 -> 32 ocurrencias / 8 archivos fuente (24 sin
+    #        imports). N4 -> 48 caracteres (medido con node -e; la US decia 51).
+    #        N5 resuelto MEJOR que lo sugerido: cleanup + count de cierre van
+    #        DENTRO del afterAll existente (types.integration.test.ts:11-13) en
+    #        un try/finally, lo que vuelve irrelevante el orden LIFO de
+    #        sequence.hooks de vitest.
+    #
+    # LO QUE EL GATE ENDOSO Y NO SE DEBE CAMBIAR: dos count() en paralelo en
+    # vez de un snapshot crudo; no abrir la forma interactiva de $transaction
+    # (cuatro US lo heredarian); codigos CATALOG_ SCREAMING_SNAKE con guarda
+    # ESTRUCTURAL sobre `code` en vez de instanceof (por el link:/dist: el
+    # instanceof falla con builds duplicados); el esquema de sufijo de colision
+    # (verificado sano para `gadget`, para un `-2` ya existente y para una base
+    # que termina en digito -> `gadget-2-2`); el cast frontera
+    # `as unknown as Prisma.InputJsonValue` (juzgado excepcion legitima, NO
+    # supresion: TypeSettings/Banner son CLASES, sin index signature implicito,
+    # y el tsconfig no-strict de la API no lo rescata); la secuencia de
+    # verificacion con `just db-build` BLOQUEANTE; y la aceptacion del TOCTOU
+    # de deleteType (defendible: ruta ADMIN_ONLY, la forma array de
+    # $transaction no puede expresar un abort condicional, y cerrarlo exige
+    # SELECT ... FOR UPDATE, patron nuevo que heredarian cuatro US).
+    #
+    # TRES CORRECCIONES FACTUALES del diseno a sus propios inputs, las tres
+    # CONFIRMADAS de forma independiente por el orquestador:
+    #  1. La premisa de D27-7 era FALSA: types.integration.test.ts:18 YA
+    #     assertaba el total, como `expect(rows).toHaveLength(10)`. La
+    #     exploracion (y el gate del orquestador) habian grepeado `toBe(10)` y
+    #     concluido que no habia red. R-4 ya tenia red automatica para types.
+    #     El diseno cumple el requirement del delta spec igualmente, con un
+    #     assert genuinamente distinto (prisma.type.count() a nivel de tabla,
+    #     independiente de listTypes). CONSECUENCIA QUE NO SE PUEDE PERDER:
+    #     como ese assert de lectura existe, TODO test de escritura debe borrar
+    #     lo que crea o lo rompe.
+    #  2. El admin consume `data.slug` del PUT /types/:id
+    #     (apps/admin/rest/src/data/type.ts:52-56 redirige a
+    #     `.../${data?.slug}/edit`), no solo en products como dice la decision
+    #     3 del epico. D27-5 es requisito funcional, no comodidad.
+    #  3. seed.sql:1718 hace setval(types_id_seq, ...) = 11, asi que el primer
+    #     createType recibe id 12. Sin ese setval el primer INSERT habria
+    #     colisionado en la PK y se habria diagnosticado como bug del
+    #     repositorio. (Ademas confirma que el DELETE /types/9 de la CA-3 es
+    #     correcto: gadget es id 9.)
+    #
+    # DIVERGENCIAS DECLARADAS (10). Las que sdd-tasks/apply deben respetar:
+    #  - manufacturers.type_id (db/schema.sql:288) y tags.type_id (:302) son
+    #    ON DELETE SET NULL: un DELETE /types/:id exitoso les pone type_id a
+    #    NULL en silencio. NO cuenta para el 409 (el spec y la decision 7 solo
+    #    nombran categories/products) pero es efecto observable sobre dos
+    #    agregados que US-27b toma a continuacion.
+    #  - `icon` no se puede limpiar por PUT: group-form.tsx manda
+    #    `icon: values.icon?.value` = undefined al limpiarlo, y Prisma trata
+    #    undefined como "no tocar". Arreglarlo exigiria tocar el frontend,
+    #    prohibido por la decision 14. Declarado, no accionado.
+    #  - centinela zz-test- -> zz-types- respecto al proposal.
+    #  - Prisma.InputJsonValue llega a la API via packages/db/index.ts:1
+    #    (`export type { Prisma }`): NO agregar el import de @prisma/client,
+    #    que la D-1 prohibe.
+    #
+    # PRESUPUESTO -- PENDIENTE DE DECISION DEL USUARIO (ask-on-risk):
+    # PR#1 re-pronosticado a ~475 lineas (+-60), ~19% sobre el budget de 400
+    # (venia de ~430; lo suman translateCatalogWriteError, normalizeSlug y los
+    # tests anadidos). Sub-corte disponible: PR#1a slug.ts + domain-errors.ts +
+    # barrel + test de slug (~250) / PR#1b repositorio + integracion (~225).
+    # El gate confirmo que ambas mitades son verificables por separado UNA VEZ
+    # ARREGLADO B4 (ya lo esta). PR#2 API ~330. La llamada final es de
+    # sdd-tasks bajo ask-on-risk.
+    #
+    # RIESGO NUEVO (medio): la capa 1 de validacion depende de que
+    # @nestjs/mapped-types@1.1.0 herede metadata de class-validator desde una
+    # subclase de una base PickType. El agente lo verifico LEYENDO el helper
+    # instalado, no ejecutandolo. Mitigacion estructural: la capa 2 en el
+    # repositorio da el mismo 400 si la capa 1 regresa, asi que ni B2 ni B3
+    # pueden degradar a 503.
+    #
+    # NOTA: el artefacto son 5876 palabras contra un techo de 3600, bajo la
+    # instruccion permanente de "completeness over the word ceiling" (mismo
+    # precedente que el design de detalle-producto-postgres). El volumen es los
+    # siete fixes bloqueantes, el bloque de interfaces fijadas y las tablas
+    # campo a campo.
+  tasks:
+    status: done
+    artifact: openspec/changes/escrituras-types-fundaciones/tasks.md
+    gate: PASS (inline)
+    # 5 fases / 20 tareas (5 / 4 / 2 / 4 / 6). Fases 1-2 = PR#1a/PR#1b
+    # (packages/db); fases 3-4 = PR#2 (API); fase 5 = evidencia DoD transversal.
+    #
+    # TRAZABILIDAD CA -> TAREA:
+    #   CA-1/CA-2 -> 2.1, 2.3, 4.2, 4.3, 5.1
+    #   CA-3      -> 2.1, 2.3, 4.2, 4.3, 5.2
+    #   CA-4      -> 1.1, 1.2, 1.4, 2.1, 3.1, 3.2, 4.1, 4.2, 4.3, 5.3
+    #   CA-5      -> 5.4 SOLO verificacion (correcto: los decoradores
+    #                ADMIN_ONLY no cambian, no hay tarea de codigo)
+    #   CA-6      -> 2.3, 4.2, 4.3, 4.4, 5.5, 5.6
+    #   CA-7      -> 1.1, 1.2, 1.4, 3.1, 3.2
+    #   1.3 y 2.2 (exports del barrel) marcadas "no CA - plumbing".
+    #
+    # GATE DEL ORQUESTADOR: pasado. Verificado el punto que mas facil se pierde
+    # al traducir un design a tareas: `just db-build` esta marcado BLOCKING en
+    # 2.4 y revalidado en 4.4, SIEMPRE antes de npx jest / build-api. La
+    # limpieza de 5.6 es por id (`DELETE FROM types WHERE id > 11` + count = 10)
+    # sin ningun db-reset. La evidencia de CA-2 va por psql, no por curl.
+    #
+    # CORRECCION AL ALZA DEL PRONOSTICO, hecha por el agente de forma
+    # independiente y con buen argumento: el design estimaba PR#2 en ~330
+    # lineas, pero esa cifra era NETA y el presupuesto de review cuenta
+    # altas+bajas -- borrar types.json, Fuse, plainToClass y los metodos
+    # muertos son lineas de borrado reales. PR#2 sube a ~410.
+    #
+    # Review Workload Forecast (autoritativo):
+    #   Estimated changed lines: ~915 total (+-100) -- PR#1a ~245, PR#1b ~240,
+    #                            PR#2 ~410
+    #   400-line budget risk: High (total); PR#1a Low, PR#1b Low, PR#2 Medium
+    #   Chained PRs recommended: Yes
+    #   Decision needed before apply: Yes
+    #
+    # El agente NO recomienda partir PR#2 mas: es una unidad cohesiva probable
+    # por jest (mapper + servicio + DTO + spec) y las ~410 estan dominadas por
+    # dos archivos de test nuevos (mapper.spec ~85, service.spec ~145), no por
+    # complejidad de diff.
+    #
+    # NOTA DE PRESUPUESTO DEL SKILL: el artefacto excede el techo de ~530
+    # palabras de sdd-tasks/SKILL.md. Decision del agente, avalada por el
+    # orquestador: primaba trasladar B1-B7 verbatim a tareas concretas sobre la
+    # regla generica de conteo, porque perder esas especificidades en una lista
+    # comprimida era el riesgo principal declarado de esta fase.
+
+# === DECISION DE ENTREGA (usuario, 2026-09-09, Review Workload Guard) ===
+delivery_decision:
+  outcome: chained-prs
+  slices: 3
+  chain_strategy: stacked-to-main
+  size_exception: false
+  # PR#1a (~245) -> PR#1b (~240) -> PR#2 (~410).
+  # Cada slice lo prueba verde un runner distinto:
+  #   PR#1a: `just db-check` solo (aun no existen funciones de escritura)
+  #   PR#1b: `just db-build` + `just db-check` (base = rama de PR#1a)
+  #   PR#2:  `npx jest` + `just build-api` + `curl` (base = rama de PR#1b)
+  # CONSECUENCIA ACEPTADA de stacked-to-main (se le expuso al usuario al
+  # elegir): main avanza de forma incremental, asi que PR#1a puede quedar
+  # fusionado en main con domain-errors.ts y slug.ts SIN consumidor hasta que
+  # entre PR#1b. Es inerte (no lo importa nadie), no roto.
+  # PRECEDENTE del repo para una cadena de 3: US-4a del Epico 1 aterrizo como
+  # 3 PRs encadenados (~135 / ~250 / ~205), registrado en su README.
+  #
+  # SKILL NO RESOLUBLE, declarado: el workflow marca `chained-pr` (skill de
+  # registro `gentle-ai-chained-pr`) como match requerido cuando se eligen PRs
+  # encadenados, y hay que pasarlo por ruta de registro sin hardcodearla. En
+  # esta maquina NO EXISTE: no hay .atl/skill-registry.md, no hay nada en
+  # .claude/skills/ y no hay nada en ~/.claude/skills/ (la unica coincidencia
+  # de "chain" es un archivo de memoria de otro proyecto). No se invento una
+  # ruta. sdd-apply se guia por el precedente de US-4a y por las fronteras de
+  # slice que fija tasks.md.
+  apply:
+    status: pending
+  verify:
+    status: pending
+  archive:
+    status: pending
