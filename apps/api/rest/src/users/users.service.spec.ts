@@ -229,8 +229,11 @@ describe('UsersService (US-25 PR3 — migración a Postgres)', () => {
     });
 
     it('id no numérico (NaN, de "/api/users/abc") → 404, nunca 500', async () => {
-      await expect(service.findOne(Number('abc'))).rejects.toBeInstanceOf(
-        NotFoundException,
+      const result = service.findOne(Number('abc'));
+      await expect(result).rejects.toBeInstanceOf(NotFoundException);
+      // El mensaje no debe filtrar el valor coercionado (`NaN`).
+      await expect(result).rejects.toThrow(
+        'El identificador de usuario no es válido.',
       );
       expect(findUserWithRelationsMock).not.toHaveBeenCalled();
     });

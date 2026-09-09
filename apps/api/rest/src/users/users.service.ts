@@ -92,7 +92,7 @@ export class UsersService {
 
   async findOne(id: number): Promise<User> {
     if (!Number.isInteger(id)) {
-      throw new NotFoundException(`No existe un usuario con id ${id}.`);
+      throw new NotFoundException('El identificador de usuario no es válido.');
     }
 
     const record = await this.withPrismaErrorTranslation(() =>
@@ -111,7 +111,7 @@ export class UsersService {
    */
   async update(id: number, _updateUserDto: UpdateUserDto): Promise<User> {
     if (!Number.isInteger(id)) {
-      throw new NotFoundException(`No existe un usuario con id ${id}.`);
+      throw new NotFoundException('El identificador de usuario no es válido.');
     }
 
     const record = await this.withPrismaErrorTranslation(() =>
@@ -140,7 +140,7 @@ export class UsersService {
   async makeAdmin(userId: string): Promise<User> {
     const id = Number(userId);
     if (!Number.isInteger(id)) {
-      throw new NotFoundException(`No existe un usuario con id ${userId}.`);
+      throw new NotFoundException('El identificador de usuario no es válido.');
     }
 
     const record = await this.withPrismaErrorTranslation(() =>
@@ -163,7 +163,7 @@ export class UsersService {
    */
   async banUser(id: number, currentUser: CurrentUserPayload): Promise<User> {
     if (!Number.isInteger(id)) {
-      throw new NotFoundException(`No existe un usuario con id ${id}.`);
+      throw new NotFoundException('El identificador de usuario no es válido.');
     }
 
     if (currentUser.sub === id) {
@@ -209,7 +209,7 @@ export class UsersService {
    */
   async activeUser(id: number): Promise<User> {
     if (!Number.isInteger(id)) {
-      throw new NotFoundException(`No existe un usuario con id ${id}.`);
+      throw new NotFoundException('El identificador de usuario no es válido.');
     }
 
     const record = await this.withPrismaErrorTranslation(() =>
