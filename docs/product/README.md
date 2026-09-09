@@ -193,15 +193,21 @@ Feature: …
 ## Mapa del backlog (orden recomendado)
 
 ```
-Épico 1  Catálogo servido desde Postgres      → US-2, US-3, US-4a, US-4b
-Épico 5  Scraper al catálogo compartido       → US-6, US-7, US-8
+Épico 1  Catálogo servido desde Postgres      → US-2, US-3, US-4a, US-4b, US-5   (completado)
+Épico 5  Scraper al catálogo compartido       → US-6, US-7, US-8   ← US-6/7 hechas; queda US-8 (`just db-count` aún consulta `productos`)
 Épico 9  Gate de calidad y CI                 → US-10, US-11, US-12
 Épico 13 Orquestación local con Docker        → US-14, US-15
 Épico 16 Despliegue y observabilidad          → US-17, US-18   ← Terraform: el README lo promete, hoy no existe
-Épico 19 Autenticación y autorización         → US-20 … US-25  ← el login es hoy un mock: cualquier contraseña entra
+Épico 19 Autenticación y autorización         → US-20 … US-25  (completado)
+Épico 26 Escrituras del catálogo desde Postgres → US-27 … US-30 ← el admin "guarda" y nada persiste: create/update/remove devuelven la fila 0 del mock
 ```
 
-**US recomendada para arrancar: US-6** (el pipeline del scraper escribe hoy en
-una tabla que ya no existe — es el único componente roto del repo). En paralelo
-puede ir **US-2** (continúa la migración a Postgres que `/api/settings` ya probó):
-no comparten archivos.
+Lo que sigue mock y **no** tiene épico todavía (contenido, staff↔tienda,
+dominio transaccional) está inventariado con evidencia en
+[`_backlog/api-mock-restante-dominio-transaccional.md`](./_backlog/api-mock-restante-dominio-transaccional.md).
+
+**US recomendada para arrancar: US-27** (abre el Épico 26; escribe sobre
+tablas que ya existen, así que no exige DDL ni `db-reset`). En paralelo
+puede ir **US-8** (lo único que queda del Épico 5: realinear `db-test`/
+`db-count` con la tabla `products`): no comparten archivos. US-6 ya no es el
+arranque: está implementada, igual que US-7.
