@@ -37,7 +37,7 @@
   (`tags`), `:324-405` (`products`, CHECKs `products_rebaja_valida`,
   `products_simple_con_precio`, `products_procedencia_completa`) y los
   pivotes `category_product`/`product_tag` (`:425-435`). **Ninguna de las
-  cuatro US de este épico añade una columna.**
+  cinco US de este épico añade una columna.**
 - **`@safari/db` ya escribe en `products` y `shops`**, para el scraper:
   `upsertScrapedProduct` (`packages/db/src/repositories/products.repository.ts:328-397`)
   valida los CHECK antes del INSERT (`:331-333`), no toca el `slug` en
@@ -147,23 +147,39 @@ esquema.
 
 | US | Título | Releasable solo | Depende de | LOC est. | Status |
 |----|--------|-----------------|------------|----------|--------|
-| [US-27](./27-escrituras-catalogos-planos.md) | Escrituras de catálogos planos: `types`, `tags`, `manufacturers` | Sí | ninguna | ~500 | Listo para ejecución |
-| [US-28](./28-escrituras-arbol-categorias.md) | Escrituras del árbol de categorías | Sí | US-27 | ~350 | Listo para ejecución |
-| [US-29](./29-escrituras-productos-postgres.md) | Escrituras de productos con categorías y tags | Sí | US-27 | ~550 | Listo para ejecución |
-| [US-30](./30-escrituras-moderacion-tiendas.md) | Escrituras y moderación de tiendas | Sí | US-27 | ~400 | Listo para ejecución |
+| [US-27a](./27-escrituras-types-fundaciones.md) | Escrituras de `types` y las piezas compartidas | Sí | ninguna | ~725 | Listo para ejecución |
+| [US-27b](./27b-escrituras-tags-manufacturers.md) | Escrituras de `tags` y `manufacturers` | Sí | US-27a | ~825 | Listo para ejecución |
+| [US-28](./28-escrituras-arbol-categorias.md) | Escrituras del árbol de categorías | Sí | US-27a | ~350 | Listo para ejecución |
+| [US-29](./29-escrituras-productos-postgres.md) | Escrituras de productos con categorías y tags | Sí | US-27a | ~550 | Listo para ejecución |
+| [US-30](./30-escrituras-moderacion-tiendas.md) | Escrituras y moderación de tiendas | Sí | US-27a | ~400 | Listo para ejecución |
 
-**Orden sugerido:** US-27 → (US-28 ∥ US-29 ∥ US-30). US-27 introduce las
-dos piezas compartidas (el helper de slug en `packages/db` y la traducción
-de errores de dominio → HTTP en la API, D-3/D-4); las otras tres las
-consumen y no comparten archivos entre sí **salvo el barrel
-`packages/db/index.ts`**: quien arranque segundo rebasea sobre él, igual
-que US-4b sobre US-4a en el Épico 1.
+**Orden sugerido:** US-27a → (US-27b ∥ US-28 ∥ US-29 ∥ US-30). US-27a
+introduce las dos piezas compartidas (el helper de slug en `packages/db` y la
+traducción de errores de dominio → HTTP en la API, D-3/D-4) y las prueba
+contra un recurso real; las otras cuatro las consumen y no comparten archivos
+entre sí **salvo el barrel `packages/db/index.ts`**: quien arranque segundo
+rebasea sobre él, igual que US-4b sobre US-4a en el Épico 1.
 
 **Sobre las estimaciones:** incluyen tests de integración y specs de jest.
 El precedente cercano es US-25 (estimada ~420, aterrizó ~965 líneas con
 tests) y US-4a (~590 reales para 4 catálogos de solo lectura). Esperar entre
 +50 % y +100 % sobre lo estimado; si una US supera ~900 líneas reales, es
 señal de partirla, no de apretar.
+
+**Partición de US-27 (2026-09-09).** La US-27 original cubría los tres
+catálogos planos con ~500 líneas estimadas. La fase de propuesta del SDD la
+pronosticó en **~1500 (±200)**: la estimación no contemplaba las tres specs
+de jest que su propia tabla de archivos exigía (ancla verificada:
+`shops.service.spec.ts` = 143 líneas) ni el volumen real de los tests de
+integración. Al superar el umbral de ~900 del párrafo anterior, se partió
+según su propia regla. El corte es **vertical, no por capas**: se descartó
+"fundaciones vs. servicios" porque habría dejado una US-27a sin consumidor
+—`packages/db` escrito y verde, el admin todavía sin persistir nada— y por
+tanto no releasable, rompiendo la columna que las cinco filas mantienen en
+"Sí". Con el corte vertical, US-27a se lleva además el riesgo alto del épico
+(R-1: el 409 del borrado protegido de `types`) y US-27b hereda unas piezas
+compartidas ya probadas en producción. Efecto secundario deseable: US-27b
+queda como par de US-28/29/30, todas dependiendo solo de US-27a.
 
 **Rutas que este épico migra:** 19 — `POST/PUT/DELETE` de `products`,
 `categories`, `tags`, `types` y `manufacturers` (15), `POST/PUT /shops`
@@ -203,12 +219,12 @@ stubs declarados:** `DELETE /shops/:id`, `POST /shops/approve`,
   `deleteX` con inputs camelCase tipados (`CreateTypeInput`, …) que
   devuelven el `Record` ya existente. La traducción a snake_case sigue en el
   servicio de Nest (D-3 del Épico 19).
-- **D-3:** Un único helper de slug en `packages/db` (introducido por US-27,
-  consumido por las cuatro US): misma regla que la función SQL `slugify()`,
-  sufijo numérico en colisión. Cuatro consumidores justifican la
+- **D-3:** Un único helper de slug en `packages/db` (introducido por US-27a,
+  consumido por las otras cuatro US): misma regla que la función SQL
+  `slugify()`, sufijo numérico en colisión. Cinco consumidores justifican la
   abstracción; no se escribe uno por agregado.
 - **D-4:** Una única traducción errores de dominio → HTTP en
-  `apps/api/rest/src/common/` (introducida por US-27), que sustituye a los
+  `apps/api/rest/src/common/` (introducida por US-27a), que sustituye a los
   `try/catch` duplicados de `isPrismaConnectionError` en cada método. Los
   métodos de lectura existentes **no** se refactorizan en este épico
   (alcance).
@@ -253,9 +269,13 @@ stubs declarados:** `DELETE /shops/:id`, `POST /shops/approve`,
   API lo reenvía crudo y así `per_page` es string (contrato de facto).
   `buildPaginator` no coerciona. Solo muerde si una US añade un listado;
   decisión 12.
-- **R-8 (medio):** desborde de estimación (US-25: 420 → ~965). Cuatro US
-  con tests reales pueden pasar de 1800 estimadas a 3000. Mitigación: US
-  independientes y releasables; ninguna bloquea a otra salvo US-27.
+- **R-8 (medio):** desborde de estimación (US-25: 420 → ~965). **Ya se
+  materializó**: la US-27 original se pronosticó en ~1500 frente a ~500
+  estimadas y se partió en US-27a/US-27b (ver "Partición de US-27" arriba).
+  Cinco US con tests reales suman ~2850 estimadas y pueden pasar de 4000.
+  Mitigación: US independientes y releasables; ninguna bloquea a otra salvo
+  US-27a. Aplicar el umbral de ~900 al pronóstico de cada `sdd-propose`, no
+  solo a las líneas reales al cerrar.
 - **R-9 (bajo):** `getCategoryTree` (US-4b) fue verificado con la
   profundidad real del seed (3 niveles). Un admin puede crear un cuarto
   nivel. US-28 debe probarlo o acotar la profundidad con un 400 declarado.

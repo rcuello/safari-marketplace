@@ -8,7 +8,7 @@
 **Épico:** [Épico 26](./README.md)
 **Fecha:** 2026-09-09
 **Status:** Listo para ejecución
-**Depende de:** US-27
+**Depende de:** US-27a
 **LOC est.:** ~550
 
 ## Historia
@@ -69,7 +69,7 @@ depender de un JSON de 2021 y del scraper como únicas fuentes.
 
 **Incluye:** `createProduct`/`updateProduct`/`deleteProduct` en `@safari/db`
 (escalares con columna, pivotes `categories`/`tags`, validación de CHECKs
-antes del INSERT, slug con el helper de US-27) y sus tests de integración;
+antes del INSERT, slug con el helper de US-27a) y sus tests de integración;
 los tres métodos del servicio con proyección `toProductDto`; la
 comprobación de propiedad por tienda (D-5); productos `variable` según la
 decisión 10; eliminación del import de `products.json`; extensión del spec

@@ -8,7 +8,7 @@
 **Épico:** [Épico 26](./README.md)
 **Fecha:** 2026-09-09
 **Status:** Listo para ejecución
-**Depende de:** US-27
+**Depende de:** US-27a
 **LOC est.:** ~350
 
 ## Historia
@@ -55,7 +55,7 @@ mantenerse sin regenerar el seed.
 `@safari/db` con validación de madre (existe, mismo `type_id`, sin ciclo,
 sin autorreferencia) y tests de integración; los tres métodos del servicio
 migrados con la proyección `toCategoryDto`; eliminación del JSON y `Fuse`;
-uso del helper de slug y del mapeo de errores de US-27.
+uso del helper de slug y del mapeo de errores de US-27a.
 
 **NO incluye:** `type`/`parent` como objetos anidados en el DTO (se acepta
 `type_id`/`parent` como los envía el admin y se corrige el DTO para

@@ -9,7 +9,7 @@
 **Épico:** [Épico 26](./README.md)
 **Fecha:** 2026-09-09
 **Status:** Listo para ejecución
-**Depende de:** US-27
+**Depende de:** US-27a
 **LOC est.:** ~400
 
 ## Historia

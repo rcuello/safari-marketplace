@@ -199,15 +199,16 @@ Feature: …
 Épico 13 Orquestación local con Docker        → US-14, US-15
 Épico 16 Despliegue y observabilidad          → US-17, US-18   ← Terraform: el README lo promete, hoy no existe
 Épico 19 Autenticación y autorización         → US-20 … US-25  (completado)
-Épico 26 Escrituras del catálogo desde Postgres → US-27 … US-30 ← el admin "guarda" y nada persiste: create/update/remove devuelven la fila 0 del mock
+Épico 26 Escrituras del catálogo desde Postgres → US-27a, US-27b, US-28 … US-30 ← el admin "guarda" y nada persiste: create/update/remove devuelven la fila 0 del mock
 ```
 
 Lo que sigue mock y **no** tiene épico todavía (contenido, staff↔tienda,
 dominio transaccional) está inventariado con evidencia en
 [`_backlog/api-mock-restante-dominio-transaccional.md`](./_backlog/api-mock-restante-dominio-transaccional.md).
 
-**US recomendada para arrancar: US-27** (abre el Épico 26; escribe sobre
-tablas que ya existen, así que no exige DDL ni `db-reset`). En paralelo
+**US recomendada para arrancar: US-27a** (abre el Épico 26; escribe sobre
+tablas que ya existen, así que no exige DDL ni `db-reset`, e introduce el
+helper de slug y el mapeo de errores que consumen las otras cuatro). En paralelo
 puede ir **US-8** (lo único que queda del Épico 5: realinear `db-test`/
 `db-count` con la tabla `products`): no comparten archivos. US-6 ya no es el
 arranque: está implementada, igual que US-7.
