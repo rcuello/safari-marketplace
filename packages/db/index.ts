@@ -100,8 +100,18 @@ export {
 } from './src/repositories/shops.repository';
 export type { ListTagsInput } from './src/repositories/tags.repository';
 export { findTagBySlug, listTags } from './src/repositories/tags.repository';
-export type { ListTypesInput } from './src/repositories/types.repository';
-export { findTypeBySlug, listTypes } from './src/repositories/types.repository';
+export type {
+  CreateTypeInput,
+  ListTypesInput,
+  UpdateTypeInput,
+} from './src/repositories/types.repository';
+export {
+  createType,
+  deleteType,
+  findTypeBySlug,
+  listTypes,
+  updateType,
+} from './src/repositories/types.repository';
 export type {
   CreateUserInput,
   ListUsersInput,
