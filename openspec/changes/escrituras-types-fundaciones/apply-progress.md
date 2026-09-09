@@ -441,3 +441,465 @@ None. Postgres remained `Up (healthy)` throughout; no `db-up`/`db-reset`/
   sub-slice forecast, still well under the global 400-line guard for a
   single PR, and independently verifiable via `just db-build` + `just
   db-check` per the design's PR#1b definition.
+
+## Slice: PR#2 — Phases 3, 4, 5 (tasks 3.1-5.6) — final slice
+
+**Branch**: `us-27a/pr2-api` (uncommitted — orchestrator owns git ops)
+**Mode**: Standard (strict_tdd: false)
+**Consumes, does not modify**: `packages/db/src/slug.ts`,
+`packages/db/src/domain-errors.ts`, `apps/api/rest/src/common/errors/`
+(newly created — closed to future edits per CA-7),
+`apps/api/rest/src/types/dto/update-type.dto.ts`,
+`apps/api/rest/src/types/entities/type.entity.ts`,
+`apps/api/rest/src/types/types.controller.ts`, `apps/api/rest/src/main.ts`
+(confirmed unchanged — see `git status`/`git diff --stat` below, none of
+them appear as modified).
+
+### Tasks completed
+
+- [x] **3.1** `apps/api/rest/src/common/errors/domain-error.mapper.ts`
+  created. `mapDomainError(error)`: guard-narrows with `isCatalogWriteError`
+  (imported from `@safari/db`, structural by `code`) and switches on the 5
+  `CATALOG_ERROR_CODES` to `BadRequestException` (`EmptySlug`,
+  `InvalidReference`), `NotFoundException` (`RecordNotFound`), or
+  `ConflictException` (`DependentRows`, `SlugConflict`); returns `null` for
+  anything else, letting the chain continue. `isConnectionFailure(error)` —
+  **local, unexported, private to this module** (B1 fix): `name ===
+  'PrismaClientInitializationError'`, OR `code` in the 6-code
+  `CONNECTION_FAILURE_CODES` set (`P1001/P1002/P1008/P1011/P1017/P2024`), OR
+  the lowercased `message` contains one of the 4 patterns
+  (`can't reach database server`/`connection refused`/`connection
+  timeout`/`econnrefused`). **Never checks `name ===
+  'PrismaClientKnownRequestError'`** — verified by reading `errors.ts:54-68`
+  before writing this function; that is exactly the line this predicate
+  deliberately does NOT replicate. `toWriteHttpException(error)` chains:
+  `mapDomainError` → `isConnectionFailure` (503,
+  `getUserFriendlyMessage(error)` — safe here because the error is already
+  confirmed to be a connection failure) → else `InternalServerErrorException`
+  with the literal fixed string `'Ocurrió un error inesperado. Por favor,
+  contacta al administrador.'` (never calling `getUserFriendlyMessage` in
+  this branch, per B1's second-order trap). Did **not** touch
+  `packages/db/src/errors.ts`.
+- [x] **3.2** `apps/api/rest/src/common/errors/domain-error.mapper.spec.ts`
+  created. Covers: each of the 5 `CatalogWriteError` subclasses (constructed
+  for real, imported from `@safari/db`, no mocking) through `mapDomainError`
+  → correct status (400/400/404/409/409); a non-catalog `Error` →
+  `mapDomainError` returns `null`; `toWriteHttpException` with a domain
+  error still resolves correctly; `{name:'PrismaClientKnownRequestError',
+  code:'P1001', message:"Can't reach database server..."}` → 503;
+  `{name:'PrismaClientInitializationError', message:"..."}` → 503; the B1
+  regression tripwire — `{name:'PrismaClientKnownRequestError',
+  code:'P2011', message:'Null constraint violation...'}` → **characterization
+  assert** `expect(isPrismaConnectionError(prismaShapedError)).toBe(true)`
+  (the OLD helper from `@safari/db` IS wrong about this object) immediately
+  followed by `expect(toWriteHttpException(prismaShapedError)).toBeInstanceOf
+  (InternalServerErrorException)` with status 500 and the literal message
+  (the NEW mapper does NOT inherit that defect); `new Error('x')` → 500 with
+  the same literal message. No `jest.mock`, no `@prisma/client` import — the
+  barrel loads for real (`prisma` client stays an unused lazy Proxy, per
+  `client.ts:39-45`, so no `DATABASE_URL` is needed for this spec).
+- [x] **4.1** `apps/api/rest/src/types/dto/create-type.dto.ts` modified.
+  `CreateTypeDto extends PickType(Type, ['name','slug','icon','banners',
+  'promotional_sliders','settings','language'])` (precedent
+  `create-tag.dto.ts:4-11`) with `name` overridden by `@IsString()
+  @IsNotEmpty()` from `class-validator` (already a dependency,
+  `package.json:36`, 0.13.2 — first real usage of these decorators in the
+  repo, confirmed by grep before writing). Did not touch
+  `update-type.dto.ts` (inherits via `PartialType`), `type.entity.ts`, or
+  `main.ts`.
+- [x] **4.2** `apps/api/rest/src/types/types.service.ts` modified.
+  Imports: added `createType`, `deleteType`, `updateType`, `type Prisma`
+  from `@safari/db`, and `toWriteHttpException` from the new
+  `common/errors/domain-error.mapper`; removed `plainToClass` (from
+  `class-transformer`), the `typesJson`/`Fuse` imports, and the module-level
+  `types`/`options`/`fuse` constants. Removed `private types: Type[] =
+  types;`, and the dead `findAll()`/`findOne(id)` stubs (confirmed unused by
+  `types.controller.ts:18-51`, which only calls `create`, `getTypes`,
+  `getTypeBySlug`, `update`, `remove`). `create()`: projects
+  `createTypeDto` field-by-field into the shape `createType` expects — a
+  mandatory `name`, then 4 conditional spreads (`slug`, `icon`, `settings`
+  cast `as unknown as Prisma.InputJsonValue`, `banners` cast the same way,
+  `language`) that omit the key entirely when the DTO field is `undefined`
+  (R-5: never spreads `createTypeDto` itself). `update(id, updateTypeDto)`:
+  `Number.isInteger(id)` guard first (`+id` from the controller can be
+  `NaN` on a non-numeric `:id` param) → `NotFoundException` before any
+  repository call; then the same conditional-spread projection into
+  `UpdateTypeInput` (no `slug` field — it isn't part of that type).
+  `remove(id)`: same integer guard, then `deleteType(id)`. All three wrap
+  their repository call in `catch (error) { throw
+  toWriteHttpException(error); }` and return `toTypeDto(record)` — the
+  **same** function `getTypes`/`getTypeBySlug` already use, untouched.
+  `parseSearch`, `GetTypesDto`, and the `Type` entity import are kept, as
+  the design requires.
+- [x] **4.3** `apps/api/rest/src/types/types.service.spec.ts` created.
+  Harness: `jest.mock('@safari/db', () => ({...jest.requireActual(...),
+  createType: jest.fn(), updateType: jest.fn(), deleteType: jest.fn(),
+  findTypeBySlug: jest.fn()}))` — exact shape of
+  `products.service.spec.ts:36-43`, with `findTypeBySlug` added (beyond the
+  task's literal 3-function list) so the CA-1 key-set assertion could call
+  `getTypeBySlug` without touching a real Postgres connection; every other
+  export (the 5 `CatalogWriteError` classes, `isCatalogWriteError`,
+  `getUserFriendlyMessage`, etc.) stays real via `jest.requireActual`.
+  Covers: `create` omits `settings`/`banners` from the repository input
+  when absent from the DTO and always drops `promotional_sliders` (asserted
+  both by `toEqual` on the full call args and by `'key' in calledWith`
+  checks); `create` casts `settings`/`banners` through when present;
+  `create` forwards an explicit `slug`; `EmptySlugError` → 400 (`create`),
+  400 (`update`); `RecordNotFoundError` → 404 (`update`, `remove`);
+  `DependentRowsError` → 409 (`remove`); a `{code:'P1001'}`-shaped rejection
+  → 503 (`create`); a `{code:'P2011'}`-shaped rejection → 500, not 503,
+  reproducing the B1 tripwire at the service layer too (`create`);
+  non-integer `id` (`NaN`) → 404 **without calling** `updateType`/
+  `deleteType` (asserted via `.not.toHaveBeenCalled()`); a dedicated
+  `describe` block builds one shared `TypeRecord` fixture, mocks
+  `findTypeBySlug`/`createType`/`updateType`/`deleteType` to all resolve it,
+  calls all four methods, and asserts `Object.keys()` of the three write
+  results `.toEqual()` (no `.sort()`) the 9-key, ordered array from
+  `getTypeBySlug`'s result.
+- [x] **4.4** Verified. `packages/db` was not touched by this slice (see
+  `git status` above — only `apps/api/rest` files and one new directory are
+  dirty), so `just db-build` was **not** re-run (no reason to believe
+  `dist` was stale; the environment note also confirms it was already
+  rebuilt after slice 2). `cd apps/api/rest && npx jest` → green: **6
+  suites / 91 tests** (baseline 4/65 → +2 suites — the two new spec files —
+  +26 tests). `just build-api` → clean (`nest build`, `Done in Ns`, no
+  errors). `grep -n "fuse\|@db/" apps/api/rest/src/types/types.service.ts`
+  → 0 lines (confirmed by exit code 1 / no match). Full output pasted below.
+
+### Files changed (this slice)
+
+| File | Action | Lines (per `git diff --stat`) |
+|---|---|---|
+| `apps/api/rest/src/common/errors/domain-error.mapper.ts` | Created | 138 |
+| `apps/api/rest/src/common/errors/domain-error.mapper.spec.ts` | Created | 159 |
+| `apps/api/rest/src/types/dto/create-type.dto.ts` | Modified | +30 / -1 |
+| `apps/api/rest/src/types/types.service.ts` | Modified | +85 / -14 |
+| `apps/api/rest/src/types/types.service.spec.ts` | Created | 331 |
+| `openspec/changes/escrituras-types-fundaciones/tasks.md` | Modified | ticked 3.1-5.6 `[x]` |
+| `openspec/changes/escrituras-types-fundaciones/apply-progress.md` | Modified | this section appended |
+
+### `npx jest` — real output
+
+```
+$ cd apps/api/rest && npx jest
+PASS src/users/user-dto.mapper.spec.ts (17.17 s)
+PASS src/shops/shops.service.spec.ts (17.18 s)
+PASS src/common/errors/domain-error.mapper.spec.ts (17.898 s)
+PASS src/products/products.service.spec.ts (17.947 s)
+PASS src/types/types.service.spec.ts (17.989 s)
+PASS src/users/users.service.spec.ts (18.105 s)
+
+Test Suites: 6 passed, 6 total
+Tests:       91 passed, 91 total
+Snapshots:   0 total
+Time:        26.442 s, estimated 44 s
+Ran all test suites.
+```
+
+**Counts**: baseline **4 suites / 65 tests** → **6 suites / 91 tests**
+(+2 suites: `domain-error.mapper.spec.ts`, `types.service.spec.ts`; +26
+tests: 6 in the mapper spec's error-mapping table + 5 in its
+`toWriteHttpException` fallback-chain block, 15 in the service spec across
+`create`/`update`/`remove`/the CA-1 key-set block — see the two spec files
+for the exact per-`it` breakdown).
+
+### `just build-api` — real output
+
+```
+$ just build-api
+yarn build
+yarn run v1.22.22
+$ rimraf dist
+$ nest build
+(node:53368) [DEP0053] DeprecationWarning: The `util.isObject` API is deprecated. Please use `arg !== null && typeof arg === "object"` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Done in 44.25s.
+```
+
+### `grep -n "fuse\|@db/" apps/api/rest/src/types/types.service.ts` — real output
+
+```
+$ grep -n "fuse\|@db/" apps/api/rest/src/types/types.service.ts
+$ echo "exit=$?"
+exit=1
+```
+
+0 matches (grep's own exit code of 1 confirms "no lines matched" — the
+correct outcome for CA-6).
+
+### Actual vs. forecast changed lines
+
+`git diff --stat` for the 4 files this slice may touch (2 created, 2
+modified; the 2 spec files were `git add -N`'d only to compute the count,
+then unstaged again — nothing committed):
+
+```
+ .../src/common/errors/domain-error.mapper.spec.ts  | 159 ++++++++++
+ .../rest/src/common/errors/domain-error.mapper.ts  | 138 +++++++++
+ apps/api/rest/src/types/dto/create-type.dto.ts     |  31 +-
+ apps/api/rest/src/types/types.service.spec.ts      | 331 +++++++++++++++++++++
+ apps/api/rest/src/types/types.service.ts           |  99 ++++--
+ 5 files changed, 733 insertions(+), 25 deletions(-)
+```
+
+**758 changed lines (733 insertions + 25 deletions) vs. the ~410 forecast
+in `tasks.md`'s Review Workload Forecast — about 85% over.** This is the
+largest overage of the three slices (58% for PR#1a, 32% for PR#1b, 85%
+here), concentrated in the same pattern the design's own forecast called
+out ahead of time (`tasks.md:8`: "el mapper 70 + mapper.spec 85 +
+service.spec 145" as the expected drivers) plus: (a) dense Spanish JSDoc
+blocks on every exported function tying each decision back to its design.md
+citation (B1's fix, the D27-13 closed-file contract, the R-5 no-spread
+rule), matching the density precedent in `products.repository.ts`/
+`errors.ts`; (b) `types.service.spec.ts` covers more cases than the task's
+minimum list (an explicit-slug-forwarding case, a settings/banners-present
+case in addition to the omitted case, a dedicated borrowed-`TypeRecord`
+fixture block for the CA-1 key-set comparison) because the CA-1 evidence
+(9 keys, exact order) needed its own isolated `describe` to avoid coupling
+mock state across the `create`/`update`/`remove` suites. No structural
+scope was added beyond tasks 3.1-4.3: same 2 exported functions in the
+mapper, same 3 service methods, same 1 DTO. This is now the third
+consecutive slice to run meaningfully over its sub-forecast while staying
+under a sane single-PR ceiling in isolation; flagging for `sdd-verify` and
+for whoever plans US-27b's forecast, since the pattern (JSDoc density +
+above-minimum test coverage) is now established across all 3 slices of
+this change, not a one-off.
+
+### Phase 5 — End-to-end DoD evidence
+
+Orphan process found and killed before starting: a `node.exe` (PID 55108)
+was already `LISTENING` on port 9001 before this slice touched anything —
+confirmed via `tasklist` and a `curl` that returned old-shape data. Killed
+with `taskkill /F /PID 55108` before starting a fresh `just api-dev`, per
+the run's explicit warning about an orphan from a prior session.
+
+**Tokens minted by real login** (`POST /api/token`), not fabricated —
+demo credentials from `db/seed.sql:47-53` (all three share `demodemo`):
+
+```
+$ curl -s -X POST http://localhost:9001/api/token -H "Content-Type: application/json" -d '{"email":"admin@demo.com","password":"demodemo"}'
+{"token":"eyJhbGci...","permissions":["super_admin","customer","store_owner"],"role":"super_admin"}
+```
+(`customer@demo.com` → `permissions:["customer"]`; `store_owner@demo.com` →
+`permissions:["customer","store_owner"]` — minted the same way.)
+
+**5.1 — CA-1/CA-2, `POST` → `GET` → restart → `GET` → `PUT` → `GET`, `psql` for `updated_at`:**
+
+```
+$ curl -s -X POST http://localhost:9001/api/types -H "Content-Type: application/json" -H "Authorization: Bearer $ADMIN_TOKEN" -d '{"name":"Vertical Prueba"}'
+{"id":22,"name":"Vertical Prueba","language":"es","translated_languages":["en"],"slug":"vertical-prueba","banners":[],"promotional_sliders":null,"settings":{},"icon":null}
+
+$ curl -s http://localhost:9001/api/types/vertical-prueba
+{"id":22,"name":"Vertical Prueba","language":"es","translated_languages":["en"],"slug":"vertical-prueba","banners":[],"promotional_sliders":null,"settings":{},"icon":null}
+
+$ node -e "... compare Object.keys(post) vs Object.keys(get) ..."
+POST keys: ["id","name","language","translated_languages","slug","banners","promotional_sliders","settings","icon"]
+GET  keys: ["id","name","language","translated_languages","slug","banners","promotional_sliders","settings","icon"]
+keys equal (order): true
+```
+
+Restart performed for real — killed the `nest start --watch` process
+listening on 9001 (`taskkill /F /PID <pid>`, confirmed no listener with
+`netstat`), then ran `just api-dev` again and polled until `curl
+localhost:9001/api/types` returned 200 (3 tries, ~6s):
+
+```
+$ curl -s http://localhost:9001/api/types/vertical-prueba   # AFTER restart
+{"id":22,"name":"Vertical Prueba","language":"es","translated_languages":["en"],"slug":"vertical-prueba","banners":[],"promotional_sliders":null,"settings":{},"icon":null}
+equal after restart: true
+```
+
+`PUT` (rename) + `psql` before/after:
+
+```
+$ docker exec safari-postgres psql -U safari -d safari_scraper -c "SELECT id, slug, updated_at FROM types WHERE id=22;"   # BEFORE
+ id |      slug       |         updated_at
+----+-----------------+----------------------------
+ 22 | vertical-prueba | 2026-09-09 21:05:37.996+00
+
+$ curl -s -X PUT http://localhost:9001/api/types/22 -H "Content-Type: application/json" -H "Authorization: Bearer $ADMIN_TOKEN" -d '{"name":"Vertical Renombrada"}'
+{"id":22,"name":"Vertical Renombrada","language":"es","translated_languages":["en"],"slug":"vertical-prueba","banners":[],"promotional_sliders":null,"settings":{},"icon":null}
+
+$ docker exec safari-postgres psql -U safari -d safari_scraper -c "SELECT id, slug, name, updated_at FROM types WHERE id=22;"   # AFTER
+ id |      slug       |        name          |         updated_at
+----+-----------------+----------------------+----------------------------
+ 22 | vertical-prueba | Vertical Renombrada  | 2026-09-09 21:06:51.999+00
+```
+
+`updated_at` advanced (`21:05:37.996` → `21:06:51.999`); `slug` unchanged;
+response still 9 keys, no `updated_at` in the body (contract preserved).
+
+**5.2 — CA-3, `DELETE` with dependents (409) and without (200 → 404):**
+
+```
+$ docker exec safari-postgres psql -c "SELECT count(*) FROM products WHERE type_id=9;"   # 44
+$ docker exec safari-postgres psql -c "SELECT count(*) FROM categories WHERE type_id=9;" # 10
+
+$ curl -s -X DELETE http://localhost:9001/api/types/9 -H "Authorization: Bearer $ADMIN_TOKEN"
+status=409
+{"statusCode":409,"message":"No se puede borrar este registro de `types`: tiene filas dependientes (10 categories, 44 products).","error":"Conflict"}
+
+$ docker exec safari-postgres psql -c "SELECT count(*) FROM products WHERE type_id=9;"   # 44 (unchanged)
+$ docker exec safari-postgres psql -c "SELECT count(*) FROM categories WHERE type_id=9;" # 10 (unchanged)
+
+$ curl -s -X DELETE http://localhost:9001/api/types/22 -H "Authorization: Bearer $ADMIN_TOKEN"
+status=200
+{"id":22,"name":"Vertical Renombrada","language":"es","translated_languages":["en"],"slug":"vertical-prueba","banners":[],"promotional_sliders":null,"settings":{},"icon":null}
+DELETE keys: ["id","name","language","translated_languages","slug","banners","promotional_sliders","settings","icon"]
+
+$ curl -s -o /dev/null -w "status=%{http_code}\n" http://localhost:9001/api/types/vertical-prueba
+status=404
+```
+
+**5.3 — CA-4, id inexistente / `name` vacío o `!!!` / colisión de slug:**
+
+```
+$ curl -s -X PUT http://localhost:9001/api/types/99999 ... -d '{"name":"x"}'
+status=404  {"statusCode":404,"message":"No existe un registro de `types` con id 99999.","error":"Not Found"}
+
+$ curl -s -X DELETE http://localhost:9001/api/types/99999 ...
+status=404  {"statusCode":404,"message":"No existe un registro de `types` con id 99999.","error":"Not Found"}
+
+$ curl -s -X POST http://localhost:9001/api/types ... -d '{}'
+status=400  {"statusCode":400,"message":["name should not be empty","name must be a string"],"error":"Bad Request"}
+
+$ curl -s -X POST http://localhost:9001/api/types ... -d '{"name":""}'
+status=400  {"statusCode":400,"message":["name should not be empty"],"error":"Bad Request"}
+
+$ curl -s -X POST http://localhost:9001/api/types ... -d '{"name":"!!!"}'
+status=400  {"statusCode":400,"message":"El texto `!!!` de `types` normaliza a un slug vacío.","error":"Bad Request"}
+
+$ docker exec safari-postgres psql -c "SELECT count(*) FROM types;"   # 10 — none of the above created a row
+
+$ curl -s -X PUT http://localhost:9001/api/types/1 ... -d '{"name":""}'
+status=400  {"statusCode":400,"message":["name should not be empty"],"error":"Bad Request"}
+$ docker exec safari-postgres psql -c "SELECT id, name, slug FROM types WHERE id=1;"
+ 1 | Grocery | grocery    -- intact
+
+$ curl -s -X POST http://localhost:9001/api/types ... -d '{"name":"Gadget"}'
+status=201  {"id":23,"name":"Gadget","language":"es","translated_languages":["en"],"slug":"gadget-2","banners":[],"promotional_sliders":null,"settings":{},"icon":null}
+$ docker exec safari-postgres psql -c "SELECT count(*) FROM types;"   # 11
+```
+
+**5.4 — CA-5, matriz de permisos en las 3 rutas de escritura:**
+
+```
+POST /api/types:    no token=401  customer=403  store_owner=403
+PUT  /api/types/1:  no token=401  customer=403  store_owner=403
+DELETE /api/types/1: no token=401 customer=403  store_owner=403
+$ docker exec safari-postgres psql -c "SELECT id, name FROM types WHERE id=1;"
+ 1 | Grocery   -- untouched by any of the 9 rejected attempts
+```
+
+**5.5 — `just build-api` + `just verify`:**
+
+`just build-api` output already shown under 4.4. Brought up `just
+shop-dev` and `just admin-dev` in background (neither was running — netstat
+confirmed) specifically to run `just verify`:
+
+```
+$ just verify
+OK   API    :9001/api/settings  200  5503B  29ms
+OK   Shop   :3003/en  200  190944B  644ms  cards:30
+OK   Admin  :3002/en/login  200  72821B  11550ms  cards:1
+```
+
+All 3 services green with real content (30 product cards on the shop, 1 on
+the admin login page).
+
+**5.6 — Cleanup (by id, no `db-reset`):**
+
+The `PUT`-then-`DELETE` sequence in 5.1/5.2 already removed row 22
+(`Vertical Renombrada`) as part of the DoD evidence itself, so only the
+CA-4 collision row was left over:
+
+```
+$ docker exec safari-postgres psql -c "SELECT id, name, slug FROM types WHERE id > 11 ORDER BY id;"
+ 23 | Gadget | gadget-2
+
+$ docker exec safari-postgres psql -c "DELETE FROM types WHERE id > 11;"
+DELETE 1
+$ docker exec safari-postgres psql -c "SELECT count(*) FROM types;"
+ 10
+
+$ just db-check
+ Test Files  9 passed (9)
+      Tests  111 passed (111)
+```
+
+`toHaveLength(10)` baseline confirmed still green after cleanup.
+
+**Processes started and stopped during this slice** — all confirmed killed
+before the run ended: the orphan on 9001 (pre-existing, killed first), then
+my own `just api-dev` (started once, killed for the mid-DoD restart,
+restarted, killed again at the end), `just shop-dev` (3003), `just
+admin-dev` (3002). Final `netstat -ano | grep -E ":9001|:3002|:3003"`
+returned no `LISTENING` lines.
+
+### Deviations from design
+
+- **First `POST /api/types` created id 22, not the documented id 12.** The
+  environment note's "first row you create gets id 12" assumed the
+  sequence was still at 11 (`db-up`'s `setval`). By the time this slice ran,
+  the sequence had already advanced past 12 — most likely from earlier
+  ad-hoc verification in this same live database across the session
+  history (`just db-up`/`db-reset` were never run in this slice, so the
+  sequence's prior state came from before this run started). This does not
+  affect any assertion: no test or `curl` in this slice's evidence depends
+  on a specific numeric id, only on the *count* of rows (10 → 11 → 10) and
+  on slugs/names. Flagging as an environment-state deviation, not a code
+  deviation.
+- **`types.service.spec.ts` mocks `findTypeBySlug` in addition to the
+  task's literal `createType`/`updateType`/`deleteType` list.** Needed so
+  the CA-1 "Object.keys() of create/update/remove equals getTypeBySlug's"
+  assertion could call `getTypeBySlug` without a real Postgres connection.
+  This is additive to the harness, not a change to the service under test.
+- **`toWriteHttpException`'s 500 branch message is a private literal
+  constant (`UNEXPECTED_ERROR_MESSAGE`), not a call to
+  `getUserFriendlyMessage`,** exactly as pinned by B1 — noting this
+  explicitly because it is the one place in the file that looks like it
+  "should" call the shared helper (every other error-mapping file in the
+  repo does) and deliberately does not.
+- **Line-count overage** (see above) — reported, not silently absorbed.
+- **`sdd-verify` reminder (adjacent, not actioned):** the design's own
+  Decision 3 flags that the 32 `isPrismaConnectionError` call sites in the
+  read paths (`getTypes`/`getTypeBySlug` included, right above the new
+  write methods in this very file) share the same over-503 defect that
+  `isConnectionFailure` was written to avoid. Not touched — out of scope
+  per D-4 and the epic boundary — but now there are two different
+  fallback chains living in the same file (`getTypes`/`getTypeBySlug` use
+  the old one; `create`/`update`/`remove` use the new one), which a future
+  reader could mistake for an inconsistency rather than a deliberate scope
+  boundary. Mentioning per the "adjacent improvement, not actioned" rule.
+
+### Issues found
+
+None. Postgres remained `Up (healthy)` throughout; `just db-up`/
+`just db-reset`/`docker compose` were never run, per the environment note.
+The pre-existing orphan on port 9001 was identified and killed (see Phase 5
+notes above) before this slice started its own instance.
+
+### Remaining tasks
+
+None — all of tasks 1.1 through 5.6 are now `[x]` in `tasks.md`.
+
+### Workload / PR boundary
+
+- Mode: stacked-to-main chained PR slice (slice 3 of 3 — final)
+- Current work unit: Unit 3 — `common/errors/` + `types.service.ts` +
+  `create-type.dto.ts` + `types.service.spec.ts`, plus the full Phase 5
+  end-to-end DoD evidence
+- Boundary: starts from the PR#1b branch (`createType`/`updateType`/
+  `deleteType` already merged in `packages/db`) and ends with `npx jest`
+  green (6/91), `just build-api` clean, the CA-6 grep at 0 lines, and the
+  complete Phase 5 evidence sequence (including the actual API restart and
+  the by-id cleanup). Rollback: reverting this slice's 5 files returns
+  `apps/api/rest/src/types` to its stub state (`create`/`update`/`remove`
+  return hardcoded/string values) without touching `packages/db` at all —
+  the barrel exports from slices 1-2 stay unused but present, so a partial
+  rollback of just this slice is safe.
+- Estimated review budget impact: 758 changed lines against the 400-line
+  budget and the ~410 forecast for this specific slice — the largest
+  overage of the three slices (85% over), still delivered as one cohesive,
+  independently-mergeable, fully-tested unit per the design's PR#2
+  definition. This closes the change: no further slices remain.

@@ -4,29 +4,24 @@ import {
   NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import { plainToClass } from 'class-transformer';
 import {
+  createType,
+  deleteType,
   findTypeBySlug,
   getUserFriendlyMessage,
   isPrismaConnectionError,
   listTypes,
+  updateType,
+  type Prisma,
   type TypeRecord,
 } from '@safari/db';
+import { toWriteHttpException } from 'src/common/errors/domain-error.mapper';
 import { CreateTypeDto } from './dto/create-type.dto';
 import { UpdateTypeDto } from './dto/update-type.dto';
 import { Type } from './entities/type.entity';
 
-import typesJson from '@db/types.json';
-import Fuse from 'fuse.js';
 import { parseSearch } from 'src/common/search/parse-search';
 import { GetTypesDto } from './dto/get-types.dto';
-
-const types = plainToClass(Type, typesJson);
-const options = {
-  keys: ['name'],
-  threshold: 0.3,
-};
-const fuse = new Fuse(types, options);
 
 /**
  * `TypeRecord` (camelCase, `@safari/db`) → proyección de 9 claves
@@ -52,8 +47,6 @@ function toTypeDto(record: TypeRecord): Type {
 
 @Injectable()
 export class TypesService {
-  private types: Type[] = types;
-
   async getTypes({ search }: GetTypesDto): Promise<Type[]> {
     const { name } = parseSearch(search);
 
@@ -89,23 +82,81 @@ export class TypesService {
     return toTypeDto(record);
   }
 
-  create(createTypeDto: CreateTypeDto) {
-    return this.types[0];
+  /**
+   * Proyecta el DTO campo a campo en `CreateTypeInput` (R-5: nunca spread
+   * del body). `settings`/`banners` se castean en la frontera
+   * (`as unknown as Prisma.InputJsonValue`, nunca `as any` — design.md,
+   * Decisión 5): `TypeSettings`/`Banner[]` son clases sin index signature
+   * implícita. El spread condicional evita mandar `undefined` como `null`:
+   * el repositorio ya distingue "ausente" (aplica el `DEFAULT` jsonb) de
+   * "presente" — mandar la clave con valor `undefined` de todos modos deja
+   * que `createType` la vea como ausente, pero se omite aquí también para
+   * que el input que le llega al repositorio no incluya claves fantasma.
+   */
+  async create(createTypeDto: CreateTypeDto): Promise<Type> {
+    try {
+      const record = await createType({
+        name: createTypeDto.name,
+        ...(createTypeDto.slug !== undefined && { slug: createTypeDto.slug }),
+        ...(createTypeDto.icon !== undefined && { icon: createTypeDto.icon }),
+        ...(createTypeDto.settings !== undefined && {
+          settings: createTypeDto.settings as unknown as Prisma.InputJsonValue,
+        }),
+        ...(createTypeDto.banners !== undefined && {
+          banners: createTypeDto.banners as unknown as Prisma.InputJsonValue,
+        }),
+        ...(createTypeDto.language !== undefined && {
+          language: createTypeDto.language,
+        }),
+      });
+      return toTypeDto(record);
+    } catch (error) {
+      throw toWriteHttpException(error);
+    }
   }
 
-  findAll() {
-    return `This action returns all types`;
+  /**
+   * `+id` llega como `NaN` desde el controlador si `PUT /api/types/abc`
+   * (`types.controller.ts:43`); sin esta guarda, `BigInt(NaN)` revienta en
+   * 500 dentro del repositorio (design.md, Decisión 6 — precedente exacto
+   * `users.service.ts:94,113,142`). El slug del DTO se ignora siempre: es
+   * inmutable (`UpdateTypeInput` ni siquiera lo declara).
+   */
+  async update(id: number, updateTypeDto: UpdateTypeDto): Promise<Type> {
+    if (!Number.isInteger(id)) {
+      throw new NotFoundException(`No existe un type con id ${id}.`);
+    }
+
+    try {
+      const record = await updateType(id, {
+        ...(updateTypeDto.name !== undefined && { name: updateTypeDto.name }),
+        ...(updateTypeDto.icon !== undefined && { icon: updateTypeDto.icon }),
+        ...(updateTypeDto.settings !== undefined && {
+          settings: updateTypeDto.settings as unknown as Prisma.InputJsonValue,
+        }),
+        ...(updateTypeDto.banners !== undefined && {
+          banners: updateTypeDto.banners as unknown as Prisma.InputJsonValue,
+        }),
+        ...(updateTypeDto.language !== undefined && {
+          language: updateTypeDto.language,
+        }),
+      });
+      return toTypeDto(record);
+    } catch (error) {
+      throw toWriteHttpException(error);
+    }
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} type`;
-  }
+  async remove(id: number): Promise<Type> {
+    if (!Number.isInteger(id)) {
+      throw new NotFoundException(`No existe un type con id ${id}.`);
+    }
 
-  update(id: number, updateTypeDto: UpdateTypeDto) {
-    return this.types[0];
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} type`;
+    try {
+      const record = await deleteType(id);
+      return toTypeDto(record);
+    } catch (error) {
+      throw toWriteHttpException(error);
+    }
   }
 }
