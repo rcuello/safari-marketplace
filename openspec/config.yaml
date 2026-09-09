@@ -25,19 +25,22 @@ context: |
 strict_tdd: false   # no hay runner de tests repo-wide todavia (ver testing.test_command)
 
 testing:
-  framework: mixed             # vitest (packages/db), jest declarado sin specs (apps/api/rest), script Python (scraper)
-  # PENDIENTE: no existe un comando de test repo-wide. Los unicos tests reales hoy:
+  framework: mixed             # vitest (packages/db), jest con 4 specs (apps/api/rest), script Python (scraper)
+  # PENDIENTE: no existe un comando de test repo-wide. Los tests reales hoy:
   #   - packages/db: `npm test` (vitest, integracion; requiere `just db-up` antes)  -> envuelto en `just db-check`
+  #   - apps/api/rest: `cd apps/api/rest && npx jest` (4 suites / 65 tests: products, shops, users,
+  #     user-dto.mapper; mockean @safari/db, no requieren Postgres). SIN receta de `just` que lo envuelva.
+  #     Su package.json resuelve `@db/*` y `src/*` via moduleNameMapper y excluye packages/db/dist
+  #     del transform (requiere `just db-build` antes). No cubre auth ni users desde products/shops.
   #   - scraper: `just db-test` (services/scraper-worker/test_pipeline.py) — HOY ROTO:
   #     el pipeline escribe en la tabla `productos`, que ya no existe en db/schema.sql
-  # apps/api/rest declara jest en package.json pero no tiene ningun *.spec.ts.
-  # Crear el gate agregador (`just check`) es una US del backlog (Epico 9).
-  test_command: "just db-check"   # el unico gate de tests que existe y pasa hoy (requiere just db-up)
+  # Crear el gate agregador (`just check`) es una US del backlog (Epico 9 / US-10).
+  test_command: "just db-check"   # el unico gate envuelto en una receta de `just` (requiere just db-up); jest de la API se corre aparte
   coverage_command: ""            # not yet configured
   build_command: "just build"     # build de produccion shop + admin (build-api aparte)
   coverage_threshold: 0
   layers:
-    unit: false                # no implementado en ningun paquete
+    unit: true                 # apps/api/rest: jest con @safari/db mockeado (products, shops, users, user-dto.mapper)
     integration: true          # packages/db/src/repositories/products.integration.test.ts (vitest + Postgres real)
     e2e: false                 # `just verify` comprueba los 3 servicios levantados, pero es manual, no una suite
   quality:
@@ -69,7 +72,7 @@ rules:
     # Inner loop por paquete (elegir segun el area tocada):
     #   packages/db  -> cd packages/db && npm test          (vitest; requiere just db-up)
     #   scraper      -> just db-test                        (hoy roto: ver testing.test_command)
-    #   apps/api     -> no hay tests; verificar con build + curl contra el endpoint
+    #   apps/api     -> cd apps/api/rest && npx jest      (4 suites; sin receta de just) + build + curl contra el endpoint
     test_command: "just db-check"
     follow_existing_patterns: true
   verify:

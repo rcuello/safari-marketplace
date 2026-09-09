@@ -50,13 +50,26 @@ just db-test           # prueba el pipeline contra la base sin salir a internet
 
 # Build de producción
 just build             # shop + admin (detener los `dev` antes: comparten .next)
+                       # EXIGE LA API ARRIBA: la tienda prerenderiza por HTTP
+                       # (getStaticPaths -> /api/shops, /api/products...). Sin
+                       # `just api-dev` en otra terminal muere en
+                       # "Failed to collect page data" por ECONNREFUSED :9001.
 just build-api         # compila la API a dist/
 ```
 
-No hay gate de tests repo-wide todavía (es US-10 del backlog). El único test
-automatizado que existe y pasa es `just db-check` (vitest de integración en
-`packages/db`, requiere `just db-up` antes). `apps/api/rest` declara jest en
-su `package.json` pero no tiene ningún `*.spec.ts`.
+No hay gate de tests repo-wide todavía (construir el agregador `just check`
+es US-10 del backlog, Épico 9). Hoy existen y pasan dos suites automatizadas:
+
+- `just db-check` — vitest de integración en `packages/db` (requiere
+  `just db-up` antes). Es el único gate envuelto en una receta de `just`.
+- `cd apps/api/rest && npx jest` — 4 suites / 65 tests (`products`, `shops`,
+  `users` y `user-dto.mapper`). Ninguna receta de `just` lo envuelve. Las
+  suites mockean `@safari/db` (no necesitan Postgres levantado); el bloque
+  `jest` de su `package.json` mapea `@db/*` y `src/*` con `moduleNameMapper`
+  y excluye `packages/db/dist` en `transformIgnorePatterns`, por eso resuelve
+  el mock JSON y el `@safari/db` ya construido (`just db-build` antes). No es
+  cobertura general: las suites de `products` y `shops` no importan `auth`
+  ni `users`.
 
 ## Arquitectura
 
