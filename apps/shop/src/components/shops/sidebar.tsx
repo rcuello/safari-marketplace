@@ -194,7 +194,7 @@ const ShopSidebar: React.FC<ShopSidebarProps> = ({
                   </div>
                 ) : null}
 
-                {shop?.settings?.socials.length > 0 ? (
+                {shop?.settings?.socials?.length > 0 ? (
                   <div className="flex flex-col mb-5 last:mb-0">
                     <span className="mb-2 text-sm font-semibold text-heading">
                       {t('text-follow-us')}
