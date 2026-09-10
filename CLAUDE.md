@@ -120,8 +120,11 @@ justfile            Todas las tareas, en español, agrupadas (setup/dev/build/ve
 - **Contratos HTTP preservados byte a byte** al migrar endpoints del mock a
   Postgres. La API publica snake_case (lo que el frontend consume); la capa
   de datos devuelve camelCase; la traducción vive en los servicios de Nest.
-  Precedente: `/api/settings` (5503 bytes antes y después — se verificó el
-  tamaño, no un diff byte a byte). Divergencia conocida, ya embarcada, que
+  Precedente: `/api/settings` (5504 bytes antes y después — es el
+  `Content-Length`; `just verify` imprime `5503B` porque mide `body.length`
+  de una string JS, o sea caracteres UTF-16: el `©` de `copyrightText` es 1
+  carácter y 2 bytes. Se verificó el tamaño, no un diff byte a
+  byte). Divergencia conocida, ya embarcada, que
   toda migración debe esperar: `created_at`/`updated_at` — el seed no
   inserta esas columnas (las filas toman `now()` del último `db-up`, no las
   fechas por fila del mock) y `Date.toJSON()` emite 3 decimales donde el

@@ -20,6 +20,7 @@
 
 import 'dotenv/config';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import type { Prisma } from '../../generated/prisma/client/client';
 import { _setNowProvider } from '../clock';
 import { prisma } from '../client';
 import { EmptySlugError, InvalidReferenceError, RecordNotFoundError } from '../domain-errors';
@@ -239,6 +240,74 @@ describe('deleteManufacturer — CA-3, sin conteo de dependientes (D27b-3)', () 
         data: { manufacturerId: null },
       });
     }
+  });
+});
+
+describe('image: null se trata como ausente (DD-5) — RV-1 de US-27b', () => {
+  // Misma frontera que en `tags.integration.test.ts`: el tipo del input NO
+  // admite `null`, pero `manufacturers.service.ts` castea el `image` del DTO
+  // con `as unknown as Prisma.InputJsonValue` y un cliente puede mandar
+  // `"image": null`. El cast reproduce esa entrada real (nunca `as any`).
+  // Sin el `!= null` de los spreads del repositorio, Prisma rechazaría el
+  // `null` crudo sobre un `Json?` y, de colar, el toggle de aprobación del
+  // admin borraría la imagen en cada clic (W-1). Asserts POR FILA.
+  const NULL_IMAGE = null as unknown as Prisma.InputJsonValue;
+  const IMAGE = {
+    id: 7,
+    original: 'https://cdn.test/zz-manu.png',
+    thumbnail: 'https://cdn.test/zz-manu-thumb.png',
+  };
+  const OTHER_IMAGE = { ...IMAGE, id: 8, original: 'https://cdn.test/zz-manu-2.png' };
+
+  it('createManufacturer con image: null persiste sin error y la columna queda NULL', async () => {
+    const created = await createManufacturer({
+      name: `${SENTINEL_PREFIX}Sin Imagen`,
+      slug: `${SENTINEL_PREFIX}sin-imagen`,
+      image: NULL_IMAGE,
+    });
+
+    expect(created.image).toBeNull();
+    const reread = await findManufacturerBySlug(created.slug);
+    expect(reread?.image).toBeNull();
+
+    await deleteManufacturer(created.id);
+  });
+
+  it('updateManufacturer con image: null NO borra la imagen almacenada; otros campos del mismo PUT sí se aplican', async () => {
+    const created = await createManufacturer({
+      name: `${SENTINEL_PREFIX}Con Imagen`,
+      slug: `${SENTINEL_PREFIX}con-imagen`,
+      image: IMAGE,
+    });
+    expect(created.image).toEqual(IMAGE);
+
+    const updated = await updateManufacturer(created.id, {
+      isApproved: false,
+      image: NULL_IMAGE,
+    });
+    expect(updated.isApproved).toBe(false);
+    expect(updated.image).toEqual(IMAGE);
+
+    const reread = await findManufacturerBySlug(created.slug);
+    expect(reread?.image).toEqual(IMAGE);
+
+    await deleteManufacturer(created.id);
+  });
+
+  it('contraste: updateManufacturer con una imagen NUEVA sí la reemplaza — el assert anterior discrimina `null` de un valor', async () => {
+    const created = await createManufacturer({
+      name: `${SENTINEL_PREFIX}Imagen Reemplazable`,
+      slug: `${SENTINEL_PREFIX}imagen-reemplazable`,
+      image: IMAGE,
+    });
+
+    const updated = await updateManufacturer(created.id, { image: OTHER_IMAGE });
+    expect(updated.image).toEqual(OTHER_IMAGE);
+
+    const reread = await findManufacturerBySlug(created.slug);
+    expect(reread?.image).toEqual(OTHER_IMAGE);
+
+    await deleteManufacturer(created.id);
   });
 });
 

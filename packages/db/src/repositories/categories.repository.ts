@@ -94,6 +94,16 @@ function _assembleTree(rows: CategoryPayload[]): Map<number, CategoryTreeNode> {
   const types = new Map<number, TypeRecord>();
   const kids = new Map<number, number[]>(); // parentId -> ids (id asc)
   for (const row of rows) {
+    // `row.type` puede llegar NULL aunque `categories.type_id` sea `NOT NULL`:
+    // Prisma resuelve el include en dos consultas, y si el type se borra entre
+    // ambas (`ON DELETE CASCADE`, `db/schema.sql:269`) esta categoría ya está
+    // en cascada de borrado. Se descarta la fila ENTERA —no solo su `type`—
+    // para que tampoco reaparezca como hija o madre de otro nodo vía `kids`/
+    // `recs`. Hoy solo alcanzable por el TOCTOU de `deleteType` (cuenta
+    // dependientes y responde 409), pero es la misma forma que reventó en
+    // `products` (C-1, US-27b). Invisible para `tsc`: Prisma tipa la relación
+    // como no nula.
+    if (row.type === null) continue;
     const rec = _toCategoryRecord(row);
     recs.set(rec.id, rec);
     types.set(rec.id, _toTypeRecord(row.type));

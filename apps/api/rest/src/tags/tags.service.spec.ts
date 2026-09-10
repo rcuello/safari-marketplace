@@ -176,6 +176,32 @@ describe('TagsService.create (US-27b)', () => {
     });
   });
 
+  it('`type_id` STRING (`"9"`: `ValidationPipe` sin `transform`) se coerciona a `typeId: 9`, igual que `manufacturers` (W-2 de US-27b)', async () => {
+    createTagMock.mockResolvedValue(makeTagRecord({ typeId: 9 }));
+
+    await service.create(
+      createDto({ name: 'Oferta Verano', type_id: '9' as never }),
+    );
+
+    expect(createTagMock).toHaveBeenCalledWith({
+      name: 'Oferta Verano',
+      typeId: 9,
+    });
+  });
+
+  it('`type_id: null` se proyecta como `typeId: null` (limpia la FK), nunca `0` ni `NaN`', async () => {
+    createTagMock.mockResolvedValue(makeTagRecord());
+
+    await service.create(
+      createDto({ name: 'Oferta Verano', type_id: null as never }),
+    );
+
+    expect(createTagMock).toHaveBeenCalledWith({
+      name: 'Oferta Verano',
+      typeId: null,
+    });
+  });
+
   it('resuelve `type` con UN `listTypes()` secuencial, después de la escritura (design.md DD-7, nunca `Promise.all`)', async () => {
     const callOrder: string[] = [];
     createTagMock.mockImplementation(async () => {
@@ -336,6 +362,16 @@ describe('TagsService.update (US-27b)', () => {
     expect('slug' in calledWith).toBe(false);
     expect('socials' in calledWith).toBe(false);
     expect('cover_image' in calledWith).toBe(false);
+  });
+
+  it('`type_id` STRING también se coerciona en PUT: `"9"` → `typeId: 9`; `null` → `typeId: null` (W-2 de US-27b)', async () => {
+    updateTagMock.mockResolvedValue(makeTagRecord({ typeId: 9 }));
+
+    await service.update(63, updateDto({ type_id: '9' as never }));
+    expect(updateTagMock).toHaveBeenLastCalledWith(63, { typeId: 9 });
+
+    await service.update(63, updateDto({ type_id: null as never }));
+    expect(updateTagMock).toHaveBeenLastCalledWith(63, { typeId: null });
   });
 
   it('resuelve `type` con UN `listTypes()` secuencial, después de la escritura', async () => {

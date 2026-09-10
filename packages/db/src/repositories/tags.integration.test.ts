@@ -16,6 +16,7 @@
 
 import 'dotenv/config';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import type { Prisma } from '../../generated/prisma/client/client';
 import { _setNowProvider } from '../clock';
 import { prisma } from '../client';
 import { EmptySlugError, InvalidReferenceError, RecordNotFoundError } from '../domain-errors';
@@ -214,6 +215,75 @@ describe('deleteTag — CA-3, sin conteo de dependientes (D27b-3)', () => {
     expect(
       await prisma.productTag.count({ where: { tagId: created.id } })
     ).toBe(0);
+  });
+});
+
+describe('image: null se trata como ausente (DD-5) — RV-1 de US-27b', () => {
+  // `CreateTagInput.image`/`UpdateTagInput.image` NO admiten `null` en el
+  // tipo, pero el runtime sí lo recibe: `tags.service.ts` castea el `image`
+  // del DTO con `as unknown as Prisma.InputJsonValue` y cualquier cliente
+  // puede mandar `"image": null`. El mismo cast reproduce aquí esa entrada
+  // real (nunca `as any`). Sin el `!= null` de los spreads del repositorio,
+  // Prisma rechazaría el `null` crudo sobre un `Json?` (exige
+  // `Prisma.DbNull`/`JsonNull`) y, de colar, cada PUT del admin borraría la
+  // imagen almacenada (W-1). Asserts POR FILA, nunca conteos globales.
+  const NULL_IMAGE = null as unknown as Prisma.InputJsonValue;
+  const IMAGE = {
+    id: 7,
+    original: 'https://cdn.test/zz-tags.png',
+    thumbnail: 'https://cdn.test/zz-tags-thumb.png',
+  };
+  const OTHER_IMAGE = { ...IMAGE, id: 8, original: 'https://cdn.test/zz-tags-2.png' };
+
+  it('createTag con image: null persiste sin error y la columna queda NULL', async () => {
+    const created = await createTag({
+      name: `${SENTINEL_PREFIX}Sin Imagen`,
+      slug: `${SENTINEL_PREFIX}sin-imagen`,
+      image: NULL_IMAGE,
+    });
+
+    expect(created.image).toBeNull();
+    const reread = await findTagBySlug(created.slug);
+    expect(reread?.image).toBeNull();
+
+    await deleteTag(created.id);
+  });
+
+  it('updateTag con image: null NO borra la imagen almacenada; otros campos del mismo PUT sí se aplican', async () => {
+    const created = await createTag({
+      name: `${SENTINEL_PREFIX}Con Imagen`,
+      slug: `${SENTINEL_PREFIX}con-imagen`,
+      image: IMAGE,
+    });
+    expect(created.image).toEqual(IMAGE);
+
+    const updated = await updateTag(created.id, {
+      name: `${SENTINEL_PREFIX}Con Imagen Renombrado`,
+      image: NULL_IMAGE,
+    });
+    expect(updated.name).toBe(`${SENTINEL_PREFIX}Con Imagen Renombrado`);
+    expect(updated.image).toEqual(IMAGE);
+
+    const reread = await findTagBySlug(created.slug);
+    expect(reread?.image).toEqual(IMAGE);
+
+    await deleteTag(created.id);
+  });
+
+  it('contraste: updateTag con una imagen NUEVA sí la reemplaza — el assert anterior discrimina `null` de un valor', async () => {
+    const created = await createTag({
+      name: `${SENTINEL_PREFIX}Imagen Reemplazable`,
+      slug: `${SENTINEL_PREFIX}imagen-reemplazable`,
+      image: IMAGE,
+    });
+
+    const updated = await updateTag(created.id, { image: OTHER_IMAGE });
+    expect(updated.image).toEqual(OTHER_IMAGE);
+
+    const reread = await findTagBySlug(created.slug);
+    expect(reread?.image).toEqual(OTHER_IMAGE);
+
+    await deleteTag(created.id);
   });
 });
 

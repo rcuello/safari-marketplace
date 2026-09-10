@@ -115,12 +115,16 @@ export class TagsService {
 
   /**
    * Proyecta el DTO campo a campo en `CreateTagInput` (B-4: nunca spread
-   * del DTO, nunca ausente → `null`). `type_id` viaja tal cual (ya es
-   * `number | undefined` en el DTO, sin coerción — a diferencia de
-   * `manufacturers`, `tag.entity.ts` no declara `type_id` como `string`).
-   * `image` se castea en la frontera (`as unknown as
-   * Prisma.InputJsonValue`, nunca `as any` — design.md, DD-1): `Prisma`
-   * viaja type-only desde el barrel.
+   * del DTO, nunca ausente → `null`). `type_id` se coerciona a `Number(...)`
+   * igual que en `manufacturers.service.ts` (design.md, DD-2): el DTO lo
+   * declara `number`, pero `ValidationPipe` corre sin `transform`
+   * (`main.ts:9`), así que `{"type_id":"9"}` llega como STRING y sin la
+   * coerción el repositorio lo rechazaba con `!Number.isInteger("9")` — un 400
+   * con el mensaje FALSO «referencia un registro inexistente (`9`)» para un
+   * type que sí existe (hallazgo W-2 de `sdd-verify` en US-27b). `null` se
+   * respeta tal cual: limpia la FK. `image` se castea en la frontera (`as
+   * unknown as Prisma.InputJsonValue`, nunca `as any` — design.md, DD-1):
+   * `Prisma` viaja type-only desde el barrel.
    *
    * `type` se resuelve con un `listTypes()` SECUENCIAL, después de la
    * escritura (design.md, DD-7): nunca `Promise.all` — en paralelo, si la
@@ -141,7 +145,8 @@ export class TagsService {
           image: createTagDto.image as unknown as Prisma.InputJsonValue,
         }),
         ...(createTagDto.type_id !== undefined && {
-          typeId: createTagDto.type_id,
+          typeId:
+            createTagDto.type_id === null ? null : Number(createTagDto.type_id),
         }),
         ...(createTagDto.language !== undefined && {
           language: createTagDto.language,
@@ -177,7 +182,8 @@ export class TagsService {
           image: updateTagDto.image as unknown as Prisma.InputJsonValue,
         }),
         ...(updateTagDto.type_id !== undefined && {
-          typeId: updateTagDto.type_id,
+          typeId:
+            updateTagDto.type_id === null ? null : Number(updateTagDto.type_id),
         }),
         ...(updateTagDto.language !== undefined && {
           language: updateTagDto.language,

@@ -178,9 +178,16 @@ function _toUserWithRelations(
   return {
     ..._toUserRecord(row),
     profile: row.profile ? _toProfileRecord(row.profile) : null,
-    permissions: row.permissions.map((link) =>
-      _toPermissionRecord(link.permission)
-    ),
+    // `link.permission` puede llegar NULL aunque la fila pivote exista: Prisma
+    // resuelve el include anidado en dos consultas (misma forma que
+    // `categories`/`tags` en `products.repository.ts`, C-1 de US-27b). Hoy es
+    // inalcanzable —ninguna ruta borra permisos, es una tabla de referencia
+    // estática— pero el pivote es `ON DELETE CASCADE` (`db/schema.sql:175`) y
+    // la guarda cuesta cero. Invisible para `tsc`: Prisma tipa la relación
+    // como no nula.
+    permissions: row.permissions
+      .filter((link) => link.permission !== null)
+      .map((link) => _toPermissionRecord(link.permission)),
     shops: row.shops.map(_toShopRecord),
   };
 }

@@ -19,6 +19,7 @@
 import type { Prisma } from '../../generated/prisma/client/client';
 import { prisma } from '../client';
 import { now } from '../clock';
+import { InvalidReferenceError } from '../domain-errors';
 import {
   _dec,
   _id,
@@ -270,7 +271,11 @@ export async function listProducts(input: ListProductsInput = {}): Promise<{
     prisma.product.count({ where }),
   ]);
 
-  return { items: rows.map(_toProductRecord), total };
+  // `total` sale del `count` y NO se corrige si `_toProductRecord` descarta
+  // una fila rota (ver el mapper): la fila está en cascada de borrado y la
+  // siguiente petición ya no la cuenta. Un `count` transitorio de más vale
+  // menos que un 500 en el SSR de la tienda.
+  return { items: rows.map(_toProductRecord).filter(_isPresent), total };
 }
 
 /**
@@ -288,6 +293,10 @@ export async function findProductBySlug(
     include: PRODUCT_INCLUDE,
   });
   if (!row) return null;
+  // Lectura rota (`type`/`shop` en cascada de borrado, ver el mapper): el
+  // producto está dejando de existir — `null` (404) es la respuesta honesta.
+  const record = _toProductRecord(row);
+  if (!record) return null;
 
   const related = await prisma.product.findMany({
     // D-1 (US-3, ratificada): paridad byte a byte con el mock, que hacía
@@ -303,8 +312,8 @@ export async function findProductBySlug(
   });
 
   return {
-    ..._toProductRecord(row),
-    relatedProducts: related.map(_toProductRecord),
+    ...record,
+    relatedProducts: related.map(_toProductRecord).filter(_isPresent),
   };
 }
 
@@ -390,13 +399,29 @@ export async function upsertScrapedProduct(
       },
       include: PRODUCT_INCLUDE,
     });
-    return _toProductRecord(row);
+    const record = _toProductRecord(row);
+    if (!record) {
+      // La fila se escribió (las FKs existían al insertar) pero `type` o
+      // `shop` desaparecieron antes de que el include los leyera: la fila
+      // está en cascada de borrado. Es, literalmente, una referencia a un
+      // registro que ya no existe — el error de dominio existente lo dice
+      // sin inventar uno nuevo.
+      throw new InvalidReferenceError(
+        'products',
+        row.type === null ? 'type_id' : 'shop_id'
+      );
+    }
+    return record;
   } catch (error) {
     throw _translateCheckViolation(error);
   }
 }
 
-/** Borra un producto por procedencia. `null` si no existía. */
+/**
+ * Borra un producto por procedencia. `null` si no existía — o si su `type`/
+ * `shop` ya están en cascada de borrado (ver el mapper): en ese caso Postgres
+ * se lleva la fila solo y aquí no hay nada que borrar ni que devolver.
+ */
 export async function deleteScrapedProduct(
   sourceStore: string,
   sourceProductId: string
@@ -408,8 +433,10 @@ export async function deleteScrapedProduct(
     include: PRODUCT_INCLUDE,
   });
   if (!row) return null;
+  const record = _toProductRecord(row);
+  if (!record) return null;
   await prisma.product.delete({ where: { id: row.id } });
-  return _toProductRecord(row);
+  return record;
 }
 
 // ---------------------------------------------------------------------------
@@ -469,7 +496,30 @@ export function _translateCheckViolation(error: unknown): unknown {
 // Mapper interno
 // ---------------------------------------------------------------------------
 
-function _toProductRecord(row: ProductPayload): ProductRecord {
+/** Type guard para `.filter()` sobre el resultado nullable del mapper. */
+function _isPresent<T>(value: T | null): value is T {
+  return value !== null;
+}
+
+/**
+ * Exportado SOLO para el test de unidad (`products.repository.test.ts`), no
+ * por el barrel: sigue siendo interno del paquete (prefijo `_`, misma
+ * convención que los `_to*Record` de `records.ts`). Sin ese test, las guardas
+ * de null de abajo son invisibles para `tsc` —Prisma tipa las relaciones como
+ * no nulas— y un refactor podría borrarlas como código muerto sin que nada
+ * se ponga rojo (hallazgo RV-1 de `sdd-verify` en US-27b).
+ *
+ * Devuelve `null` cuando `type` o `shop` llegan NULL: son FKs `NOT NULL` con
+ * `ON DELETE CASCADE` (`db/schema.sql:331-332`), así que un NULL ahí no es un
+ * dato opcional sino una lectura rota — el agregado se borró entre la
+ * consulta principal y la del include (mismo mecanismo que `categories`/
+ * `tags`, abajo) y Postgres está borrando este producto en cascada. No hay
+ * default sensato para un `shop`, y lanzar solo cambiaría el texto del 500;
+ * descartar la fila es lo que la cascada va a hacer un instante después. Es
+ * exactamente la ventana que abre `deleteShop` (US-30).
+ */
+export function _toProductRecord(row: ProductPayload): ProductRecord | null {
+  if (row.type === null || row.shop === null) return null;
   return {
     id: _id(row.id),
     name: row.name,
@@ -517,7 +567,10 @@ function _toProductRecord(row: ProductPayload): ProductRecord {
     // de `manufacturer` (arriba) ya lo contemplaba; estas dos no, y el
     // resultado era un `TypeError: Cannot read properties of null` reproducible
     // al 8,3 % (hallazgo C-1 de `sdd-verify` en US-27b) — y un 500 real al
-    // borrar un tag mientras la tienda hace SSR de `/api/products`.
+    // borrar un tag mientras la tienda hace SSR de `/api/products`. Aquí SÍ se
+    // descarta solo el enlace, no el producto: ambos pivotes son `ON DELETE
+    // CASCADE` hacia el tag/categoría, no hacia el producto (`schema.sql:427,
+    // 433`), así que el producto sobrevive y solo pierde esa relación.
     categories: row.categories
       .filter((link) => link.category !== null)
       .map((link) => _toCategoryRecord(link.category)),
