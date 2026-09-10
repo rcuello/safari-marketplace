@@ -634,3 +634,513 @@ leftovers 'zz-%' en tags / manufacturers  0 / 0
 5. Sin hallazgos CRITICAL pendientes, este change está listo para `sdd-archive`
    (incluido el merge no estándar del bloque `## Out of Scope`, con su precedente
    declarado).
+
+---
+---
+
+# ANEXO — Re-verificación dirigida de la remediación (commit `cc0059f`)
+
+> **Este anexo NO modifica nada de lo anterior.** Todo lo que está por encima de
+> esta línea es el registro de auditoría del primer pase de `sdd-verify`
+> (`PASS WITH FINDINGS`, `blocking_for_archive: true`) y se conserva íntegro:
+> veredicto, hallazgos, matrices y lista *NOT VERIFIED*. Este anexo solo añade el
+> resultado de comprobar si la remediación cerró `C-1` y `W-1` sin romper nada más.
+
+**Fecha:** 2026-09-10 · **Fase:** `sdd-verify` (re-verificación dirigida) ·
+**Modo de artefactos:** `openspec` (Engram no conectado)
+**Base:** `da7dd84` · **HEAD:** `cc0059f` · **Commit remediador:** `cc0059f`
+**Postura:** adversarial e independiente, igual que el primer pase. **Todos los
+comandos y todos los arneses se construyeron y ejecutaron de nuevo en esta
+sesión.** No se copió ninguna cifra de `apply-progress.md` ni del mensaje del
+commit `cc0059f`; esos textos se leyeron únicamente para saber qué había que
+intentar refutar.
+
+## Veredicto del anexo
+
+> **`PASS WITH WARNINGS`** — **`blocking_for_archive`: `false`**.
+>
+> `C-1` (CRITICAL) está **cerrado con evidencia de control A/B propia**. `W-1`
+> está **cerrado** en repositorio y sobre HTTP, en los dos agregados y en las dos
+> operaciones. Los cuatro gates vuelven verdes con conteos reales. `CA-7` sigue
+> intacto a nivel de byte. No queda ningún hallazgo CRITICAL.
+>
+> El cambio de veredicto **no** revoca el del primer pase: aquel era correcto para
+> `ad4bb4b`. Este es el veredicto para `cc0059f`.
+
+## 1. `C-1` — ¿desapareció de verdad?
+
+Un tally verde no prueba nada aquí: el primer pase ya obtuvo 10/10 verdes **con
+el defecto presente**. Así que la evidencia decisiva es un **control A/B a nivel
+de mecanismo**, con arnés propio (`reverify-race.cjs`, escrito en esta sesión, en
+el scratchpad; nunca dentro del repo) y con **las dos ramas ejecutadas por el
+mismo arnés**:
+
+- **Rama de control (código PRE-arreglo).** Se construyó `dist/vf-prefix.cjs`
+  copiando el `dist/index.js` recién compilado y revirtiendo por string-replace
+  **solo** los dos `.filter(...)`. Vive en `dist/`, que está gitignored, y se
+  borró al cerrar (`git status` limpio, `ls dist/` sin residuos). El working tree
+  **nunca** se modificó.
+- **Rama arreglada.** El `dist/index.js` de `just db-build` sobre `cc0059f`.
+
+Arnés: 2 lectores en bucle (`listProducts({ name })` + `findProductBySlug`) sobre
+el producto sembrado **id 1** (`slug=apples`), y 1 escritor en bucle
+(`createTag` -> `productTag.create(productId=1)` -> `deleteTag`), con limpieza por
+id exacto.
+
+| Rama | Duración | reads | writeCycles | **CRASHES** | Tasa |
+|---|---|---|---|---|---|
+| **Control (pre-arreglo)** | 20 s | 1863 | 772 | **364** | **19,5 %** |
+| Arreglada | 90 s | 8658 | 3068 | **0** | 0 |
+| Arreglada | 30 s | 2458 | 879 | **0** | 0 |
+| **Arreglada, total** | 120 s | **11 116** | **3947** | **0** | **0** |
+
+Firma del control, idéntica a la del primer pase y a la de las fases anteriores:
+
+```
+RESULT module=vf-prefix.cjs reads=1863 writeCycles=772 CRASHES=364
+FIRST ERROR: TypeError :: Cannot read properties of null (reading 'id')
+    at _toTagRecord (packages\db\dist\vf-prefix.cjs:554:17)
+    at packages\db\dist\vf-prefix.cjs:1213:34
+    at Array.map (<anonymous>)
+cleanup -> tags=10 product_tag=0
+```
+
+```
+RESULT module=index.js reads=8658 writeCycles=3068 CRASHES=0
+cleanup -> tags=10 product_tag=0
+```
+
+**Cota.** El arnés reproduce el defecto al 19,5 % en el mismo binario, la misma
+base y el mismo producto sonda; a esa tasa, 11 116 lecturas habrían producido
+~2170 fallos. Se observaron **0**. Cota superior al 95 % de confianza con 0/11 116
+=> **< 0,035 %**, es decir una reducción de al menos **x550** frente a la tasa
+medida del control. No es "no lo vi": es "no puede estar a la tasa anterior".
+
+**Gate designado, además:** `just db-check` x5 corridas secuenciales,
+**9 archivos / 131 tests passed** y exit `0` en las cinco. Se declara
+explícitamente como evidencia **corroborante, no probatoria** (ver arriba por qué).
+
+`c1_closed`: **true**.
+
+## 2. La pregunta de fondo: ¿el `.filter()` es correcto o solo cómodo?
+
+Es la pieza más delicada de la remediación, porque un `.filter()` **descarta en
+silencio**. Tres preguntas separadas, con respuesta medida:
+
+### 2.1 ¿Puede existir una fila pivote huérfana en reposo? **No.** Demostrado.
+
+`db/schema.sql:425-435` declara las dos pivotes con FK `NOT NULL` +
+`ON DELETE CASCADE`. Verificado contra la base real (`pg_constraint`), no solo
+contra el DDL: **no deferrable, no deferred** en las cuatro FKs.
+
+```
+product_tag_tag_id_fkey            FOREIGN KEY (tag_id)      REFERENCES tags(id)       ON DELETE CASCADE
+product_tag_product_id_fkey        FOREIGN KEY (product_id)  REFERENCES products(id)   ON DELETE CASCADE
+category_product_category_id_fkey  FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
+category_product_product_id_fkey   FOREIGN KEY (product_id)  REFERENCES products(id)   ON DELETE CASCADE
+(condeferrable=f, condeferred=f en las cuatro)
+```
+
+Tres intentos de fabricar el huérfano, los tres rechazados por la base:
+
+```
+INSERT INTO product_tag VALUES (1, 999999);
+  ERROR: violates foreign key constraint "product_tag_tag_id_fkey"
+  DETAIL: Key (tag_id)=(999999) is not present in table "tags".
+
+INSERT INTO product_tag VALUES (1, NULL);
+  ERROR: null value in column "tag_id" ... violates not-null constraint
+
+-- enlazar y luego borrar el tag, en la misma transacción:
+pivot_before_delete=1
+orphan_pivot_rows_after=0     <- el CASCADE se lleva la pivote atómicamente
+```
+
+**Conclusión: el `.filter()` no puede enmascarar un problema de integridad de
+datos, porque ese problema no es representable.** Solo un
+`session_replication_role = replica` o un `DISABLE TRIGGER ALL` de superusuario
+podría crear la fila huérfana, y eso ya no es un estado alcanzable por la
+aplicación.
+
+### 2.2 ¿El array más corto es la respuesta correcta, o habría que emitir un error?
+
+**Correcta.** La ventana en la que `link.tag` llega `null` es exactamente el
+*read skew* interno de Prisma: la consulta 1 (filas de `product_tag`) ve un
+snapshot pre-borrado y la consulta 2 (`tags` por id) ve uno post-borrado. Al
+filtrar, la respuesta que se devuelve es **la misma que devolvería una lectura
+íntegramente posterior al borrado**: el tag ya no existe, y el enlace tampoco
+existe en reposo. Es decir, el resultado es **serializable a "leer después del
+DELETE"**, que es una linealización legítima de dos operaciones concurrentes.
+
+La alternativa —propagar un error— convertiría una carrera benigna en un **500**
+en el SSR de la tienda, que es precisamente el `W-3` del primer pase. Y no hay
+tercera vía razonable: no se puede "rellenar" el tag, porque ya no existe.
+
+Tampoco hay riesgo de **falso descarte**: `link.tag` solo llega `null` cuando la
+consulta 2 no encontró la fila en su snapshot, no por truncado ni por batching.
+Nunca se pierde un enlace cuyo destino esté vivo.
+
+Coherencia interna, además: la línea hermana `manufacturer` (`:511-513`) ya usaba
+guarda de null por una razón *legítima y distinta* (`products.manufacturer_id` es
+`NULLABLE`, FK `ON DELETE SET NULL`), y de paso cubría la carrera. La remediación
+alinea `categories`/`tags` con ese precedente en vez de inventar un patrón.
+
+### 2.3 La objeción real: la guarda es **invisible al sistema de tipos**.
+
+Aquí está la única debilidad genuina. Prisma tipa `link.tag` y `link.category`
+como **no-nullables**, así que `.filter((link) => link.tag !== null)` es, para
+TypeScript, una condición que nunca puede ser falsa. `tsc --noEmit` pasa
+(`exit 0`, verificado), pero eso significa que **nada mecánico impide que un
+refactor futuro borre la guarda por "código muerto"**. Lo único que la sostiene
+es el comentario en español que el propio commit añadió —que es bueno y explica
+la causa raíz— y **ningún test**. Ver `RV-1`.
+
+`filter_judgement`: **correcto, no meramente cómodo.** No puede enmascarar un
+problema de integridad (2.1), devuelve la única respuesta consistente disponible
+(2.2), y es coherente con la guarda hermana preexistente. Su fragilidad no es
+semántica sino de **mantenimiento**: es invisible al compilador y no está cubierta
+por ningún test.
+
+## 3. `W-1` — ¿está cerrada?
+
+Sí, en **las dos capas**, los **dos agregados** y las **dos operaciones**.
+La distinción que importa es la del primer pase: `image IS NULL` (columna SQL
+`NULL` = "ausente") frente a `jsonb_typeof(image) = 'null'` (jsonb `null` escrito
+encima = pérdida). Medido con `psql` sobre la columna, nunca por la respuesta HTTP.
+
+### 3.1 Nivel repositorio (contra `dist/` recién construido)
+
+```
+sanity: (0 != null)=true  ("" != null)=true  (false != null)=true  (null != null)=false
+
+== TAGS ==
+  1 create image=objeto           image={"id": 7, "original": "o"} | sqlNULL=false | jsonb_typeof=object
+  2 update image=null             image={"id": 7, "original": "o"} | sqlNULL=false | jsonb_typeof=object | name=zzvf Img A2 details=keep-me
+  3 update image=objeto nuevo     image={"id": 8, "original": "p"} | sqlNULL=false | jsonb_typeof=object
+  4 update sin clave image        image={"id": 8, "original": "p"} | ... | details=changed-details
+  5 update image=undefined        image={"id": 8, "original": "p"}
+  6 create image=null             image=<SQLNULL>                  | sqlNULL=true
+  7 create image=0 (falsy valido) image=0                          | jsonb_typeof=number
+
+== MANUFACTURERS ==
+  1 create image=objeto           image={"id": 7, "original": "o"} | jsonb_typeof=object | desc=keep-desc | web=https://keep.example
+  2 update image=null             image={"id": 7, "original": "o"} | name=zzvf Img MA2 | desc=keep-desc | web=https://keep.example
+  3 update image=objeto nuevo     image={"id": 8, "original": "p"}
+  4 update sin clave image        image={"id": 8, "original": "p"} | desc=changed-desc | web=https://keep.example
+  5 create image=null             image=<SQLNULL>                  | sqlNULL=true
+
+cleanup -> tags=10 manufacturers=14 product_tag=0
+```
+
+### 3.2 Nivel HTTP (proceso compilado, token real de `admin@demo.com`)
+
+```
+POST /api/tags {"name":"Vf2 Img Tag","details":"keep-details","image":{...}} -> 201 id=7959
+  psql: image={"id": 7, "original": "o"} sqlnull=false jt=object details=keep-details
+PUT  /api/tags/7959 {"name":"Vf2 Img Tag B","image":null}                    -> 200
+  psql: image={"id": 7, "original": "o"} sqlnull=false jt=object   <- INTACTA
+        name=Vf2 Img Tag B  details=keep-details                   <- name sí cambió; details preservado
+PUT  /api/tags/7959 {"image":{"id":8,"original":"p"}}                        -> 200
+  psql: image={"id": 8, "original": "p"}                           <- SIGUE PUDIENDO FIJARSE
+PUT  /api/tags/7959 {"details":"changed-details"}   (sin clave image)        -> 200
+  psql: image={"id": 8, "original": "p"}  details=changed-details   <- ausencia respetada
+POST /api/tags {"name":"Vf2 Img Tag Null","image":null}                      -> 201 id=7960
+  psql: image=<SQLNULL> sqlnull=true                               <- "ausente", no jsonb null
+
+POST /api/manufacturers {..."description":"keep-desc","website":"https://keep.example","image":{...}} -> 201 id=197
+  psql: image={"id": 7, "original": "o"} desc=keep-desc web=https://keep.example
+PUT  /api/manufacturers/197 {"name":"Vf2 Img Manu B","image":null}           -> 200
+  psql: image={"id": 7, "original": "o"} jt=object                 <- INTACTA
+        name=Vf2 Img Manu B  desc=keep-desc  web=https://keep.example
+PUT  /api/manufacturers/197 {"image":{"id":8,"original":"p"}}                -> 200
+  psql: image={"id": 8, "original": "p"}
+PUT  /api/manufacturers/197 {"description":"changed-desc"}  (sin clave image)-> 200
+  psql: image={"id": 8, "original": "p"} desc=changed-desc web=https://keep.example
+POST /api/manufacturers {"name":"Vf2 Img Manu Null","image":null}            -> 201 id=198
+  psql: image=<SQLNULL> sqlnull=true
+```
+
+Contraste directo con el primer pase, que sobre `PUT {"image":null}` midió
+`image::text=null | image IS NULL = false | jsonb_typeof=null`. Ahora el valor
+previo **no se toca**. La divergencia `V-5` del diseño («`image: null` se trata
+como ausente y la columna queda intacta») pasa de **FALSA** a **REAL Y EXACTA**.
+
+### 3.3 Tres comprobaciones que la remediación podía haber roto y no rompió
+
+1. **`!= null` no descarta falsy válidos.** `image: 0` persiste como
+   `jsonb_typeof=number`; `0 != null`, `'' != null` y `false != null` son `true`.
+   El `!=` suelto acierta aquí: es el chequeo *nullish*, no un chequeo de
+   veracidad. Habría sido un error usar `input.image &&`.
+2. **Fijar imagen sigue funcionando** (casos 3 de las dos capas).
+3. **La proyección HTTP no cambió.** El paso de jsonb `null` a `NULL` SQL en el
+   `create` es invisible en el contrato: `POST` y `GET` emiten `"image": null` con
+   la clave presente en los dos casos (verificado sobre el registro creado con
+   `image: null`). No hay deriva de bytes.
+
+**Nota de capas, sin consecuencia funcional hoy:** los servicios de Nest
+(`tags.service.ts:140,176`, `manufacturers.service.ts:187,233`) siguen usando
+`!== undefined`, así que el `null` del cliente **sí** cruza la frontera de servicio
+y es el repositorio quien lo descarta. Como todas las escrituras pasan por el
+repositorio, el comportamiento observable es correcto; pero la decisión vive en un
+solo sitio, y sin test que la fije (ver `RV-1`).
+
+`w1_closed`: **true**.
+
+## 4. Barrido de regresión — los cuatro gates
+
+| Gate | Resultado real | Exit |
+|---|---|---|
+| `just db-build` (previo, para que `dist/` refleje `cc0059f`) | Prisma Client 7.10.0 · `dist\index.js` **145.08 KB** · `dist\index.d.ts` 1.39 MB | `0` |
+| `just db-check` x5 | **9 archivos / 131 tests passed** en las cinco | `0` x5 |
+| `cd apps/api/rest && npx jest` | **8 suites / 135 tests passed**, 29,7 s | `0` |
+| `just build-api` | `rimraf dist` + `nest build` · `Done in 21.17s` · sin errores de TypeScript | `0` |
+| `just verify` | `OK API :9001/api/settings 200 5503B` · `OK Shop :3003/en 200 190788B cards:30` · `OK Admin :3002/en/login 200 72821B cards:1` | `0` |
+
+Extras no exigidos por la DoD:
+
+- `packages/db` -> `npm run typecheck` (`tsc --noEmit`) **exit 0**. Relevante:
+  confirma que comparar contra `null` un tipo que Prisma declara no-nullable
+  compila sin queja (y por eso mismo no protege — ver 2.3).
+- `packages/db` -> `npm run lint` (`biome check .`) **exit 1, 26 errores**.
+  **Preexistente y fuera de alcance:** son `assist/source/organizeImports` y un
+  `lint/complexity/noUselessSwitchCase`, y fallan igual en archivos que este
+  change **no toca** (`types.repository.ts`, `types.integration.test.ts`,
+  `auth-tokens.integration.test.ts`); el `switch` señalado en
+  `products.repository.ts:234` ya existía en `da7dd84`. `biome check` no es
+  ninguno de los cuatro gates ni está en la DoD. Se registra, no se acciona.
+
+### CA-1 — paridad de key-set, remedida
+
+`node -e` sobre las respuestas reales, comparación posicional (`a[i]===b[i]`),
+**sin `.sort()` en ningún punto**:
+
+```
+== tags == id=7961  POST=201 GET=200 PUT=200 DELETE=200
+  keys(9) esperado=9 -> true
+  orden POST===GET: true | POST===PUT: true | POST===DELETE: true
+  keys: id,name,language,translated_languages,slug,details,image,icon,type
+  GET tras DELETE -> 404
+== manufacturers == id=199  POST=201 GET=200 PUT=200 DELETE=200
+  keys(13) esperado=13 -> true
+  orden POST===GET: true | POST===PUT: true | POST===DELETE: true
+  keys: id,name,slug,language,translated_languages,products_count,is_approved,description,website,socials,image,cover_image,type
+  GET tras DELETE -> 404
+```
+
+### CA-7 — piezas compartidas, byte a byte
+
+```
+$ git diff --stat da7dd84..HEAD -- packages/db/src/slug.ts packages/db/src/domain-errors.ts apps/api/rest/src/common/errors/
+(salida vacía, exit 0)
+$ git diff da7dd84..HEAD -- <los mismos tres paths> | wc -c
+0
+```
+
+**Cero bytes** de diff en los tres paths protegidos, con el commit remediador
+incluido en el rango. La distinción se sostiene: `products.repository.ts` **no**
+es uno de los tres paths de `CA-7`; lo protegido dentro de `packages/db` es
+`slug.ts` y `domain-errors.ts`, no todo el paquete. **`CA-7` no está afectado por
+la remediación.**
+
+## 5. Contabilidad de alcance — desviación declarada
+
+`git diff --name-status da7dd84..HEAD` (con `cc0059f`): **12 archivos de código**
+(antes 11) + 9 artefactos de `openspec/changes/escrituras-tags-manufacturers/`.
+El archivo nuevo en la lista es:
+
+```
+M  packages/db/src/repositories/products.repository.ts     (13 añadidas / 2 borradas)
+```
+
+**Se declara sin ambages:** `products.repository.ts` **no aparece en la tabla
+*File Changes* del diseño** (`design.md:459-479`), y esa tabla se declara a sí
+misma cerrada («cualquier archivo fuera de ella con diff es una desviación que hay
+que declarar»). Por tanto es una **desviación de alcance**, y fue una **decisión
+explícita del usuario** tomada sobre el hallazgo `W-3` de este mismo informe: se
+prefirió cerrar la causa raíz —que también es un 500 real de producción y la misma
+trampa que espera a US-28 en la línea gemela de `categories`— antes que arreglar
+solo el test, que habría sido frágil porque cualquier producto es compartido entre
+suites. `sdd-archive` debe registrarla como **desviación declarada, no como
+violación**: no toca ninguna pieza protegida por `CA-7`, no altera ningún contrato
+HTTP y su diff son 13/2 líneas, de las cuales 8 son el comentario que documenta la
+causa raíz.
+
+Los otros 11 archivos siguen dentro de la valla, y siguen **sin diff** los paths
+que el primer pase enumeró como intactos.
+
+## 6. Higiene de finales de línea del commit remediador
+
+Auditoría byte a byte sobre los **blobs comprometidos** de `cc0059f` (object
+store, no working tree), con script propio de node:
+
+```
+CR=0 CRLF=0 loneCR=0    openspec/changes/escrituras-tags-manufacturers/verify-report.md
+CR=0 CRLF=0 loneCR=0    packages/db/src/repositories/manufacturers.repository.ts
+CR=0 CRLF=0 loneCR=0    packages/db/src/repositories/products.repository.ts
+CR=0 CRLF=0 loneCR=0    packages/db/src/repositories/tags.repository.ts
+```
+
+**Cero `\r`** de cualquier tipo. Y **ninguna reescritura fantasma**: el diffstat es
+quirúrgico (`2/2`, `2/2`, `13/2`) frente a archivos de 213, 240 y 528 líneas —
+nada parecido al `213/213` que hubo que corregir con `--amend` en el commit #2.
+
+## 7. Hallazgos NUEVOS que introduce la propia remediación
+
+### WARNING
+
+#### `RV-1` — Los dos arreglos van **sin ningún test que los fije**
+
+`cc0059f` no toca un solo archivo de test (verificado: `git show --name-only` solo
+lista los 3 repositorios y este informe). Consecuencias asimétricas:
+
+- **`C-1` / la guarda de null:** es inherentemente difícil de testear (depende de
+  una carrera) y además **invisible al sistema de tipos** (ver 2.3). Un refactor
+  futuro puede borrar los dos `.filter()` como código muerto, `tsc` no dirá nada,
+  y el gate volverá a ser no determinista al 8-20 %. Lo único que lo sostiene es
+  el comentario del código. Mitigación barata y determinista disponible: un test
+  de unidad sobre `_toProductRecord` con un payload sintético que traiga
+  `{ tag: null }` / `{ category: null }` — no necesita carrera ni base.
+- **`W-1` / `image: null`:** es **determinista y trivial de testear**, y sigue sin
+  test. `grep` sobre `tags.integration.test.ts` y
+  `manufacturers.integration.test.ts` -> **0 asserts sobre `image`**; en los specs
+  de jest, `image: null` aparece solo como dato de fixture
+  (`tags.service.spec.ts:73`, `manufacturers.service.spec.ts:75`), nunca como
+  aserción de la semántica de escritura. Es exactamente la condición que permitió
+  que `V-5` fuera falsa durante todo el change sin que nadie lo notara: la
+  divergencia estaba *declarada* y por eso quedó *sin probar*. Cerrar el código
+  sin cerrar la cobertura deja el mismo agujero abierto para la próxima vez.
+
+**No bloquea el archivo** (nada está roto ahora mismo, y añadir tests saldría de la
+tabla *File Changes* igual que el arreglo), pero debe viajar a US-28 como trabajo
+con dueño.
+
+#### `RV-2` — El arreglo es un parche puntual en 2 de 6 sitios estructuralmente idénticos
+
+El mensaje del commit justifica salirse del alcance apelando a que se pre-empta
+US-28. Es cierto para `categories`, pero la **clase** de defecto —desreferenciar
+sin guarda el destino de un `include` que Prisma resuelve en dos consultas—
+sobrevive en otros cuatro sitios del mismo `packages/db`:
+
+| Sitio | Forma | ¿Alcanzable hoy? |
+|---|---|---|
+| `products.repository.ts:509` `type: _toTypeRecord(row.type)` | to-one sin guarda. `products.type_id` es `NOT NULL` -> `types` `ON DELETE CASCADE` | **Casi no.** `DELETE /api/types` existe desde US-27a, pero `deleteType` cuenta dependientes y devuelve 409 si hay productos o categorías; solo queda el TOCTOU ya declarado de US-27a |
+| `products.repository.ts:510` `shop: _toShopRecord(row.shop)` | to-one sin guarda. `products.shop_id` es `NOT NULL` -> `shops` `ON DELETE CASCADE` | **No hoy** (no hay ruta que borre tiendas) — **pero es justo la que abre US-30**, y borrar una tienda arrastra sus productos |
+| `categories.repository.ts:99` `_toTypeRecord(row.type)` | to-one sin guarda | Igual que el primero, cubierto por el 409 de `deleteType` |
+| `users.repository.ts:181` `row.permissions.map((link) => _toPermissionRecord(link.permission))` | **pivote sin guarda, forma idéntica a la que se acaba de arreglar**. `permission_user` con las dos FKs `ON DELETE CASCADE` | **No**: no existe ninguna ruta que borre permisos (tabla de referencia estática) |
+
+Ninguno es explotable hoy, así que **no bloquea el archivo**. Pero la lectura
+correcta es que la remediación **no** cerró la clase: la cerró en los dos sitios
+donde el gate la hizo visible. **US-30 debe guardar `row.shop` antes de añadir
+`deleteShop`**, o reproducirá `C-1` con la firma `_toShopRecord`. Conviene
+apuntarlo en el diseño de US-30 en lugar de redescubrirlo en verify.
+
+### SUGGESTION
+
+#### `RV-3` — El «5503 bytes» de `/api/settings` son 5503 **caracteres**, no bytes
+
+Hallazgo lateral, no atribuible a este change, pero toca el invariante central del
+repo. `just verify` reporta `5503B` porque su script acumula el body en una
+**string de JS** y mide `body.length` (unidades UTF-16, `justfile:196-204`). El
+payload real pesa **5504 bytes** (`curl | wc -c` y `Content-Length: 5504`,
+deterministas: mismo `md5` en 3 muestras consecutivas). La diferencia es un único
+carácter no-ASCII, el `©` del `copyrightText`:
+
+```
+bytes= 5504   js_string_length= 5503   delta= 1   non-ascii= ["©"]
+```
+
+No hay ninguna deriva: las dos cifras miden cosas distintas. Pero `CLAUDE.md`
+documenta el precedente de `/api/settings` como «5503 bytes antes y después», y
+`just verify` imprime una `B` que sugiere bytes. Con «contratos preservados byte a
+byte» como regla de diseño del épico, conviene que la unidad del medidor sea la
+que dice ser — o que la doctrina diga «caracteres».
+
+## 8. Hallazgos ARRASTRADOS — confirmación de que siguen en pie
+
+No remediados y no re-litigados: solo comprobados otra vez para que
+`sdd-archive` los arrastre con exactitud.
+
+| # | Estado | Comprobación propia de este anexo |
+|---|---|---|
+| **`W-2`** asimetría de `type_id` string, con mensaje falso en `tags` | **EN PIE, sin cambios** | `POST /api/tags {"name":"Vf3 Str","type_id":"9"}` -> **400** `` `tags.type_id` referencia un registro inexistente (`9`). `` — y el type 9 **existe**. `POST /api/manufacturers` con el mismo body -> **201**, `type={"id":9,"name":"Gadget","slug":"gadget","logo":null}`. Reproducido literal |
+| **`W-3`** NPE en `products.repository.ts` | **CERRADO** por la remediación en `categories`/`tags`; **abierto** en `type`/`shop` -> reclasificado como `RV-2` |
+| **`W-4`** volumen +26 % | **EN PIE, ligeramente peor** | Remedido con `git diff --numstat` (solo código): `684eef4` 364 · `d6cf840` 620 · `aaeed9b` 386 · `ad4bb4b` 730 · `cc0059f` **23**. Neto `da7dd84..HEAD` = **2037 añadidas / 72 borradas / 2109 cambiadas** (era 2094) vs ~1666 previstas => **+26,6 %**. Anclas confirmadas: `tags.service.spec.ts` **474**, `manufacturers.service.spec.ts` **551**. La recomendación de reanclar en ~500 líneas por agregado sigue vigente |
+| **`W-5`** aritmética de `apply-progress.md` | **EN PIE, verbatim** | El archivo sigue afirmando `manufacturers.service.spec.ts` = **498** líneas (`:824`, `:841`, `:1285`, `:1295`) y `39 + 109 + 498 = 646 added`. Real (`git show --numstat ad4bb4b`): **551/0**; `create-manufacturer.dto.ts` **38/8** (afirmado 39/6); `manufacturers.service.ts` **108/25** (afirmado 109/31). `wc -l` confirma 551 |
+| **`W-6`** `V-11` subestimada: el bump ocurre en **cada** `just db-check` | **EN PIE, y ahora con serie temporal** | `products.updated_at` de la fila **id 1**: `2026-09-10 16:58:13.994785+00` al cierre del primer pase -> **`2026-09-10 17:45:17.506137+00`** al cierre de este anexo. Lo movieron **solo mis 5 corridas del gate** (`manufacturers.integration.test.ts:215-237` hace `prisma.product.update` sobre el producto sembrado id 1, y otra vez al `SET NULL`). La fila **id 2** sigue en `2026-09-02 15:33:36.102816+00`, intacta. Prueba directa de que la deriva es por corrida de gate, no residuo de setup manual |
+| `S-1`, `S-2`, `S-3` | **EN PIE** | No tocadas. `S-3` (ausencia de `vitest.config.*`) gana peso: sigue siendo la razón por la que los 9 archivos corren en paralelo y por la que `C-1` fue posible |
+
+## 9. Lista *NOT VERIFIED* — sin cambios
+
+Los **10 puntos** de la sección *NOT VERIFIED* del primer pase siguen vigentes tal
+cual: la remediación no aporta evidencia sobre ninguno y este anexo tampoco los
+persiguió (no estaban en el encargo). En particular siguen sin observación de
+runtime `SlugConflictError`->409 y `DependentRowsError`->409 sobre HTTP,
+`meta.target` como array en un P2002 real, y `just build` (shop+admin de
+producción). **No se degradó ni se "cerró por conveniencia" ninguno.**
+
+## 10. Entorno que dejo atrás
+
+**Base de datos** — exactamente como la encontré, verificado con `just db-check`
+detenido y todos los procesos muertos:
+
+```
+tags                                     10   <- baseline
+manufacturers                            14   <- baseline
+product_tag                               0   <- baseline
+products                               1200   <- baseline
+products WHERE manufacturer_id IS NOT NULL 0  <- baseline
+types                                    10
+categories                              198
+category_product                           0
+leftovers 'Vf%' / 'zz%' en tags y manufacturers: 0
+```
+
+- **`just db-reset` NUNCA se ejecutó.** El contenedor `safari-postgres` no se paró
+  ni se arrancó en este anexo: `Up About an hour (healthy)`,
+  `0.0.0.0:5433->5432/tcp`.
+- **Limpieza toda por id exacto devuelto por la respuesta** — tags 7959, 7960,
+  7961, 7962; manufacturers 197, 198, 199, 200 — más los centinelas del arnés
+  (`zzvf-race-*`) y de la sonda de repositorio (`zzvf-img-*`), borrados por id y
+  con un barrido final por prefijo propio. Nunca un `id > N`.
+- **Derivas no restaurables, declaradas:** `tags_id_seq` -> **7962** y
+  `manufacturers_id_seq` -> **200** (el arnés del control A/B creó y borró ~3900
+  tags). Ningún assert del repo depende de posiciones de secuencia (los tests de
+  colisión usan sufijos de slug, no ids). `products.updated_at` de la fila id 1
+  movido otra vez, ver `W-6`; la fila id 2 sigue intacta.
+- **Procesos: cero orfandades.** Antes de empezar comprobé el **dueño del puerto**
+  y no solo la respuesta: `netstat` no mostraba nada en 9001/3002/3003, y los 12
+  `node.exe` vivos eran servidores MCP de la sesión (`chrome-devtools-mcp`,
+  `memento`), ninguno un `nest start --watch` — el primer pase había limpiado
+  bien. Levanté **un solo** proceso de API, `env PORT=9001 node -r
+  source-map-support/register dist/main` (sin `--watch`), y **verifiqué que el PID
+  que servía el 9001 era el mío** antes de fiarme de cualquier respuesta:
+  `PID 35100`, `CreationDate 12:47:24`, `CommandLine ... dist/main`. Un segundo
+  intento de arranque murió con `EADDRINUSE` — era mi propio primer proceso, no un
+  huérfano; se confirmó por PID y hora de creación, no por suposición. Después
+  `just shop-dev` (61144) y `just admin-dev` (41452) solo para `just verify`.
+  **Los tres muertos al cierre**: `netstat` de 9001/3002/3003 vacío y ningún
+  `node` con `nest`/`next`/`dist/main` en su línea de comandos.
+- **Archivos:** todos los arneses en el scratchpad de la sesión, fuera del repo.
+  El único artefacto escrito dentro del repo fue `packages/db/dist/vf-prefix.cjs`
+  (el build de control A/B), en un directorio **gitignored** y **borrado** al
+  cerrar (`ls dist/` -> solo `index.d.ts`, `index.js`, `index.js.map`).
+  `git status --porcelain` -> **vacío** salvo este anexo.
+
+## 11. Recomendación del anexo
+
+1. **`sdd-archive` está desbloqueado.** No queda ningún hallazgo CRITICAL. Al
+   archivar, registrar `products.repository.ts` como **desviación de alcance
+   declarada** (§5), no como violación.
+2. **Arrastrar `W-2`, `W-4`, `W-5`, `W-6`, `S-1`, `S-2`, `S-3`** al informe de
+   archivo tal como están redactados; los cuatro `W` se reconfirmaron aquí uno a
+   uno.
+3. **`RV-1` y `RV-2` como insumo de US-28, con dueño:** (a) un test de unidad
+   determinista sobre `_toProductRecord` con `{tag:null}`/`{category:null}` —
+   fija la guarda que el compilador no protege; (b) un assert de integración de
+   `image: null` en las dos suites; (c) **guardar `row.shop` antes de que US-30
+   añada `deleteShop`**, y `row.type` de paso.
+4. **`S-3` sube de prioridad:** `packages/db/vitest.config.ts` con aislamiento
+   explícito por archivo sigue siendo material de US-10 / Épico 9, pero es la
+   causa estructural de que `C-1` fuera posible y de que `DD-8.1` exista.
+5. **`RV-3`** es una corrección de una línea en `CLAUDE.md` o en el `justfile`, a
+   criterio del dueño del repo.
