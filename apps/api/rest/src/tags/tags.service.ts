@@ -6,31 +6,25 @@ import {
 } from '@nestjs/common';
 import { paginate } from 'src/common/pagination/paginate';
 import {
+  createTag,
+  deleteTag,
   findTagBySlug,
   getUserFriendlyMessage,
   isPrismaConnectionError,
   listTags,
   listTypes,
+  updateTag,
   type ListTagsInput,
+  type Prisma,
   type TagRecord,
   type TypeRecord,
 } from '@safari/db';
+import { toWriteHttpException } from 'src/common/errors/domain-error.mapper';
 import { CreateTagDto } from './dto/create-tag.dto';
 import { GetTagsDto, TagPaginator } from './dto/get-tags.dto';
 import { UpdateTagDto } from './dto/update-tag.dto';
 import { Tag } from './entities/tag.entity';
-import tagsJson from '@db/tags.json';
-import { plainToClass } from 'class-transformer';
-import Fuse from 'fuse.js';
 import { parseSearch } from 'src/common/search/parse-search';
-
-const tags = plainToClass(Tag, tagsJson);
-
-const options = {
-  keys: ['name'],
-  threshold: 0.3,
-};
-const fuse = new Fuse(tags, options);
 
 /**
  * `TagRecord` (camelCase, `@safari/db`) → proyección de 9 claves
@@ -62,15 +56,6 @@ function toTagDto(
 
 @Injectable()
 export class TagsService {
-  private tags: Tag[] = tags;
-
-  create(createTagDto: CreateTagDto) {
-    return {
-      id: this.tags.length + 1,
-      ...createTagDto,
-    };
-  }
-
   async findAll({ page, limit, search }: GetTagsDto): Promise<TagPaginator> {
     if (!page) page = 1;
 
@@ -128,11 +113,94 @@ export class TagsService {
     return toTagDto(record, typesById);
   }
 
-  update(id: number, updateTagDto: UpdateTagDto) {
-    return this.tags[0];
+  /**
+   * Proyecta el DTO campo a campo en `CreateTagInput` (B-4: nunca spread
+   * del DTO, nunca ausente → `null`). `type_id` viaja tal cual (ya es
+   * `number | undefined` en el DTO, sin coerción — a diferencia de
+   * `manufacturers`, `tag.entity.ts` no declara `type_id` como `string`).
+   * `image` se castea en la frontera (`as unknown as
+   * Prisma.InputJsonValue`, nunca `as any` — design.md, DD-1): `Prisma`
+   * viaja type-only desde el barrel.
+   *
+   * `type` se resuelve con un `listTypes()` SECUENCIAL, después de la
+   * escritura (design.md, DD-7): nunca `Promise.all` — en paralelo, si la
+   * escritura rechaza con un error de dominio y `listTypes()` rechaza por
+   * conexión, `Promise.all` propaga el primero que rechace y un 400
+   * determinista podría salir como 503.
+   */
+  async create(createTagDto: CreateTagDto): Promise<Tag> {
+    try {
+      const record = await createTag({
+        name: createTagDto.name,
+        ...(createTagDto.slug !== undefined && { slug: createTagDto.slug }),
+        ...(createTagDto.details !== undefined && {
+          details: createTagDto.details,
+        }),
+        ...(createTagDto.icon !== undefined && { icon: createTagDto.icon }),
+        ...(createTagDto.image !== undefined && {
+          image: createTagDto.image as unknown as Prisma.InputJsonValue,
+        }),
+        ...(createTagDto.type_id !== undefined && {
+          typeId: createTagDto.type_id,
+        }),
+        ...(createTagDto.language !== undefined && {
+          language: createTagDto.language,
+        }),
+      });
+      const types = await listTypes();
+      return toTagDto(record, new Map(types.map((t) => [t.id, t])));
+    } catch (error) {
+      throw toWriteHttpException(error);
+    }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} tag`;
+  /**
+   * `+id` llega como `NaN` desde el controlador si `PUT /api/tags/abc`
+   * (`tags.controller.ts:43`); sin esta guarda, `BigInt(NaN)` revienta en
+   * 500 dentro del repositorio (design.md, DD-10 — precedente exacto
+   * `users.service.ts:94,113,142`). El `slug` del DTO se ignora siempre: es
+   * inmutable (`UpdateTagInput` ni siquiera lo declara).
+   */
+  async update(id: number, updateTagDto: UpdateTagDto): Promise<Tag> {
+    if (!Number.isInteger(id)) {
+      throw new NotFoundException(`No existe un tag con id ${id}.`);
+    }
+
+    try {
+      const record = await updateTag(id, {
+        ...(updateTagDto.name !== undefined && { name: updateTagDto.name }),
+        ...(updateTagDto.details !== undefined && {
+          details: updateTagDto.details,
+        }),
+        ...(updateTagDto.icon !== undefined && { icon: updateTagDto.icon }),
+        ...(updateTagDto.image !== undefined && {
+          image: updateTagDto.image as unknown as Prisma.InputJsonValue,
+        }),
+        ...(updateTagDto.type_id !== undefined && {
+          typeId: updateTagDto.type_id,
+        }),
+        ...(updateTagDto.language !== undefined && {
+          language: updateTagDto.language,
+        }),
+      });
+      const types = await listTypes();
+      return toTagDto(record, new Map(types.map((t) => [t.id, t])));
+    } catch (error) {
+      throw toWriteHttpException(error);
+    }
+  }
+
+  async remove(id: number): Promise<Tag> {
+    if (!Number.isInteger(id)) {
+      throw new NotFoundException(`No existe un tag con id ${id}.`);
+    }
+
+    try {
+      const record = await deleteTag(id);
+      const types = await listTypes();
+      return toTagDto(record, new Map(types.map((t) => [t.id, t])));
+    } catch (error) {
+      throw toWriteHttpException(error);
+    }
   }
 }

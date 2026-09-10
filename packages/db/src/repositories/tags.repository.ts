@@ -143,7 +143,6 @@ export async function createTag(input: CreateTagInput): Promise<TagRecord> {
   } catch (error) {
     throw translateCatalogWriteError(error, {
       aggregate: 'tags',
-      uniqueField: 'slug',
     });
   }
 }
@@ -184,7 +183,6 @@ export async function updateTag(
     throw translateCatalogWriteError(error, {
       aggregate: 'tags',
       id,
-      uniqueField: 'slug',
     });
   }
 }
@@ -210,7 +208,6 @@ export async function deleteTag(id: number): Promise<TagRecord> {
     throw translateCatalogWriteError(error, {
       aggregate: 'tags',
       id,
-      uniqueField: 'slug',
     });
   }
 }
