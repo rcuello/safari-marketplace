@@ -37,10 +37,18 @@ guarde de verdad.
   `manufacturer-form.tsx:184-220` (`name`, `slug` opcional, `description`,
   `website`, `socials[]`, `image`, `cover_image`, `is_approved`, `type_id`,
   `language`, más `shop_id` solo en create).
-- **El toggle de aprobación NO es un parche parcial**:
-  `manufacturer-list.tsx:134-142` envía `{id, name, is_approved, type_id,
-  language}` — el registro editable completo, tomado del propio `record` de la
-  fila. `updateManufacturer` **no necesita soportar partial update**.
+- **El toggle de aprobación ES un payload parcial** (corregido 2026-09-10, tras
+  el gate de diseño): `manufacturer-list.tsx:134-142` envía **5** claves
+  (`{id, name, is_approved, type_id, language}`), no las 10 editables que sí
+  manda `manufacturer-form.tsx:184-218` (añade `slug`, `description`,
+  `website`, `socials`, `image`, `cover_image`). La versión anterior de esta
+  nota decía "el registro editable completo" y era **falsa**.
+  Consecuencia normativa, y es la que importa: **una clave ausente del DTO NO
+  debe llegar al `data` del `update` de Prisma.** Con inputs todos opcionales y
+  spread condicional no hace falta un camino dedicado de partial update, pero
+  proyectar todas las columnas sin condición y mapear ausente → `null`
+  **borraría `description`, `website` e `image` en cada clic del toggle** — la
+  regresión silenciosa que esta US existe para cerrar.
 - DTO que no describe eso: `create-manufacturer.dto.ts:4-18` omite `name`,
   `description`, `website`, `image`, `type_id`, `socials`, `cover_image`. El
   body llega entero porque `ValidationPipe` no hace whitelist (`main.ts:9`).
@@ -207,9 +215,10 @@ Feature: Escrituras de tags y manufacturers
   fija la estrategia de slug y la forma del mapeo de errores. Esta US los
   **consume**; si algo no encaja, se para y se pregunta antes de modificarlos
   (romperlos afectaría también a US-28/29/30).
-- `updateManufacturer` recibe siempre el conjunto completo de campos
-  editables (verificado en `manufacturer-list.tsx:134-142`): **no diseñar un
-  camino de partial update**.
+- `updateManufacturer` recibe payloads **parciales** (el toggle manda 5 de 10
+  campos editables — ver Contexto). No hace falta un camino dedicado de partial
+  update, pero **toda clave ausente debe quedar fuera del `data` de Prisma**:
+  inputs opcionales + spread condicional, nunca ausente → `null`.
 - `is_approved` llega booleano al servicio y la proyección de lectura lo emite
   como `Number(record.isApproved)` (`manufacturers.service.ts:60`): coercionar
   en el mapper, no en el repositorio.
