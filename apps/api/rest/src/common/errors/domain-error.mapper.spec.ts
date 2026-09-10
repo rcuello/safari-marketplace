@@ -118,6 +118,27 @@ describe('toWriteHttpException — cadena de fallback corregida (B1)', () => {
   });
 
   /**
+   * Hallazgo C-1 de `sdd-verify`. Esta fixture NO es sintética: es la forma
+   * EXACTA que Prisma 7 + `@prisma/adapter-pg` produce con el contenedor
+   * `safari-postgres` apagado, capturada apagándolo de verdad. Importa porque
+   * ni el `code` es un `P1xxx` ni el `message` contiene ninguno de los
+   * patrones de conexión — con la versión anterior de `isConnectionFailure`
+   * este error caía al 500 literal y la rama 503 estaba muerta en las tres
+   * rutas de escritura, mientras las de lectura (con la cadena vieja) sí
+   * devolvían 503 en la misma ventana.
+   */
+  it('base caída real (ECONNREFUSED en `code`, no en `message`) → 503 — C-1', () => {
+    const result = toWriteHttpException({
+      name: 'PrismaClientKnownRequestError',
+      code: 'ECONNREFUSED',
+      message: '\nInvalid `prisma.$queryRaw()` invocation:\n\n\n',
+    });
+
+    expect(result).toBeInstanceOf(ServiceUnavailableException);
+    expect(result.getStatus()).toBe(503);
+  });
+
+  /**
    * Regression tripwire de B1: un `PrismaClientKnownRequestError` con
    * `code: 'P2011'` (violación NOT NULL, ninguno de los 5 códigos de
    * catálogo) MUST caer al 500 literal, NO al 503 — porque no es un fallo de

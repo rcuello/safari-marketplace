@@ -206,9 +206,11 @@ Lo que sigue mock y **no** tiene épico todavía (contenido, staff↔tienda,
 dominio transaccional) está inventariado con evidencia en
 [`_backlog/api-mock-restante-dominio-transaccional.md`](./_backlog/api-mock-restante-dominio-transaccional.md).
 
-**US recomendada para arrancar: US-27a** (abre el Épico 26; escribe sobre
-tablas que ya existen, así que no exige DDL ni `db-reset`, e introduce el
-helper de slug y el mapeo de errores que consumen las otras cuatro). En paralelo
+**US recomendada para arrancar: US-27b, US-28, US-29 o US-30** — cualquiera de
+las cuatro, en paralelo: US-27a ya está implementada (2026-09-10) y con ella
+aterrizaron el helper de slug y el mapeo de errores de dominio → HTTP que las
+cuatro consumen. Solo comparten el barrel `packages/db/index.ts`, así que quien
+arranque segundo rebasea sobre él. En paralelo
 puede ir **US-8** (lo único que queda del Épico 5: realinear `db-test`/
 `db-count` con la tabla `products`): no comparten archivos. US-6 ya no es el
 arranque: está implementada, igual que US-7.

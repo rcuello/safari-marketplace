@@ -34,9 +34,21 @@ const UNEXPECTED_ERROR_MESSAGE =
   'Ocurrió un error inesperado. Por favor, contacta al administrador.';
 
 /**
- * Códigos de conexión/arranque de Prisma que sí ameritan 503. Deliberadamente
- * NO incluye `PrismaClientKnownRequestError` por `name` (ver
- * `isConnectionFailure`) — ese es el defecto de B1 que este mapeador evita.
+ * Códigos que sí ameritan 503. Dos familias:
+ *
+ * 1. Códigos de conexión/arranque de Prisma (`P1xxx`, `P2024`).
+ * 2. Códigos de socket del driver (`ECONNREFUSED`, …). Con Prisma 7 +
+ *    `@prisma/adapter-pg`, una base caída NO llega como `P1001`: llega como
+ *    `{ name: 'PrismaClientKnownRequestError', code: 'ECONNREFUSED',
+ *    message: 'Invalid `prisma.$queryRaw()` invocation:' }`. El código del
+ *    driver viaja en `code`, y el `message` no contiene ninguno de los
+ *    patrones de abajo, así que sin esta segunda familia la rama 503 queda
+ *    MUERTA y un fallo de conexión cae al 500 literal. Hallazgo C-1 de
+ *    `sdd-verify`, observado apagando el contenedor de verdad — no inferido.
+ *
+ * Deliberadamente NO incluye `PrismaClientKnownRequestError` por `name`: ese
+ * es el defecto B1 que este mapeador evita, y es lo que mantiene P2011 (y
+ * cualquier otro error de escritura no traducido) en el 500.
  */
 const CONNECTION_FAILURE_CODES: ReadonlySet<string> = new Set([
   'P1001',
@@ -45,6 +57,11 @@ const CONNECTION_FAILURE_CODES: ReadonlySet<string> = new Set([
   'P1011',
   'P1017',
   'P2024',
+  'ECONNREFUSED',
+  'ECONNRESET',
+  'ETIMEDOUT',
+  'ENOTFOUND',
+  'EHOSTUNREACH',
 ]);
 
 const CONNECTION_FAILURE_MESSAGE_PATTERNS: readonly string[] = [

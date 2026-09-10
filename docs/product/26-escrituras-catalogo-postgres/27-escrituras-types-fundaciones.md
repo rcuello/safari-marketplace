@@ -9,9 +9,9 @@
 
 **Épico:** [Épico 26](./README.md)
 **Fecha:** 2026-09-09
-**Status:** Listo para ejecución
+**Status:** Implementada (2026-09-10)
 **Depende de:** ninguna
-**LOC est.:** ~725
+**LOC est.:** ~725 · **LOC real:** ~1470 en 3 PRs encadenados (~387 / ~317 / ~766)
 
 ## Historia
 **Como** administrador del marketplace, **quiero** que crear, editar y borrar
@@ -175,24 +175,24 @@ Feature: Escrituras de types y piezas compartidas
 
 ## Definición de Done
 
-- [ ] Secuencia `POST → GET → reinicio → GET → PUT → GET → DELETE → GET 404`
+- [x] Secuencia `POST → GET → reinicio → GET → PUT → GET → DELETE → GET 404`
       pegada para `types`, con comparación de key-sets (`POST` vs `GET`, 9
       claves, sin `.sort()`).
-- [ ] `curl` de CA-3 pegado: 409 en `DELETE /types/9` + `psql` con el conteo
+- [x] `curl` de CA-3 pegado: 409 en `DELETE /types/9` + `psql` con el conteo
       de productos **y de categorías** antes/después; 200 en el borrado de un
       type sin dependientes creado en la misma sesión.
-- [ ] `curl` de CA-4 pegado: 404, 400 (nombre vacío), sufijo de colisión.
-- [ ] `curl` de CA-5 pegado: 401, 403 `customer`, 403 `store_owner`.
-- [ ] `grep -n "fuse\|@db/" apps/api/rest/src/types/types.service.ts` devuelve
+- [x] `curl` de CA-4 pegado: 404, 400 (nombre vacío), sufijo de colisión.
+- [x] `curl` de CA-5 pegado: 401, 403 `customer`, 403 `store_owner`.
+- [x] `grep -n "fuse\|@db/" apps/api/rest/src/types/types.service.ts` devuelve
       0 líneas.
-- [ ] `just db-check` verde con recuento (base medida: 8 archivos / 91 tests;
+- [x] `just db-check` verde con recuento (base medida: 8 archivos / 91 tests;
       pegar el nuevo).
-- [ ] `cd apps/api/rest && npx jest` verde con recuento (base medida: 4
+- [x] `cd apps/api/rest && npx jest` verde con recuento (base medida: 4
       suites / 65 tests).
-- [ ] `just build-api` limpio y `just verify` verde.
-- [ ] Divergencias declaradas en el reporte: `promotional_sliders` ignorado
+- [x] `just build-api` limpio y `just verify` verde.
+- [x] Divergencias declaradas en el reporte: `promotional_sliders` ignorado
       (sin columna) y cualquier otra.
-- [ ] Status de esta US actualizado y fila del épico marcada.
+- [x] Status de esta US actualizado y fila del épico marcada.
 
 ## Notas para el agente ejecutor
 
