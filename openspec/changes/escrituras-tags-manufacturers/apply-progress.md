@@ -529,6 +529,290 @@ Untracked files:
 No file outside this run's allowed list has a diff. `apply-progress.md`
 itself will show as modified once this write completes.
 
-## Phases 3-4
+## Phase 3 — `manufacturers` in `packages/db` (commit #3)
 
-Untouched — `tasks.md` still shows `[ ]` for all of Phase 3 and Phase 4.
+### Task record
+
+| Task | Status | Notes |
+|---|---|---|
+| 3.1 | [x] | `manufacturers.repository.ts`: added `CreateManufacturerInput`/`UpdateManufacturerInput` (`Partial<Omit<CreateManufacturerInput,'slug'>>`), `manufacturerSlugs: ExistingSlugLookup`, `createManufacturer`, `updateManufacturer`, `deleteManufacturer`. **S-1 remedy applied from the start** (per this run's explicit instruction, ahead of the design's own `DD-3` "observe first" framing, since the remedy was already proven necessary and applied to `tags.repository.ts` in commit #1): every `translateCatalogWriteError` call site passes `{aggregate:'manufacturers'}` or `{aggregate:'manufacturers', id}` — **no `uniqueField`**. `isApproved` stays `boolean`-typed (no coercion in the repository, DD-6); `image?: Prisma.InputJsonValue` without `\| null` (DD-5); same `_assertValidTypeId` guard shape as `tags.repository.ts` (DD-2); `deleteManufacturer` is find-then-delete with no dependent count (D27b-3). `findOrCreateManufacturerBySlug` untouched — confirmed by diff (only new code added below it). |
+| 3.2 | [x] | `packages/db/index.ts`: barrel-exports `createManufacturer`, `updateManufacturer`, `deleteManufacturer`, `CreateManufacturerInput`, `UpdateManufacturerInput` added next to the existing `findManufacturerBySlug`/`findOrCreateManufacturerBySlug`/`listManufacturers`/`ListManufacturersInput` block. No rebase needed — no concurrent US touched the file. |
+| 3.3 | [x] | `manufacturers.integration.test.ts`: write `describe`s appended at the end of the file (no file-order trap here, confirmed empirically — see "Order-sensitivity finding" below). Sentinel `zz-manu-`; cleanup folded into the existing `afterAll` in `try/finally`; `beforeAll(cleanup)` added. Desenlace test links a sentinel manufacturer to a seeded product's `manufacturer_id`, deletes the manufacturer, and asserts row-scoped via `prisma.product.findUnique({ where: { id: seededProduct.id } })).manufacturerId === null` — never a global `product.count()` (B-2). |
+| 3.4 | [x] | `just db-build` clean, `just db-check` green — see pasted output below. |
+
+### Order-sensitivity finding (per the DoD's explicit request)
+
+`manufacturers.integration.test.ts:18`'s `toBe(14)` is a plain global count —
+insensitive to id ordering by construction. `:32-36`'s
+`toHaveLength(10)`/`toEqual([1,2,...,10])` runs `listManufacturers({limit:10})`
+under the table's `orderBy: { id: 'asc' }` (no filter): the assert is
+**scoped to the first 10 ids of an ascending, unfiltered list**. The seeded
+manufacturer ids measured today are `1..12, 18, 19` with
+`manufacturers_id_seq.last_value = 20` — any sentinel this suite creates gets
+an id ≥ 20 (confirmed after the run: sequence advanced to 32). An id ≥ 20
+can never appear inside `limit:10` of an ascending order starting at id 1,
+so **there is no analogous trap to `tags.integration.test.ts:19`'s
+`orderBy: { id: 'desc' }` unfiltered `items[0].id === 62`** (where any live
+sentinel — necessarily a higher id than 62 — would appear first). Conclusion:
+placing the write `describe`s at the end of the file (done here, matching
+the file's existing convention and `tags`'s pattern for consistency) is
+sufficient; it was not load-bearing to correctness for `manufacturers` the
+way it was for `tags`, but doing it anyway costs nothing and keeps the two
+files structurally uniform for future readers.
+
+### Deviations from the design's pinned interfaces
+
+- **S-1 remedy applied proactively, not "observed first."** The design's
+  `DD-3` frames the `uniqueField` omission as a remedy to apply *if* the
+  misleading `P2003` message is observed empirically in this slice. This
+  run's explicit instructions (informed by commit #1/#2's empirical finding,
+  already reproduced and recorded in `tags.repository.ts`/`tags.service.ts`'s
+  history) said to apply the remedy **from the start** for `manufacturers`
+  too, since the underlying Prisma 7 + `@prisma/adapter-pg` behavior
+  (`meta.field_name` not populated on P2003) is a property of the driver, not
+  of the aggregate — it will reproduce identically here. Applied: all three
+  `translateCatalogWriteError` call sites in `manufacturers.repository.ts`
+  omit `uniqueField`. This is **not** an edit to `domain-errors.ts` (CA-7
+  intact) — it is the call-site-only shape the design pre-authorized.
+- **Bug found and fixed during 3.4's first `just db-check` run: raw-Prisma
+  `bigint` vs `number` in the desenlace test.** The first run of the new
+  suite failed 2 of 131 tests:
+  - `desenlace: ...` failed with `AssertionError: expected 26n to be 26`
+    because `prisma.product.findUnique(...)` returns the raw row, where
+    `manufacturerId` is a Postgres `bigint` column and Prisma surfaces it as
+    a JS `bigint` (`26n`), not a `number` — the repository's own
+    `_toManufacturerRecord`/`_id()` conversion (`records.ts:37-40`) is what
+    normally hides this, but the test queries `prisma.product` directly, not
+    through a record mapper. Fixed by wrapping the raw field in `Number(...)`
+    before the equality assert (`expect(Number(linked?.manufacturerId)).toBe(created.id)`).
+    This is a **test bug, not an app bug**: `deleteManufacturer` and its
+    `SET NULL` semantics were never in question, only the raw-row read in
+    the test's own setup assertion.
+  - `cierre de la suite ... vuelve a 14` failed with `expected 15 to be 14`
+    — a **downstream symptom** of the same first failure: the desenlace
+    test's assertion threw before it reached `deleteManufacturer(created.id)`
+    two lines later, so that test's sentinel manufacturer was never deleted,
+    leaving the count at 15 for the closing assert. No cleanup logic was
+    weakened or bypassed to fix this — fixing the root cause (the `Number()`
+    conversion) let the test run to completion and self-clean normally, and
+    the closing assert was not touched.
+  Both failures are pasted verbatim below, followed by the green re-run
+  after the one-line fix. No existing assert (in this file, `tags`, or any
+  other suite) was weakened, rewritten, or deleted to reach green.
+- No other deviation. `slug` immutability, `updatedAt: now()`, absent-key
+  spread semantics (B-4), and `deleteManufacturer`'s find-then-delete-with-
+  no-409 shape all match the design and the `deleteTag`/`deleteScrapedProduct`
+  precedent literally. `findOrCreateManufacturerBySlug` was not touched
+  (confirmed: `git diff` shows only additions after its closing brace).
+
+### Real command output — `just db-build`
+
+```
+$ just db-build
+npm install
+
+up to date, audited 325 packages in 3s
+...
+npm run build
+
+> @safari/db@0.1.0 build
+> prisma generate && tsup
+
+Loaded Prisma config from prisma.config.ts.
+
+Prisma schema loaded from prisma\schema.prisma.
+
+✔ Generated Prisma Client (7.10.0) to .\generated\prisma\client in 190ms
+
+CLI Building entry: index.ts
+CLI Using tsconfig: tsconfig.json
+CLI tsup v8.5.1
+CLI Using tsup config: C:\DevOps\MyGitHub\safari-marketplace\packages\db\tsup.config.ts
+CLI Target: node18
+CLI Cleaning output folder
+CJS Build start
+CJS dist\index.js     144.50 KB
+CJS dist\index.js.map 339.38 KB
+CJS ⚡️ Build success in 92ms
+DTS Build start
+DTS ⚡️ Build success in 8498ms
+DTS dist\index.d.ts 1.39 MB
+```
+
+### Real command output — `just db-check`, first run (RED, test bug found)
+
+```
+$ just db-check
+npm run typecheck
+
+> @safari/db@0.1.0 typecheck
+> tsc --noEmit
+
+cd "$(pwd)" && npm test
+
+> @safari/db@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.11 C:/DevOps/MyGitHub/safari-marketplace/packages/db
+
+ ❯ src/repositories/manufacturers.integration.test.ts (16 tests | 2 failed) 1268ms
+     × desenlace: borra la marca y `products.manufacturer_id` desenlaza por SET NULL — assert POR FILA, nunca un conteo global (B-2: ...) 95ms
+     × ningún test de escritura dejó basura: prisma.manufacturer.count() vuelve a 14 11ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/repositories/manufacturers.integration.test.ts > deleteManufacturer — CA-3, sin conteo de dependientes (D27b-3) > desenlace: ...
+AssertionError: expected 26n to be 26 // Object.is equality
+
+- Expected:
+26
+
++ Received:
+26n
+
+ ❯ src/repositories/manufacturers.integration.test.ts:225:7
+
+ FAIL  src/repositories/manufacturers.integration.test.ts > cierre de la suite (CA-6) > ningún test de escritura dejó basura: prisma.manufacturer.count() vuelve a 14
+AssertionError: expected 15 to be 14 // Object.is equality
+
+- Expected
++ Received
+
+- 14
++ 15
+
+ ❯ src/repositories/manufacturers.integration.test.ts:245:47
+
+ Test Files  1 failed | 8 passed (9)
+      Tests  2 failed | 129 passed (131)
+   Start at  11:10:13
+   Duration  6.33s
+```
+
+Root cause diagnosed as a test-only `bigint`/`number` mismatch (see
+Deviations above), fixed with a one-line `Number(...)` wrap — no assert
+weakened, no cleanup skipped. `beforeAll(cleanup)` on the re-run removed the
+one leftover sentinel row (id 15 at the time) from this failed attempt
+automatically, as designed.
+
+### Real command output — `just db-check`, re-run after the fix (GREEN)
+
+```
+$ just db-check
+npm run typecheck
+
+> @safari/db@0.1.0 typecheck
+> tsc --noEmit
+
+cd "$(pwd)" && npm test
+
+> @safari/db@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.11 C:/DevOps/MyGitHub/safari-marketplace/packages/db
+
+(node:52688) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated ...
+
+ Test Files  9 passed (9)
+      Tests  131 passed (131)
+   Start at  11:10:53
+   Duration  5.38s (transform 1.86s, setup 0ms, import 7.36s, tests 11.22s, environment 1ms)
+```
+
+**Baseline (post-commit #2) was 9 files / 121 tests. New count: 9 files /
+131 tests (+10 new tests, file count unchanged as required).** `typecheck`
+(`tsc --noEmit`) completed with no errors both times.
+`manufacturers.integration.test.ts:18`'s `toBe(14)` and `:32-36`'s
+`toHaveLength(10)`/`ids === [1..10]` asserts are part of that green run —
+untouched and unweakened. `tags.integration.test.ts`'s asserts (`:18`
+`toBe(10)`, `:19-20` `items[0].id === 62`/`items[last].id === 53`) also
+passed in the same run (file untouched by this commit).
+
+### Post-run DB state (sanity, not part of the DoD gate)
+
+```
+$ docker exec safari-postgres psql -U safari -d safari_scraper \
+    -c "SELECT count(*) FROM manufacturers;" \
+    -c "SELECT count(*) FROM products WHERE manufacturer_id IS NOT NULL;" \
+    -c "SELECT manufacturers_id_seq.last_value FROM manufacturers_id_seq;"
+
+ count
+-------
+    14
+(1 row)
+
+ count
+-------
+     0
+(1 row)
+
+ last_value
+------------
+        32
+(1 row)
+```
+
+`manufacturers` back to 14 rows, `products.manufacturer_id IS NOT NULL` back
+to 0 — every sentinel test cleaned up after itself (including the failed
+first attempt's leftover row, removed by `beforeAll(cleanup)` on the
+re-run). `manufacturers_id_seq` advanced from 20 to 32 (create/delete
+round-trips across both the failed and the green run); expected sequence
+churn, not row leakage, and does not affect any assert (both `:18` and
+`:32-36` read the 14 live rows / the first 10 seeded ids, not sequence
+positions).
+
+### `git diff --numstat` vs the ~332-line forecast (commit #3)
+
+```
+$ git diff --numstat -- packages/db/index.ts packages/db/src/repositories/manufacturers.integration.test.ts packages/db/src/repositories/manufacturers.repository.ts
+8       1       packages/db/index.ts
+204     4       packages/db/src/repositories/manufacturers.integration.test.ts
+169     0       packages/db/src/repositories/manufacturers.repository.ts
+```
+
+Totals: **381 added / 5 deleted** (386 changed) vs the forecast's ~332
+added (commit #3 subtotal: ~150 repository + ~170 test + ~12 barrel = ~332,
+per design.md's per-area estimation table). Breakdown:
+
+| File | Forecast (added) | Actual (added) | Delta |
+|---|---|---|---|
+| `manufacturers.repository.ts` | ~150 | 169 | +19 (header comment explaining the `types`-vs-`manufacturers` FK/`SET NULL` difference, the `_assertValidTypeId` helper with docstring, and the extra `isApproved` field vs `tags`'s `language`) |
+| `manufacturers.integration.test.ts` | ~170 | 204 | +34 (the order-sensitivity explanation comment required by this run's DoD, the two malformed-`typeId` tests mirroring `tags`'s pattern, and the desenlace test's extra `Number(...)` bigint-safety comment added while fixing the test bug) |
+| `packages/db/index.ts` | ~12 | 8 | −4 (fewer new type re-exports needed relative to `tags`, which also exports `ListTagsInput` inline in the same block already present) |
+
+Net over forecast: **+49 lines** (~15% over), within the same commentary-
+density slack observed for commit #1 (+31 over its ~327 forecast). No new
+files, no file outside the allowed list.
+
+### Forbidden files — untouched
+
+```
+$ git diff --stat HEAD -- packages/db/src/slug.ts packages/db/src/domain-errors.ts apps/api/rest/src/common/errors/
+(empty output)
+```
+
+Confirms `packages/db/src/slug.ts`, `packages/db/src/domain-errors.ts`, and
+`apps/api/rest/src/common/errors/**` are byte-identical to `HEAD` — CA-7
+intact. `findOrCreateManufacturerBySlug` also confirmed untouched (diff
+shows only additions after its function body, no changes within it).
+
+### `git status` — full picture at the end of this run
+
+```
+On branch us-27b-escrituras-tags-manufacturers
+Changes not staged for commit:
+  modified:   packages/db/index.ts
+  modified:   packages/db/src/repositories/manufacturers.integration.test.ts
+  modified:   packages/db/src/repositories/manufacturers.repository.ts
+```
+
+No file outside this run's allowed list has a diff (`openspec/changes/
+escrituras-tags-manufacturers/tasks.md` and this `apply-progress.md` file
+itself will additionally show as modified once this write completes, both
+explicitly in scope for this run).
+
+## Phase 4
+
+Untouched — `tasks.md` still shows `[ ]` for all of Phase 4.

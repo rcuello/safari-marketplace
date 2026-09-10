@@ -65,11 +65,18 @@ export {
   getCategoryTree,
   listCategories,
 } from './src/repositories/categories.repository';
-export type { ListManufacturersInput } from './src/repositories/manufacturers.repository';
+export type {
+  CreateManufacturerInput,
+  ListManufacturersInput,
+  UpdateManufacturerInput,
+} from './src/repositories/manufacturers.repository';
 export {
+  createManufacturer,
+  deleteManufacturer,
   findManufacturerBySlug,
   findOrCreateManufacturerBySlug,
   listManufacturers,
+  updateManufacturer,
 } from './src/repositories/manufacturers.repository';
 export type {
   ListProductsInput,
