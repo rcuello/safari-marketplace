@@ -1,21 +1,57 @@
 /**
  * Test de integración contra el Postgres real (docker-compose, puerto
  * 5433, sembrado por `just db-up`: 198 categorías = 83 raíces + 109
- * hijas + 6 nietas). Solo lectura: no escribe ninguna fila, así que no
- * necesita `afterAll` de limpieza — sí `prisma.$disconnect()`.
+ * hijas + 6 nietas).
+ *
+ * Los describes de LECTURA (sin modificar) van primero y afirman conteos
+ * exactos del seed — `toBe(198)`, `toBe(83)`, `toBe(53)`, `toBe(10)` — que
+ * corren antes de que exista ninguna fila centinela. Los describes de
+ * ESCRITURA (US-28) van al final, operan 100% sobre un centinela propio
+ * `zz-categories-` en `slug`/`name` (design.md, DD28-8) y cada `it` borra
+ * lo que crea, además de la red del `beforeAll`/`afterAll` de abajo.
  */
 
 import 'dotenv/config';
-import { afterAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { prisma } from '../client';
+import { EmptySlugError, InvalidReferenceError, RecordNotFoundError } from '../domain-errors';
+import { _id } from '../records';
 import {
+  createCategory,
+  deleteCategory,
   findCategoryByIdOrSlug,
   getCategoryTree,
   listCategories,
+  updateCategory,
 } from './categories.repository';
 
+const SENTINEL_PREFIX = 'zz-categories-';
+
+const cleanup = () =>
+  prisma.category.deleteMany({ where: { slug: { startsWith: SENTINEL_PREFIX } } });
+
+/** `daily-needs` y `gadget` — dos types reales y distintos del seed, para
+ * las reglas 4/7 (madre/hija de otro `type_id`). Resueltos por slug en vez
+ * de hardcodear el id: sobreviven a un `db-reset` que reordene el seed. */
+let TYPE_A: number;
+let TYPE_B: number;
+
+beforeAll(async () => {
+  await cleanup(); // corrida abortada previa
+  const [typeA, typeB] = await Promise.all([
+    prisma.type.findUniqueOrThrow({ where: { slug: 'daily-needs' } }),
+    prisma.type.findUniqueOrThrow({ where: { slug: 'gadget' } }),
+  ]);
+  TYPE_A = _id(typeA.id);
+  TYPE_B = _id(typeB.id);
+});
+
 afterAll(async () => {
-  await prisma.$disconnect();
+  try {
+    await cleanup();
+  } finally {
+    await prisma.$disconnect();
+  }
 });
 
 describe('listCategories — conteos del seed', () => {
@@ -171,5 +207,345 @@ describe('getCategoryTree — compatibilidad (R-4)', () => {
     expect(tree).toHaveLength(83);
     for (const root of tree) expect(root.parentId).toBeNull();
     expect(tree.some((root) => root.children.length > 0)).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Escrituras (US-28) — centinela zz-categories-, describes al final.
+// ---------------------------------------------------------------------------
+
+describe('createCategory — CA-1, centinela zz-categories-', () => {
+  it('crea una raíz y sobrevive a una relectura por slug (_loadNode)', async () => {
+    const created = await createCategory({
+      name: `${SENTINEL_PREFIX}raiz`,
+      slug: `${SENTINEL_PREFIX}raiz`,
+      typeId: TYPE_A,
+    });
+
+    expect(created.parentId).toBeNull();
+    expect(created.parent).toBeNull();
+    expect(created.type.id).toBe(TYPE_A);
+
+    const reread = await findCategoryByIdOrSlug(created.slug);
+    expect(reread?.id).toBe(created.id);
+
+    await deleteCategory(created.id);
+  });
+
+  it('crea una hija bajo una madre centinela del mismo type_id', async () => {
+    const parent = await createCategory({
+      name: `${SENTINEL_PREFIX}madre`,
+      slug: `${SENTINEL_PREFIX}madre`,
+      typeId: TYPE_A,
+    });
+    const child = await createCategory({
+      name: `${SENTINEL_PREFIX}hija-create`,
+      slug: `${SENTINEL_PREFIX}hija-create`,
+      typeId: TYPE_A,
+      parentId: parent.id,
+    });
+
+    expect(child.parentId).toBe(parent.id);
+    expect(child.parent?.id).toBe(parent.id);
+
+    const parentReread = await findCategoryByIdOrSlug(parent.slug);
+    expect(parentReread?.children.map((c) => c.id)).toContain(child.id);
+
+    await deleteCategory(child.id);
+    await deleteCategory(parent.id);
+  });
+
+  it('colisión de slug explícito agrega sufijo incremental (-2)', async () => {
+    const first = await createCategory({
+      name: `${SENTINEL_PREFIX}Duplicada`,
+      slug: `${SENTINEL_PREFIX}dup`,
+      typeId: TYPE_A,
+    });
+    const second = await createCategory({
+      name: `${SENTINEL_PREFIX}Duplicada`,
+      slug: `${SENTINEL_PREFIX}dup`,
+      typeId: TYPE_A,
+    });
+
+    expect(second.slug).toBe(`${SENTINEL_PREFIX}dup-2`);
+
+    await deleteCategory(first.id);
+    await deleteCategory(second.id);
+  });
+});
+
+describe('updateCategory — CA-2, slug inmutable, updatedAt por trigger de base', () => {
+  it('renombrar no cambia el slug; updated_at avanza (monotonía contra el reloj de la base, DD28-7)', async () => {
+    const created = await createCategory({
+      name: `${SENTINEL_PREFIX}Original`,
+      slug: `${SENTINEL_PREFIX}original`,
+      typeId: TYPE_A,
+    });
+
+    const updated = await updateCategory(created.id, {
+      name: `${SENTINEL_PREFIX}Renombrada`,
+    });
+
+    expect(updated.name).toBe(`${SENTINEL_PREFIX}Renombrada`);
+    expect(updated.slug).toBe(`${SENTINEL_PREFIX}original`);
+    expect(updated.updatedAt.getTime()).toBeGreaterThanOrEqual(
+      created.updatedAt.getTime()
+    );
+
+    await deleteCategory(created.id);
+  });
+
+  it('name vacío ⇒ EmptySlugError y la fila queda intacta', async () => {
+    const created = await createCategory({
+      name: `${SENTINEL_PREFIX}Intacta`,
+      slug: `${SENTINEL_PREFIX}intacta`,
+      typeId: TYPE_A,
+    });
+
+    await expect(updateCategory(created.id, { name: '' })).rejects.toBeInstanceOf(
+      EmptySlugError
+    );
+
+    const reread = await findCategoryByIdOrSlug(`${SENTINEL_PREFIX}intacta`);
+    expect(reread?.name).toBe(`${SENTINEL_PREFIX}Intacta`);
+
+    await deleteCategory(created.id);
+  });
+
+  it('mueve una categoría a otra madre centinela válida del mismo type', async () => {
+    const [a, b] = await Promise.all([
+      createCategory({
+        name: `${SENTINEL_PREFIX}Mover A`,
+        slug: `${SENTINEL_PREFIX}mover-a`,
+        typeId: TYPE_A,
+      }),
+      createCategory({
+        name: `${SENTINEL_PREFIX}Mover B`,
+        slug: `${SENTINEL_PREFIX}mover-b`,
+        typeId: TYPE_A,
+      }),
+    ]);
+
+    const moved = await updateCategory(a.id, { parentId: b.id });
+    expect(moved.parentId).toBe(b.id);
+    expect(moved.parent?.id).toBe(b.id);
+
+    const bReread = await findCategoryByIdOrSlug(b.slug);
+    expect(bReread?.children.map((c) => c.id)).toContain(a.id);
+
+    await deleteCategory(a.id);
+    await deleteCategory(b.id);
+  });
+
+  it('id inexistente ⇒ RecordNotFoundError', async () => {
+    await expect(
+      updateCategory(999999, { name: `${SENTINEL_PREFIX}Fantasma` })
+    ).rejects.toBeInstanceOf(RecordNotFoundError);
+  });
+});
+
+describe('Las siete reglas de la arista madre→hija — 400 (InvalidReferenceError), nunca 500 (DD28-3)', () => {
+  it('regla 1 (type_id): forma no entera en create → InvalidReferenceError, nunca BigInt(NaN)', async () => {
+    await expect(
+      createCategory({
+        name: `${SENTINEL_PREFIX}bad-type`,
+        typeId: Number('abc'),
+      })
+    ).rejects.toBeInstanceOf(InvalidReferenceError);
+  });
+
+  it('regla 1 (parent): forma no entera en create → InvalidReferenceError ANTES del dispatch `parentId != null`', async () => {
+    await expect(
+      createCategory({
+        name: `${SENTINEL_PREFIX}bad-parent`,
+        typeId: TYPE_A,
+        parentId: Number('abc'),
+      })
+    ).rejects.toBeInstanceOf(InvalidReferenceError);
+  });
+
+  it('regla 3: madre inexistente → InvalidReferenceError', async () => {
+    await expect(
+      createCategory({
+        name: `${SENTINEL_PREFIX}madre-fantasma`,
+        typeId: TYPE_A,
+        parentId: 999999,
+      })
+    ).rejects.toBeInstanceOf(InvalidReferenceError);
+  });
+
+  it('regla 4: madre de otro type_id → InvalidReferenceError', async () => {
+    const parent = await createCategory({
+      name: `${SENTINEL_PREFIX}Madre Type A`,
+      slug: `${SENTINEL_PREFIX}madre-type-a`,
+      typeId: TYPE_A,
+    });
+
+    await expect(
+      createCategory({
+        name: `${SENTINEL_PREFIX}hija-type-b`,
+        typeId: TYPE_B,
+        parentId: parent.id,
+      })
+    ).rejects.toBeInstanceOf(InvalidReferenceError);
+
+    await deleteCategory(parent.id);
+  });
+
+  it('regla 2: autorreferencia (parent === id) en update → InvalidReferenceError', async () => {
+    const node = await createCategory({
+      name: `${SENTINEL_PREFIX}Auto`,
+      slug: `${SENTINEL_PREFIX}auto`,
+      typeId: TYPE_A,
+    });
+
+    await expect(
+      updateCategory(node.id, { parentId: node.id })
+    ).rejects.toBeInstanceOf(InvalidReferenceError);
+
+    const reread = await findCategoryByIdOrSlug(node.slug);
+    expect(reread?.parentId).toBeNull();
+
+    await deleteCategory(node.id);
+  });
+
+  it('reglas 5/6: ciclo A→B→A en update → InvalidReferenceError (única red que atrapa un `_id()` faltante, DD28-4)', async () => {
+    const a = await createCategory({
+      name: `${SENTINEL_PREFIX}Ciclo A`,
+      slug: `${SENTINEL_PREFIX}ciclo-a`,
+      typeId: TYPE_A,
+    });
+    const b = await createCategory({
+      name: `${SENTINEL_PREFIX}Ciclo B`,
+      slug: `${SENTINEL_PREFIX}ciclo-b`,
+      typeId: TYPE_A,
+      parentId: a.id,
+    });
+
+    await expect(
+      updateCategory(a.id, { parentId: b.id })
+    ).rejects.toBeInstanceOf(InvalidReferenceError);
+
+    const aReread = await findCategoryByIdOrSlug(a.slug);
+    expect(aReread?.parentId).toBeNull();
+
+    await deleteCategory(b.id);
+    await deleteCategory(a.id);
+  });
+
+  it('regla 7: cambiar type_id en un nodo CON hijas → 400; la misma operación en una hoja → 200 (DD28-5)', async () => {
+    const parentWithChild = await createCategory({
+      name: `${SENTINEL_PREFIX}Con Hijas`,
+      slug: `${SENTINEL_PREFIX}con-hijas`,
+      typeId: TYPE_A,
+    });
+    const child = await createCategory({
+      name: `${SENTINEL_PREFIX}Con Hijas Hija`,
+      slug: `${SENTINEL_PREFIX}con-hijas-hija`,
+      typeId: TYPE_A,
+      parentId: parentWithChild.id,
+    });
+
+    await expect(
+      updateCategory(parentWithChild.id, { typeId: TYPE_B })
+    ).rejects.toBeInstanceOf(InvalidReferenceError);
+
+    const leaf = await createCategory({
+      name: `${SENTINEL_PREFIX}Hoja`,
+      slug: `${SENTINEL_PREFIX}hoja`,
+      typeId: TYPE_A,
+    });
+    const retyped = await updateCategory(leaf.id, { typeId: TYPE_B });
+    expect(retyped.typeId).toBe(TYPE_B);
+
+    await deleteCategory(child.id);
+    await deleteCategory(parentWithChild.id);
+    await deleteCategory(leaf.id);
+  });
+});
+
+describe('deleteCategory — CA-3, snapshot pre-borrado y re-enraizado por la base', () => {
+  it('borra una madre centinela con hijas: el snapshot trae la hija con su parent_id previo; la base ya re-enraizó', async () => {
+    const parent = await createCategory({
+      name: `${SENTINEL_PREFIX}Borrar Madre`,
+      slug: `${SENTINEL_PREFIX}borrar-madre`,
+      typeId: TYPE_A,
+    });
+    const child = await createCategory({
+      name: `${SENTINEL_PREFIX}Borrar Hija`,
+      slug: `${SENTINEL_PREFIX}borrar-hija`,
+      typeId: TYPE_A,
+      parentId: parent.id,
+    });
+
+    const snapshot = await deleteCategory(parent.id);
+    expect(snapshot.children.map((c) => c.id)).toContain(child.id);
+    expect(snapshot.children.find((c) => c.id === child.id)?.parentId).toBe(
+      parent.id
+    );
+
+    const childReread = await findCategoryByIdOrSlug(child.slug);
+    expect(childReread?.parentId).toBeNull();
+    expect(childReread?.parent).toBeNull();
+
+    expect(await findCategoryByIdOrSlug(parent.slug)).toBeNull();
+
+    await deleteCategory(child.id);
+  });
+
+  it('id inexistente ⇒ RecordNotFoundError', async () => {
+    await expect(deleteCategory(999999)).rejects.toBeInstanceOf(RecordNotFoundError);
+  });
+});
+
+describe('CA-4 — profundidad 4 servida de extremo a extremo (confirmación empírica de D28-7)', () => {
+  it('cadena centinela raíz→hija→nieta→bisnieta, 100% centinela, se sirve anidada a 4 niveles', async () => {
+    const raiz = await createCategory({
+      name: `${SENTINEL_PREFIX}Raiz4`,
+      slug: `${SENTINEL_PREFIX}raiz4`,
+      typeId: TYPE_A,
+    });
+    const hija = await createCategory({
+      name: `${SENTINEL_PREFIX}Hija4`,
+      slug: `${SENTINEL_PREFIX}hija4`,
+      typeId: TYPE_A,
+      parentId: raiz.id,
+    });
+    const nieta = await createCategory({
+      name: `${SENTINEL_PREFIX}Nieta4`,
+      slug: `${SENTINEL_PREFIX}nieta4`,
+      typeId: TYPE_A,
+      parentId: hija.id,
+    });
+    // Si esto lanzara 400 en vez de crear, D28-7 se desmentiría — no se asume,
+    // se ejercita: la ausencia de `rejects` ya es la evidencia.
+    const bisnieta = await createCategory({
+      name: `${SENTINEL_PREFIX}Bisnieta4`,
+      slug: `${SENTINEL_PREFIX}bisnieta4`,
+      typeId: TYPE_A,
+      parentId: nieta.id,
+    });
+    expect(bisnieta.parentId).toBe(nieta.id);
+
+    const raizReread = await findCategoryByIdOrSlug(raiz.slug);
+    const hijaNode = raizReread?.children.find((c) => c.id === hija.id);
+    const nietaNode = hijaNode?.children.find((c) => c.id === nieta.id);
+    const bisnietaNode = nietaNode?.children.find((c) => c.id === bisnieta.id);
+    expect(bisnietaNode).toBeDefined();
+
+    const { items } = await listCategories({ rootsOnly: false, limit: 1000 });
+    const bisnietaFlat = items.find((n) => n.id === bisnieta.id);
+    expect(bisnietaFlat?.parent?.parent?.parent?.id).toBe(raiz.id);
+
+    await deleteCategory(bisnieta.id);
+    await deleteCategory(nieta.id);
+    await deleteCategory(hija.id);
+    await deleteCategory(raiz.id);
+  });
+});
+
+describe('cierre de la suite (R28-2)', () => {
+  it('ningún test de escritura dejó basura: prisma.category.count() vuelve a 198', async () => {
+    expect(await prisma.category.count()).toBe(198);
   });
 });

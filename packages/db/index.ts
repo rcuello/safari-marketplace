@@ -58,12 +58,17 @@ export type {
   CategoryAncestor,
   CategoryDescendant,
   CategoryTreeNode,
+  CreateCategoryInput,
   ListCategoriesInput,
+  UpdateCategoryInput,
 } from './src/repositories/categories.repository';
 export {
+  createCategory,
+  deleteCategory,
   findCategoryByIdOrSlug,
   getCategoryTree,
   listCategories,
+  updateCategory,
 } from './src/repositories/categories.repository';
 export type {
   CreateManufacturerInput,
