@@ -98,8 +98,18 @@ export {
   listShops,
   listShopsNear,
 } from './src/repositories/shops.repository';
-export type { ListTagsInput } from './src/repositories/tags.repository';
-export { findTagBySlug, listTags } from './src/repositories/tags.repository';
+export type {
+  CreateTagInput,
+  ListTagsInput,
+  UpdateTagInput,
+} from './src/repositories/tags.repository';
+export {
+  createTag,
+  deleteTag,
+  findTagBySlug,
+  listTags,
+  updateTag,
+} from './src/repositories/tags.repository';
 export type {
   CreateTypeInput,
   ListTypesInput,

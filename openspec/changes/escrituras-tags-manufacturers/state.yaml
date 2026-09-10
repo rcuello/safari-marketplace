@@ -1,0 +1,301 @@
+# DAG state del change. Sobrevive a la compactacion de contexto.
+change_name: escrituras-tags-manufacturers
+project: safari-marketplace
+artifact_store_mode: openspec
+execution_mode: auto
+delivery_strategy: ask-on-risk
+strict_tdd: false
+
+source:
+  epic: docs/product/26-escrituras-catalogo-postgres/README.md
+  user_story: docs/product/26-escrituras-catalogo-postgres/27b-escrituras-tags-manufacturers.md
+  depends_on: US-27a (escrituras-types-fundaciones, archivada 2026-09-10)
+  reference_implementation: openspec/changes/archive/2026-09-10-escrituras-types-fundaciones/
+  branch: us-27b-escrituras-tags-manufacturers
+
+phases:
+  explore:
+    status: done
+    artifact: openspec/changes/escrituras-tags-manufacturers/exploration.md
+    # CERO DRIFT contra los hallazgos de tags/manufacturers que la exploracion
+    # de US-27a retuvo a proposito para esta US: stubs, mappers, imports
+    # huerfanos y numeros de linea coinciden. Lo que US-27a SI cambio
+    # (slug.ts, domain-errors.ts, el mapper, types.*) no toco ni un byte de
+    # tags/manufacturers.
+    # Key-sets reconfirmados: toTagDto 9 claves, toManufacturerDto 13,
+    # is_approved: Number(record.isApproved) en manufacturers.service.ts:60.
+    #
+    # VEREDICTO CA-7: alcanzable con SOLO call-sites. Se leyeron las firmas
+    # REALES (no las del design) de slug.ts, domain-errors.ts y
+    # domain-error.mapper.ts: ninguno contiene un literal 'types'/'tags' ni un
+    # `if (aggregate === ...)`, y translateCatalogWriteError recibe
+    # {aggregate, id, uniqueField} por parametro. No se hallo ningun caso que
+    # fuerce editar los tres archivos compartidos.
+    #
+    # SIN BORRADO PROTEGIDO en esta US (a diferencia de types): tags.type_id
+    # (schema.sql:302) y manufacturers.type_id (:288) son SET NULL,
+    # products.manufacturer_id (:333) es SET NULL y product_tag.tag_id
+    # (:431-433) es CASCADE HACIA tags -- Postgres desenlaza solo y ningun
+    # producto se borra por ninguna via. El R-1 del epico NO aplica aqui.
+    #
+    # === TRES HALLAZGOS NUEVOS, los tres re-verificados por el orquestador ===
+    #  (1) InvalidReference (P2003 -> 400) se vuelve ALCANZABLE por primera vez.
+    #      `types` no tiene FK saliente, asi que esa rama nunca corrio contra un
+    #      error real de Postgres. tags/manufacturers si la tienen, asi que
+    #      POST /tags {"type_id":99999} es su primer productor real por HTTP.
+    #      OJO (S-1 heredado del verify de US-27a): la rama P2003 lee
+    #      meta?.field_name y cae a context.uniqueField, que semanticamente es
+    #      el campo UNICO (slug), no el de la FK (type_id) -> el mensaje del 400
+    #      puede salir enganoso. NO rompe CA-4 (sigue siendo 400, nunca 500) ni
+    #      CA-7. Es EMPIRICO: no se puede zanjar leyendo codigo.
+    #  (2) CA-3 NO SE PUEDE DEMOSTRAR contra el seed tal cual. Medido en la base
+    #      viva: products.manufacturer_id IS NOT NULL = 0 de 1200; product_tag =
+    #      0 filas. No existe "una marca con productos asociados". Crear esos
+    #      vinculos por API es scope de US-29. Es un DEFECTO DE LA US TAL COMO
+    #      LA ESCRIBI, no un detalle de ejecucion: exige un paso manual de psql
+    #      declarado como preparacion (y su deshacer).
+    #  (3) CreateTagDto no puede "declarar type_id" sin mas: la entidad Tag solo
+    #      tiene `type: Type`, sin propiedad type_id (Manufacturer si declara
+    #      type_id?: string). Verificado en tag.entity.ts:13.
+    #
+    # Baselines MEDIDOS: just db-check 9 archivos / 111 tests; npx jest 6
+    # suites / 92 tests. Asserts de conteo que deben seguir verdes, verificados
+    # EN EL CODIGO (no por grep de `toBe(`, el error que cometio la exploracion
+    # de US-27a con types): tags.integration.test.ts:18 toBe(10) y
+    # manufacturers.integration.test.ts:18 toBe(14). Aqui si son literales.
+    #
+    # Adyacente, informativo, NO accionable: findOrCreateManufacturerBySlug no
+    # tiene NINGUN call site en TypeScript hoy (el scraper es Python+psycopg y
+    # no consume @safari/db). Es codigo muerto en ejecucion real pese a lo que
+    # afirma su comentario de cabecera. Mencionar en el reporte, no tocar.
+  propose:
+    status: done
+    artifact: openspec/changes/escrituras-tags-manufacturers/proposal.md
+    # 9 decisiones con prefijo D27b-N (fresco, para no confundirlas con las
+    # D27-N archivadas de US-27a), 9 riesgos R27b-N, rollback y estrategia de
+    # verificacion. 236 lineas / 2853 palabras.
+    #
+    # D27b-1 CIERRA el hueco de CreateTagDto a favor de `type_id` como
+    #   propiedad STANDALONE fuera del PickType, sin tocar tag.entity.ts.
+    #   Precedente verificado en el archivo hermano:
+    #   create-manufacturer.dto.ts:18 ya hace exactamente eso con
+    #   `shop_id?: string`. Se cierra aqui para que sdd-apply no improvise
+    #   tocando la entidad, que Tag comparte con Product.
+    # D27b-7 DECLARA el paso manual de psql para CA-3 y dice sin rodeos que es
+    #   un defecto de la US tal como esta escrita. El paso 3 del rollback exige
+    #   deshacerlo para que los conteos sembrados sigan verdes.
+    #
+    # CAPABILITIES (dirige sdd-spec):
+    #   flat-catalogs-api -> ADDED los requirements de escritura de tags y
+    #     manufacturers + MODIFIED su Out of Scope (spec.md:319-329), que queda
+    #     acotado a shops (US-30) UNICAMENTE.
+    #   catalog-write-foundations -> UN escenario ADDED y CERO requirements
+    #     MODIFIED: registra InvalidReference observado por HTTP por primera
+    #     vez, que archive-report.md:210 dejo explicitamente como no verificado
+    #     y clavado a tags.type_id. Ningun archivo fuente de esa capability se
+    #     toca, asi que CA-7 se sostiene.
+    #
+    # === PRESUPUESTO: pronostico ~1530 (+-180) lineas ===
+    # ANCLADO EN CIFRAS MEDIDAS de los commits de US-27a, no en estimaciones de
+    # diseno (que ya se demostraron bajas). Re-verificadas por el orquestador
+    # con `git show --stat`:
+    #   types.repository.ts        +150  (3c59b0d)
+    #   types.integration.test.ts  +153  (3c59b0d)
+    #   types.service.ts            +99  (829f510)
+    #   create-type.dto.ts           31  (829f510)
+    #   types.service.spec.ts       331  (829f510)  <-- el design predijo ~145.
+    #                                                   Error de 2.3x, y la
+    #                                                   causa principal del
+    #                                                   desborde de US-27a.
+    # Reparto: tags ~742, manufacturers ~792.
+    #   400-line budget risk: High
+    #   Chained PRs recommended: Yes
+    #   Decision needed before apply: Yes
+    #
+    # CADENA RECOMENDADA: 4 PRs, corte EXTERIOR por agregado y corte INTERIOR
+    # por capa. Cada slice lo prueba verde un runner distinto:
+    #   PR#1 tags en packages/db      (~300)  just db-check solo
+    #   PR#2 tags en la API           (~440)  npx jest + curl + build-api
+    #                                         <- `tags` queda RELEASABLE aqui
+    #   PR#3 manufacturers en packages/db (~300)  just db-check
+    #   PR#4 manufacturers en la API  (~490)  npx jest + el curl del toggle
+    #                                         is_approved con reinicio +
+    #                                         build-api + verify
+    # Se peso el corte por capas (ambos repos ~600, luego ambas APIs ~930) y se
+    # RECHAZO: dejaria el PR#1 sin consumidor -- packages/db verde mientras el
+    # admin sigue sin persistir nada -- que es exactamente el corte que el
+    # epico descarto al partir US-27.
+    #
+    # SOBRE PARTIR LA US: el umbral de ~900 del epico SI se dispara (~1530),
+    # pero el proposal recomienda NO partirla, y el argumento es bueno: partir
+    # US-27 compro aislamiento de riesgo (R-1) y herencia de fundaciones ya
+    # probadas; aqui tags y manufacturers son SIMETRICOS, no construyen nada
+    # compartido y no dependen entre si, asi que partir duplicaria toda la
+    # ceremonia SDD (los artefactos de US-27a fueron 3030 lineas contra 1462 de
+    # codigo) sin retirar un solo riesgo. CAVEAT registrado: la frontera de la
+    # cadena ES la frontera de particion -- si apply se desborda de verdad, los
+    # PR#3-#4 se levantan a una US-27c sin replanificar nada.
+    #
+    # GATE DEL ORQUESTADOR: pasado. Re-verificadas con `git show --stat` las
+    # cinco anclas de linea (153/150/31/331/99, exactas), el precedente
+    # `shop_id?: string` en create-manufacturer.dto.ts:18, y los dos hallazgos
+    # nuevos de la exploracion contra la base viva (0 de 1200 productos con
+    # manufacturer_id, product_tag vacia) y contra el codigo (tag.entity.ts sin
+    # type_id).
+    # Nota de presupuesto del skill: 2853 palabras contra un techo declarado de
+    # 1450. Cae dentro del rango real de los precedentes archivados
+    # (839-3511, mediana ~1900). Es el mismo item de gobernanza que US-27a ya
+    # levanto sobre la premisa de ese techo; no se sacrifico ninguna decision
+    # ni riesgo por el conteo.
+
+# === DECISION DE ENTREGA (usuario, 2026-09-10) ===
+  spec:
+    status: done
+    gate: PASS (inline)
+    artifacts:
+      - openspec/changes/escrituras-tags-manufacturers/specs/flat-catalogs-api/spec.md
+      - openspec/changes/escrituras-tags-manufacturers/specs/catalog-write-foundations/spec.md
+    # flat-catalogs-api: 6 requirements ADDED (CA-1..CA-6) / 11 escenarios +
+    #   MODIFIED Out of Scope acotado a shops (US-30) UNICAMENTE.
+    # catalog-write-foundations: 1 requirement ADDED (CA-7) / 1 escenario, CERO
+    #   MODIFIED -- registra InvalidReference observado por HTTP por primera vez
+    #   y exige `git diff` limpio en los tres archivos compartidos.
+    # SIN 409 en ningun sitio (verificado por grep): no hay borrado protegido en
+    # esta US. El requirement de update habla de la COLUMNA updated_at, con la
+    # nota heredada de types -- evita recrear el requirement insatisfacible que
+    # el gate de US-27a tuvo que corregir a mano (su B6).
+    # GATE: CA-1..CA-7 cubiertas por union de los dos archivos. El punto de
+    # riesgo real (el delta de prosa del Out of Scope) se diffeo con node:
+    # 9 items en main, 9 en el delta, PERDIDOS: ninguno. Merge no destructivo.
+    # OJO PARA sdd-archive: ese reemplazo se aplica A MANO (4o precedente).
+  design:
+    status: done
+    gate: PASS (2a corrida; la 1a fue PASS WITH FINDINGS con 4 bloqueantes)
+    artifact: openspec/changes/escrituras-tags-manufacturers/design.md
+    # 10 decisiones DD-1..DD-10, 13 divergencias V-1..V-13, cerca de alcance,
+    # procedimiento de evidencia, rollout de 4 commits y estimado por area.
+    # NO reabre nada: replica el patron de `types` ya en produccion.
+    #
+    # === GATE 1: 4 BLOQUEANTES (revisor de contexto fresco, opus) ===
+    # El orquestador re-verifico a mano los dos peores antes de re-correr:
+    #  B-1 CONFIRMADO y GRAVE -- la evidencia de CA-5 era DESTRUCTIVA. Hasta
+    #      esta US, "store_owner -> 200" en manufacturers era inocuo porque los
+    #      stubs no escribian. Ahora escriben: permissions.decorator.ts:22
+    #      (ADMIN_OWNER_AND_STAFF incluye store_owner) cubre PUT :52-53 y
+    #      DELETE :61-62, asi que la sonda contra un id sembrado habria BORRADO
+    #      datos del seed sin undo (la decision 1 prohibe db-reset).
+    #  B-4 CONFIRMADO -- y el error era MIO, en el texto de la US: escribi que
+    #      el toggle envia "el registro editable completo". Envia 5 de 10
+    #      (manufacturer-list.tsx:134-142 vs manufacturer-form.tsx:184-218, que
+    #      anade slug/description/website/socials/image/cover_image). La
+    #      conclusion operativa se sostiene, pero leida literalmente un agente
+    #      proyectaria todas las columnas y mapearia ausente -> null,
+    #      BORRANDO description/website/image en cada clic del toggle: la
+    #      regresion silenciosa que esta US existe para cerrar.
+    #      ACCION: corregi el doc de la US (Contexto + nota del ejecutor) antes
+    #      de re-correr la fase.
+    #  B-2 el analisis de paralelismo omitia un tercer escritor:
+    #      products.integration.test.ts:198-237 mantiene vivo un producto con
+    #      fila de product_tag durante todo su archivo, asi que en paralelo
+    #      product.count() es 1201 y productTag.count() es 1 -> el test de
+    #      desenlace se pondria rojo por algo ajeno a esta US.
+    #  B-3 un escenario ADDED del delta spec (spec.md:23-26, POST /tags con
+    #      socials y cover_image) quedaba sin ejercitar: el body de tags no los
+    #      llevaba, solo el de manufacturers.
+    #
+    # === GATE 2: PASS (verificacion inline de cada fix) ===
+    #  B-1 -> CA-5 se parte: las sondas 401/403 no escriben (el guard corta
+    #         antes del servicio) y las 3 de store_owner sobre manufacturers
+    #         corren como secuencia AUTO-LIMPIANTE sobre centinela propio
+    #         (POST -> PUT del id devuelto -> DELETE del mismo id), con un
+    #         PROHIBIDO explicito sobre ids sembrados y limpieza de respaldo.
+    #  B-2 -> asserts de desenlace ACOTADOS POR FILA
+    #         (productTag.count({where:{tagId: sentinelId}}) -> 0;
+    #         findUnique(probeId).manufacturerId -> null). Un count() global
+    #         dentro de la suite queda declarado DEFECTO; los conteos globales
+    #         solo valen en el procedimiento manual con la suite detenida.
+    #  B-3 -> el body de tags ya lleva socials y cover_image, tageado al
+    #         escenario.
+    #  B-4 -> DD-1 corrige el hecho y eleva la regla a MUST en blockquote:
+    #         "una clave ausente del DTO NO debe llegar al `data`". Ademas la
+    #         lleva al nivel de TIPOS: UpdateTagInput/UpdateManufacturerInput
+    #         pasan de Omit<...,'slug'> a Partial<Omit<...,'slug'>>, asi que el
+    #         compilador sostiene la regla (fix de coherencia que el gate no
+    #         pidio, aportado por el agente).
+    #  N-1..N-9 resueltos. Los dos que importan a sdd-apply:
+    #    N-1: update-{tag,manufacturer}.dto.ts usan PartialType de
+    #         @nestjs/swagger (no de @nestjs/mapped-types como types), que
+    #         funciona SOLO por el plugin CLI de nest-cli.json. Ese plugin NO
+    #         corre bajo ts-jest -> NINGUN spec de jest puede assertar
+    #         comportamiento del ValidationPipe: la evidencia de POST {} y
+    #         PUT {} va por curl contra un proceso construido.
+    #    N-7: divergencia V-12 -- 4 commits secuenciales, sin ramas apiladas y
+    #         sin PRs, autoritativo sobre la redaccion de D27b-9.
+    #
+    # HALLAZGOS DEL DISENO QUE EL GATE CONFIRMO Y QUE APPLY NO PUEDE PERDER:
+    #  - tags.integration.test.ts:19-20 asserta items[0].id === 62 y el ultimo
+    #    === 53 sobre orderBy id DESC sin filtro, y tags_id_seq esta en 62 ->
+    #    el primer tag centinela recibe 63 y ROMPE ese assert CON CERTEZA (no
+    #    probabilidad). types no tenia esta trampa porque su assert era
+    #    toHaveLength, insensible al orden. Remedio: los describe de escritura
+    #    van AL FINAL del archivo (vitest respeta el orden de declaracion) +
+    #    comentario obligatorio explicando por que el orden es portante.
+    #  - manufacturers NO TIENE columna `language` y toManufacturerDto:57 emite
+    #    la constante 'en': la lista de campos ignorados de la decision 5 del
+    #    epico esta incompleta. Declarado en V-2, no accionado.
+    #  - Deriva de secuencias: types_id_seq 58 vs max(id) 11; manufacturers
+    #    20/19; tags 62/62. Los predicados `id > N` son INSEGUROS en este repo:
+    #    la limpieza va por el id que devuelve la respuesta.
+    #  - El repositorio NO debe borrar filas de product_tag a mano:
+    #    product_tag.tag_id es CASCADE hacia tags (schema.sql:433). El instinto
+    #    de copiar deleteType y limpiar pivotes esta explicitamente prohibido.
+    #  - Remedio CA-7-compatible para S-1 (mensaje del P2003), pre-autorizado y
+    #    verificado por el gate: OMITIR uniqueField en ese call site. P2002
+    #    sigue correcto por el fallback hardcodeado a 'slug'
+    #    (domain-errors.ts:146) y P2003 pasa a decir `tags.desconocida` --
+    #    vago pero nunca falso. Cero bytes en archivos compartidos. Editar
+    #    domain-errors.ts rompe CA-7: parar y preguntar.
+    #  - DD-7 (lo mejor del documento, segun el gate): listTypes() SECUENCIAL
+    #    tras la escritura, NO Promise.all -- un Promise.all propaga la primera
+    #    promesa que rechaza, asi que un 400 determinista podria salir como 503
+    #    y volver CA-4 irreproducible.
+    #
+    # PRESUPUESTO: estimado propio ~1620 lineas de altas (tags ~794,
+    # manufacturers ~827), dentro de la banda +-180 del proposal. Los dos
+    # commits de API van a ~467 y ~495: ambos sobre 400, con el exceso
+    # concentrado en un spec de jest de ~320 lineas anclado en las 331 REALES
+    # de types.service.spec.ts. Decision needed before apply: No -- la frontera
+    # de 4 commits ya esta resuelta.
+  tasks:
+    status: pending
+  apply:
+    status: pending
+  verify:
+    status: pending
+  archive:
+    status: pending
+
+delivery_decision:
+  outcome: commits-per-slice-direct-to-main
+  slices: 4
+  chain_strategy: none   # sin ramas apiladas, sin PRs
+  size_exception: false  # no hace falta: cada slice es una frontera de commit
+  # Las 4 fronteras del proposal SE MANTIENEN, pero como fronteras de COMMIT,
+  # no de PR: cada una sigue siendo verificable por su propio runner.
+  #   commit 1  tags en packages/db          -> just db-check solo
+  #   commit 2  tags en la API               -> npx jest + curl + build-api
+  #   commit 3  manufacturers en packages/db -> just db-check
+  #   commit 4  manufacturers en la API      -> npx jest + curl del toggle
+  #                                             is_approved con reinicio +
+  #                                             build-api + verify
+  # RAZON DE LA ELECCION (del usuario, tras que el orquestador la planteara):
+  # US-27a se planifico como 3 PRs apilados y acabo empujada a main como 7
+  # commits directos, sin revision por PR. La cadena de PRs era ceremonia que
+  # no se uso, asi que se conserva el valor real (fronteras verificables por
+  # separado) y se descarta el envoltorio.
+  # Se trabaja en la rama us-27b-escrituras-tags-manufacturers y se hace
+  # fast-forward + push a main AL FINAL, solo tras verify verde: nada aterriza
+  # en main antes de estar verificado.
+  execution_scope: full-chain   # spec -> design -> tasks -> apply -> verify -> archive
+  stop_condition: un hallazgo CRITICAL en verify detiene la cadena y se reporta
+                  (los CRITICAL no admiten override; precedente C-1 de US-27a)
