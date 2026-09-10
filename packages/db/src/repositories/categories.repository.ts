@@ -449,9 +449,19 @@ export async function createCategory(
     });
     createdId = _id(row.id);
   } catch (error) {
+    // Sin `uniqueField: 'slug'` a propósito (gate corrective, finding 1):
+    // bajo Prisma 7 + adapter-pg, un `P2003` llega sin `meta.field_name`, y
+    // `translateCatalogWriteError` cae al `uniqueField` del contexto para
+    // CUALQUIER violación de FK — no solo la de `slug`. Con
+    // `uniqueField: 'slug'` fijo, un `type_id` inexistente (o un `parent_id`
+    // borrado por una carrera entre la guarda y el write) se reportaba como
+    // «categories.slug referencia un registro inexistente», culpando al
+    // campo equivocado. Precedente de la casa: `createTag`
+    // (`tags.repository.ts:143-147`) omite `uniqueField` a propósito y
+    // acepta el `'desconocida'` más vago pero honesto de
+    // `translateCatalogWriteError` (`domain-errors.ts:150-156`).
     throw translateCatalogWriteError(error, {
       aggregate: 'categories',
-      uniqueField: 'slug',
     });
   }
 
@@ -511,10 +521,13 @@ export async function updateCategory(
       },
     });
   } catch (error) {
+    // Ver el comentario equivalente en `createCategory`: sin `uniqueField`
+    // fijo (gate corrective, finding 1) — un `P2003` (madre borrada por una
+    // carrera entre la guarda y el write, o `type_id` inexistente) ya no se
+    // atribuye a `slug`.
     throw translateCatalogWriteError(error, {
       aggregate: 'categories',
       id,
-      uniqueField: 'slug',
     });
   }
 

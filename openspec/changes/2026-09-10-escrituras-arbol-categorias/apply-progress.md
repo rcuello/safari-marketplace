@@ -65,7 +65,11 @@ explicitly out of scope for this run (PR#2/PR#3) and were NOT touched.
       rows: (1) non-integer `type_id`; (1b) non-integer `parent` (the
       `{"parent":"abc"}` trap); (3) nonexistent parent; (4) parent of another
       `type_id`; (2) self-reference; (5/6) cycle A→B→A; (7) `type_id` change on
-      a node WITH sentinel children (400) vs. on a sentinel leaf (200).
+      a node WITH sentinel children (400) vs. on a sentinel leaf (200). Plus,
+      added in the `GATE: FAIL` correction round (finding 3): the `P2003`
+      (FK) path — `createCategory({typeId: 999999})` → `InvalidReferenceError`
+      whose message does NOT say `slug` — the exact path that exposed
+      finding 1.
 - [x] 2.4 Covered `deleteCategory` (pre-delete snapshot shows the child's old
       `parent_id`; a follow-up read confirms the DB re-enraized it to `null`)
       and CA-4 (depth-4 chain `raiz→hija→nieta→bisnieta`, 100% sentinel-owned,
@@ -78,8 +82,8 @@ explicitly out of scope for this run (PR#2/PR#3) and were NOT touched.
 
 | File | Action | What Was Done |
 |---|---|---|
-| `packages/db/src/repositories/categories.repository.ts` | Modified | +3 public write functions (`createCategory`/`updateCategory`/`deleteCategory`), +2 input types, +4 private guards (`_assertIntegerRef`/`_assertParentEdge`/`_assertNoAncestorCycle`/`_assertChildrenShareType`), +`_loadNode`, +`categorySlugs`. Reads (`getCategoryTree`/`listCategories`/`findCategoryByIdOrSlug`) and `_assembleTree`/`_loadFlat` untouched. |
-| `packages/db/src/repositories/categories.integration.test.ts` | Modified | Sentinel infra (`SENTINEL_PREFIX`, `cleanup`, `beforeAll`/`afterAll`) + 6 new `describe` blocks (create/update/seven-rules/delete/CA-4/closing-count), 18 new `it`s, all appended after the pre-existing read describes. |
+| `packages/db/src/repositories/categories.repository.ts` | Modified | +3 public write functions (`createCategory`/`updateCategory`/`deleteCategory`), +2 input types, +4 private guards (`_assertIntegerRef`/`_assertParentEdge`/`_assertNoAncestorCycle`/`_assertChildrenShareType`), +`_loadNode`, +`categorySlugs`. Reads (`getCategoryTree`/`listCategories`/`findCategoryByIdOrSlug`) and `_assembleTree`/`_loadFlat` untouched. **`GATE: FAIL` round**: dropped `uniqueField: 'slug'` from both write catches (finding 1). |
+| `packages/db/src/repositories/categories.integration.test.ts` | Modified | Sentinel infra (`SENTINEL_PREFIX`, `cleanup`, `beforeAll`/`afterAll`) + 7 new `describe` blocks (create/update/seven-rules/**P2003-field** [added in the `GATE: FAIL` round]/delete/CA-4/closing-count), 19 new `it`s, all appended after the pre-existing read describes. |
 | `packages/db/index.ts` | Modified | Barrel: added the 2 input types + 3 write functions, alphabetical order, additive only. |
 
 ### Deviations from Design
@@ -94,15 +98,18 @@ explicitly out of scope for this run (PR#2/PR#3) and were NOT touched.
   something this US introduced), while `updated.updatedAt` is
   Postgres-trigger-clock-sourced (correctly, per DD28-7) — a genuine
   cross-clock comparison that this dev environment demonstrably drifts on
-  by hundreds of ms. I changed the assertion to compare two successive
-  `updateCategory` results (both same-clock), which is monotonic and stable
-  (verified 5/5 clean full-suite runs after the change, vs. failures in 2/3
-  before). This preserves CA-2's actual contract ("advances relative to the
-  previous value on any successful PUT") without depending on cross-clock
-  agreement the design didn't anticipate. Flagged for `sdd-verify`/`design.md`
-  to decide whether the underlying `@default(now())` vs.
-  `@default(dbgenerated("now()"))` question is worth closing at the schema
-  level in a future US.
+  by hundreds of ms (direction and magnitude vary — see "Correction round"
+  below). I changed the assertion to compare two successive `updateCategory`
+  results (both same-clock) with a **strict** `toBeGreaterThan` (not `>=` —
+  a `GATE: FAIL` correction, see below; `>=` was a tautology that a frozen,
+  non-firing trigger would also satisfy), which is monotonic and stable
+  (verified clean full-suite runs after the change, vs. ~66% failure rate
+  before). This preserves CA-2's actual contract ("`updated_at` MUST avanzar…
+  posterior al valor previo") without depending on cross-clock agreement the
+  design didn't anticipate. The underlying `@default(now())` vs.
+  `@default(dbgenerated("now()"))` gap is real but scoped to `categories`
+  alone (not cross-aggregate, see "Correction round" below) — recorded as a
+  ticket-sized follow-up, not fixed here (needs DDL/`db-reset`, out of scope).
 - **`InvalidReferenceError` `value` argument for rules 5/6.** `design.md`'s
   table lists `value: parentId` for rules 5/6 (cycle, hop-limit), but
   `_assertNoAncestorCycle(id, startFrom)`'s canonical signature (from
@@ -167,23 +174,37 @@ explicitly out of scope for this run (PR#2/PR#3) and were NOT touched.
     change): the assertion now compares **two successive `updateCategory`
     calls** against each other (both DB-trigger/Postgres-clock-sourced),
     instead of `updateCategory` against `createCategory` (cross-clock).
-    Verified monotonic and small (17-24ms) across 5 repeated runs; the full
-    suite passed 5/5 clean `just db-check` runs after the fix (previously
-    ~66% failure rate). This still verifies CA-2's actual contract ("`updated_at`
-    MUST avanzar respecto al valor previo tras cualquier `PUT` exitoso") — it
-    just anchors "el valor previo" to a same-clock reading instead of a
-    cross-clock one.
-  - **Not fixed (deliberately, out of scope for PR#1)**: the underlying
-    architectural gap — `prisma/schema.prisma`'s `@default(now())` vs.
-    `@default(dbgenerated("now()"))` for `createdAt`/`updatedAt` — is a
-    cross-aggregate decision (affects `types`/`tags`/`manufacturers`/`shops`/
-    `users` identically) that no task in `tasks.md` authorizes touching, and
-    `schema.prisma` is documented as introspection-derived, not
-    hand-authored. Flagged here for `sdd-verify`/a future US to decide
-    whether it's worth closing at the schema level; it is currently latent
-    (not exercised) for every other aggregate because their own
-    `updateX`/tests use the SAME client-side clock on both sides via
-    `../clock.ts`'s `now()`/`_setNowProvider`.
+    Verified monotonic across repeated runs (17-45ms deltas observed between
+    successive `PUT`s, never zero or negative); the full suite passed 5/5
+    clean `just db-check` runs after the fix (previously ~66% failure rate).
+    **Correction round (`GATE: FAIL`, finding 2)**: the first version of this
+    fix kept `toBeGreaterThanOrEqual`, which is a tautology against the exact
+    failure this test exists to catch (trigger not firing ⇒ exact equality
+    ⇒ still passes). Changed to `toBeGreaterThan` — see "Correction round"
+    section below for the full resolution.
+  - **Sharpened during the `GATE: FAIL` correction round**: the cross-aggregate
+    framing this bullet originally had is inert — `types`/`tags`/
+    `manufacturers`/`shops`/`users` all set `updatedAt: now()` from
+    `../clock.ts` on BOTH `create` and `update`, so both sides are Node-clock
+    and internally consistent for them. **`categories` is the ONLY table with
+    a DB trigger, and therefore the only one mixing two different clocks.**
+    The concrete, measured consequence: **`categories` rows can persist and
+    be served with `updated_at` EARLIER than `created_at`** — this repo's own
+    measurements while root-causing ranged from **-114ms to -543ms**
+    (`created_at` ahead of a subsequent `updated_at`), and the gate's
+    independent re-run found Postgres running **~676ms AHEAD** of Node on the
+    same box (the drift direction flipped between runs — itself evidence the
+    drift is real and variable, not a fixed, ignorable offset).
+  - **Not fixed here (deliberately, out of scope for PR#1 — needs DDL, this
+    change adds none)**: aligning `Category.createdAt`/`Category.updatedAt`
+    in `prisma/schema.prisma` from `@default(now())` to
+    `@default(dbgenerated("now()"))`, plus a `just db-reset` to re-seed with
+    DB-generated timestamps. This is scoped to **`categories` alone** — NOT a
+    cross-aggregate user story, since the other aggregates don't have this
+    bug (see the paragraph above). Ticket-sized follow-up recommendation: a
+    small, dedicated future task that (1) changes the two `@default`
+    attributes, (2) runs `just db-reset`, (3) re-verifies the
+    198/83/53/10 seed counts still hold.
 - The ~475-line PR#1 forecast in `tasks.md`/`proposal.md` was undershot by a
   real diff of **704 changed lines** (+48%). Per `design.md` ("Re-anclaje de
   la estimación... si `sdd-apply` desborda de forma material, el corte a
@@ -192,12 +213,32 @@ explicitly out of scope for this run (PR#2/PR#3) and were NOT touched.
   no natural seam. Reported as a finding for `sdd-verify`/the epic's
   estimation record, not acted on unilaterally (no code was restructured to
   force a smaller diff).
-- `packages/db` lint (biome) reports 27 pre-existing errors, all
-  CRLF/line-ending `format` findings unrelated to this change (verified: same
-  27-error count on `main` before this branch's commits, via `git stash`).
-  One real `organizeImports` issue that this change *did* introduce (import
-  order in `categories.repository.ts`) was found and fixed before commit — the
-  final count matches the `main` baseline exactly.
+- `packages/db` lint (biome) reports 27 pre-existing errors: **20
+  CRLF/line-ending `format` findings + 7 `assist/source/organizeImports`**
+  findings (corrected in the `GATE: FAIL` round, finding 4 — the original
+  text in this file mischaracterized all 27 as `format`). Both categories are
+  unrelated to this change: verified the same 27-error split on `main` before
+  this branch's commits via `git stash` (20 `format` predate the branch; the
+  7 `organizeImports` are all in `types`/`tags`/`manufacturers`/
+  `auth-tokens` files this branch never touches). One real `organizeImports`
+  issue that this change *did* introduce (import order in
+  `categories.repository.ts`) was found and fixed before the first commit —
+  the final count matches the `main` baseline exactly, and is NOT one of the
+  7 `organizeImports` findings above (those are all pre-existing, in
+  unrelated files).
+- **`GATE: FAIL` finding 1 — a reachable 400 blamed the wrong field.** Both
+  write catches passed `uniqueField: 'slug'` to `translateCatalogWriteError`.
+  Under Prisma 7 + `adapter-pg`, a `P2003` (FK violation) arrives with no
+  `meta.field_name`, so the translator fell back to the fixed `uniqueField`
+  for EVERY FK violation, not just slug collisions. Observed live before the
+  fix: `createCategory({typeId: 999999})` threw «`categories.slug` referencia
+  un registro inexistente» — blaming `slug` for a `type_id` problem. Also
+  reachable via a real race: a `parent_id` deleted concurrently between
+  `_assertParentEdge`'s guard and the actual write. Fixed by dropping
+  `uniqueField: 'slug'` from both catches (house precedent: `createTag`
+  already does this, accepting the vaguer-but-honest `'desconocida'`
+  fallback in `translateCatalogWriteError`). `domain-errors.ts` was NOT
+  touched (`CA-7`). New test added (finding 3, below) locks this in.
 
 ### CA-4 empirical result (design.md Open Question, closed here)
 
@@ -334,13 +375,21 @@ Found 27 errors.
 Found 1 info.
 ```
 
-Same 27 errors, all pre-existing CRLF `format` findings across unrelated
-files (`slug.ts`, `types.repository.ts`, `tags.repository.ts`,
-`manufacturers.repository.ts`, several `*.integration.test.ts`), a
-repo-wide `core.autocrlf=true` artifact, not introduced by this change. One
-real `organizeImports` finding that this change *did* introduce (import
-order in `categories.repository.ts`) was caught and fixed before this final
-run — confirmed by the matching before/after counts.
+Same 27 errors both times, split **20 `format` (CRLF/line-ending, a
+repo-wide `core.autocrlf=true` artifact) + 7 `assist/source/organizeImports`**
+(corrected in the `GATE: FAIL` round, finding 4 — this section originally,
+incorrectly, called all 27 `format`). Both categories are pre-existing and
+unrelated to this change: the 20 `format` findings span `slug.ts`,
+`types.repository.ts`, `tags.repository.ts`, `manufacturers.repository.ts`,
+`categories.repository.ts`/`categories.integration.test.ts` (this branch's
+own files, but the CRLF condition predates the branch — the whole repo is
+checked out with CRLF) and several other `*.integration.test.ts`/`records.ts`/
+`domain-errors.ts`/`index.ts`; the 7 `organizeImports` findings are ALL in
+`types`/`tags`/`manufacturers`/`auth-tokens` files this branch never touches.
+One real `organizeImports` issue that this change *did* introduce (import
+order in `categories.repository.ts`) was caught and fixed before the first
+commit of this PR — confirmed by the matching before/after 27-error counts,
+and it is NOT one of the 7 pre-existing `organizeImports` findings above.
 
 ### The seven 400 rules — exercised at the repository level (via `just db-check`, `describe('Las siete reglas...')`)
 
@@ -395,3 +444,136 @@ $ git diff --stat main -- packages/db
 
 704 changed lines vs. the ~475-line PR#1 forecast in `tasks.md` (+48%). No
 scope was cut to force a smaller number; see "Issues Found" above.
+
+---
+
+## Correction round (`GATE: FAIL`) — single permitted re-run
+
+A fresh-context adversarial gate reviewed the batch above and returned
+`GATE: FAIL` with four findings (two MEDIUM, two LOW). The gate independently
+reproduced every number in this file (160/160, 5/5 clean runs, 27 lint
+errors, 198/83/0, 704 lines, +18 tests) and confirmed correct: the BigInt
+boundary, validation ordering, the deep-cycle guard, the four-way `parentId`
+semantics, rule 7's leaf-only behavior, `deleteCategory`'s pre-delete
+snapshot, slug immutability, `updatedAt` never set by hand, scope discipline,
+and house-pattern conformance. None of that was touched in this round.
+
+| # | Sev. | Finding | Resolution |
+|---|---|---|---|
+| 1 | Medium | `createCategory`/`updateCategory`'s catches passed `uniqueField: 'slug'`; under Prisma 7 + `adapter-pg`, `P2003` arrives with no `meta.field_name`, so a `type_id`-inexistente (or a `parent_id` deleted by a concurrent race) was reported as «`categories.slug` referencia un registro inexistente» — wrong field on a reachable route. | Dropped `uniqueField: 'slug'` from both `catch` blocks in `categories.repository.ts` (house precedent: `createTag` already omits it, accepting `'desconocida'`). `domain-errors.ts` NOT touched (`CA-7`). Verified live: `createCategory({typeId: 999999})` now throws `InvalidReferenceError` with message «`categories.desconocida` referencia un registro inexistente.» — no longer blames `slug`. |
+| 2 | Medium, blocking | The update-vs-update monotonicity fix from the previous batch used `toBeGreaterThanOrEqual`, which is a tautology: the exact failure the test exists to catch (trigger not firing, `updated_at` frozen) produces exact equality and still passes. Spec requires "avanza"/"posterior", not "no retrocede". | Changed `toBeGreaterThanOrEqual` → `toBeGreaterThan` at `categories.integration.test.ts`'s `updateCategory` monotonicity assertion. Verified stable under the stricter operator: deltas between two successive `PUT`s measured 17-45ms across runs, never zero — 4/4 clean `just db-check` re-runs after the change. |
+| 3 | Low | The `P2003` path (FK `type_id` inexistente) had no test — precisely why finding 1 shipped undetected. | Added a new `describe('FK type_id inexistente (P2003)...')` with one `it`: `createCategory({typeId: 999999})` asserts `InvalidReferenceError` AND that the thrown message does NOT contain `.slug`. This is the test that would have caught finding 1 directly. |
+| 4 | Low | `apply-progress.md` mischaracterized all 27 lint errors as CRLF `format` findings; the real split is 20 `format` + 7 `assist/source/organizeImports`. The "still verifies CA-2's actual contract" claim needed to match whichever operator shipped after fix 2. | Corrected the lint characterization in both places it appeared ("Issues Found" and the "npm run lint" evidence block) to the accurate 20+7 split, with the 7 `organizeImports` findings confirmed to live entirely in `types`/`tags`/`manufacturers`/`auth-tokens` files this branch never touches. Softened/updated the CA-2 contract claim to reference the shipped `toBeGreaterThan` operator specifically. |
+
+**Informational items, no action taken** (per the coordinator's explicit
+instruction not to act on these):
+- `createCategory({typeId: undefined})` produces an untranslatable
+  `PrismaClientValidationError` → 500, but is TS-illegal at the type level
+  and unreachable from HTTP (DD28-10's `Number()` coercion in the service
+  always yields a `number`, never `undefined`, for `type_id`). Noted, not
+  guarded.
+- The A→B→A cycle test (`describe('reglas 5/6: ciclo...')`) is confirmed
+  genuinely load-bearing at the integration level — stripping `_id()` from
+  the cycle-guard's ascent flips it red — though `tsc --noEmit` would also
+  catch that specific line (the type of `cursor` wouldn't compile against
+  `bigint`), so the original "only test that would catch a missing `_id()`"
+  framing slightly overstated its uniqueness for that one call site (it
+  remains the only RUNTIME net for the semantic failure mode, per DD28-3's
+  "Regla normativa transversal").
+
+**`@default(now())` finding, sharpened per the coordinator's correction**:
+recorded in "Issues Found" and "Deviations from Design" above — the
+cross-aggregate framing was inert (`types`/`tags`/`manufacturers`/`shops`/
+`users` are internally consistent, both sides Node-clock via `../clock.ts`);
+`categories` is the only table with a DB trigger and therefore the only one
+mixing clocks; the concrete consequence is that `categories` rows CAN persist
+and be served with `updated_at` earlier than `created_at` (measured: -114ms
+to -543ms on this run, and the gate's independent re-run found the drift
+had flipped to Postgres ~676ms AHEAD of Node — confirming the drift is real
+and variable). Recorded as a `categories`-scoped ticket-sized follow-up
+(NOT a cross-aggregate US), not implemented here (needs DDL/`db-reset`, this
+change adds none).
+
+### Re-run evidence after the four fixes
+
+**`just db-build && just db-check`** (expect 161/161 after finding 3's new test):
+
+```
+$ just db-build
+CLI Building entry: index.ts
+CJS dist\index.js     151.59 KB
+CJS ⚡️ Build success in 77ms
+DTS ⚡️ Build success in 5541ms
+DTS dist\index.d.ts 1.39 MB
+
+$ just db-check
+npm run typecheck
+> tsc --noEmit
+npm test
+> vitest run
+ Test Files  10 passed (10)
+      Tests  161 passed (161)
+   Duration  7.43s
+```
+
+Re-ran `just db-check` **4 more times** to confirm stability under the
+stricter `toBeGreaterThan` operator (finding 2) — all clean:
+
+```
+=== run 1 ===  Test Files  10 passed (10)   Tests  161 passed (161)
+=== run 2 ===  Test Files  10 passed (10)   Tests  161 passed (161)
+=== run 3 ===  Test Files  10 passed (10)   Tests  161 passed (161)
+=== run 4 ===  Test Files  10 passed (10)   Tests  161 passed (161)
+```
+
+**`npm run typecheck`** (packages/db, after all four fixes):
+
+```
+$ cd packages/db && npm run typecheck
+> @safari/db@0.1.0 typecheck
+> tsc --noEmit
+```
+(no output = clean, exit 0)
+
+**`psql`** — categories back to 198/83, zero sentinel leftovers, after the
+re-run:
+
+```
+$ docker exec safari-postgres psql -U safari -d safari_scraper -t -c "SELECT count(*) FROM categories;"
+   198
+
+$ docker exec safari-postgres psql -U safari -d safari_scraper -t -c "SELECT count(*) FROM categories WHERE parent_id IS NULL;"
+    83
+
+$ docker exec safari-postgres psql -U safari -d safari_scraper -t -c "SELECT count(*) FROM categories WHERE slug LIKE 'zz-%';"
+     0
+```
+
+**`npm run lint`** (packages/db, after all four fixes) — unchanged from
+before the correction round:
+
+```
+Checked 33 files in ~50ms.
+Found 27 errors.
+Found 1 info.
+```
+
+Confirmed split: 20 `format` + 7 `assist/source/organizeImports`, all
+pre-existing, none introduced by this round (verified via
+`npx biome check . --max-diagnostics=200` grouped by finding type).
+
+**`git diff --stat main -- packages/db`** (final, after the correction round):
+
+```
+$ git diff --stat main -- packages/db
+ packages/db/index.ts                                              |   5 +
+ packages/db/src/repositories/categories.integration.test.ts       | 439 ++++++++++++++++++++-
+ packages/db/src/repositories/categories.repository.ts             | 317 +++++++++++++++
+ 3 files changed, 757 insertions(+), 4 deletions(-)
+```
+
+761 changed lines (additions + deletions, up from 708 pre-correction — the
+round added a `describe`/`it` for finding 3, explanatory comments for
+findings 1-2, and the `updated_at` assertion rewrite for finding 2), vs. the
+~475-line PR#1 forecast (+60%). Consistent with the epic's known
+estimation-drift pattern; not acted on unilaterally (see "Issues Found").

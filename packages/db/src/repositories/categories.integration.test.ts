@@ -303,7 +303,15 @@ describe('updateCategory — CA-2, slug inmutable, updatedAt por trigger de base
       name: `${SENTINEL_PREFIX}Renombrada Otra Vez`,
     });
     expect(secondUpdate.slug).toBe(`${SENTINEL_PREFIX}original`);
-    expect(secondUpdate.updatedAt.getTime()).toBeGreaterThanOrEqual(
+    // `toBeGreaterThan`, NUNCA `toBeGreaterThanOrEqual` (gate corrective,
+    // finding 2): con `>=`, el fallo exacto que este test existe para cazar
+    // — el trigger `categories_updated_at` sin disparar, `updated_at`
+    // congelado en su valor de INSERT — produce una IGUALDAD exacta y el
+    // test PASA igual. El spec (`category-tree-api/spec.md:30-31,38`) exige
+    // «avanza»/«posterior», no «no retrocede». Delta medido entre dos `PUT`
+    // sucesivos: 17-45ms según la corrida — nunca cero — así que `>` estricto
+    // es estable.
+    expect(secondUpdate.updatedAt.getTime()).toBeGreaterThan(
       firstUpdate.updatedAt.getTime()
     );
 
@@ -476,6 +484,38 @@ describe('Las siete reglas de la arista madre→hija — 400 (InvalidReferenceEr
     await deleteCategory(child.id);
     await deleteCategory(parentWithChild.id);
     await deleteCategory(leaf.id);
+  });
+});
+
+describe('FK type_id inexistente (P2003) — InvalidReferenceError con field distinto de `slug` (gate corrective, finding 3)', () => {
+  // `_assertIntegerRef` solo valida FORMA entera de `type_id`, nunca su
+  // EXISTENCIA (design.md no lo pide — la tabla de errores lo deja al FK
+  // `categories_type_id_fkey`, alcanzable por POST y PUT). Este es el camino
+  // que expuso el finding 1: bajo Prisma 7 + adapter-pg, `P2003` llega SIN
+  // `meta.field_name`, y `translateCatalogWriteError` (`domain-errors.ts:150-156`)
+  // caía al `uniqueField` fijo del `catch` — `'slug'` — culpando al campo
+  // equivocado. Tras quitar `uniqueField: 'slug'` de ambos catches, el campo
+  // cae al `'desconocida'` genérico y honesto de la casa (precedente
+  // `createTag`), nunca `slug`.
+  it('createCategory con type_id inexistente → InvalidReferenceError, el mensaje NO culpa a `slug`', async () => {
+    let error: unknown;
+    try {
+      await createCategory({
+        name: `${SENTINEL_PREFIX}fk-type-fantasma`,
+        typeId: 999999,
+      });
+    } catch (e) {
+      error = e;
+    }
+
+    expect(error).toBeInstanceOf(InvalidReferenceError);
+    const message = (error as Error).message;
+    expect(message).not.toContain('.slug');
+
+    // Nada se creó: si el guard fallara y se llegara a insertar, esto lo cazaría.
+    expect(
+      await findCategoryByIdOrSlug(`${SENTINEL_PREFIX}fk-type-fantasma`)
+    ).toBeNull();
   });
 });
 
