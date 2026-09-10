@@ -8,9 +8,9 @@
 
 **Épico:** [Épico 26](./README.md)
 **Fecha:** 2026-09-09
-**Status:** Listo para ejecución
+**Status:** Implementada (2026-09-10)
 **Depende de:** US-27a
-**LOC est.:** ~825
+**LOC est.:** ~825 · **LOC real:** ~2109 en 4 commits secuenciales (364 / 620 / 386 / 730)
 
 ## Historia
 **Como** administrador del marketplace, **quiero** que crear, editar y borrar
@@ -185,28 +185,28 @@ Feature: Escrituras de tags y manufacturers
 
 ## Definición de Done
 
-- [ ] Secuencia `POST → GET → reinicio → GET → PUT → GET → DELETE → GET 404`
+- [x] Secuencia `POST → GET → reinicio → GET → PUT → GET → DELETE → GET 404`
       pegada para los dos recursos, con comparación de key-sets (`POST` vs
       `GET`, 9 y 13 claves, sin `.sort()`).
-- [ ] `curl` de CA-2 pegado para el toggle `is_approved` **con reinicio de la
+- [x] `curl` de CA-2 pegado para el toggle `is_approved` **con reinicio de la
       API en medio** (es el fallo silencioso que esta US cierra).
-- [ ] `curl` de CA-3 pegado + `psql` mostrando `manufacturer_id = NULL` y las
+- [x] `curl` de CA-3 pegado + `psql` mostrando `manufacturer_id = NULL` y las
       filas de `product_tag` desaparecidas, con el conteo de `products`
       intacto.
-- [ ] `curl` de CA-4 pegado: 404, 400 (nombre vacío), 400 (`type_id`
+- [x] `curl` de CA-4 pegado: 404, 400 (nombre vacío), 400 (`type_id`
       inexistente), sufijo de colisión.
-- [ ] `curl` de CA-5 pegado: 401, 403 `customer`, 403 tags / 200 manufacturers
+- [x] `curl` de CA-5 pegado: 401, 403 `customer`, 403 tags / 200 manufacturers
       con `store_owner`.
-- [ ] `grep -n "fuse\|@db/"` sobre los dos servicios devuelve 0 líneas.
-- [ ] `git diff --stat` de las piezas compartidas de US-27a: sin cambios
+- [x] `grep -n "fuse\|@db/"` sobre los dos servicios devuelve 0 líneas.
+- [x] `git diff --stat` de las piezas compartidas de US-27a: sin cambios
       (CA-7), o desviación declarada.
-- [ ] `just db-check` verde con recuento (pegar el nuevo; la base la fija
+- [x] `just db-check` verde con recuento (pegar el nuevo; la base la fija
       US-27a al cerrar).
-- [ ] `cd apps/api/rest && npx jest` verde con recuento.
-- [ ] `just build-api` limpio y `just verify` verde.
-- [ ] Divergencias declaradas en el reporte: campos ignorados (`socials`,
+- [x] `cd apps/api/rest && npx jest` verde con recuento.
+- [x] `just build-api` limpio y `just verify` verde.
+- [x] Divergencias declaradas en el reporte: campos ignorados (`socials`,
       `cover_image`) y cualquier otra.
-- [ ] Status de esta US actualizado y fila del épico marcada.
+- [x] Status de esta US actualizado y fila del épico marcada.
 
 ## Notas para el agente ejecutor
 

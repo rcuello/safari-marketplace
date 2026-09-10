@@ -9,7 +9,7 @@
 > DDL, sin `db-reset` y sin tocar el contrato que el admin consume.
 
 **Fecha:** 2026-09-09
-**Status:** En ejecución (US-27a implementada 2026-09-10; quedan US-27b, US-28, US-29, US-30)
+**Status:** En ejecución (US-27a y US-27b implementadas 2026-09-10; quedan US-28, US-29, US-30)
 
 ## Contexto verificado
 
@@ -148,7 +148,7 @@ esquema.
 | US | Título | Releasable solo | Depende de | LOC est. | Status |
 |----|--------|-----------------|------------|----------|--------|
 | [US-27a](./27-escrituras-types-fundaciones.md) | Escrituras de `types` y las piezas compartidas | Sí | ninguna | ~725 (real ~1470) | **Implementada** (2026-09-10) |
-| [US-27b](./27b-escrituras-tags-manufacturers.md) | Escrituras de `tags` y `manufacturers` | Sí | US-27a | ~825 | Listo para ejecución |
+| [US-27b](./27b-escrituras-tags-manufacturers.md) | Escrituras de `tags` y `manufacturers` | Sí | US-27a | ~825 (real ~2109) | **Implementada** (2026-09-10) |
 | [US-28](./28-escrituras-arbol-categorias.md) | Escrituras del árbol de categorías | Sí | US-27a | ~350 | Listo para ejecución |
 | [US-29](./29-escrituras-productos-postgres.md) | Escrituras de productos con categorías y tags | Sí | US-27a | ~550 | Listo para ejecución |
 | [US-30](./30-escrituras-moderacion-tiendas.md) | Escrituras y moderación de tiendas | Sí | US-27a | ~400 | Listo para ejecución |
