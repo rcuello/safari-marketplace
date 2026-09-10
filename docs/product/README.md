@@ -199,18 +199,33 @@ Feature: …
 Épico 13 Orquestación local con Docker        → US-14, US-15
 Épico 16 Despliegue y observabilidad          → US-17, US-18   ← Terraform: el README lo promete, hoy no existe
 Épico 19 Autenticación y autorización         → US-20 … US-25  (completado)
-Épico 26 Escrituras del catálogo desde Postgres → US-27a, US-27b, US-28 … US-30 ← el admin "guarda" y nada persiste: create/update/remove devuelven la fila 0 del mock
+Épico 26 Escrituras del catálogo desde Postgres → US-27a, US-27b hechas; quedan US-28, US-29, US-30 ← `types`, `tags` y `manufacturers` ya persisten; en los otros tres agregados create/update/remove siguen devolviendo la fila 0 del mock
 ```
 
 Lo que sigue mock y **no** tiene épico todavía (contenido, staff↔tienda,
 dominio transaccional) está inventariado con evidencia en
 [`_backlog/api-mock-restante-dominio-transaccional.md`](./_backlog/api-mock-restante-dominio-transaccional.md).
 
-**US recomendada para arrancar: US-27b, US-28, US-29 o US-30** — cualquiera de
-las cuatro, en paralelo: US-27a ya está implementada (2026-09-10) y con ella
-aterrizaron el helper de slug y el mapeo de errores de dominio → HTTP que las
-cuatro consumen. Solo comparten el barrel `packages/db/index.ts`, así que quien
-arranque segundo rebasea sobre él. En paralelo
-puede ir **US-8** (lo único que queda del Épico 5: realinear `db-test`/
-`db-count` con la tabla `products`): no comparten archivos. US-6 ya no es el
-arranque: está implementada, igual que US-7.
+**US recomendada para arrancar: US-28, US-29 o US-30** — cualquiera de las
+tres, en paralelo: US-27a y US-27b ya están implementadas (2026-09-10), y con
+US-27a aterrizaron el helper de slug y el mapeo de errores de dominio → HTTP
+que las tres consumen. Solo comparten el barrel `packages/db/index.ts`, así que
+quien arranque segundo rebasea sobre él.
+
+**Dos herencias que NO se copian a ciegas** (las midió el `sdd-verify` de
+US-27b; su `archive-report.md` las detalla):
+
+- **US-29** — el remedio de S-1 (omitir `uniqueField` al traducir el error de
+  Prisma) es local a agregados con **un solo** unique. `products` tiene un
+  segundo (`products_procedencia_key`, el parcial del scraper), así que
+  copiarlo haría que una violación P2002 mienta diciendo `slug`. Y con 3 FK
+  salientes, `products.desconocida` no es actuable: toca pre-validar cada FK en
+  el repositorio del agregado.
+- **US-30** — no hereda el "no hay 409" de US-27b: `shops.owner_id` es
+  `RESTRICT` y `products.shop_id` es `CASCADE`, así que `deleteShop` necesita
+  el patrón de borrado protegido de `types` (US-27a), no el de `tags`.
+
+En paralelo puede ir **US-8** (lo único que queda del Épico 5: realinear
+`db-test`/`db-count` con la tabla `products` — `justfile:308` todavía consulta
+`productos`): no comparte archivos con el Épico 26. US-6 ya no es el arranque:
+está implementada, igual que US-7.
