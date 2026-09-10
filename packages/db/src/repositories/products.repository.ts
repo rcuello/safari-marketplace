@@ -511,7 +511,18 @@ function _toProductRecord(row: ProductPayload): ProductRecord {
     manufacturer: row.manufacturer
       ? _toManufacturerRecord(row.manufacturer)
       : null,
-    categories: row.categories.map((link) => _toCategoryRecord(link.category)),
-    tags: row.tags.map((link) => _toTagRecord(link.tag)),
+    // `link.category`/`link.tag` pueden llegar NULL aunque la fila pivote
+    // exista: Prisma resuelve el include anidado en dos consultas, así que si
+    // el agregado se borra entre ambas, el enlace queda sin destino. La guarda
+    // de `manufacturer` (arriba) ya lo contemplaba; estas dos no, y el
+    // resultado era un `TypeError: Cannot read properties of null` reproducible
+    // al 8,3 % (hallazgo C-1 de `sdd-verify` en US-27b) — y un 500 real al
+    // borrar un tag mientras la tienda hace SSR de `/api/products`.
+    categories: row.categories
+      .filter((link) => link.category !== null)
+      .map((link) => _toCategoryRecord(link.category)),
+    tags: row.tags
+      .filter((link) => link.tag !== null)
+      .map((link) => _toTagRecord(link.tag)),
   };
 }
