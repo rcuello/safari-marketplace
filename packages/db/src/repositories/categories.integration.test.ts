@@ -275,21 +275,36 @@ describe('createCategory — CA-1, centinela zz-categories-', () => {
 });
 
 describe('updateCategory — CA-2, slug inmutable, updatedAt por trigger de base', () => {
-  it('renombrar no cambia el slug; updated_at avanza (monotonía contra el reloj de la base, DD28-7)', async () => {
+  it('renombrar no cambia el slug; updated_at avanza (monotonía entre dos PUT sucesivos, ambos por el reloj de la base, DD28-7)', async () => {
+    // La comparación es UPDATE-vs-UPDATE, nunca create-vs-update: `created.updatedAt`
+    // lo computa Prisma Client en Node (comportamiento estándar de `@default(now())`
+    // en prisma/schema.prisma, confirmado con `log:['query']` — el INSERT trae
+    // `created_at`/`updated_at` como parámetros ligados, no delegados al DEFAULT
+    // de la columna), mientras que `updateCategory` SÍ delega en el trigger de
+    // Postgres (DD28-7). Comparar create vs update mezcla dos relojes distintos
+    // (Node del proceso vs Postgres del contenedor) y, verificado empíricamente
+    // en este entorno (Docker Desktop/Windows), pueden divergir varios cientos
+    // de ms — un hallazgo real para `design.md`, no un flake a ignorar. Dos
+    // `PUT` sucesivos comparados entre sí SÍ usan el mismo reloj (el trigger,
+    // ambas veces) y son monótonos de forma fiable.
     const created = await createCategory({
       name: `${SENTINEL_PREFIX}Original`,
       slug: `${SENTINEL_PREFIX}original`,
       typeId: TYPE_A,
     });
 
-    const updated = await updateCategory(created.id, {
+    const firstUpdate = await updateCategory(created.id, {
       name: `${SENTINEL_PREFIX}Renombrada`,
     });
+    expect(firstUpdate.name).toBe(`${SENTINEL_PREFIX}Renombrada`);
+    expect(firstUpdate.slug).toBe(`${SENTINEL_PREFIX}original`);
 
-    expect(updated.name).toBe(`${SENTINEL_PREFIX}Renombrada`);
-    expect(updated.slug).toBe(`${SENTINEL_PREFIX}original`);
-    expect(updated.updatedAt.getTime()).toBeGreaterThanOrEqual(
-      created.updatedAt.getTime()
+    const secondUpdate = await updateCategory(created.id, {
+      name: `${SENTINEL_PREFIX}Renombrada Otra Vez`,
+    });
+    expect(secondUpdate.slug).toBe(`${SENTINEL_PREFIX}original`);
+    expect(secondUpdate.updatedAt.getTime()).toBeGreaterThanOrEqual(
+      firstUpdate.updatedAt.getTime()
     );
 
     await deleteCategory(created.id);
