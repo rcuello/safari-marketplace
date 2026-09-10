@@ -1,0 +1,127 @@
+# Catalog Write Foundations Specification
+
+## Purpose
+
+Dos piezas compartidas que las escrituras de catálogo necesitan y que
+**cuatro US más** (`tags`/`manufacturers` en US-27b, `categories` en US-28,
+`products` en US-29, `shops` en US-30) consumirán sin editar: la regla de
+generación de slug en servidor y la traducción de errores de dominio a
+códigos HTTP. Esta capability se introduce en US-27a y se integra **solo**
+con `types` aquí — añadir otro agregado MUST ser un call site, nunca una
+edición de estos archivos (D27-13). El mecanismo concreto de cómputo del
+slug (TypeScript vs. delegar a Postgres) es una decisión de `sdd-design`
+todavía abierta; esta spec describe el comportamiento observable, no la
+implementación.
+
+## Requirements
+
+### Requirement: Slug generado en servidor a partir de `slug` o `name` (CA-7)
+
+El sistema MUST generar el slug de un recurso en el servidor: si el cliente
+envía un campo `slug` no vacío, se usa ese valor normalizado; si no, se
+deriva de `name`. La normalización MUST producir el mismo resultado que la
+función `slugify()` de la base (minúsculas, sin tildes, caracteres fuera de
+`[a-z0-9]` colapsados a un guion, guiones repetidos colapsados, sin guiones
+al inicio/fin). El helper MUST recibir la tabla/agregado como parámetro
+(genérico por firma) en vez de tener una variante por catálogo. Esta
+Requirement MUST permanecer agnóstica de si la normalización corre en
+TypeScript o vía `SELECT slugify($1)` en Postgres.
+
+#### Scenario: Nombre con tildes normaliza igual que la función SQL
+- GIVEN los nombres `"Café & Té"`, `"Acción!"`, `"Niño Grande"`
+- WHEN se generan sus slugs
+- THEN cada resultado es idéntico al que produce `SELECT slugify($1)` sobre
+  el mismo texto
+
+#### Scenario: Un `slug` explícito del cliente tiene prioridad sobre `name`
+- GIVEN un payload con `name "Vertical X"` y `slug "vertical-custom"`
+- WHEN se genera el slug del recurso
+- THEN el slug resultante es `"vertical-custom"` normalizado, no derivado de `name`
+
+### Requirement: Colisión de slug resuelve con sufijo numérico incremental (CA-4, CA-7)
+
+Cuando el slug calculado ya existe en la tabla, el sistema MUST anexar un
+sufijo numérico incremental (`-2`, `-3`, …) hasta encontrar uno libre, sin
+producir un error. La resolución de colisión MUST funcionar igual para
+cualquier tabla que use el helper (genérico por firma), consultando solo la
+tabla del agregado en cuestión.
+
+#### Scenario: Primera colisión produce el sufijo `-2`
+- GIVEN un slug existente `"gadget"` en la tabla `types`
+- WHEN se genera el slug para un nuevo `name "Gadget"`
+- THEN el resultado es `"gadget-2"`
+
+#### Scenario: Colisiones sucesivas incrementan el sufijo
+- GIVEN slugs existentes `"gadget"` y `"gadget-2"` en la misma tabla
+- WHEN se genera el slug para otro `name "Gadget"`
+- THEN el resultado es `"gadget-3"`
+
+### Requirement: Nombre que slugifica a vacío es un error de dominio (CA-4, CA-7)
+
+Si el `name` (o el `slug` explícito) normaliza a una cadena vacía, el
+sistema MUST lanzar el error de dominio `EmptySlug` **antes** de cualquier
+escritura, y ninguna fila MUST crearse ni actualizarse.
+
+#### Scenario: `name` compuesto solo por símbolos
+- GIVEN un payload con `name "!!!"`
+- WHEN se intenta generar su slug
+- THEN se lanza `EmptySlug` y no se ejecuta ningún INSERT/UPDATE
+
+### Requirement: Slug inmutable tras la creación (CA-2, CA-7)
+
+Una vez creado un recurso, ninguna operación de actualización MUST
+recalcular ni modificar su slug, incluso si `name` cambia en la misma
+solicitud.
+
+#### Scenario: Actualizar `name` no toca el slug existente
+- GIVEN un recurso con slug `"vertical-prueba"`
+- WHEN se actualiza su `name` a un valor distinto
+- THEN el slug de la fila permanece `"vertical-prueba"`
+
+### Requirement: Contrato dominio → HTTP es un conjunto cerrado de 5 códigos (CA-4, CA-7)
+
+El mapeador de errores de dominio a HTTP MUST cubrir exactamente estos
+cinco códigos, como una tabla `code → status`, nunca como ramas
+`if (aggregate === …)` ni wrappers por agregado: `EmptySlug` → 400,
+`InvalidReference` → 400, `RecordNotFound` → 404, `DependentRows` → 409,
+`SlugConflict` → 409. Ningún error de dominio MUST resultar en 500. Integrar
+un agregado nuevo MUST limitarse a invocar el mapeador existente desde su
+propio `catch` (un call site), sin tocar el archivo del mapeador ni el de
+los errores de dominio.
+
+#### Scenario: Cada uno de los cinco códigos mapea a su status
+- GIVEN una instancia de cada uno de `EmptySlug`, `InvalidReference`,
+  `RecordNotFound`, `DependentRows`, `SlugConflict`
+- WHEN cada una pasa por el mapeador
+- THEN los status resultantes son 400, 400, 404, 409, 409 respectivamente
+
+#### Scenario: `types` solo ejercita tres códigos, pero los cinco están probados
+- GIVEN que `types` solo puede producir `EmptySlug`, `RecordNotFound` y
+  `DependentRows` por HTTP (no tiene ruta que dispare `InvalidReference` ni
+  `SlugConflict`)
+- WHEN se revisa la cobertura del spec unitario del mapeador
+- THEN los cinco códigos tienen un test directo, sin depender de una ruta HTTP
+
+### Requirement: Piezas listas para consumo sin reabrir el archivo (CA-7)
+
+El helper de slug y el mapeador de errores MUST exportarse desde
+`packages/db` (helper) y desde el módulo de errores de la API (mapeador), y
+MUST estar consumidos por al menos un caso real (`types`) en este change.
+Sus tests MUST cubrir tildes, nombre que slugifica a vacío y colisión.
+Ninguna de las cuatro US siguientes (`tags`/`manufacturers`, `categories`,
+`products`, `shops`) MUST necesitar editar la implementación de estas dos
+piezas para integrarse — solo añadir su propio call site.
+
+#### Scenario: Un caso real consume ambas piezas sin adaptadores
+- GIVEN `createType`/`updateType`/`deleteType` ya implementados
+- WHEN se revisa su código
+- THEN llaman directamente al helper de slug y al mapeador de errores, sin
+  wrappers ni ramas condicionales por agregado
+
+#### Scenario: Agregar un agregado nuevo es un call site, no una edición
+- GIVEN una US futura que integra `tags` con estas piezas
+- WHEN se compara el `git diff` de `packages/db/src/slug.ts`,
+  `packages/db/src/domain-errors.ts` y el mapeador de errores de la API
+  antes y después de esa integración
+- THEN el diff de esos archivos compartidos está vacío; el cambio vive
+  entero en el repositorio/servicio de `tags`
