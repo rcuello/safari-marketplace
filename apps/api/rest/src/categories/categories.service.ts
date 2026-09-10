@@ -4,34 +4,29 @@ import {
   NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import { plainToClass } from 'class-transformer';
 import {
+  createCategory,
+  deleteCategory,
   findCategoryByIdOrSlug,
   getUserFriendlyMessage,
   isPrismaConnectionError,
   listCategories,
+  updateCategory,
   type CategoryAncestor,
   type CategoryDescendant,
   type CategoryRecord,
   type CategoryTreeNode,
   type ListCategoriesInput,
+  type Prisma,
   type TypeRecord,
 } from '@safari/db';
+import { toWriteHttpException } from 'src/common/errors/domain-error.mapper';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { GetCategoriesDto } from './dto/get-categories.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { Category } from './entities/category.entity';
-import Fuse from 'fuse.js';
-import categoriesJson from '@db/categories.json';
 import { paginate } from 'src/common/pagination/paginate';
 import { parseSearch } from 'src/common/search/parse-search';
-
-const categories = plainToClass(Category, categoriesJson);
-const options = {
-  keys: ['name', 'type.slug'],
-  threshold: 0.3,
-};
-const fuse = new Fuse(categories, options);
 
 /**
  * `search=key:value;key:value` → `ListCategoriesInput` de `@safari/db`
@@ -180,12 +175,6 @@ function toCategoryDto(node: CategoryTreeNode): Category {
 
 @Injectable()
 export class CategoriesService {
-  private categories: Category[] = categories;
-
-  create(createCategoryDto: CreateCategoryDto) {
-    return this.categories[0];
-  }
-
   async getCategories({ limit, page, search, parent }: GetCategoriesDto) {
     if (!page) page = 1;
 
@@ -241,11 +230,108 @@ export class CategoriesService {
     return toCategoryDto(node);
   }
 
-  update(id: number, updateCategoryDto: UpdateCategoryDto) {
-    return this.categories[0];
+  /**
+   * Proyecta el DTO campo a campo en `CreateCategoryInput` (nunca spread del
+   * body). `type_id`/`parent` se coercionan con `Number(...)` (DD28-10,
+   * réplica de W-2 de US-27b, `tags.service.ts:118-124`): sin `transform`
+   * (`main.ts:9`), `{"type_id":"9"}` llega como STRING y el repositorio lo
+   * rechazaría con un 400 que culpa al campo equivocado. `parent === null`
+   * se respeta tal cual (raíz); `Number(null)` sería `0`, por eso la rama
+   * `=== null` es obligatoria.
+   */
+  async create(createCategoryDto: CreateCategoryDto): Promise<Category> {
+    try {
+      const node = await createCategory({
+        name: createCategoryDto.name,
+        ...(createCategoryDto.slug !== undefined && {
+          slug: createCategoryDto.slug,
+        }),
+        ...(createCategoryDto.details !== undefined && {
+          details: createCategoryDto.details,
+        }),
+        ...(createCategoryDto.icon !== undefined && {
+          icon: createCategoryDto.icon,
+        }),
+        ...(createCategoryDto.image !== undefined && {
+          image: createCategoryDto.image as unknown as Prisma.InputJsonValue,
+        }),
+        ...(createCategoryDto.parent !== undefined && {
+          parentId:
+            createCategoryDto.parent === null
+              ? null
+              : Number(createCategoryDto.parent),
+        }),
+        ...(createCategoryDto.language !== undefined && {
+          language: createCategoryDto.language,
+        }),
+        typeId: Number(createCategoryDto.type_id),
+      });
+      return toCategoryDto(node);
+    } catch (error) {
+      throw toWriteHttpException(error);
+    }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} category`;
+  /**
+   * `+id` llega como `NaN` desde el controlador si `PUT /api/categories/abc`;
+   * sin esta guarda, `BigInt(NaN)` revienta en 500 dentro del repositorio
+   * (precedente exacto `types.service.ts:119-128`). Los dos spreads de
+   * `type_id`/`parent` son **condicionales por separado** (DD28-10): así se
+   * preserva la semántica `Partial` de `UpdateCategoryInput` — un campo
+   * ausente en el body nunca sobrescribe el valor actual, y "no tocar el
+   * type" queda distinguible de "ponerlo al valor actual" (DD28-5).
+   */
+  async update(
+    id: number,
+    updateCategoryDto: UpdateCategoryDto
+  ): Promise<Category> {
+    if (!Number.isInteger(id)) {
+      throw new NotFoundException(`No existe una categoría con id ${id}.`);
+    }
+
+    try {
+      const node = await updateCategory(id, {
+        ...(updateCategoryDto.name !== undefined && {
+          name: updateCategoryDto.name,
+        }),
+        ...(updateCategoryDto.details !== undefined && {
+          details: updateCategoryDto.details,
+        }),
+        ...(updateCategoryDto.icon !== undefined && {
+          icon: updateCategoryDto.icon,
+        }),
+        ...(updateCategoryDto.image !== undefined && {
+          image: updateCategoryDto.image as unknown as Prisma.InputJsonValue,
+        }),
+        ...(updateCategoryDto.parent !== undefined && {
+          parentId:
+            updateCategoryDto.parent === null
+              ? null
+              : Number(updateCategoryDto.parent),
+        }),
+        ...(updateCategoryDto.language !== undefined && {
+          language: updateCategoryDto.language,
+        }),
+        ...(updateCategoryDto.type_id !== undefined && {
+          typeId: Number(updateCategoryDto.type_id),
+        }),
+      });
+      return toCategoryDto(node);
+    } catch (error) {
+      throw toWriteHttpException(error);
+    }
+  }
+
+  async remove(id: number): Promise<Category> {
+    if (!Number.isInteger(id)) {
+      throw new NotFoundException(`No existe una categoría con id ${id}.`);
+    }
+
+    try {
+      const node = await deleteCategory(id);
+      return toCategoryDto(node);
+    } catch (error) {
+      throw toWriteHttpException(error);
+    }
   }
 }

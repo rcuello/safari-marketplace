@@ -1,5 +1,515 @@
 # Apply Progress: Escrituras del árbol de categorías (US-28)
 
+## Batch 2 — PR#2 (`apps/api/rest`), branch `us-28-pr2-api-categorias`
+
+**Mode**: Standard (strict_tdd: false)
+**Base**: `us-28-pr1-db-categorias` (3 commits, gate-approved, `just db-check`
+161/161). Rama nueva `us-28-pr2-api-categorias` creada **encima** de esa rama
+(`stacked-to-main`), nunca de `main`.
+**Scope**: Phase 3 + Phase 4 de `tasks.md` únicamente. Phase 5
+(`categories.service.spec.ts`) y Phase 6 quedan explícitamente fuera — son
+PR#3, bajo una decisión de producto pendiente, y esta corrida no las tocó.
+
+### Completed Tasks
+
+- [x] 3.1 `apps/api/rest/src/categories/dto/create-category.dto.ts`: quitados
+      `'type'`/`'parent'` del `PickType`; añadidos `type_id: number`,
+      `parent?: number | null`, `slug?: string` standalone. Sin efecto de
+      runtime (`main.ts:9` sin `transform`/`whitelist`). `category.entity.ts`
+      no tocado.
+- [x] 3.2 `categories.service.ts` — `create(createCategoryDto)` migrado:
+      proyección campo a campo a `CreateCategoryInput`, `typeId:
+      Number(createCategoryDto.type_id)`, spread condicional de `parent`
+      (`=== null ? null : Number(...)`, solo si `!== undefined`),
+      `createCategory(input)` → `toCategoryDto(node)`, `catch { throw
+      toWriteHttpException(error) }`.
+- [x] 3.3 `update(id, updateCategoryDto)` migrado: guarda
+      `!Number.isInteger(id)` → `NotFoundException` antes del repositorio
+      (precedente `types.service.ts:126-128`); **ambos** spreads de
+      `type_id`/`parent` condicionales por separado (DD28-10) — un campo
+      ausente en el body nunca sobreescribe el valor actual.
+- [x] 3.4 `remove(id)` migrado: misma guarda de id entero, `deleteCategory(id)`
+      → `toCategoryDto(node)`, mismo `catch`.
+- [x] 3.5 Eliminados de `categories.service.ts`: `import Fuse from 'fuse.js'`,
+      `import categoriesJson from '@db/categories.json'`, `import {
+      plainToClass } from 'class-transformer'`, las constantes de módulo
+      `categories`/`options`/`fuse`, y el campo `private categories:
+      Category[]`. `getCategories`/`getCategory`/`toCategoryDto`/
+      `parseCategorySearch` **intactos** (no se tocó ni una línea de esas
+      funciones).
+- [x] 4.1 `just db-build` → `just build-api` limpio → `grep -n
+      "fuse\|@db/" categories.service.ts` → **1 coincidencia**, no 0 (ver
+      "Issues Found": es una mención en prosa dentro del docstring de
+      `parseCategorySearch`, preexistente, en una función que 3.5
+      explícitamente prohíbe tocar).
+- [x] 4.2 Secuencia completa `POST raíz → POST hija → GET → reinicio real de
+      la API (proceso matado y vuelto a levantar, puerto verificado libre
+      antes) → GET (la fila persiste) → PUT (mover) → GET → DELETE madre →
+      GET hija (`parent: null`) → GET madre → 404`. Diff de `Object.keys()`
+      con `node -e` (sin `.sort()`) de `POST`/`PUT`/`DELETE` contra el `GET`
+      de la categoría semilla `124`: **16 claves, mismo orden, en los tres
+      casos**.
+- [x] 4.3 Los siete `curl` de 400 pegados, más el contraste 200 en hoja.
+      Ninguno de los siete devolvió 500. Incluye el intento adicional (no
+      pedido, mantenido como hallazgo) de repetir la regla 7 sobre una hoja
+      **con** padre, que en realidad dispara la regla 4 (ver "Issues Found").
+- [x] 4.4 CA-4 confirmado por API: `POST` de una bisnieta bajo la nieta `165`
+      → 201; `GET /categories/124`, `GET /categories/dairy-2` (slug) y `GET
+      /categories?limit=200` (lista) muestran los cuatro niveles anidados
+      correctamente.
+- [~] 4.5 CA-3 cascada — **parcial**, ver "Issues Found".
+- [x] 4.6 CA-5: 401 sin token y 403 con `store_owner` en las tres escrituras;
+      `git diff --stat` del controlador vacío.
+- [x] 4.7 `psql` (read-only): `categories` de vuelta a 198/83, 0 filas
+      `zz-categories-%`, tras limpiar manualmente los 7 IDs creados durante
+      los `curl` (824,825,826,828,829,830,831 vía `DELETE` HTTP — nunca
+      `psql` de escritura).
+- [~] 4.8 Smoke-test del admin — **método distinto al literal**, ver "Issues
+      Found". Resultado declarado: correcto, no roto.
+- [x] 4.9 `just verify` verde (API/Shop/Admin, contenido real). `npx jest`:
+      8 suites / 138 tests, sin cambios respecto a la base pre-PR#2 (la
+      base de `just build-api` en PR#1 no corrió jest; el número real
+      observado en esta corrida es la baseline correcta para PR#3, no el
+      "4 suites/65 tests" obsoleto de `CLAUDE.md`).
+
+### Files Changed
+
+| File | Action | What Was Done |
+|---|---|---|
+| `apps/api/rest/src/categories/dto/create-category.dto.ts` | Modified | `type_id`/`parent`/`slug` standalone fuera del `PickType`; sin efecto de runtime (DD28-9). |
+| `apps/api/rest/src/categories/categories.service.ts` | Modified | `create`/`update`/`remove` migrados a `@safari/db`; `Fuse`/`@db/categories.json`/`plainToClass` y el campo `private categories` eliminados. `getCategories`/`getCategory`/`toCategoryDto`/mappers auxiliares/`parseCategorySearch` sin tocar. |
+
+`git diff --stat us-28-pr1-db-categorias -- apps/`:
+
+```
+ apps/api/rest/src/categories/categories.service.ts          | 126 +++++++++++++++++----
+ apps/api/rest/src/categories/dto/create-category.dto.ts     |  16 ++-
+ 2 files changed, 119 insertions(+), 23 deletions(-)
+```
+
+142 líneas cambiadas vs. el pronóstico de ~145 de `tasks.md`/`proposal.md`
+para PR#2 — dentro del presupuesto de 400 líneas, sin desvío material.
+
+### Deviations from Design
+
+- Ninguna en el código. `categories.service.ts` sigue el patrón exacto de
+  `types.service.ts`/`tags.service.ts` citado por `design.md`: proyección
+  campo a campo, spreads condicionales, `Number(...)` en ambos campos
+  coercibles, guarda `Number.isInteger(id)` antes del repositorio,
+  `toWriteHttpException` como única línea del `catch`.
+- Dos desviaciones de **método de verificación**, no de código — documentadas
+  abajo en "Issues Found": el grep de CA-6 encuentra 1 línea de prosa (no
+  código) y el smoke-test 4.8 se hizo por trazado de configuración en vez de
+  un click real de navegador, por ausencia de herramienta.
+
+### Issues Found
+
+- **CA-6, grep no da 0 líneas literales — es una mención en prosa,
+  preexistente, en una función fuera de alcance.** `grep -n "fuse\|@db/"
+  categories.service.ts` devuelve:
+  ```
+  34: * el `fuse.js` difuso del mock, V-4); `name` se soporta a propósito, aunque
+  ```
+  Es un comentario dentro del docstring de `parseCategorySearch` que compara
+  la búsqueda SQL exacta de `@safari/db` contra el `fuse.js` DIFUSO que tenía
+  el mock — pura prosa histórica, sin ningún `import`/instancia de `Fuse` ni
+  de `@db/categories.json`. Confirmado que existía **antes** de esta PR:
+  `git show us-28-pr1-db-categorias:.../categories.service.ts | grep -n
+  "fuse\|@db/"` devuelve las mismas 4 líneas (2 imports + la constante `fuse`
+  + este mismo comentario en `:39`) — solo los 3 primeros hits son código, y
+  los tres desaparecieron; el cuarto es prosa y es el mismo texto de antes.
+  Task 3.5 prohíbe explícitamente tocar `parseCategorySearch` (`D-6`, ya
+  migrada), así que no se editó el comentario. CA-6 (la capability real:
+  "MUST NOT importar `@db/categories.json` ni `fuse.js`") está satisfecha —
+  cero imports, cero instancias — pero el grep literal de la evidencia da 1
+  línea, no 0. Reportado, no accionado unilateralmente (habría exigido tocar
+  una función fuera de alcance).
+- **4.5, CA-3 `category_product` — bloqueado por el límite de permisos de la
+  sesión, no por el código.** El task pide enlazar, vía `psql`, una categoría
+  centinela a un producto sembrado (`INSERT INTO category_product ...`), y
+  luego confirmar que el `DELETE` de la categoría deja el conteo en 0. El
+  contrato de comandos de esta corrida autoriza **psql de solo lectura**
+  (`just db-shell` de lectura) — un `INSERT` no lo es. Tampoco hay una vía
+  HTTP disponible hoy para poblar `category_product`: `products.service.ts`
+  `create`/`update` siguen siendo stubs (`return this.products[...]` sin
+  persistencia real — es US-29, no esta US). Verificación realizada en su
+  lugar, **de solo lectura**: `\d category_product` confirma `category_product_category_id_fkey
+  FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE`
+  — el mismo CASCADE que `deleteCategory` ya ejercita indirectamente (no hay
+  código propio de esta US que toque `category_product`; D28-6 lo declara
+  "cero código de re-enraizado/desenlace", 100% DDL preexistente). La
+  confirmación end-to-end en vivo (insertar → borrar → contar 0) queda
+  pendiente de una autorización de escritura por `psql` o de los endpoints
+  de escritura de `products` (US-29) — no se tocó código de asignación
+  producto-categoría (fuera de alcance, vinculante).
+- **4.8, smoke-test del admin — sin herramienta de navegador en este
+  entorno, verificado por configuración en su lugar.** Esta ejecución no
+  tiene disponible ninguna herramienta de automatización de navegador (el
+  set de herramientas es Bash/Read/Edit/Write). En su lugar se trazaron los
+  valores de runtime exactos que gobiernan la rama create-vs-update de
+  `category-form.tsx:237-240`:
+  - `apps/admin/rest/.env`: `NEXT_PUBLIC_DEFAULT_LANGUAGE=en`,
+    `NEXT_PUBLIC_ENABLE_MULTI_LANG=false`.
+  - `next-i18next.config.js:19-24`: con multi-lang deshabilitado,
+    `generateLocales()` devuelve `[NEXT_PUBLIC_DEFAULT_LANGUAGE]` = `['en']`
+    — es decir, el admin **solo tiene un locale posible: `'en'`**, y
+    `defaultLocale` también es `'en'`.
+  - Consecuencia: `router.locale` es **siempre** `'en'` en esta instancia del
+    admin (nunca hay otro locale para navegar a él). La condición
+    `!initialValues.translated_languages.includes(router.locale!)` con
+    `translated_languages` constante `['en']` (`categories.service.ts:169`)
+    es **siempre `false`** cuando `initialValues` existe (i.e., toda edición
+    de una categoría existente) — así que el formulario **siempre** entra
+    por la rama `updateCategoryMutation`, nunca por `createCategory`, al
+    editar. **Resultado declarado: correcto, no roto** — el hallazgo del
+    riesgo `R28-4` (constante `translated_languages`) sería observable solo
+    si este deployment habilitara multi-idioma con un locale ≠ `en`, lo cual
+    hoy está apagado por configuración (`NEXT_PUBLIC_ENABLE_MULTI_LANG=false`).
+    Es una verificación de configuración real, no una suposición de código,
+    pero **no** es un click de navegador real — declarado como desviación de
+    método, no de resultado.
+- **Hallazgo colateral en la evidencia de la regla 7 (no bloqueante,
+  documentado, no accionado)**: el primer intento de "contraste hoja → 200"
+  usó la hoja `B` (829), que SÍ tenía padre (`A`, `type_id 7`). Cambiar el
+  `type_id` de `B` a `9` no disparó la regla 7 (sin hijas, el `count` es 0)
+  sino la regla 4 (`_assertParentEdge` re-valida la arista contra el padre
+  existente con el `effectiveTypeId` nuevo, y `A` sigue en `type_id 7`) — un
+  400 igual, pero por el motivo equivocado para ese caso concreto. Se creó
+  una segunda hoja **raíz** (`830`, sin padre) para un contraste limpio, que
+  sí dio 200. Ambas evidencias quedan pegadas abajo. Esto confirma en vivo,
+  sobre HTTP, la interacción entre DD28-5 (regla 7) y DD28-3 (regla 4) que
+  `design.md` ya predijo analíticamente ("re-validar la arista efectiva en
+  **todo** `PUT`").
+- Ningún archivo compartido tocado: `git diff --stat
+  us-28-pr1-db-categorias -- packages/db slug.ts domain-errors.ts
+  common/errors` está vacío salvo por los archivos de `apps/api/rest`
+  listados arriba (`CA-7`).
+
+### CA-4 empirical result (confirmado por HTTP, no solo por el test de integración)
+
+`POST /categories` con `parent: 165` (nieta real del seed, nivel 3, bajo
+`164`→`124`) devolvió **201**, no 400. `GET /categories/124`, `GET
+/categories/dairy-2` (mismo nodo por slug) y `GET /categories?limit=200`
+(lista paginada) muestran los cuatro niveles: `124 → 164 (Dairy) → 165
+(Butter) → 831 (bisnieta centinela)`, anidados correctamente en los tres
+endpoints. `D28-7` confirmado también end-to-end sobre HTTP, no solo sobre
+`packages/db`.
+
+### Workload / PR Boundary
+
+- Mode: chained PR slice (stacked-to-main, session-cached)
+- Current work unit: Unit 2 — API: `categories.service.ts` migrado,
+  `Fuse`/`categories.json` eliminados, `create-category.dto.ts` corregido
+  (PR#2)
+- Boundary: empieza sobre `us-28-pr1-db-categorias` (repositorio ya
+  escribible) y termina con los tres métodos del servicio Nest migrados,
+  `just build-api` limpio y la secuencia `curl` completa verde, incluido el
+  reinicio real de la API. **La US es releasable a partir de aquí** (el
+  admin ya puede crear/editar/borrar categorías de verdad). Phase 5 (jest
+  mockeado) queda para PR#3, bajo decisión de producto pendiente.
+- Estimated review budget impact: 142 líneas cambiadas (`git diff --stat`
+  contra `us-28-pr1-db-categorias`) vs. el pronóstico de ~145 de
+  `tasks.md`/`proposal.md` — dentro del presupuesto de 400 líneas, sin
+  necesidad de partir esta PR.
+
+### Status
+
+23/26 tasks complete (Phases 1-4 de 6; dentro de Phase 4, 4.5 y 4.8 quedan
+parciales por las razones documentadas arriba, no por trabajo pendiente de
+código). Ready for PR#3 (`categories.service.spec.ts`), una vez el producto
+resuelva la decisión pendiente sobre esa pieza — un `sdd-apply` separado
+sobre esta rama, per `stacked-to-main`.
+
+---
+
+## Evidence (real command output, pasted verbatim) — PR#2
+
+### `just db-build` (prerequisito bloqueante antes de `build-api`)
+
+```
+$ just db-build
+✔ Generated Prisma Client (7.10.0) to .\generated\prisma\client in 252ms
+CJS dist\index.js     151.59 KB
+CJS ⚡️ Build success in 112ms
+DTS ⚡️ Build success in 8955ms
+DTS dist\index.d.ts 1.39 MB
+```
+
+### `just build-api` (después de 3.1-3.5)
+
+```
+$ just build-api
+yarn build
+$ rimraf dist
+$ nest build
+Done in 49.45s.
+```
+
+Segunda corrida, al cierre de la evidencia (idéntico resultado):
+
+```
+$ just build-api
+yarn build
+$ rimraf dist
+$ nest build
+Done in 96.81s.
+```
+
+### `grep -n "fuse\|@db/" apps/api/rest/src/categories/categories.service.ts`
+
+```
+34: * el `fuse.js` difuso del mock, V-4); `name` se soporta a propósito, aunque
+```
+
+1 línea, no 0 — ver "Issues Found": prosa preexistente en
+`parseCategorySearch`, fuera de alcance de 3.5. Confirmado con `git show
+us-28-pr1-db-categorias:apps/api/rest/src/categories/categories.service.ts |
+grep -n "fuse\|@db/"` que esa misma línea ya existía **antes** de esta PR
+(junto con los 2 imports y la constante `fuse` que sí se eliminaron):
+
+```
+$ git show us-28-pr1-db-categorias:apps/api/rest/src/categories/categories.service.ts | grep -n "fuse\|@db/"
+24:import Fuse from 'fuse.js';
+25:import categoriesJson from '@db/categories.json';
+34:const fuse = new Fuse(categories, options);
+39: * el `fuse.js` difuso del mock, V-4); `name` se soporta a propósito, aunque
+```
+
+### Secuencia completa `POST raíz → POST hija → GET → reinicio → GET → PUT (mover) → GET → DELETE madre → GET hija → GET madre 404`
+
+```
+=== POST raiz ===
+{"id":823,"name":"zz-categories-pr2-raiz", ... "parent":null,"type_id":7, ...}
+HTTP:201
+
+=== POST hija bajo 823 ===
+{"id":824,"name":"zz-categories-pr2-hija", ... "parent":{"id":823,...},"parent_id":823, ...}
+HTTP:201
+
+=== POST otra-madre (825, para el PUT de mover) ===
+{"id":825,"name":"zz-categories-pr2-otra-madre", ... "parent":null,"type_id":7, ...}
+HTTP:201
+
+=== GET hija (824) antes del reinicio ===
+HTTP:200 (idéntica al POST)
+
+--- API detenida de verdad: taskkill al proceso que escuchaba :9001,
+    confirmado con curl --max-time 2 -> exit 28 (connection refused) ---
+--- API vuelta a levantar con `just api-dev`, poll hasta 200 en /api/settings ---
+
+=== GET hija (824) DESPUES del reinicio ===
+{"id":824,"name":"zz-categories-pr2-hija", ... "parent_id":823, ...}
+HTTP:200   <- la fila sigue viva tras matar y relevantar el proceso Node: escritura real, no en memoria
+
+=== PUT mover hija 824 a otra-madre 825 ===
+{"id":824, ..., "parent":{"id":825,...}, "parent_id":825,
+ "updated_at":"2026-09-10T23:09:14.168Z"}   <- updated_at avanzo desde 23:08:20.175Z
+HTTP:200
+
+=== GET hija (824) tras mover === (idéntica)  HTTP:200
+=== GET otra-madre (825), incluye la hija en children === HTTP:200 (children:[{id:824,...}])
+
+=== POST hija2 (826) bajo raiz 823, para forzar un DELETE con hijas ===
+HTTP:201
+
+=== DELETE raiz (823) ===
+{"id":823, ..., "parent":null,
+ "children":[{"id":826, ..., "parent_id":823, ...}]}   <- snapshot PRE-borrado (DD28-1)
+HTTP:200
+
+=== GET hija2 (826) tras el DELETE, parent null (re-enraizada por ON DELETE SET NULL) ===
+{"id":826, ..., "parent":null, "parent_id":null,
+ "updated_at":"2026-09-10T23:09:30.726Z"}   <- el trigger disparo tambien en el SET NULL
+HTTP:200
+
+=== GET raiz (823) tras el DELETE ===
+{"statusCode":404,"message":"No existe una categoría `823`.","error":"Not Found"}
+HTTP:404
+```
+
+### Diff de `Object.keys()` (16 claves) contra el `GET` de la categoría semilla `124`
+
+```js
+seed GET keys (16): ["id","name","slug","icon","image","details","language","translated_languages","parent","type_id","created_at","updated_at","deleted_at","parent_id","type","children"]
+POST keys (16):   [misma lista]   matches seed key order exactly: true
+PUT keys (16):    [misma lista]   matches seed key order exactly: true
+DELETE keys (16): [misma lista]   matches seed key order exactly: true
+```
+
+### Los siete `curl` de 400 (ninguno 500) + el contraste 200 en hoja
+
+```
+=== (1) type_id no entero ===
+{"statusCode":400,"message":"`categories.type_id` referencia un registro inexistente (`NaN`).","error":"Bad Request"}
+HTTP:400
+
+=== (2) parent no entero (la trampa BigInt(NaN)) ===
+{"statusCode":400,"message":"`categories.parent_id` referencia un registro inexistente (`NaN`).","error":"Bad Request"}
+HTTP:400
+
+=== (3) parent inexistente ===
+{"statusCode":400,"message":"`categories.parent_id` referencia un registro inexistente (`999999`).","error":"Bad Request"}
+HTTP:400
+
+=== (4) parent de otro type_id (124 es type_id 7; se crea con type_id 9) ===
+{"statusCode":400,"message":"`categories.parent_id (dentro de type_id 9)` referencia un registro inexistente (`124`).","error":"Bad Request"}
+HTTP:400
+
+=== (5) autorreferencia: PUT A con parent=A (A=828) ===
+{"statusCode":400,"message":"`categories.parent_id (autorreferencia)` referencia un registro inexistente (`828`).","error":"Bad Request"}
+HTTP:400
+
+=== (6) ciclo A->B->A: PUT A con parent=B (B=829, ya hija de A) ===
+{"statusCode":400,"message":"`categories.parent_id (ciclo: la madre propuesta desciende de esta categoría)` referencia un registro inexistente (`828`).","error":"Bad Request"}
+HTTP:400
+
+=== GET A (828) tras ambos rechazos: sigue parent: null ===
+
+=== (7a) type_id sobre A (828, TIENE hija B=829) -> 400 ===
+{"statusCode":400,"message":"`categories.type_id (1 hija(s) con otro type_id)` referencia un registro inexistente (`9`).","error":"Bad Request"}
+HTTP:400
+
+=== (7b, primer intento, hallazgo colateral) type_id sobre B (829, hoja PERO con padre A=828) ===
+{"statusCode":400,"message":"`categories.parent_id (dentro de type_id 9)` referencia un registro inexistente (`828`).","error":"Bad Request"}
+HTTP:400   <- 400 correcto, pero por la regla 4 (arista contra el padre), no la 7 -- ver "Issues Found"
+
+=== (7b, contraste limpio) type_id sobre una hoja RAIZ (830, sin padre, sin hijos) -> 200 ===
+{"id":830, ..., "type_id":9, "type":{"id":9,"name":"Gadget",...}, ...}
+HTTP:200
+```
+
+Ninguno de los ocho `curl` anteriores (siete 400 + un 200 de contraste)
+devolvió 500.
+
+### CA-4 por API (no solo por el test de integración de PR#1)
+
+```
+=== POST hija de 165 (bisnieta, nivel 4) ===
+{"id":831,"name":"zz-categories-pr2-bisnieta", ..., "parent_id":165, ...}
+HTTP:201
+
+=== GET /categories/124 (raiz), bisnieta anidada 3 niveles ===
+root->dairy(164)->butter(165)->bisnieta(831) found: true zz-categories-pr2-bisnieta
+
+=== GET /categories/dairy-2 (slug de la raiz 124) ===
+by slug: root->dairy(164)->butter(165)->bisnieta(831) found: true zz-categories-pr2-bisnieta
+
+=== GET /categories?limit=200 (lista completa) ===
+root 124 found in list: true total items: 200
+GET /categories: root(124)->dairy(164)->butter(165)->bisnieta(831) found: true zz-categories-pr2-bisnieta
+```
+
+### CA-5 — permisos (401 / 403) en las tres escrituras
+
+```
+=== 401 sin token: POST === HTTP:401 {"message":"Token de autenticación ausente o inválido."}
+=== 401 sin token: PUT ===  HTTP:401 (mismo mensaje)
+=== 401 sin token: DELETE === HTTP:401 (mismo mensaje)
+=== 403 store_owner: POST === HTTP:403 {"message":"No tienes permisos suficientes para esta operación."}
+=== 403 store_owner: PUT ===  HTTP:403 (mismo mensaje)
+=== 403 store_owner: DELETE === HTTP:403 (mismo mensaje)
+```
+
+```
+$ git diff --stat us-28-pr1-db-categorias -- apps/api/rest/src/categories/categories.controller.ts
+(sin salida — el controlador y sus permisos no se tocaron)
+```
+
+### `psql` (read-only) — categories de vuelta a 198/83, cero centinelas, tras limpiar manualmente
+
+Los 7 ids creados durante la evidencia manual (`824,825,826,828,829,830,831`
+— `823` ya se había borrado como parte de la propia secuencia de evidencia)
+se borraron con `curl DELETE` **por HTTP**, nunca con un `DELETE` de SQL:
+
+```
+DELETE 829 -> 200
+DELETE 828 -> 200
+DELETE 824 -> 200
+DELETE 825 -> 200
+DELETE 826 -> 200
+DELETE 830 -> 200
+DELETE 831 -> 200
+```
+
+```
+$ docker compose exec postgres psql -U safari -d safari_scraper -c "SELECT count(*) FROM categories;"
+ count
+-------
+   198
+
+$ ... -c "SELECT count(*) FROM categories WHERE parent_id IS NULL;"
+ count
+-------
+    83
+
+$ ... -c "SELECT count(*) FROM categories WHERE slug LIKE 'zz-categories-%';"
+ count
+-------
+     0
+```
+
+### Smoke-test del admin (`R28-4`) — verificado por configuración, no por click
+
+```
+$ grep -n "NEXT_PUBLIC_DEFAULT_LANGUAGE\|NEXT_PUBLIC_ENABLE_MULTI_LANG\|NEXT_PUBLIC_AVAILABLE_LANGUAGES" apps/admin/rest/.env
+NEXT_PUBLIC_DEFAULT_LANGUAGE=en
+NEXT_PUBLIC_ENABLE_MULTI_LANG=false
+NEXT_PUBLIC_AVAILABLE_LANGUAGES=en,de
+```
+
+Con `NEXT_PUBLIC_ENABLE_MULTI_LANG=false`, `next-i18next.config.js`'s
+`generateLocales()` devuelve `[NEXT_PUBLIC_DEFAULT_LANGUAGE]` = `['en']` —
+único locale posible. `router.locale` es siempre `'en'`; la constante
+`translated_languages: ['en']` siempre hace `includes(router.locale!)` ===
+`true` en cualquier edición → siempre entra por `updateCategoryMutation`.
+**Declarado: correcto, no roto** (ver "Issues Found" para la desviación de
+método — no hubo click real de navegador, ninguna herramienta de ese tipo
+está disponible en este entorno).
+
+### `just verify`
+
+```
+$ just verify
+OK   API    :9001/api/settings  200  5503B  30ms
+OK   Shop   :3003/en  200  190788B  427ms  cards:30
+OK   Admin  :3002/en/login  200  72821B  22062ms  cards:1
+```
+
+### `npx jest` (apps/api/rest) — baseline real para PR#3
+
+```
+$ cd apps/api/rest && npx jest
+PASS src/common/errors/domain-error.mapper.spec.ts
+PASS src/manufacturers/manufacturers.service.spec.ts
+PASS src/users/user-dto.mapper.spec.ts
+PASS src/shops/shops.service.spec.ts
+PASS src/types/types.service.spec.ts
+PASS src/products/products.service.spec.ts
+PASS src/users/users.service.spec.ts
+PASS src/tags/tags.service.spec.ts
+
+Test Suites: 8 passed, 8 total
+Tests:       138 passed, 138 total
+```
+
+Sin cambios respecto al baseline pre-PR#2 (8 suites/138 tests): esta PR no
+tocó ningún archivo `.spec.ts`. `categories.service.spec.ts` (9na suite) es
+Phase 5/PR#3.
+
+### `git diff --stat` de PR#2 completo, contra `us-28-pr1-db-categorias`
+
+```
+$ git diff --stat us-28-pr1-db-categorias -- apps/
+ apps/api/rest/src/categories/categories.service.ts          | 126 +++++++++++++++++----
+ apps/api/rest/src/categories/dto/create-category.dto.ts     |  16 ++-
+ 2 files changed, 119 insertions(+), 23 deletions(-)
+```
+
+142 líneas cambiadas vs. el pronóstico de ~145 (`tasks.md`/`proposal.md`)
+— dentro del presupuesto de revisión de 400 líneas.
+
+---
+
 ## Batch 1 — PR#1 (`packages/db`), branch `us-28-pr1-db-categorias`
 
 **Mode**: Standard (strict_tdd: false)
