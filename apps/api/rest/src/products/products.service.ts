@@ -1,32 +1,38 @@
 import {
+  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import { plainToClass } from 'class-transformer';
 import {
+  createProduct,
+  deleteProduct,
   findProductBySlug,
+  findProductShopId,
+  findShopOwnerById,
   getUserFriendlyMessage,
   isPrismaConnectionError,
   listProducts,
+  updateProduct,
+  type CreateProductInput,
   type ListProductsInput,
+  type Prisma,
   type ProductDetail,
   type ProductRecord,
+  type UpdateProductInput,
 } from '@safari/db';
+import { toWriteHttpException } from 'src/common/errors/domain-error.mapper';
+import {
+  CurrentUserPayload,
+} from 'src/auth/decorators/current-user.decorator';
 import { CreateProductDto } from './dto/create-product.dto';
 import { GetProductsDto, ProductPaginator } from './dto/get-products.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { Product } from './entities/product.entity';
 import { paginate } from 'src/common/pagination/paginate';
-import productsJson from '@db/products.json';
 import { GetPopularProductsDto } from './dto/get-popular-products.dto';
 import { GetBestSellingProductsDto } from './dto/get-best-selling-products.dto';
-
-// Solo sostiene los stubs de escritura (create()/update()) — el listado y
-// los 4 endpoints derivados (popular, best-selling, stock, draft) ya salen
-// de Postgres vía listProducts() (US-5).
-const products = plainToClass(Product, productsJson);
 
 /**
  * `value` → number solo si es finito; si no (`'abc'`, `''`, `undefined`),
@@ -151,10 +157,97 @@ function toProductDto(record: ProductRecord): Product {
 
 @Injectable()
 export class ProductsService {
-  private products: any = products;
+  /**
+   * Propiedad por tienda (DD29-4): `super_admin` corta en seco sin
+   * consultar `shops`; `store_owner`/`staff` deben ser dueños de `shopId`.
+   * `findShopOwnerById(shopId) === null` (tienda inexistente) NO es 403: se
+   * deja pasar para que el repositorio produzca el 400 vía `P2003` — mismo
+   * desenlace que si hubiera sido `super_admin` (nunca sondeó).
+   */
+  async create(
+    createProductDto: CreateProductDto,
+    user: CurrentUserPayload,
+  ): Promise<Product> {
+    const shopId = Number(createProductDto.shop_id);
 
-  create(createProductDto: CreateProductDto) {
-    return this.products[0];
+    if (!user.permissions.includes('super_admin')) {
+      const ownerId = await findShopOwnerById(shopId);
+      if (ownerId !== null && ownerId !== user.sub) {
+        throw new ForbiddenException(
+          `No tienes permisos sobre la tienda ${shopId}.`,
+        );
+      }
+    }
+
+    // Campo a campo (R29-6): nunca `...createProductDto` — el body trae
+    // `variation_options`, `author_id`, `digital_file`, etc. sin columna.
+    const input: CreateProductInput = {
+      name: createProductDto.name,
+      typeId: Number(createProductDto.type_id),
+      shopId,
+      ...(createProductDto.manufacturer_id !== undefined && {
+        manufacturerId: Number(createProductDto.manufacturer_id),
+      }),
+      ...(createProductDto.description !== undefined && {
+        description: createProductDto.description,
+      }),
+      ...(createProductDto.product_type !== undefined && {
+        productType: createProductDto.product_type,
+      }),
+      ...(createProductDto.price !== undefined && {
+        price: createProductDto.price,
+      }),
+      ...(createProductDto.sale_price !== undefined && {
+        salePrice: createProductDto.sale_price,
+      }),
+      ...(createProductDto.min_price !== undefined && {
+        minPrice: createProductDto.min_price,
+      }),
+      ...(createProductDto.max_price !== undefined && {
+        maxPrice: createProductDto.max_price,
+      }),
+      ...(createProductDto.quantity !== undefined && {
+        quantity: createProductDto.quantity,
+      }),
+      ...(createProductDto.in_stock !== undefined && {
+        inStock: createProductDto.in_stock,
+      }),
+      ...(createProductDto.sku !== undefined && { sku: createProductDto.sku }),
+      ...(createProductDto.unit !== undefined && {
+        unit: createProductDto.unit,
+      }),
+      ...(createProductDto.status !== undefined && {
+        status: createProductDto.status,
+      }),
+      ...(createProductDto.visibility !== undefined && {
+        visibility: createProductDto.visibility,
+      }),
+      ...(createProductDto.image !== undefined && {
+        image: createProductDto.image as unknown as Prisma.InputJsonValue,
+      }),
+      ...(createProductDto.gallery !== undefined && {
+        gallery: createProductDto.gallery as unknown as Prisma.InputJsonValue,
+      }),
+      ...(createProductDto.is_taxable !== undefined && {
+        isTaxable: createProductDto.is_taxable,
+      }),
+      ...(createProductDto.language !== undefined && {
+        language: createProductDto.language,
+      }),
+      ...(Array.isArray(createProductDto.categories) && {
+        categoryIds: createProductDto.categories,
+      }),
+      ...(Array.isArray(createProductDto.tags) && {
+        tagIds: createProductDto.tags,
+      }),
+    };
+
+    try {
+      const record = await createProduct(input);
+      return toProductDto(record);
+    } catch (error) {
+      throw toWriteHttpException(error);
+    }
   }
 
   async getProducts({
@@ -340,11 +433,147 @@ export class ProductsService {
     }
   }
 
-  update(id: number, updateProductDto: UpdateProductDto) {
-    return this.products[0];
+  /**
+   * 404 antes que 403 (DD29-4): la propiedad se evalúa sobre el `shop_id`
+   * **actual** de la fila, que exige tenerla primero. Mover `shop_id`
+   * (`D29-1` ratificada: es mutable) exige propiedad de AMBAS tiendas — la
+   * actual primero, la destino después.
+   */
+  async update(
+    id: number,
+    updateProductDto: UpdateProductDto,
+    user: CurrentUserPayload,
+  ): Promise<Product> {
+    if (!Number.isSafeInteger(id) || id <= 0) {
+      throw new NotFoundException(`No existe un producto con id ${id}.`);
+    }
+
+    const currentShopId = await findProductShopId(id);
+    if (currentShopId === null) {
+      throw new NotFoundException(`No existe un producto con id ${id}.`);
+    }
+
+    if (!user.permissions.includes('super_admin')) {
+      const currentOwnerId = await findShopOwnerById(currentShopId);
+      if (currentOwnerId !== user.sub) {
+        throw new ForbiddenException(
+          `No tienes permisos sobre la tienda ${currentShopId}.`,
+        );
+      }
+
+      if (updateProductDto.shop_id !== undefined) {
+        const destinationShopId = Number(updateProductDto.shop_id);
+        if (destinationShopId !== currentShopId) {
+          const destinationOwnerId = await findShopOwnerById(destinationShopId);
+          if (destinationOwnerId !== null && destinationOwnerId !== user.sub) {
+            throw new ForbiddenException(
+              `No tienes permisos sobre la tienda ${destinationShopId}.`,
+            );
+          }
+        }
+      }
+    }
+
+    const input: UpdateProductInput = {
+      ...(updateProductDto.name !== undefined && {
+        name: updateProductDto.name,
+      }),
+      ...(updateProductDto.type_id !== undefined && {
+        typeId: Number(updateProductDto.type_id),
+      }),
+      ...(updateProductDto.shop_id !== undefined && {
+        shopId: Number(updateProductDto.shop_id),
+      }),
+      ...(updateProductDto.manufacturer_id !== undefined && {
+        manufacturerId: Number(updateProductDto.manufacturer_id),
+      }),
+      ...(updateProductDto.description !== undefined && {
+        description: updateProductDto.description,
+      }),
+      ...(updateProductDto.product_type !== undefined && {
+        productType: updateProductDto.product_type,
+      }),
+      ...(updateProductDto.price !== undefined && {
+        price: updateProductDto.price,
+      }),
+      ...(updateProductDto.sale_price !== undefined && {
+        salePrice: updateProductDto.sale_price,
+      }),
+      ...(updateProductDto.min_price !== undefined && {
+        minPrice: updateProductDto.min_price,
+      }),
+      ...(updateProductDto.max_price !== undefined && {
+        maxPrice: updateProductDto.max_price,
+      }),
+      ...(updateProductDto.quantity !== undefined && {
+        quantity: updateProductDto.quantity,
+      }),
+      ...(updateProductDto.in_stock !== undefined && {
+        inStock: updateProductDto.in_stock,
+      }),
+      ...(updateProductDto.sku !== undefined && { sku: updateProductDto.sku }),
+      ...(updateProductDto.unit !== undefined && {
+        unit: updateProductDto.unit,
+      }),
+      ...(updateProductDto.status !== undefined && {
+        status: updateProductDto.status,
+      }),
+      ...(updateProductDto.visibility !== undefined && {
+        visibility: updateProductDto.visibility,
+      }),
+      ...(updateProductDto.image !== undefined && {
+        image: updateProductDto.image as unknown as Prisma.InputJsonValue,
+      }),
+      ...(updateProductDto.gallery !== undefined && {
+        gallery: updateProductDto.gallery as unknown as Prisma.InputJsonValue,
+      }),
+      ...(updateProductDto.is_taxable !== undefined && {
+        isTaxable: updateProductDto.is_taxable,
+      }),
+      ...(updateProductDto.language !== undefined && {
+        language: updateProductDto.language,
+      }),
+      ...(Array.isArray(updateProductDto.categories) && {
+        categoryIds: updateProductDto.categories,
+      }),
+      ...(Array.isArray(updateProductDto.tags) && {
+        tagIds: updateProductDto.tags,
+      }),
+    };
+
+    try {
+      const record = await updateProduct(id, input);
+      return toProductDto(record);
+    } catch (error) {
+      throw toWriteHttpException(error);
+    }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} product`;
+  /** Mismo guard de id y de propiedad que `update`, sin el lado del destino. */
+  async remove(id: number, user: CurrentUserPayload): Promise<Product> {
+    if (!Number.isSafeInteger(id) || id <= 0) {
+      throw new NotFoundException(`No existe un producto con id ${id}.`);
+    }
+
+    const currentShopId = await findProductShopId(id);
+    if (currentShopId === null) {
+      throw new NotFoundException(`No existe un producto con id ${id}.`);
+    }
+
+    if (!user.permissions.includes('super_admin')) {
+      const ownerId = await findShopOwnerById(currentShopId);
+      if (ownerId !== user.sub) {
+        throw new ForbiddenException(
+          `No tienes permisos sobre la tienda ${currentShopId}.`,
+        );
+      }
+    }
+
+    try {
+      const record = await deleteProduct(id);
+      return toProductDto(record);
+    } catch (error) {
+      throw toWriteHttpException(error);
+    }
   }
 }

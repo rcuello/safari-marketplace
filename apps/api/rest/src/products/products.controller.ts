@@ -21,6 +21,10 @@ import {
   ADMIN_OWNER_AND_STAFF,
   Permissions,
 } from 'src/auth/decorators/permissions.decorator';
+import {
+  CurrentUser,
+  CurrentUserPayload,
+} from 'src/auth/decorators/current-user.decorator';
 
 @Controller('products')
 export class ProductsController {
@@ -28,8 +32,11 @@ export class ProductsController {
 
   @Permissions(...ADMIN_OWNER_AND_STAFF)
   @Post()
-  createProduct(@Body() createProductDto: CreateProductDto) {
-    return this.productsService.create(createProductDto);
+  createProduct(
+    @Body() createProductDto: CreateProductDto,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
+    return this.productsService.create(createProductDto, user);
   }
 
   @Public()
@@ -46,14 +53,18 @@ export class ProductsController {
 
   @Permissions(...ADMIN_OWNER_AND_STAFF)
   @Put(':id')
-  update(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
-    return this.productsService.update(+id, updateProductDto);
+  update(
+    @Param('id') id: string,
+    @Body() updateProductDto: UpdateProductDto,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
+    return this.productsService.update(+id, updateProductDto, user);
   }
 
   @Permissions(...ADMIN_OWNER_AND_STAFF)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.productsService.remove(+id);
+  remove(@Param('id') id: string, @CurrentUser() user: CurrentUserPayload) {
+    return this.productsService.remove(+id, user);
   }
 }
 

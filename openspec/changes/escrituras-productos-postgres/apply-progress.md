@@ -1,9 +1,291 @@
 # Apply Progress: Escrituras de productos con categorías y tags (US-29)
 
 > Mode: Standard (strict_tdd: false). Chain strategy: stacked-to-main, 4-PR
-> chain. Este documento cubre **PR#1 (Phase 1, tasks 1.1–1.12)** y **PR#2
-> (Phase 2, tasks 2.1–2.5)** — segundo batch de `sdd-apply`, fusionado sobre
-> el documento de PR#1 (Merge Protocol: ninguna tarea previa se pierde).
+> chain. Este documento cubre **PR#1 (Phase 1, tasks 1.1–1.12)**, **PR#2
+> (Phase 2, tasks 2.1–2.5)** y **PR#3 (Phase 3, tasks 3.1–3.7 — capa API, US
+> releasable aquí)** — tercer batch de `sdd-apply`, fusionado sobre el
+> documento de PR#1/PR#2 (Merge Protocol: ninguna tarea previa se pierde).
+
+## PR#3 — Capa API: servicio, controller, DTO (Phase 3, tasks 3.1–3.7)
+
+**Alcance respetado.** Solo los 3 archivos autorizados:
+`products.service.ts`, `products.controller.ts`,
+`dto/create-product.dto.ts`. `git status --short` tras el batch muestra
+exactamente esos 3 + `tasks.md`; ninguno de la lista prohibida
+(`slug.ts`, `domain-errors.ts`, `common/errors/`, `db/schema.sql`,
+`apps/shop`, `apps/admin`, el cuerpo de `upsertScrapedProduct`,
+`products.service.spec.ts`) aparece en el diff.
+
+### Completed Tasks (Phase 3 / PR#3)
+
+- [x] 3.1 — `create-product.dto.ts`: `manufacturer_id?: number` standalone
+      (único campo genuinamente ausente — `type_id`/`shop_id` ya llegaban
+      vía `OmitType`, hueco H2 del design) + comentario documentando los
+      campos aceptados-y-descartados.
+- [x] 3.2 — `create(dto, user)` migrado: `shopId = Number(dto.shop_id)` →
+      short-circuit de `super_admin` → `findShopOwnerById(shopId)` (403 si
+      `≠ sub`, `null` deja pasar al 400 del repositorio) →
+      `CreateProductInput` campo a campo (`Number()` en las 3 FK,
+      `Array.isArray()` para `categories`/`tags`, **nunca `...body`**) →
+      `createProduct(input)` → `toProductDto` → `catch { throw
+      toWriteHttpException(error); }`.
+- [x] 3.3 — `update(id, dto, user)` migrado: guard de id
+      (`!Number.isSafeInteger(id) || id<=0` → 404) → `findProductShopId(id)`
+      (`null` → 404) → propiedad de la tienda **actual** (403 si `≠ sub`,
+      salvo `super_admin`) → si el body mueve `shop_id`, propiedad también
+      del **destino** (`findShopOwnerById` del nuevo shopId; `null` deja
+      pasar, `≠ sub` → 403) → `UpdateProductInput` campo a campo →
+      `updateProduct(id, input)` → proyección → mismo `catch`. Orden
+      verificado: 404 antes que 403, tienda actual antes que destino.
+- [x] 3.4 — `remove(id, user)` migrado: mismo guard de id (404), mismo
+      `findProductShopId` (404), propiedad sobre la actual (403, sin lado de
+      destino), `deleteProduct(id)`, proyección del snapshot, mismo `catch`.
+- [x] 3.5 — Eliminados de `products.service.ts`: `import productsJson from
+      '@db/products.json'`, `import { plainToClass } from
+      'class-transformer'` y el campo `private products: any = products`.
+      `listProducts`/`findProductBySlug`/`toProductDto`/`parseProductSearch`
+      intactos (confirmado por `git diff`: no aparecen en el rango
+      modificado).
+- [x] 3.6 — `products.controller.ts`: `@CurrentUser() user: CurrentUserPayload`
+      añadido a las 3 rutas de escritura (`createProduct`, `update`,
+      `remove`), pasado como segundo/tercer argumento al servicio.
+      `@Permissions(...ADMIN_OWNER_AND_STAFF)` intacto en las 3 — no se tocó
+      ningún decorador de permisos.
+- [x] 3.7 — Verificación completa (ver § Verification Evidence abajo):
+      `just db-build` → `just build-api` limpio → `grep` de `@db/`/
+      `plainToClass` → 0 líneas → `just api-dev` real (reiniciado una vez a
+      mitad de secuencia) → secuencia `curl` completa con token
+      `store_owner` real (login vía `/api/token`) → diff de `Object.keys()`
+      contra el seed (`apples`) → `just verify` verde (API + shop + admin
+      arriba, los 3 `OK`).
+
+### Campos descartados en silencio (declarados, `R29-6`)
+
+Construidos **campo a campo**, nunca `...body`: `variations`,
+`variation_options`, `author_id`, `digital_file`, `height`/`length`/`width`,
+`in_flash_sale` (la lectura sigue emitiendo la constante `0`, sin cambios).
+Tampoco se mapean `isDigital`/`isExternal`/`externalProductUrl` de
+`CreateProductInput`/`UpdateProductInput`: `Product` (la entidad de Nest) no
+los declara, así que el DTO nunca los recibe del body — quedan a los
+defaults del repositorio (`false`/`false`/`null` en `create`, sin tocar en
+`update`). No están entre las 20 claves de `toProductDto`, así que esta
+omisión no es observable desde la respuesta de escritura.
+
+### Deviations from Design (PR#3)
+
+Ninguna. Un matiz no deletreado línea a línea por el design, dentro de lo
+que autoriza:
+
+- El design menciona `Number(...)` explícitamente solo para las 3 FK
+  (`type_id`/`shop_id`/`manufacturer_id`). Los campos numéricos puros
+  (`price`, `sale_price`, `min_price`, `max_price`, `quantity`) se pasan
+  **sin coerción** — si el cliente manda un string no numérico (`"abc"`),
+  `_assertFiniteNumber`/`_assertIntegerCount` del repositorio lo detectan
+  igual (`Number.isFinite('abc')` es `false` sin intentar coercionar, nunca
+  `true` por accidente) y responden 400, no 500. No se necesitaba `Number()`
+  ahí para cerrar `CA-4`.
+- Los ids dentro de `categories[]`/`tags[]` se pasan tal cual llegan del
+  body (solo `Array.isArray()` como filtro de inclusión), sin `.map(Number)`
+  elemento a elemento — la task 3.2 solo pide `Number()` "en las 3 FK" y
+  `Array.isArray()` para los arrays; la frontera numérica de cada id
+  individual la sigue cerrando `_assertIntegerRef` del repositorio (PR#1),
+  que ya trata un string no entero como 400.
+
+### Files Changed (PR#3)
+
+| File | Action | Δ líneas (`git diff --stat`) | Qué se hizo |
+|---|---|---|---|
+| `apps/api/rest/src/products/products.service.ts` | Modified | +257 / -20 | `create`/`update`/`remove` migrados de Postgres via `@safari/db`; propiedad por tienda (DD29-4); fuera `@db/products.json`, `plainToClass`, `private products` |
+| `apps/api/rest/src/products/products.controller.ts` | Modified | +19 / -4 | `@CurrentUser()` en las 3 rutas de escritura; `@Permissions` intacto |
+| `apps/api/rest/src/products/dto/create-product.dto.ts` | Modified | +17 / -1 | `manufacturer_id?: number` standalone + comentario de campos aceptados/descartados |
+| **Total** | | **+293 / -25** (277 inserciones + 20 eliminaciones netas por `git diff --stat`, contando ambos lados) | Por encima del ~210 forecast de PR#3 de `tasks.md`, dentro del margen de redondeo (~287) del roll-up total de la US; no dispara una nueva decisión de partición — el chain de 4 PRs ya estaba resuelto por el usuario |
+
+### Issues Found (PR#3)
+
+Ninguno bloqueante.
+
+- Puerto 9001 ya estaba ocupado por un proceso `node.exe` (PID 60352) de una
+  corrida anterior al arrancar este batch — matado y reiniciado para
+  garantizar que el `curl` corriera contra el `dist`/código fuente de ESTE
+  batch, no contra un watcher stale. Idéntica precaución tomada para el
+  "reinicio de la API" que exige la secuencia de la task 3.7 (matado de
+  nuevo, relanzado, esperado el `200` real antes de continuar).
+- `just verify` exige los 3 servicios arriba (API + shop + admin, ninguno
+  opcional en el script); se levantaron `shop-dev`/`admin-dev` solo para
+  esa verificación puntual y se detuvieron inmediatamente después —no
+  quedan procesos de frontend corriendo al cierre de este batch.
+
+### Verification Evidence (real output) — PR#3
+
+#### `just db-build`
+
+```
+npm run build
+> @safari/db@0.1.0 build
+> prisma generate && tsup
+✔ Generated Prisma Client (7.10.0) to .\generated\prisma\client in 288ms
+CJS Build start
+CJS dist\index.js     162.95 KB
+CJS dist\index.js.map 391.24 KB
+CJS ⚡️ Build success in 109ms
+DTS Build start
+DTS ⚡️ Build success in 13941ms
+DTS dist\index.d.ts 1.39 MB
+```
+
+#### `just build-api`
+
+```
+yarn build
+$ rimraf dist
+$ nest build
+Done in 91.08s.
+```
+
+Limpio — sin errores de `tsc`/Nest.
+
+#### `grep -n "@db/\|plainToClass" apps/api/rest/src/products/products.service.ts`
+
+```
+(sin salida — 0 líneas, exit code 1 de grep)
+```
+
+#### `cd apps/api/rest && npx jest` — sin regresión
+
+```
+Test Suites: 9 passed, 9 total
+Tests:       173 passed, 173 total
+Snapshots:   0 total
+Time:        73.316 s
+```
+
+173/173 — idéntico al baseline pre-US-29 declarado por el orquestador (9
+suites / 173 tests). Los 20 `it` de lectura de `products.service.spec.ts`
+sobreviven sin tocar ese archivo (confirmado: no aparece en `git status`).
+
+#### Secuencia HTTP real (token `store_owner` real, login vía `/api/token`)
+
+Login:
+
+```
+POST /api/token {"email":"store_owner@demo.com","password":"demodemo"}
+→ 200 {"token":"eyJ...","permissions":["customer","store_owner"],"role":"store_owner"}
+```
+
+Secuencia completa (ids reales, no simulados):
+
+```
+POST /api/products  (shop_id 1, type_id 1, categories:[1], tags:[62], status publish)
+→ 201  {"id":1465,"name":"zz-products-us29 evidencia PR3",
+        "slug":"zz-products-us29-evidencia-pr3", ... 20 claves, sin related_products}
+
+GET /api/products/zz-products-us29-evidencia-pr3
+→ 200  (con related_products — endpoint de lectura, no de escritura)
+
+[reinicio real de la API: taskkill del proceso anterior + `just api-dev` de nuevo,
+ esperado el primer 200 de /api/settings antes de continuar]
+
+GET /api/products?search=categories.slug:fruits-vegetables
+→ 200  total:1, found sentinel product: true   (CA-1: sobrevive al reinicio)
+
+GET /api/products/zz-products-us29-evidencia-pr3   (post-reinicio)
+→ 200
+
+PUT /api/products/1465  {"name":"...editado","categories":[],"price":249.5}
+→ 200  {"name":"zz-products-us29 evidencia PR3 editado",
+        "slug":"zz-products-us29-evidencia-pr3"  ← INVARIANTE,
+        "price":249.5, "max_price":249.5, "min_price":249.5, ... 20 claves}
+
+psql: category_product WHERE product_id=1465 → 0   (vaciado, se envió [])
+      product_tag      WHERE product_id=1465 → 1   (intacto, se omitió `tags`)
+
+GET /api/products/zz-products-us29-evidencia-pr3
+→ 200  name: "...editado" | slug: invariante | price: 249.5
+
+DELETE /api/products/1465
+→ 200  {"id":1465, ... 20 claves, snapshot pre-borrado}
+
+GET /api/products/zz-products-us29-evidencia-pr3
+→ 404  {"statusCode":404,"message":"No existe un producto con slug
+        `zz-products-us29-evidencia-pr3`.","error":"Not Found"}
+```
+
+CA-1/CA-2/CA-3 verificados con evidencia real: creación con pivotes visible
+tras reinicio, edición con slug invariante y pivotes en los 3 estados
+(vacío/omitido probados; el estado "con ids" ya lo cubre PR#1/PR#2 vía
+integración), borrado con snapshot de 20 claves + 404 posterior.
+
+#### Diff de `Object.keys()` — 20 claves, mismo orden, sin `related_products`
+
+```
+seed keys (apples, related_products excluido): 20
+  ["id","name","slug","type","language","translated_languages","product_type",
+   "shop","sale_price","max_price","min_price","image","status","price",
+   "quantity","unit","sku","sold_quantity","in_flash_sale","visibility"]
+write keys (POST /api/products): 20  (mismo array, mismo orden)
+same order, no .sort(): true
+write has related_products: false
+```
+
+(Comparación hecha con `node -e`, sin `jq` — no instalado en esta máquina —
+y sin `.sort()` en ninguno de los dos arrays, tal como exige la task 3.7.)
+
+#### `just verify`
+
+```
+OK   API    :9001/api/settings  200  5503B  55ms
+OK   Shop   :3003/en  200  190788B  1200ms  cards:30
+OK   Admin  :3002/en/login  200  72821B  114ms  cards:1
+```
+
+Exit code 0.
+
+#### `psql` — conteos de cierre (Postgres real, `safari-postgres`)
+
+Antes de este batch (re-verificado, idéntico a PR#2):
+
+```
+products=1200  category_product=0  product_tag=0  categories=198  tags=10  shops=12
+```
+
+Después de crear/editar/borrar los 2 productos centinela (`1465`, `1466`)
+por HTTP real:
+
+```
+$ docker exec safari-postgres psql -U safari -d safari_scraper -t \
+    -c "SELECT count(*) FROM products;" \
+    -c "SELECT count(*) FROM category_product;" \
+    -c "SELECT count(*) FROM product_tag;" \
+    -c "SELECT count(*) FROM categories;" \
+    -c "SELECT count(*) FROM tags;" \
+    -c "SELECT count(*) FROM shops;"
+  1200
+     0
+     0
+   198
+    10
+    12
+```
+
+Idénticos a los medidos antes de empezar — ambos productos centinela
+(`1465` `zz-products-us29-evidencia-pr3`, `1466` `zz-products-us29-keys`)
+borrados por `DELETE /api/products/:id` real, ningún residuo en ningún
+pivote.
+
+### Workload / PR Boundary (PR#3)
+
+- Mode: chained PR slice (`stacked-to-main`, 4-PR chain).
+- Current work unit: **Unit 3 — API: servicio + controller + DTO. US
+  releasable aquí** (tasks 3.1–3.7).
+- Boundary: empieza sobre PR#2 ya aplicado (`just db-check` 186/186 verde),
+  termina en `just build-api` limpio + `npx jest` sin regresión (173/173) +
+  secuencia HTTP real completa + `just verify` verde + conteos restituidos.
+  No incluye `products.service.spec.ts` (Phase 4 / PR#4) ni el cierre formal
+  de la DoD (Phase 5).
+- Estimated review budget impact: +293/-25 líneas (`git diff --stat`, 3
+  archivos), por encima del ~210 puntual de PR#3 pero dentro del margen de
+  redondeo (~287) que el propio roll-up de `tasks.md` reserva para el total
+  de la US; no requiere una nueva decisión de partición.
 
 ## PR#2 — Batería hostil de integración (Phase 2, tasks 2.1–2.5)
 
@@ -563,15 +845,19 @@ delegados al `DEFAULT now()` de Postgres.
 
 ## Remaining Tasks (fuera de este batch)
 
-- [ ] 3.1–3.7 — Capa API: servicio, controller, DTO (PR#3, US releasable).
 - [ ] 4.1–4.5 — `products.service.spec.ts` (PR#4).
 - [ ] 5.1–5.10 — Cierre de la DoD (evidencia, todo PR).
 
 ## Status
 
-17/33 tasks complete (Phase 1 + Phase 2 completas, **incluida la corrección
-post-GATE FAILED de PR#1**). `just db-check` verde de forma reproducible
-tanto al cierre de PR#1 (171/171, 3 corridas) como al cierre de PR#2
-(186/186, 3 corridas), evidencia real pegada en sus respectivas secciones.
-Ready for next batch (Phase 3 / PR#3 — capa API, US releasable ahí) o para
-que el orquestador decida el siguiente slice.
+24/33 tasks complete (Phase 1 + Phase 2 + Phase 3 completas, **incluida la
+corrección post-GATE FAILED de PR#1**). `just db-check` verde de forma
+reproducible tanto al cierre de PR#1 (171/171, 3 corridas) como al cierre de
+PR#2 (186/186, 3 corridas); PR#3 cierra con `just build-api` limpio,
+`npx jest` sin regresión (173/173), secuencia HTTP real completa con token
+`store_owner` (login real, sin fabricar), diff de 20 claves confirmado y
+`just verify` verde (API+shop+admin), evidencia real pegada en sus
+respectivas secciones. **US-29 es releasable a partir de este punto**
+(Phase 3 es el corte "releasable aquí" del roll-up de `tasks.md`). Ready for
+next batch (Phase 4 / PR#4 — `products.service.spec.ts`) o para que el
+orquestador decida el siguiente slice.
