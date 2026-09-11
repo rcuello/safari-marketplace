@@ -1,4 +1,4 @@
-# US-{NN} — Deriva de reloj entre `created_at` y `updated_at`
+# US-32 — Deriva de reloj entre `created_at` y `updated_at`
 
 > `created_at` lo calcula Prisma en Node (`@default(now())`); `updated_at` lo
 > pisa un trigger de Postgres. Son dos relojes distintos, así que una fila puede
@@ -6,7 +6,7 @@
 
 **Épico:** ninguno (US standalone)
 **Fecha:** 2026-09-11
-**Status:** Sin priorizar — pendiente de numeración
+**Status:** Listo para ejecución
 **Depende de:** ninguna
 **LOC est.:** ~80 (requiere `db-reset`)
 

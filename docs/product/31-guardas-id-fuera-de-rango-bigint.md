@@ -1,4 +1,4 @@
-# US-{NN} — Guardas de id fuera del rango `bigint` (500 vivo en la API)
+# US-31 — Guardas de id fuera del rango `bigint` (500 vivo en la API)
 
 > `Number.isInteger(1e21)` es `true`. Los guards de id de `types`, `tags` y
 > `manufacturers` lo dejan pasar, el valor llega al driver de Postgres y la API
@@ -6,7 +6,7 @@
 
 **Épico:** ninguno (US standalone)
 **Fecha:** 2026-09-11
-**Status:** Sin priorizar — pendiente de numeración
+**Status:** Listo para ejecución
 **Depende de:** ninguna (US-28 establece el precedente del arreglo)
 **LOC est.:** ~120
 
