@@ -3,19 +3,29 @@
 > Mode: Standard (strict_tdd: false). Chain strategy: stacked-to-main, 4-PR
 > chain. Este documento cubre **PR#1 (Phase 1, tasks 1.1–1.12)**, **PR#2
 > (Phase 2, tasks 2.1–2.5)**, **PR#3 (Phase 3, tasks 3.1–3.7 — capa API, US
-> releasable aquí)** y **PR#4 (Phase 4, tasks 4.1–4.5 — unit tests de la
-> capa API, con un GATE abierto — ver abajo)** — cuarto batch de
-> `sdd-apply`, fusionado sobre el documento de PR#1/PR#2/PR#3 (Merge
-> Protocol: ninguna tarea previa se pierde).
+> releasable aquí)**, **PR#4 (Phase 4, tasks 4.1–4.5 — unit tests de la capa
+> API)** y **el fix de PR#3 autorizado tras el hallazgo de PR#4** (mismo
+> commit range, `us-29-escrituras-productos-postgres`, sin cruzar a otra
+> rama) — cuarto batch de `sdd-apply` + su cierre, fusionado sobre el
+> documento de PR#1/PR#2/PR#3 (Merge Protocol: ninguna tarea previa se
+> pierde).
 
-## GATE ABIERTO — PR#4 descubre un defecto genuino en `products.service.ts` (PR#3), fuera de alcance de este batch
+## GATE RESUELTO — PR#4 descubrió un defecto genuino en `products.service.ts` (PR#3); autorizado y corregido en un commit separado
 
-**No se corrigió.** El alcance de este batch está limitado por contrato a
-`products.service.spec.ts`; el defecto vive en `products.service.ts`
-(archivo de PR#3, prohibido tocar aquí). Se documenta con evidencia real,
-tal como exige el protocolo ("un defecto real encontrado en esta etapa es
-información valiosa, no un obstáculo") — el test NO se debilitó, NO se
-borró, NO se marcó `.skip`.
+**Estado final: corregido, en verde, evidencia real pegada abajo.** Este
+defecto se descubrió DENTRO del alcance autorizado de PR#4
+(`products.service.spec.ts`, un test escrito exactamente como pedía `R29-7`)
+pero vivía en `products.service.ts` (archivo de PR#3, fuera del alcance de
+ese batch). Se documentó sin corregir, se pidió autorización, el
+coordinador **verificó el hallazgo de forma independiente** y **autorizó
+explícitamente el fix** con la siguiente motivación textual: *"el fix es
+INSIDE US-29's scope. La US posee `products.service.ts`, el defecto está en
+código que esta US introdujo, y el registro de riesgos del propio diseño
+exige este comportamiento. La división PR#3/PR#4 es una convención interna
+de la cadena para el tamaño de revisión, no una frontera de contrato — no
+justifica enviar un camino conocido como roto."* Queda registrado como
+hallazgo permanente del audit trail (visible para `sdd-verify`/
+`sdd-archive`), no como una nota borrada tras corregirse.
 
 ### El hallazgo
 
@@ -61,22 +71,50 @@ repositorio, nunca Number(null)===0 (R29-7)')`):
         |                                  ^
 ```
 
-El mismo patrón (`!== undefined` sin distinguir `null`) está DUPLICADO en
+El mismo patrón (`!== undefined` sin distinguir `null`) estaba DUPLICADO en
 `update()` (`:487-488`) — no se escribió un segundo test rojo para no
-duplicar la misma evidencia, pero el defecto es idéntico ahí.
+duplicar la misma evidencia, pero el defecto era idéntico ahí. **Se
+verificó que ningún otro campo nullable construido campo a campo sufre el
+mismo patrón**: `manufacturer_id` es el único campo, de los tres con
+`Number(...)`, que además es legítimamente nullable en
+`CreateProductInput`/`UpdateProductInput` (`manufacturerId?: number |
+null`). `type_id`/`shop_id` también usan `Number(...)`, pero son
+`typeId: number`/`shopId: number` — no nullable —, así que un `null`
+explícito ahí cae correctamente al 400 vía `P2003` (el comportamiento que
+la propia tabla de `DD29-4` ya documenta como deseado, no un defecto). El
+resto de campos opcionales (`price`, `sale_price`, `min_price`, `max_price`,
+`quantity`, `sku`, etc.) se pasan SIN `Number(...)` — sus tipos ya aceptan
+`number | null`/`string | null` directamente, así que un `null` explícito
+llega intacto sin pasar por ninguna coerción. Conclusión: el defecto es
+exactamente el que `R29-7` nombraba, en exactamente los dos sitios
+(`create`/`update`), y en ningún otro campo.
 
-### Por qué no se corrigió aquí
+### Autorización y verificación independiente del coordinador
 
-El contrato de este batch (recibido del orquestador) es explícito: *"Touch
-ONLY `products.service.spec.ts`... Do NOT modify the service, controller,
-DTO... If a test reveals a genuine defect in PR#3's service code, STOP and
-report it rather than fixing it here or weakening the test."* `git status
---short` tras este batch confirma que solo `products.service.spec.ts` (+
-`tasks.md`) cambiaron.
+El coordinador re-derivó el hallazgo de forma independiente antes de
+autorizar (evaluación directa: `null !== undefined` → `true`, `Number(null)`
+→ `0`) y confirmó que la capa de datos (`packages/db`) YA acepta el valor
+correcto sin cambios: `CreateProductInput.manufacturerId?: number | null`
+(`products.repository.ts:7`), `UpdateProductInput` igual (`:620`),
+`createProduct` normaliza con `input.manufacturerId ?? null` (`:705`), y
+`updateProduct` discrimina por `!== undefined` (`:824`). Es decir: pasar
+`null` tal cual es exactamente el contrato que la capa de datos ya espera —
+**el fix es puramente de `products.service.ts`, cero cambios en
+`packages/db`.**
 
-### Corrección propuesta (NO aplicada, fuera de alcance)
+Ruling explícito de scope del coordinador: *"fixing this is INSIDE US-29's
+scope... the PR#3/PR#4 split is an internal chain convention for review
+sizing, not a contract boundary — it does not justify shipping a
+known-broken path."*
 
-En ambos sitios (`:188-189` de `create()`, `:487-488` de `update()`):
+### Corrección aplicada (autorizada, commit separado — "(US-29, PR#3 fix)")
+
+En ambos sitios (`products.service.ts:188-189` de `create()`,
+`:487-488`→`:496-502` tras el primer parche, de `update()`), la misma
+distinción de tres vías que ya usa el resto del archivo para `!== undefined`
+(DD29-7 a nivel de servicio, paralela a la del repositorio): **ausente
+(`undefined`) = clave omitida · `null` explícito = `null` · cualquier otra
+cosa = `Number(...)`**:
 
 ```ts
 ...(createProductDto.manufacturer_id !== undefined && {
@@ -87,15 +125,57 @@ En ambos sitios (`:188-189` de `create()`, `:487-488` de `update()`):
 }),
 ```
 
-2 líneas por sitio, 4 líneas en total. Requiere autorización explícita del
-orquestador/mantenedor para tocar `products.service.ts` (fuera del alcance
-autorizado de PR#4) — no se decide unilateralmente aquí.
+(Idéntico en `update()`, sobre `updateProductDto.manufacturer_id`.) 2 líneas
+añadidas por sitio (comentario + rama ternaria), 4 líneas netas en total.
+Ningún otro campo, método, DTO, controller ni archivo de `packages/db`
+tocado — `git diff --stat` de este fix confirma un único archivo,
+`products.service.ts`, +16/-2.
 
-### Impacto en la Definición de Done de este batch
+### ¿La evidencia HTTP real de PR#3 habría atrapado esto?
 
-`cd apps/api/rest && npx jest`: **203/204 en verde, 1 en rojo** — el rojo es
-el hallazgo de arriba, no un flake ni un test mal escrito. Ver evidencia
-completa en § Verification Evidence (PR#4) abajo.
+**No.** La secuencia de `curl` de la task 3.7 (`POST` → `GET` → reinicio →
+`GET` por categoría → `PUT` → `GET` → `DELETE` → `GET 404`) nunca envía
+`manufacturer_id: null` explícito — el producto centinela de esa secuencia
+ni siquiera declara `manufacturer_id` (queda `undefined`, la rama que SÍ
+funcionaba bien desde PR#3). Un smoke test de camino feliz no tiene motivo
+para probar el caso de borde "limpiar un campo opcional-y-nullable
+mandando `null`"; es precisamente el tipo de caso que un smoke test manual
+no cubre por construcción y que un test unitario dirigido, como los de
+PR#4, sí. Esto es, textualmente, el argumento de por qué PR#4 existe como
+fase separada en la cadena — no una casualidad de esta corrida.
+
+### Verificación real tras el fix
+
+`cd apps/api/rest && npx jest` (suite completa, las 9):
+
+```
+PASS src/common/errors/domain-error.mapper.spec.ts (24.652 s)
+PASS src/tags/tags.service.spec.ts (32.477 s)
+PASS src/users/user-dto.mapper.spec.ts (37.81 s)
+PASS src/categories/categories.service.spec.ts (39.638 s)
+PASS src/types/types.service.spec.ts (41.408 s)
+PASS src/shops/shops.service.spec.ts (45.574 s)
+PASS src/users/users.service.spec.ts (49.483 s)
+PASS src/manufacturers/manufacturers.service.spec.ts (49.658 s)
+PASS src/products/products.service.spec.ts (50.476 s)
+
+Test Suites: 9 passed, 9 total
+Tests:       204 passed, 204 total
+Snapshots:   0 total
+Time:        63.644 s
+```
+
+`just build-api` tras el fix:
+
+```
+yarn build
+$ rimraf dist
+$ nest build
+Done in 80.63s.
+```
+
+Limpio — sin errores de `tsc`/Nest. **Genuinamente verde**, no reportado sin
+pegar la salida real.
 
 ## PR#4 — Unit tests de la capa API (Phase 4, tasks 4.1–4.5)
 
@@ -124,8 +204,8 @@ diff de este batch.
       `manufacturer_id` probado con las 3 FK como string; guard de id
       (`NaN`/`1.5`/`0`/`-1`) → 404 en `update`/`remove` **sin** llamar a
       `findProductShopId` (aserción `not.toHaveBeenCalled()`, no solo el
-      404); `manufacturer_id: null` explícito → **hallazgo real**, ver §
-      GATE ABIERTO arriba.
+      404); `manufacturer_id: null` explícito → **hallazgo real, corregido**,
+      ver § GATE RESUELTO arriba.
 - [x] 4.3 — Matriz de roles de CA-5 en las 3 rutas (`create`/`update`/
       `remove`) vía `it.each`: `store_owner` dueño → 200; `store_owner`
       ajeno → 403; `super_admin` → 200 **con aserción explícita**
@@ -144,18 +224,23 @@ diff de este batch.
       DD29-1 paga: antes de esa decisión estas dos clases no llevaban `code`
       y `toWriteHttpException` degradaba a 500), `InvalidReferenceError` →
       400, `RecordNotFoundError` → 404, `SlugConflictError` → 409.
-- [ ] 4.5 — Verificación: **NO verde**. `npx jest` → 9 suites (1 failed, 8
-      passed), 204 tests (1 failed, 203 passed). El fallo es el hallazgo de
-      § GATE ABIERTO — no un defecto de este archivo. El archivo no
-      desborda el forecast (~650 líneas): +387 líneas reales
-      (`git diff --stat`). Ver evidencia completa abajo.
+- [x] 4.5 — Verificación: en la corrida ORIGINAL de PR#4, **NO verde** (9
+      suites, 1 failed/8 passed; 204 tests, 1 failed/203 passed — el fallo
+      era el hallazgo de § GATE RESUELTO, no un defecto de este archivo).
+      Tras el fix autorizado de `products.service.ts` (commit separado,
+      "(US-29, PR#3 fix)"), **re-verificado en verde real**: 9 suites / 204
+      tests, todos pasando; `just build-api` limpio. El archivo de tests no
+      desbordó el forecast (~650 líneas): +387 líneas reales
+      (`git diff --stat`). Ver ambas evidencias (roja original, verde final)
+      abajo y en § GATE RESUELTO.
 
 ### Deviations from Design (PR#4)
 
 Ninguna decisión de diseño se contradijo. El único desvío es el hallazgo ya
-descrito (§ GATE ABIERTO) — no es un desvío de diseño sino un defecto de
-implementación de PR#3 que el design (`R29-7`) ya anticipaba como riesgo y
-que este batch confirma empíricamente.
+descrito (§ GATE RESUELTO) — no es un desvío de diseño sino un defecto de
+implementación de PR#3 que el design (`R29-7`) ya anticipaba como riesgo,
+que este batch confirmó empíricamente y que el mismo batch, ya autorizado,
+corrigió.
 
 ### Files Changed (PR#4)
 
@@ -166,13 +251,17 @@ que este batch confirma empíricamente.
 
 ### Issues Found (PR#4)
 
-Uno, no bloqueante para ESTE batch pero sí para el cierre verde de la DoD:
-ver § GATE ABIERTO arriba (defecto genuino en `products.service.ts`,
-`manufacturer_id: null` → `Number(null) === 0`).
+Uno, encontrado y **ya corregido** dentro de este mismo batch (autorizado
+por el coordinador): ver § GATE RESUELTO arriba (defecto genuino en
+`products.service.ts`, `manufacturer_id: null` → `Number(null) === 0` en
+`create()`/`update()`).
 
 ### Verification Evidence (real output) — PR#4
 
-#### `cd apps/api/rest && npx jest products.service.spec.ts` (solo el archivo tocado)
+> Las dos corridas de abajo son intencionalmente ANTES/DESPUÉS del fix
+> (auditoría completa, no se sobreescribe la evidencia roja original).
+
+#### ANTES del fix — `cd apps/api/rest && npx jest products.service.spec.ts` (solo el archivo tocado)
 
 ```
 Test Suites: 1 failed, 1 total
@@ -193,7 +282,7 @@ Time:        78.903 s
   > 766 |     expect(input.manufacturerId).toBeNull();
 ```
 
-#### `cd apps/api/rest && npx jest` (suite completa, las 9)
+#### ANTES del fix — `cd apps/api/rest && npx jest` (suite completa, las 9)
 
 ```
 PASS src/common/errors/domain-error.mapper.spec.ts (34.048 s)
@@ -215,24 +304,29 @@ Snapshots:   0 total
 Time:        43.48 s, estimated 75 s
 ```
 
-**Conteo real reportado, no el "4 suites / 65 tests" obsoleto de
-`CLAUDE.md`** (sin corregir ese archivo — fuera de alcance): son **9
-suites / 204 tests**, de los cuales 203 pasan y 1 falla por el hallazgo
+**Conteo real reportado en su momento, no el "4 suites / 65 tests" obsoleto
+de `CLAUDE.md`** (sin corregir ese archivo — fuera de alcance): 9 suites /
+204 tests, de los cuales 203 pasaban y 1 fallaba por el hallazgo
 documentado arriba.
+
+#### DESPUÉS del fix autorizado — ver § GATE RESUELTO para la salida completa (verde real, 9/9 suites, 204/204 tests, `just build-api` limpio).
 
 ### Workload / PR Boundary (PR#4)
 
 - Mode: chained PR slice (`stacked-to-main`, 4-PR chain).
 - Current work unit: **Unit 4 — `products.service.spec.ts`** (tasks
-  4.1–4.5).
+  4.1–4.5), más el fix autorizado de `products.service.ts` que cierra el
+  hallazgo de esa misma unidad.
 - Boundary: empieza sobre PR#3 ya aplicado (`npx jest` 173/173 verde).
-  Termina en 203/204 — **NO verde** — por el hallazgo de § GATE ABIERTO,
-  que requiere una decisión del orquestador/mantenedor (autorizar tocar
-  `products.service.ts` fuera del alcance de este batch, o dejar el rojo
-  documentado a la espera de un fix dedicado) antes de que Phase 5 (cierre
-  de la DoD) pueda declarar la suite verde.
-- Estimated review budget impact: +387 líneas (`git diff --stat`, 1
-  archivo), bajo el techo forecast de PR#4 (~650).
+  Pasó por 203/204 — no verde — mientras el hallazgo de § GATE RESUELTO
+  esperaba autorización; **cierra en 204/204 verde real** tras el fix
+  autorizado por el coordinador (commit separado, "(US-29, PR#3 fix)"),
+  con `just build-api` limpio confirmado después del fix. Phase 5 (cierre
+  de la DoD) queda desbloqueada.
+- Estimated review budget impact: +387 líneas en `products.service.spec.ts`
+  (`git diff --stat`, bajo el techo forecast de PR#4 ~650) + 16/-2 líneas
+  en `products.service.ts` (el fix autorizado, commit separado — no cuenta
+  contra el presupuesto de PR#4, es la corrección de un defecto de PR#3).
 
 ## PR#3 — Capa API: servicio, controller, DTO (Phase 3, tasks 3.1–3.7)
 
@@ -1073,36 +1167,36 @@ delegados al `DEFAULT now()` de Postgres.
 
 ## Remaining Tasks (fuera de este batch)
 
-- [ ] 4.5 — Verificación de PR#4: bloqueada por el GATE ABIERTO (defecto
-      genuino en `products.service.ts`, fuera de alcance de PR#4 — ver
-      arriba). Requiere decisión del orquestador/mantenedor.
-- [ ] 5.1–5.10 — Cierre de la DoD (evidencia, todo PR). **No debería
-      arrancar** hasta resolver el GATE ABIERTO de PR#4: `just verify` y la
-      secuencia de `curl` de la Fase 5 pueden reproducir el mismo defecto de
-      `manufacturer_id: null` si algún escenario lo ejercita.
+- [ ] 5.1–5.10 — Cierre de la DoD (evidencia, todo PR). Desbloqueado: el
+      hallazgo de `manufacturer_id: null` (§ GATE RESUELTO) ya está
+      corregido y verificado en verde; Phase 5 puede arrancar en un batch
+      separado.
 
 ## Status
 
-28/33 tasks complete (Phase 1 + Phase 2 + Phase 3 completas; Phase 4 con
-4.1–4.4 completas y **4.5 bloqueada por un GATE ABIERTO** — un defecto
-genuino descubierto en `products.service.ts`, PR#3, fuera del alcance
-autorizado de `products.service.spec.ts`). `just db-check` verde de forma
-reproducible tanto al cierre de PR#1 (171/171, 3 corridas) como al cierre de
-PR#2 (186/186, 3 corridas); PR#3 cierra con `just build-api` limpio,
-`npx jest` sin regresión (173/173), secuencia HTTP real completa con token
-`store_owner` (login real, sin fabricar), diff de 20 claves confirmado y
-`just verify` verde (API+shop+admin), evidencia real pegada en sus
-respectivas secciones. PR#4 añade 387 líneas de tests nuevos a
-`products.service.spec.ts` (dentro del forecast ~650); `npx jest` corre
-**203/204 en verde, 1 en rojo** — el rojo prueba, con evidencia real, que
-`manufacturer_id: null` explícito se convierte en `Number(null) === 0` en
+29/33 tasks complete (Phase 1 + Phase 2 + Phase 3 + Phase 4 completas,
+**incluido el fix autorizado del defecto de `manufacturer_id: null`**
+descubierto por PR#4 en código de PR#3 — ver § GATE RESUELTO). `just
+db-check` verde de forma reproducible tanto al cierre de PR#1 (171/171, 3
+corridas) como al cierre de PR#2 (186/186, 3 corridas); PR#3 cierra con
+`just build-api` limpio, `npx jest` sin regresión (173/173), secuencia HTTP
+real completa con token `store_owner` (login real, sin fabricar), diff de
+20 claves confirmado y `just verify` verde (API+shop+admin), evidencia real
+pegada en sus respectivas secciones. PR#4 añade 387 líneas de tests nuevos a
+`products.service.spec.ts` (dentro del forecast ~650); su primera corrida
+(`npx jest`, 203/204 en verde, 1 en rojo) probó, con evidencia real, que
+`manufacturer_id: null` explícito se convertía en `Number(null) === 0` en
 `create()`/`update()` de `products.service.ts` en vez de preservarse como
-`null` (`R29-7`). El test NO se debilitó ni se borró; el fix (2 líneas por
-sitio) NO se aplicó porque está fuera del alcance autorizado de este batch.
-**US-29 sigue siendo releasable desde PR#3** (Phase 3 es el corte
-"releasable aquí" del roll-up de `tasks.md`) — este hallazgo es sobre un
-caso de borde (`manufacturer_id: null` explícito) que no bloquea el camino
-feliz ya verificado con `curl` real en PR#3. Bloqueado para: (a) cerrar
-formalmente Phase 4 (4.5) y (b) arrancar Phase 5, en espera de que el
-orquestador decida si autoriza el fix de 4 líneas en `products.service.ts`
-o si se abre un defecto/US dedicado.
+`null` (`R29-7`). El test NO se debilitó ni se borró — se detuvo el batch y
+se reportó el hallazgo; el coordinador lo verificó de forma independiente,
+falló explícitamente que está DENTRO del alcance de US-29 (la partición
+PR#3/PR#4 es una convención de tamaño de revisión, no una frontera de
+contrato) y autorizó el fix. Aplicado en un commit separado
+("US-29, PR#3 fix"), 16/-2 líneas en `products.service.ts`, cero cambios en
+`packages/db` (la capa de datos ya aceptaba `null` sin modificarse).
+Re-verificado: `npx jest` **204/204 en verde real**, `just build-api`
+limpio. **US-29 sigue siendo releasable desde PR#3** (Phase 3 es el corte
+"releasable aquí" del roll-up de `tasks.md`); el fix cierra además el único
+caso de borde pendiente. Ready for Phase 5 (cierre de la DoD, evidencia
+completa) en un batch separado, o para que el orquestador decida el
+siguiente paso.

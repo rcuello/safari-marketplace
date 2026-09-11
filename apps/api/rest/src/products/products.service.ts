@@ -185,8 +185,17 @@ export class ProductsService {
       name: createProductDto.name,
       typeId: Number(createProductDto.type_id),
       shopId,
+      // Tres vías (paralelo a DD29-7 en el repositorio): ausente
+      // (`undefined`) omite la clave; `null` explícito llega como `null`
+      // (SET NULL, "sin fabricante" — R29-7); cualquier otra cosa se
+      // coerciona con `Number(...)`. `Number(null) === 0` es el defecto que
+      // esto evita: sin la rama `=== null`, un cliente que limpia el
+      // fabricante terminaría enlazando la fila al fabricante id `0`.
       ...(createProductDto.manufacturer_id !== undefined && {
-        manufacturerId: Number(createProductDto.manufacturer_id),
+        manufacturerId:
+          createProductDto.manufacturer_id === null
+            ? null
+            : Number(createProductDto.manufacturer_id),
       }),
       ...(createProductDto.description !== undefined && {
         description: createProductDto.description,
@@ -484,8 +493,13 @@ export class ProductsService {
       ...(updateProductDto.shop_id !== undefined && {
         shopId: Number(updateProductDto.shop_id),
       }),
+      // Mismo tratamiento de tres vías que `create()` — ver el comentario de
+      // arriba (R29-7): `null` explícito NUNCA se coerciona con `Number(...)`.
       ...(updateProductDto.manufacturer_id !== undefined && {
-        manufacturerId: Number(updateProductDto.manufacturer_id),
+        manufacturerId:
+          updateProductDto.manufacturer_id === null
+            ? null
+            : Number(updateProductDto.manufacturer_id),
       }),
       ...(updateProductDto.description !== undefined && {
         description: updateProductDto.description,
