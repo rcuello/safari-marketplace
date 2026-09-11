@@ -4,11 +4,461 @@
 > chain. Este documento cubre **PR#1 (Phase 1, tasks 1.1–1.12)**, **PR#2
 > (Phase 2, tasks 2.1–2.5)**, **PR#3 (Phase 3, tasks 3.1–3.7 — capa API, US
 > releasable aquí)**, **PR#4 (Phase 4, tasks 4.1–4.5 — unit tests de la capa
-> API)** y **el fix de PR#3 autorizado tras el hallazgo de PR#4** (mismo
+> API)**, **el fix de PR#3 autorizado tras el hallazgo de PR#4** (mismo
 > commit range, `us-29-escrituras-productos-postgres`, sin cruzar a otra
-> rama) — cuarto batch de `sdd-apply` + su cierre, fusionado sobre el
-> documento de PR#1/PR#2/PR#3 (Merge Protocol: ninguna tarea previa se
-> pierde).
+> rama) y **Phase 5 (tasks 5.1–5.10 — cierre de evidencia de la DoD, quinto
+> batch de `sdd-apply`)**, fusionado sobre el documento de PR#1/PR#2/PR#3/PR#4
+> (Merge Protocol: ninguna tarea previa se pierde).
+
+## Phase 5 — Cierre de la Definición de Done (evidencia, quinto batch)
+
+**Alcance: solo evidencia, ningún archivo de código tocado.** `git status
+--short` tras este batch muestra únicamente `tasks.md`,
+`apply-progress.md` y los dos artefactos de `docs/product/` autorizados por
+la DoD (`29-escrituras-productos-postgres.md`, `README.md` del épico 26).
+Ningún archivo de `apps/api/rest/src` ni de `packages/db/src` cambia en
+este batch.
+
+### Estado de partida (verificado antes de tocar nada)
+
+Rama `us-29-escrituras-productos-postgres` en `20dddfb`, árbol limpio,
+`safari-postgres` `Up (healthy)`. Conteos baseline (idénticos a los que
+PR#1-4 ya habían restituido):
+
+```
+$ docker exec safari-postgres psql -U safari -d safari_scraper -t \
+    -c "SELECT count(*) FROM products;" \
+    -c "SELECT count(*) FROM category_product;" \
+    -c "SELECT count(*) FROM product_tag;" \
+    -c "SELECT count(*) FROM categories;" \
+    -c "SELECT count(*) FROM tags;" \
+    -c "SELECT count(*) FROM shops;"
+  1200
+     0
+     0
+   198
+    10
+    12
+```
+
+El puerto 9001 tenía un proceso `node.exe` stale de una corrida anterior
+(igual que documentó PR#3): matado antes de arrancar `just api-dev`, para
+garantizar que todo `curl` de este batch corriera contra el código real de
+HEAD, no contra un watcher viejo. `just db-build` se corrió primero
+(bloqueante, `dist/` gitignored).
+
+### Identidades usadas
+
+- `store_owner@demo.com` (sub=1): dueño de las 12 tiendas del seed (`owner_id=1`
+  en las 12 filas de `shops`) — login real vía `/api/token`, reutilizado tal
+  cual del patrón de PR#3.
+- `admin@demo.com` (sub=3): único usuario con permiso `super_admin` en el
+  seed (`permission_user`: `super_admin`, `customer`, `store_owner`).
+- **Tienda ajena centinela**: las 12 tiendas del seed comparten **el mismo**
+  `owner_id=1` — no existe una tienda de otro dueño en los datos de partida.
+  Se insertó una fila `shops` centinela (`zz-products-foreign-shop`, id 16,
+  `owner_id=2`, vía `psql` directo — no hay `POST /shops` en el alcance de
+  esta US, esa escritura es de US-30) para tener un `shop_id` genuinamente
+  ajeno al `store_owner` de prueba. Borrada al cierre (`DELETE FROM shops
+  WHERE id=16`).
+- **Rol `staff`**: el seed no tiene ningún usuario con el permiso `staff`
+  asignado (`permission_user` solo tiene `super_admin`/`customer`/
+  `store_owner` en 3 filas). Se creó un usuario centinela aislado
+  (`zz-staff-sentinel@demo.com`, mismo hash de contraseña que el resto del
+  seed, **sin ninguna tienda propia**) con **solo** el permiso `staff`, para
+  evitar cualquier colisión de `sub` con un `owner_id` real. Borrado al
+  cierre (`DELETE FROM permission_user ...` + `DELETE FROM users WHERE
+  id=354`).
+  - **Nota de proceso, declarada por transparencia**: el primer intento de
+    este batch asignó `staff` directamente a `customer@demo.com` (sub=2) —
+    el mismo `id` que se había usado como `owner_id` de la tienda ajena
+    centinela. Eso hizo que el `PUT`/`DELETE` de "staff" devolvieran **200**
+    en vez de 403, porque el chequeo de propiedad comparaba correctamente
+    `sub(2) === owner_id(2)` — no era un fallo de la guarda, era una
+    colisión de identidades en el propio dato de prueba. Se revirtió esa
+    asignación, se creó el usuario aislado de arriba y se re-corrió la
+    matriz completa con resultado correcto (ver § 5.3). Se documenta aquí
+    para que quede claro que el 200 inicial no fue un hallazgo de seguridad
+    real.
+
+### 5.1 — CA-1/CA-2/CA-3: secuencia completa con token `store_owner`
+
+Producto centinela `zz-products-5.1 evidencia DoD` (`shop_id=1`, `type_id=1`,
+`categories=[35]` "cereal", `tags=[62]` "shake"):
+
+```
+POST /api/products  → 201
+{"id":1467,"name":"zz-products-5.1 evidencia DoD",
+ "slug":"zz-products-5-1-evidencia-dod", ... 20 claves, sin related_products}
+
+GET /api/products/zz-products-5-1-evidencia-dod (antes del reinicio) → 200
+
+[reinicio real: taskkill del proceso + `PORT=9001 yarn start:dev`,
+ esperado el primer 200 de /api/settings antes de continuar]
+
+GET /api/settings (post-reinicio) → 200  (confirma la API real arriba)
+
+GET /api/products?search=categories.slug:cereal (post-reinicio)
+→ 200  count:1  found sentinel: true   (CA-1: sobrevive al reinicio,
+                                         filtrado por categoría real)
+
+GET /api/products/zz-products-5-1-evidencia-dod (post-reinicio) → 200
+
+PUT /api/products/1467  {"name":"...editado","price":249.5}
+→ 200  {"name":"zz-products-5.1 evidencia DoD editado",
+        "slug":"zz-products-5-1-evidencia-dod"  ← INVARIANTE,
+        "price":249.5,"max_price":249.5,"min_price":249.5, ... 20 claves}
+
+GET /api/products/zz-products-5-1-evidencia-dod → 200
+  name: "...editado" | slug: invariante | price: 249.5
+
+psql: category_product WHERE product_id=1467 → 1  (intacto, PUT no envió `categories`)
+      product_tag      WHERE product_id=1467 → 1  (intacto, PUT no envió `tags`)
+
+DELETE /api/products/1467 → 200
+  {"id":1467, ... 20 claves, snapshot pre-borrado}
+
+GET /api/products/zz-products-5-1-evidencia-dod → 404
+  {"statusCode":404,"message":"No existe un producto con slug
+   `zz-products-5-1-evidencia-dod`.","error":"Not Found"}
+
+psql: category_product WHERE product_id=1467 → 0
+      product_tag      WHERE product_id=1467 → 0
+```
+
+**Diff de `Object.keys()` — 20 claves, mismo orden, sin `related_products`**
+(segundo producto centinela `zz-products-keydiff`, comparado contra
+`GET /api/products/apples` del seed, `node -e` sin `.sort()`, `jq` no
+instalado):
+
+```
+seed keys (apples, related_products excluido): 20
+  ["id","name","slug","type","language","translated_languages","product_type",
+   "shop","sale_price","max_price","min_price","image","status","price",
+   "quantity","unit","sku","sold_quantity","in_flash_sale","visibility"]
+write keys (POST /api/products): 20  (mismo array, mismo orden)
+same order, no .sort(): true
+write has related_products: false
+```
+
+Ambos productos centinela de esta sección (`1467` borrado por la secuencia,
+y el de key-diff) se limpiaron por `DELETE /api/products/:id` real. **Nota
+de higiene declarada**: un primer intento de crear el producto de key-diff
+falló por una ruta de archivo temporal incorrecta (`/tmp` no resuelve en
+Windows/Git Bash para `node -e`) y dejó un producto huérfano (`id 1468`,
+slug `zz-products-keydiff`) antes de que el segundo intento (con ruta
+corregida al scratchpad) creara el `id 1469` con slug `-2`. Ambos se
+detectaron con `SELECT id, slug FROM products WHERE slug LIKE
+'zz-products-%'` y se borraron por HTTP real (`DELETE /api/products/1468` y
+`/1469`); `SELECT count(*) FROM products` volvió a **1200** antes de seguir
+con 5.2.
+
+### 5.2 — CA-4: los 14 casos, ninguno 500
+
+```
+1) 400 rebaja inválida (sale_price >= price):
+   {"statusCode":400,"message":"El precio rebajado (100) debe ser menor
+    que el de lista (100) — CHECK products_rebaja_valida.","error":"Bad Request"}
+
+2) 400 'simple' sin price:
+   {"statusCode":400,"message":"Un producto 'simple' necesita precio —
+    CHECK products_simple_con_precio.","error":"Bad Request"}
+
+3) 400 product_type fuera de IN ('bundle'):
+   {"statusCode":400,"message":"`products.product_type (fuera de IN
+    ('simple','variable'))` referencia un registro inexistente
+    (`bundle`).","error":"Bad Request"}
+
+4) 400 status fuera de IN ('archived'):
+   {"statusCode":400,"message":"`products.status (fuera de IN
+    ('publish','draft'))` referencia un registro inexistente
+    (`archived`).","error":"Bad Request"}
+
+5) 400 type_id inexistente (999999):
+   {"statusCode":400,"message":"`products.desconocida` referencia un
+    registro inexistente.","error":"Bad Request"}
+
+6) 400 shop_id inexistente (999999):
+   {"statusCode":400,"message":"`products.desconocida` referencia un
+    registro inexistente.","error":"Bad Request"}
+
+7) 400 manufacturer_id inexistente (999999):
+   {"statusCode":400,"message":"`products.desconocida` referencia un
+    registro inexistente.","error":"Bad Request"}
+
+8) 400 categoría inexistente (categories:[999999]):
+   {"statusCode":400,"message":"`products.categories[]` referencia un
+    registro inexistente.","error":"Bad Request"}
+
+9) 400 tag inexistente (tags:[999999]):
+   {"statusCode":400,"message":"`products.tags[]` referencia un registro
+    inexistente.","error":"Bad Request"}
+
+10) 400 type_id no entero ("abc"):
+    {"statusCode":400,"message":"`products.type_id` referencia un
+     registro inexistente (`NaN`).","error":"Bad Request"}
+
+11) 400 shop_id no entero ("abc"):
+    {"statusCode":400,"message":"`products.shop_id` referencia un
+     registro inexistente (`NaN`).","error":"Bad Request"}
+
+12) 400 manufacturer_id no entero ("abc"):
+    {"statusCode":400,"message":"`products.manufacturer_id` referencia un
+     registro inexistente (`NaN`).","error":"Bad Request"}
+
+13) 404 PUT id inexistente (999999999):
+    {"statusCode":404,"message":"No existe un producto con id
+     999999999.","error":"Not Found"}
+
+14) 404 DELETE id inexistente (999999999):
+    {"statusCode":404,"message":"No existe un producto con id
+     999999999.","error":"Not Found"}
+```
+
+Los 14, verificados con `-w "\nSTATUS:%{http_code}\n"` en el `curl` real:
+9× **400**, 2× **404**, ninguno **500**. Cierre: `SELECT count(*) FROM
+products` = **1200** y `SELECT count(*) FROM products WHERE slug LIKE
+'zz-products-%'` = **0** tras los 12 intentos de escritura fallidos (ningún
+`400`/`404` dejó fila).
+
+### 5.3 — CA-5: matriz de roles completa sobre HTTP
+
+```
+403 dueño ajeno — POST shop_id=16 (store_owner, sub=1, no es owner_id=2 de la 16):
+  {"statusCode":403,"message":"No tienes permisos sobre la tienda
+   16.","error":"Forbidden"}
+
+403 dueño ajeno — PUT sobre producto de la tienda 16 (creado antes por
+super_admin, id 1473/1474):
+  {"statusCode":403,"message":"No tienes permisos sobre la tienda
+   16.","error":"Forbidden"}
+
+403 dueño ajeno — DELETE sobre el mismo producto:
+  {"statusCode":403,"message":"No tienes permisos sobre la tienda
+   16.","error":"Forbidden"}
+
+403 PUT que mueve shop_id propio (1) → ajeno (16):
+  {"statusCode":403,"message":"No tienes permisos sobre la tienda
+   16.","error":"Forbidden"}
+  psql tras el intento: shop_id del producto 1475 sigue en 1 (sin mutación)
+
+200 dueño propio — POST en shop_id=1 (store_owner sobre su propia tienda):
+  201 {"id":1475,"name":"zz-products-ca5-ownshop", ... "shop":{"id":1,...}}
+
+200 super_admin — PUT sobre el producto de la tienda 16 (cualquiera):
+  200 {"id":1474,"name":"super admin edited", ... "shop":{"id":16,...}}
+
+403 staff (usuario centinela aislado, sin tienda propia) — POST en shop_id=1:
+  {"statusCode":403,"message":"No tienes permisos sobre la tienda
+   1.","error":"Forbidden"}
+
+403 staff — PUT sobre el producto de la tienda 16:
+  {"statusCode":403,"message":"No tienes permisos sobre la tienda
+   16.","error":"Forbidden"}
+
+403 staff — DELETE sobre el mismo producto:
+  {"statusCode":403,"message":"No tienes permisos sobre la tienda
+   16.","error":"Forbidden"}
+
+401 sin token — PUT:
+  {"statusCode":401,"message":"Token de autenticación ausente o
+   inválido.","error":"Unauthorized"}
+
+401 sin token — DELETE:
+  {"statusCode":401,"message":"Token de autenticación ausente o
+   inválido.","error":"Unauthorized"}
+```
+
+Los 5 roles (`store_owner` dueño, `store_owner` ajeno, `super_admin`,
+`staff`, sin token) cubiertos en las 3 rutas donde aplica, más el caso
+dedicado del `PUT` que mueve `shop_id` (ambos lados de la propiedad, DD29-4).
+Limpieza: productos centinela `1474`/`1475` borrados por HTTP real
+(`DELETE` con `super_admin`/`store_owner` respectivamente); `SELECT id, slug
+FROM products WHERE slug LIKE 'zz-products-%'` = vacío antes de seguir.
+
+### 5.4 — CA-6: producto `variable`
+
+```
+POST /api/products {"product_type":"variable","min_price":15,"max_price":45,
+  (sin "price"), "variations":[...], "variation_options":{"upsert":[...],"delete":[]}}
+→ 201 {"id":1476,"product_type":"variable","price":null,
+       "min_price":15,"max_price":45, ... 20 claves}
+
+GET /api/products/zz-products-ca6-variable → 200
+  product_type: variable | price: null | min_price: 15 | max_price: 45
+
+psql — comparación con 3 variables reales del seed:
+  invictus                                            | price ''  | min 70.00 | max 80.00
+  magnetic-designs-women-printed-fit-and-flare-dress  | price ''  | min 35.00 | max 35.00
+  mango-self-striped-a-line-dress                     | price ''  | min 70.00 | max 81.00
+```
+
+Mismo patrón que los 58 `variable` del seed: `price` vacío/`NULL`,
+`min_price`/`max_price` poblados. `variations`/`variation_options` del body
+**no aparecen** en la respuesta (20 claves exactas, sin rastro de esos
+campos) — descartados en silencio tal como declara `R29-6`/el `design.md`.
+Limpieza: `DELETE /api/products/1476` → 200, confirmado.
+
+### 5.5 — Herencia 1 (US-28): cierre del escenario `UNTESTED`
+
+```
+POST /api/categories {"name":"zz-products-herencia1-categoria","type_id":1}
+  (super_admin, NUNCA una categoría del seed)
+→ 201 {"id":888,"slug":"zz-products-herencia1-categoria", ...}
+
+POST /api/products {"categories":[888], ...} (store_owner, shop propio)
+→ 201 {"id":1477,"name":"zz-products-herencia1-producto", ...}
+
+psql: category_product WHERE category_id=888 → 1   (el enlace existe)
+
+DELETE /api/categories/888 (super_admin)
+→ 200 {"id":888, ...}
+
+psql: category_product WHERE category_id=888 → 0   ← el escenario que
+                                                        cierra Herencia 1
+
+Cierre: DELETE /api/products/1477 → 200
+psql: SELECT count(*) FROM categories → 198   (restituido)
+      SELECT count(*) FROM products  → 1200   (restituido)
+```
+
+**El escenario `UNTESTED (verificación diferida a US-29)` de
+`openspec/specs/category-tree-api/spec.md` (CA-3 — «los enlaces de producto
+desaparecen») queda cerrado con evidencia real: 1 fila antes del `DELETE` de
+la categoría, 0 después.** La edición del propio archivo de spec (pasar el
+escenario de `UNTESTED` a `COMPLIANT`) se deja a `sdd-archive`, por
+instrucción explícita del orquestador — este batch produce la evidencia, no
+edita `openspec/specs/`.
+
+### 5.6 — Herencia 2 (US-28): tabla de cobertura de las 5 guardas
+
+Ya construida y verificada empíricamente en PR#2 (ver § PR#2 más abajo en
+este mismo documento); se reproduce aquí como cierre formal de la DoD:
+
+| # | Regla | DDL | Origen | Error de dominio | Test (PR#2) |
+|---|---|---|---|---|---|
+| 1 | `products_rebaja_valida` (`sale_price < price`) | `schema.sql:393-394` | **Heredada y adaptada** de `upsertScrapedProduct` (DD29-9 añade el disyunto `price != null`) | `InvalidSalePriceError` | `regla 1: sale_price >= price → InvalidSalePriceError` |
+| 2 | `products_simple_con_precio` | `:398-399` | **Nueva** | `MissingPriceError` | `regla 2: product_type 'simple' sin price → MissingPriceError` |
+| 3 | `product_type IN ('simple','variable')` | `:335-336` | **Nueva** | `InvalidReferenceError` (DD29-2) | `regla 3: product_type fuera de IN (…) → InvalidReferenceError` |
+| 4 | `status IN ('publish','draft')` | `:359-360` | **Nueva** | `InvalidReferenceError` (DD29-2) | `regla 4: status fuera de IN (…) → InvalidReferenceError` |
+| 5 | `products_procedencia_completa` | `:403-404` | **Por construcción**: el input del admin no declara `source_*` ⇒ `num_nonnulls = 0 ∈ (0,2)` siempre falso | — (sin guarda de runtime) | **Sin test** — documentado en el `describe`, no simulado |
+
+1 heredada-adaptada / 3 nuevas / 1 por construcción sin guarda de runtime,
+tal como exige la task 5.6. Su incorporación formal al escenario de
+`openspec/specs/catalog-write-foundations/spec.md` («Una violación de CHECK
+no pertenece al conjunto cerrado — lección para `products` (US-29)») queda,
+igual que en 5.5, para `sdd-archive`.
+
+### 5.7 — Sin mock huérfano ni regresión en archivos protegidos
+
+```
+$ grep -n "@db/\|plainToClass" apps/api/rest/src/products/products.service.ts
+(sin salida — 0 líneas, exit code 1 de grep)
+
+$ git diff --stat main...HEAD -- apps/api/rest/src/common/slug.ts \
+    apps/api/rest/src/common/domain-errors.ts packages/db/src/domain-errors.ts \
+    packages/db/src/slug.ts apps/api/rest/src/common/errors/ db/schema.sql \
+    apps/shop apps/admin
+(sin salida — cero cambios en los 8 caminos protegidos)
+```
+
+**`upsertScrapedProduct` sin tocar en su cuerpo**: `git diff --unified=0
+main...HEAD -- packages/db/src/repositories/products.repository.ts` muestra
+sus hunks reales —
+
+```
+@@ -22 +22,7 @@ import { now } from '../clock';
+@@ -36,0 +43 @@ import {
+@@ -441,0 +449,468 @@ export async function deleteScrapedProduct(
+@@ -446,2 +921,10 @@ export async function deleteScrapedProduct(
+@@ -450 +933,2 @@ export class InvalidSalePriceError extends Error {
+@@ -456,2 +940,2 @@ export class InvalidSalePriceError extends Error {
+@@ -460 +944,2 @@ export class MissingPriceError extends Error {
+@@ -466,2 +951,2 @@ export class MissingPriceError extends Error {
+@@ -470 +955,2 @@ export class IncompleteProvenanceError extends Error {
+```
+
+— el hunk grande (`+449,468` líneas) se inserta **entre** el final de
+`upsertScrapedProduct` y el inicio de `deleteScrapedProduct` (código
+enteramente nuevo, las 3 escrituras + guardas), y los hunks pequeños de más
+abajo tocan solo los `super(...)` de las 3 clases de error (DD29-1). Ninguna
+línea dentro del cuerpo de `upsertScrapedProduct` (que termina antes de la
+línea 441 del archivo viejo) aparece en un hunk.
+
+### 5.8 — Cierre de conteos vía `psql`
+
+```
+$ docker exec safari-postgres psql -U safari -d safari_scraper -t \
+    -c "SELECT count(*) FROM products;" \
+    -c "SELECT count(*) FROM category_product;" \
+    -c "SELECT count(*) FROM product_tag;" \
+    -c "SELECT count(*) FROM categories;" \
+    -c "SELECT count(*) FROM tags;" \
+    -c "SELECT count(*) FROM shops;" \
+    -c "SELECT count(*) FROM users;"
+  1200
+     0
+     0
+   198
+    10
+    12
+     3
+```
+
+Idéntico al baseline medido antes de arrancar Phase 5. Además de los
+productos/categoría centinela (todos borrados por HTTP real, ver 5.1-5.5),
+esta corrida creó y borró por `psql` directo: la tienda ajena centinela
+(`id 16`, `DELETE FROM shops WHERE id=16`) y el usuario `staff` aislado
+(`id 354`, `DELETE FROM permission_user ...` + `DELETE FROM users WHERE
+id=354`) — ambos confirmados fuera de la base en el conteo final (`shops` =
+12, `users` = 3, idénticos al arranque).
+
+### 5.9 — Smoke-test en el navegador: **PENDIENTE (orquestador)**
+
+Este batch de `sdd-apply` no tiene acceso a una herramienta de navegador —
+no hay ningún MCP ni tool de automatización de UI disponible en este
+entorno de ejecución. **No se fabricó evidencia.** Se deja explícitamente
+pendiente para que el orquestador (u otro batch con acceso a un navegador)
+verifique: tras un `PUT /api/products/:id` real desde el formulario del
+admin, `apps/admin/rest` redirige a `/products/{slug}/edit` y los campos
+editados aparecen guardados. La API real que el admin consumiría ya está
+verificada end-to-end por HTTP en 5.1 (`PUT` con `name`/`price` nuevos,
+`slug` invariante, `GET` posterior refleja los cambios) — lo único que
+falta cerrar es el **routing del frontend tras la mutación**, que es
+puramente de UI y no cambia el contrato ya probado.
+
+### Cierre de identidades y filas de prueba (Phase 5)
+
+Todo lo creado en este batch fuera de la API (vía `psql` directo, porque no
+había ruta HTTP en el alcance de esta US para crearlo) se borró antes de
+cerrar:
+
+| Fila centinela | Creada para | Borrada con |
+|---|---|---|
+| `shops.id=16` (`zz-products-foreign-shop`, `owner_id=2`) | Tener un `shop_id` genuinamente ajeno al `store_owner` de prueba (CA-5) | `DELETE FROM shops WHERE id=16` |
+| `users.id=354` (`zz-staff-sentinel@demo.com`) | Un token `staff` real sin colisión de `sub` con ningún `owner_id` (CA-5) | `DELETE FROM permission_user ...` + `DELETE FROM users WHERE id=354` |
+
+### Verificación de aislamiento del proceso API
+
+`just api-dev` corrió sobre el puerto 9001 durante todo Phase 5 (reiniciado
+una vez, a mitad de la secuencia 5.1, para probar la persistencia real tras
+reinicio). Detenido (`taskkill`) al cierre de este batch — `netstat` final
+confirma que no queda ningún `LISTENING` en 9001/3003/3002.
+
+### Workload / PR Boundary (Phase 5)
+
+- Mode: evidencia de cierre de DoD, no una PR de código — no cuenta contra
+  el presupuesto de revisión de 400 líneas (cero líneas de `apps/api/rest/src`
+  ni `packages/db/src` tocadas).
+- Current work unit: **Phase 5 — cierre completo de la Definición de Done**
+  (tasks 5.1-5.10).
+- Boundary: empieza sobre PR#4 + su fix ya aplicados (204/204 `npx jest`
+  verde, `just build-api` limpio). Cierra con las 10 tareas de Phase 5
+  evidenciadas — 9 con evidencia real pegada, 1 (`5.9`, smoke de navegador)
+  declarada `PENDIENTE (orquestador)` sin fabricar evidencia.
+- Estimated review budget impact: 0 líneas de código (solo
+  `docs/product/26-escrituras-catalogo-postgres/{README,29-...}.md`,
+  `tasks.md` y este documento).
 
 ## GATE RESUELTO — PR#4 descubrió un defecto genuino en `products.service.ts` (PR#3); autorizado y corregido en un commit separado
 
@@ -1167,36 +1617,57 @@ delegados al `DEFAULT now()` de Postgres.
 
 ## Remaining Tasks (fuera de este batch)
 
-- [ ] 5.1–5.10 — Cierre de la DoD (evidencia, todo PR). Desbloqueado: el
-      hallazgo de `manufacturer_id: null` (§ GATE RESUELTO) ya está
-      corregido y verificado en verde; Phase 5 puede arrancar en un batch
-      separado.
+- [ ] 5.9 — Smoke-test en el navegador. **PENDIENTE (orquestador)**: este
+      batch de `sdd-apply` no dispone de una herramienta de navegador; no
+      se fabricó evidencia. El resto de Phase 5 (5.1-5.8, 5.10) está
+      cerrado con evidencia real — ver § Phase 5 arriba.
 
 ## Status
 
-29/33 tasks complete (Phase 1 + Phase 2 + Phase 3 + Phase 4 completas,
-**incluido el fix autorizado del defecto de `manufacturer_id: null`**
-descubierto por PR#4 en código de PR#3 — ver § GATE RESUELTO). `just
-db-check` verde de forma reproducible tanto al cierre de PR#1 (171/171, 3
-corridas) como al cierre de PR#2 (186/186, 3 corridas); PR#3 cierra con
-`just build-api` limpio, `npx jest` sin regresión (173/173), secuencia HTTP
-real completa con token `store_owner` (login real, sin fabricar), diff de
-20 claves confirmado y `just verify` verde (API+shop+admin), evidencia real
-pegada en sus respectivas secciones. PR#4 añade 387 líneas de tests nuevos a
-`products.service.spec.ts` (dentro del forecast ~650); su primera corrida
-(`npx jest`, 203/204 en verde, 1 en rojo) probó, con evidencia real, que
-`manufacturer_id: null` explícito se convertía en `Number(null) === 0` en
-`create()`/`update()` de `products.service.ts` en vez de preservarse como
-`null` (`R29-7`). El test NO se debilitó ni se borró — se detuvo el batch y
-se reportó el hallazgo; el coordinador lo verificó de forma independiente,
-falló explícitamente que está DENTRO del alcance de US-29 (la partición
-PR#3/PR#4 es una convención de tamaño de revisión, no una frontera de
-contrato) y autorizó el fix. Aplicado en un commit separado
-("US-29, PR#3 fix"), 16/-2 líneas en `products.service.ts`, cero cambios en
-`packages/db` (la capa de datos ya aceptaba `null` sin modificarse).
-Re-verificado: `npx jest` **204/204 en verde real**, `just build-api`
-limpio. **US-29 sigue siendo releasable desde PR#3** (Phase 3 es el corte
-"releasable aquí" del roll-up de `tasks.md`); el fix cierra además el único
-caso de borde pendiente. Ready for Phase 5 (cierre de la DoD, evidencia
-completa) en un batch separado, o para que el orquestador decida el
-siguiente paso.
+39/40 tasks complete (Phase 1 + Phase 2 + Phase 3 + Phase 4 + Phase 5
+completas salvo 5.9, **incluido el fix autorizado del defecto de
+`manufacturer_id: null`** descubierto por PR#4 en código de PR#3 — ver §
+GATE RESUELTO). `just db-check` verde de forma reproducible tanto al cierre
+de PR#1 (171/171, 3 corridas) como al cierre de PR#2 (186/186, 3 corridas);
+PR#3 cierra con `just build-api` limpio, `npx jest` sin regresión (173/173),
+secuencia HTTP real completa con token `store_owner` (login real, sin
+fabricar), diff de 20 claves confirmado y `just verify` verde
+(API+shop+admin), evidencia real pegada en sus respectivas secciones. PR#4
+añade 387 líneas de tests nuevos a `products.service.spec.ts` (dentro del
+forecast ~650); su primera corrida (`npx jest`, 203/204 en verde, 1 en rojo)
+probó, con evidencia real, que `manufacturer_id: null` explícito se
+convertía en `Number(null) === 0` en `create()`/`update()` de
+`products.service.ts` en vez de preservarse como `null` (`R29-7`). El test
+NO se debilitó ni se borró — se detuvo el batch y se reportó el hallazgo;
+el coordinador lo verificó de forma independiente, falló explícitamente que
+está DENTRO del alcance de US-29 (la partición PR#3/PR#4 es una convención
+de tamaño de revisión, no una frontera de contrato) y autorizó el fix.
+Aplicado en un commit separado ("US-29, PR#3 fix"), 16/-2 líneas en
+`products.service.ts`, cero cambios en `packages/db` (la capa de datos ya
+aceptaba `null` sin modificarse). Re-verificado: `npx jest` **204/204 en
+verde real**, `just build-api` limpio.
+
+**Phase 5 (cierre de la DoD) completa salvo 5.9.** Las 9 tareas restantes
+(5.1-5.8, 5.10) tienen evidencia real pegada: la secuencia completa
+`POST/GET/reinicio/GET-por-categoría/PUT/GET/DELETE/GET-404` con token
+`store_owner` real y diff de 20 claves contra el seed (5.1); los 14 casos
+de `CA-4`, ninguno 500 (5.2); la matriz de 5 roles de `CA-5` sobre HTTP real,
+incluida la tienda ajena centinela y el usuario `staff` aislado creados y
+borrados por `psql` directo (5.3); un producto `variable` creado y leído
+como los 58 del seed (5.4); el cierre de Herencia 1 de US-28 — el escenario
+`UNTESTED` de `category-tree-api` (`category_product` → 0 tras borrar la
+categoría centinela) — con evidencia `psql` real (5.5); la tabla de
+cobertura de las 5 guardas de Herencia 2 (5.6); `grep`/`git diff --stat`
+confirmando cero mock huérfano y cero cambios en los 8 caminos protegidos,
+incluido el cuerpo de `upsertScrapedProduct` (5.7); el cierre de conteos
+`psql` idéntico al baseline (5.8); y el Status de la US + la fila del épico
+actualizados (5.10). La única tarea NO cerrada es **5.9** (smoke visual del
+admin tras un `PUT`): declarada explícitamente `PENDIENTE (orquestador)` sin
+fabricar evidencia, porque este batch no tiene acceso a un navegador.
+Todos los conteos de Postgres (`products`=1200, `category_product`=0,
+`product_tag`=0, `categories`=198, `tags`=10, `shops`=12, `users`=3) quedaron
+restituidos al baseline medido antes de Phase 5. **US-29 sigue siendo
+releasable desde PR#3** (Phase 3 es el corte "releasable aquí" del roll-up
+de `tasks.md`); Phase 5 cierra la evidencia formal de la DoD. Ready for
+`sdd-verify`/`sdd-archive`, con la única salvedad de 5.9 a resolver por el
+orquestador.

@@ -7,10 +7,17 @@
 
 **Épico:** [Épico 26](./README.md)
 **Fecha:** 2026-09-09
-**Status:** Listo para ejecución
+**Status:** Implementada (2026-09-11) — PR#1 `packages/db` camino feliz, PR#2
+`packages/db` batería hostil, PR#3 `apps/api/rest` (servicio/controller/DTO,
+releasable aquí) + su fix autorizado de `manufacturer_id: null`, PR#4
+`products.service.spec.ts`; evidencia completa de la Definición de Done en
+`openspec/changes/escrituras-productos-postgres/apply-progress.md` (§ Phase 5).
+Pendiente de orquestador: 5.9 (smoke visual del admin en navegador).
 **Depende de:** US-27a
 **LOC est.:** ~2100 (original ~550, recalibrado por el sesgo medido del épico —
 desglose por componente y aritmética en [«Sesgo de estimación medido»](./README.md))
+· **LOC real:** ~1808 (código, `git diff --stat` de 4 PRs encadenados sobre
+`apps/api/rest` + `packages/db`, sin contar los artefactos de `openspec/`)
 
 ## Historia
 **Como** dueño de tienda, **quiero** que crear o editar un producto en el
@@ -165,23 +172,34 @@ Feature: Escrituras de productos
 
 ## Definición de Done
 
-- [ ] Secuencia `POST → GET por slug → reinicio → GET por categoría → PUT →
+- [x] Secuencia `POST → GET por slug → reinicio → GET por categoría → PUT →
       GET → DELETE → GET 404` pegada con token `store_owner` sobre su
       tienda; key-set de 20 claves comparado contra un producto del seed.
-- [ ] `psql` pegado: filas de `category_product`/`product_tag` del producto
-      creado, y su ausencia tras el `DELETE`.
-- [ ] `curl` de CA-4 pegado: 400 rebaja, 400 simple sin precio, 400 FK
-      inexistente, 404 id inexistente.
-- [ ] `curl` de CA-5 pegado: 403 dueño ajeno, 200 dueño propio, 200
-      `super_admin`, 403 `staff`, 401 sin token.
-- [ ] `curl` de CA-6 pegado: `variable` creado y leído; divergencia
-      declarada.
-- [ ] `grep -n "@db/\|plainToClass" products.service.ts` → 0 líneas.
-- [ ] `just db-check`, `npx jest`, `just build-api`, `just verify` verdes,
-      con recuentos; conteo de `products` = 1200 tras los tests.
-- [ ] Nota en el reporte sobre R-6 (primeros enlaces reales en
-      `category_product`).
-- [ ] Status de esta US actualizado y fila del épico marcada.
+      Evidencia real en `apply-progress.md` § 5.1 (task 5.1).
+- [x] `psql` pegado: filas de `category_product`/`product_tag` del producto
+      creado, y su ausencia tras el `DELETE`. Extendido a Herencia 1 de
+      US-28 (borrado de la **categoría**, no solo del producto): § 5.5.
+- [x] `curl` de CA-4 pegado: 400 rebaja, 400 simple sin precio, 400 FK
+      inexistente, 404 id inexistente. Cobertura completa (14 casos, ninguno
+      500) en § 5.2.
+- [x] `curl` de CA-5 pegado: 403 dueño ajeno, 200 dueño propio, 200
+      `super_admin`, 403 `staff`, 401 sin token. Incluye el `PUT` que mueve
+      `shop_id` a tienda ajena. § 5.3.
+- [x] `curl` de CA-6 pegado: `variable` creado y leído; divergencia
+      declarada. § 5.4.
+- [x] `grep -n "@db/\|plainToClass" products.service.ts` → 0 líneas. § 5.7.
+- [x] `just db-check`, `npx jest`, `just build-api`, `just verify` verdes,
+      con recuentos; conteo de `products` = 1200 tras los tests. § 5.8 y las
+      evidencias de PR#1-4.
+- [x] Nota en el reporte sobre R-6 (primeros enlaces reales en
+      `category_product`): declarada en `design.md` (Riesgos) y re-observada
+      en § 5.5 (Herencia 1) — los primeros enlaces reales de esta tabla los
+      escribió esta US, no una regresión.
+- [x] Status de esta US actualizado y fila del épico marcada.
+- [ ] Smoke-test en el navegador (tras `PUT`, el admin aterriza en
+      `/products/{slug}/edit` con los valores guardados): **PENDIENTE
+      (orquestador)** — este batch de `sdd-apply` no tiene acceso a un
+      navegador; ver § 5.9 de `apply-progress.md`.
 
 ## Notas para el agente ejecutor
 

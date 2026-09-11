@@ -110,16 +110,16 @@ una US-29b**.
 
 ## Phase 5: Cierre de la DoD (evidencia, todo PR)
 
-- [ ] 5.1 CA-1/CA-2/CA-3: secuencia completa `POST → GET → reinicio → GET por categoría → PUT → GET → DELETE → GET 404` con token `store_owner`, pegada con status+body; key-set de 20 claves diffeado contra un producto del seed.
-- [ ] 5.2 CA-4: `curl` pegados, ninguno 500 — 400 rebaja inválida, 400 `simple` sin `price`, 400 `product_type` fuera de `IN`, 400 `status` fuera de `IN`, 400 FK/pivote inexistente (×5), 400 id no entero en las 3 FK, 404 id inexistente en `PUT`/`DELETE`.
-- [ ] 5.3 CA-5: `curl` pegados — 403 dueño ajeno (3 rutas), 403 `PUT` que mueve `shop_id` a tienda ajena, 200 dueño propio, 200 `super_admin`, 403 `staff`, 401 sin token.
-- [ ] 5.4 CA-6: `curl` pegado — `variable` con `price` ausente y `min/max` presentes, creado y leído como los 58 del seed; `variations`/`variation_options` descartados y declarados en el reporte.
-- [ ] 5.5 Herencia 1 (US-28): `psql` (`just db-shell`) — crear categoría **centinela** (nunca del seed) → `POST /products` enlazándola → `DELETE /categories/:id` → `SELECT count(*) FROM category_product WHERE category_id = :id` → **0**. Cierre: borrar producto y categoría centinela, `count(*) FROM categories` = 198. El escenario `UNTESTED` de `category-tree-api` pasa a `COMPLIANT`.
-- [ ] 5.6 Herencia 2 (US-28): tabla de cobertura de las 5 guardas (1 heredada-adaptada / 3 nuevas / 1 por construcción, sin guarda de runtime) pegada en el reporte, y el escenario añadido a `catalog-write-foundations`.
-- [ ] 5.7 `grep -n "@db/\|plainToClass" apps/api/rest/src/products/products.service.ts` → 0 líneas; `git diff --stat` sin cambios en `slug.ts`, `domain-errors.ts`, `common/errors/`, `db/schema.sql`, `apps/shop`, `apps/admin`, ni en el cuerpo de `upsertScrapedProduct`.
-- [ ] 5.8 Cierre de conteos vía `psql`: `SELECT count(*) FROM products` = **1200**; `category_product`/`product_tag` de vuelta al conteo medido **antes** de empezar (no asumido en 0).
-- [ ] 5.9 Smoke-test en el navegador declarado (sin tocar el frontend): tras el `PUT`, el admin aterriza en `/products/{slug}/edit` con los valores guardados.
-- [ ] 5.10 Actualizar el Status de US-29 (`docs/product/26-escrituras-catalogo-postgres/29-escrituras-productos-postgres.md`) y marcar su fila en el README del épico.
+- [x] 5.1 CA-1/CA-2/CA-3: secuencia completa `POST → GET → reinicio → GET por categoría → PUT → GET → DELETE → GET 404` con token `store_owner`, pegada con status+body; key-set de 20 claves diffeado contra un producto del seed.
+- [x] 5.2 CA-4: `curl` pegados, ninguno 500 — 400 rebaja inválida, 400 `simple` sin `price`, 400 `product_type` fuera de `IN`, 400 `status` fuera de `IN`, 400 FK/pivote inexistente (×5), 400 id no entero en las 3 FK, 404 id inexistente en `PUT`/`DELETE`.
+- [x] 5.3 CA-5: `curl` pegados — 403 dueño ajeno (3 rutas), 403 `PUT` que mueve `shop_id` a tienda ajena, 200 dueño propio, 200 `super_admin`, 403 `staff`, 401 sin token.
+- [x] 5.4 CA-6: `curl` pegado — `variable` con `price` ausente y `min/max` presentes, creado y leído como los 58 del seed; `variations`/`variation_options` descartados y declarados en el reporte.
+- [x] 5.5 Herencia 1 (US-28): `psql` (`just db-shell`) — crear categoría **centinela** (nunca del seed) → `POST /products` enlazándola → `DELETE /categories/:id` → `SELECT count(*) FROM category_product WHERE category_id = :id` → **0**. Cierre: borrar producto y categoría centinela, `count(*) FROM categories` = 198. El escenario `UNTESTED` de `category-tree-api` pasa a `COMPLIANT` (edición del spec en sí diferida a `sdd-archive`).
+- [x] 5.6 Herencia 2 (US-28): tabla de cobertura de las 5 guardas (1 heredada-adaptada / 3 nuevas / 1 por construcción, sin guarda de runtime) pegada en el reporte (edición del spec en sí diferida a `sdd-archive`).
+- [x] 5.7 `grep -n "@db/\|plainToClass" apps/api/rest/src/products/products.service.ts` → 0 líneas; `git diff --stat` sin cambios en `slug.ts`, `domain-errors.ts`, `common/errors/`, `db/schema.sql`, `apps/shop`, `apps/admin`, ni en el cuerpo de `upsertScrapedProduct`.
+- [x] 5.8 Cierre de conteos vía `psql`: `SELECT count(*) FROM products` = **1200**; `category_product`/`product_tag` de vuelta al conteo medido **antes** de empezar (no asumido en 0).
+- [ ] 5.9 Smoke-test en el navegador declarado (sin tocar el frontend): tras el `PUT`, el admin aterriza en `/products/{slug}/edit` con los valores guardados. **PENDIENTE (orquestador)** — este batch de `sdd-apply` no dispone de un navegador para conducir la verificación; no se fabricó evidencia.
+- [x] 5.10 Actualizar el Status de US-29 (`docs/product/26-escrituras-catalogo-postgres/29-escrituras-productos-postgres.md`) y marcar su fila en el README del épico.
 
 ## Review Workload Forecast
 
