@@ -360,6 +360,66 @@ describe('updateCategory — CA-2, slug inmutable, updatedAt por trigger de base
     await deleteCategory(b.id);
   });
 
+  // Las dos siguientes cierran W-2 del gate adversarial post-PR#3: ningún
+  // `it` anterior de este describe renombra una HIJA (todos renombran
+  // raíces) ni pasa `parentId: null` explícito, así que la mutación
+  // `...(input.parentId !== undefined && { parentId: input.parentId })` →
+  // `parentId: input.parentId ?? null` sobrevivía a las 162 pruebas: bajo
+  // esa mutación, CUALQUIER `PUT` sin `parent` en el body (`input.parentId
+  // === undefined`) re-enraizaría en silencio a la categoría a la raíz,
+  // porque `undefined ?? null` es `null`. El comportamiento embarcado
+  // siempre fue correcto (confirmado en vivo por el gate); lo que faltaba
+  // era la red de regresión.
+  it('renombrar una HIJA sin enviar `parent` conserva su `parentId` intacto (W-2 — sin este test, `parentId: input.parentId ?? null` pasa el gate en verde)', async () => {
+    const parent = await createCategory({
+      name: `${SENTINEL_PREFIX}Madre W2`,
+      slug: `${SENTINEL_PREFIX}madre-w2`,
+      typeId: TYPE_A,
+    });
+    const child = await createCategory({
+      name: `${SENTINEL_PREFIX}Hija W2`,
+      slug: `${SENTINEL_PREFIX}hija-w2`,
+      typeId: TYPE_A,
+      parentId: parent.id,
+    });
+
+    // Sin `parent` en el input — `input.parentId` es `undefined`, nunca
+    // `null`. Bajo la mutación de W-2, `undefined ?? null` colapsa a
+    // `null` y este `expect` iría a `null`, no a `parent.id`.
+    const renamed = await updateCategory(child.id, {
+      name: `${SENTINEL_PREFIX}Hija W2 Renombrada`,
+    });
+
+    expect(renamed.name).toBe(`${SENTINEL_PREFIX}Hija W2 Renombrada`);
+    expect(renamed.parentId).toBe(parent.id);
+    expect(renamed.parent?.id).toBe(parent.id);
+
+    await deleteCategory(child.id);
+    await deleteCategory(parent.id);
+  });
+
+  it('`updateCategory(id, { parentId: null })` explícito SÍ re-enraíza a una hija (limpia el padre)', async () => {
+    const parent = await createCategory({
+      name: `${SENTINEL_PREFIX}Madre W2b`,
+      slug: `${SENTINEL_PREFIX}madre-w2b`,
+      typeId: TYPE_A,
+    });
+    const child = await createCategory({
+      name: `${SENTINEL_PREFIX}Hija W2b`,
+      slug: `${SENTINEL_PREFIX}hija-w2b`,
+      typeId: TYPE_A,
+      parentId: parent.id,
+    });
+
+    const rerooted = await updateCategory(child.id, { parentId: null });
+
+    expect(rerooted.parentId).toBeNull();
+    expect(rerooted.parent).toBeNull();
+
+    await deleteCategory(child.id);
+    await deleteCategory(parent.id);
+  });
+
   it('id inexistente ⇒ RecordNotFoundError', async () => {
     await expect(
       updateCategory(999999, { name: `${SENTINEL_PREFIX}Fantasma` })
