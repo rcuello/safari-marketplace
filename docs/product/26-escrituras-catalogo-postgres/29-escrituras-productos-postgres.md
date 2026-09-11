@@ -9,7 +9,8 @@
 **Fecha:** 2026-09-09
 **Status:** Listo para ejecución
 **Depende de:** US-27a
-**LOC est.:** ~550
+**LOC est.:** ~2100 (original ~550, recalibrado por el sesgo medido del épico —
+desglose por componente y aritmética en [«Sesgo de estimación medido»](./README.md))
 
 ## Historia
 **Como** dueño de tienda, **quiero** que crear o editar un producto en el
@@ -184,6 +185,40 @@ Feature: Escrituras de productos
 
 ## Notas para el agente ejecutor
 
+- **Herencia 1 de US-28 — el escenario `UNTESTED` de `category_product` es
+  parte de la DoD de esta US.** El gate de cierre de US-28 archivó el
+  escenario «CA-3 — los enlaces de producto desaparecen» marcado
+  **`UNTESTED (verificación diferida a US-29)`**, no `COMPLIANT`, en
+  `openspec/specs/category-tree-api/spec.md`: cero código de US-28 toca
+  `category_product`, el desenlace es el `ON DELETE CASCADE` preexistente, y
+  **no existía ninguna ruta HTTP capaz de poblar esa tabla** porque
+  `products.create`/`update` seguían siendo stubs. Los endpoints de escritura
+  de esta US son lo primero que puede poblarla, así que aquí se cierra:
+  crear un producto con categorías → `DELETE /categories/:id` →
+  `SELECT count(*) FROM category_product WHERE category_id = :id` = 0, con
+  la salida de `psql` pegada. El propio spec lo declara vinculante
+  («US-29 hereda explícitamente la obligación de cerrar este escenario como
+  parte de su propia Definición de Done»). Es el mismo `psql` que ya pide la
+  DoD de CA-3, extendido al borrado de la **categoría**, no solo del
+  producto.
+- **Herencia 2 de US-28 — una violación de CHECK NO está en el conjunto
+  cerrado de 5 códigos, y degrada a 500.** `translateCatalogWriteError`
+  (`packages/db/src/domain-errors.ts`) solo reconoce `P2002`, `P2003` y
+  `P2025`; cualquier otro error **vuelve intacto** y el mapeador HTTP lo deja
+  caer en 500. Una violación de CHECK de Postgres no trae código de Prisma
+  reconocido, así que **toda regla expresada como CHECK en el DDL hay que
+  pre-validarla en código de aplicación antes del write**; el CHECK queda
+  solo como red de integridad de la base, nunca como comportamiento
+  observable de la API. La lección está escrita en
+  `openspec/specs/catalog-write-foundations/spec.md` («Una violación de CHECK
+  no pertenece al conjunto cerrado — lección para `products` (US-29)»). Aquí
+  pesa **triple**: `products` tiene tres CHECK nombradas
+  (`products_rebaja_valida`, `products_simple_con_precio`,
+  `products_procedencia_completa`) más los dos `IN` de `product_type` y
+  `status` (`db/schema.sql:336,360,393-404`). `upsertScrapedProduct` ya
+  pre-valida dos de ellas y `_translateCheckViolation` traduce las que se
+  cuelen: reutilizar ambos, no reinventarlos — pero cubrir también las que el
+  scraper nunca dispara. CA-4 («nunca 500») no se cierra sin esto.
 - **No hacer spread del body a Prisma.** El payload trae
   `variation_options: {upsert: [], delete: [...]}`, `author_id`,
   `digital_file`… (R-5). El `CreateProductInput` se construye campo a campo

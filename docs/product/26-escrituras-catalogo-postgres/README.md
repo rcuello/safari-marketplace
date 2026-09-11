@@ -150,8 +150,8 @@ esquema.
 | [US-27a](./27-escrituras-types-fundaciones.md) | Escrituras de `types` y las piezas compartidas | Sí | ninguna | ~725 (real ~1470) | **Implementada** (2026-09-10) |
 | [US-27b](./27b-escrituras-tags-manufacturers.md) | Escrituras de `tags` y `manufacturers` | Sí | US-27a | ~825 (real ~2109) | **Implementada** (2026-09-10) |
 | [US-28](./28-escrituras-arbol-categorias.md) | Escrituras del árbol de categorías | Sí | US-27a | ~350 (real ~1612, 3 PRs) | **Implementada** (2026-09-11) |
-| [US-29](./29-escrituras-productos-postgres.md) | Escrituras de productos con categorías y tags | Sí | US-27a | ~550 | Listo para ejecución |
-| [US-30](./30-escrituras-moderacion-tiendas.md) | Escrituras y moderación de tiendas | Sí | US-27a | ~400 | Listo para ejecución |
+| [US-29](./29-escrituras-productos-postgres.md) | Escrituras de productos con categorías y tags | Sí | US-27a | ~2100 (original ~550, recalibrado) | Listo para ejecución |
+| [US-30](./30-escrituras-moderacion-tiendas.md) | Escrituras y moderación de tiendas | Sí | US-27a | ~1550 (original ~400, recalibrado) | Listo para ejecución |
 
 **Orden sugerido:** US-27a → (US-27b ∥ US-28 ∥ US-29 ∥ US-30). US-27a
 introduce las dos piezas compartidas (el helper de slug en `packages/db` y la
@@ -164,7 +164,10 @@ rebasea sobre él, igual que US-4b sobre US-4a en el Épico 1.
 El precedente cercano es US-25 (estimada ~420, aterrizó ~965 líneas con
 tests) y US-4a (~590 reales para 4 catálogos de solo lectura). Esperar entre
 +50 % y +100 % sobre lo estimado; si una US supera ~900 líneas reales, es
-señal de partirla, no de apretar.
+señal de partirla, no de apretar. **Esa banda del +50/+100 % quedó
+desmentida por las tres US ya cerradas**: ver «Sesgo de estimación medido»
+más abajo, que es de donde salen las cifras recalibradas de US-29 y US-30 en
+la tabla.
 
 **Partición de US-27 (2026-09-09).** La US-27 original cubría los tres
 catálogos planos con ~500 líneas estimadas. La fase de propuesta del SDD la
@@ -180,6 +183,95 @@ tanto no releasable, rompiendo la columna que las cinco filas mantienen en
 (R-1: el 409 del borrado protegido de `types`) y US-27b hereda unas piezas
 compartidas ya probadas en producción. Efecto secundario deseable: US-27b
 queda como par de US-28/29/30, todas dependiendo solo de US-27a.
+
+### Sesgo de estimación medido (2026-09-11, al cerrar US-28)
+
+Tres US cerradas, tres desbordes. Contra la estimación **original** de cada
+US —la que llevaba en su cabecera antes de ejecutarla, no ningún
+re-anclaje posterior—:
+
+| US | Est. original | Real | Factor |
+|----|---------------|------|--------|
+| US-27a | ~725 | ~1470 | ×2,0 |
+| US-27b | ~825 | ~2109 | ×2,6 |
+| US-28 | ~350 | ~1612 | ×4,6 |
+
+**Ojo con las dos líneas base de US-28.** Su `design.md` re-ancló el
+pronóstico a mitad de vuelo, de ~350 a **~985**, al añadir la séptima regla
+de la arista madre→hija (`openspec/changes/archive/2026-09-10-escrituras-arbol-categorias/design.md`,
+sección «Re-anclaje de la estimación»). El **×1,64** que reporta su
+`archive-report.md` está medido contra ~985, **no** contra la estimación
+original; contra la original el factor es **×4,6**. Toda cifra de esta
+sección se refiere a la estimación original de la US salvo que diga lo
+contrario. (Dos conteos de US-28 conviven en los artefactos: ~1612 líneas
+—`apply-progress.md`, y la fila de la tabla de arriba— y 1684
+—`archive-report.md`, insertions+deletions del `git diff`—. La diferencia no
+mueve nada: ×4,6 vs. ×4,8.)
+
+Mediana del factor: **×2,6**; media: ×3,1. Pero el dato accionable no es el
+factor, sino esto: las tres US **aterrizaron entre ~1470 y ~2109
+independientemente de lo que estimaban** (~350, ~725 y ~825 de partida). El
+coste fijo de una US de este épico —repositorio + tests de integración +
+spec de jest + la batería hostil del gate— domina sobre la diferencia de
+complejidad entre agregados. Anclas medidas hoy sobre el agregado ya
+cerrado más parecido a los que quedan: `categories.repository.ts` 589
+líneas, `categories.integration.test.ts` 683, `categories.service.spec.ts`
+671; y el `archive-report.md` de US-27b dejó escrita la regla de gobierno
+«re-anclar el pronóstico de los specs de jest a ~500 líneas por agregado».
+
+**Regla de recalibración aplicada.** Multiplicar a ciegas por la mediana
+daría ~1430 para US-29 y ~1040 para US-30, y ~1040 cae **por debajo del
+suelo medido del épico** (~1470 — US-27a, el agregado más simple y encima
+cargando las piezas compartidas). Un pronóstico por debajo del suelo es
+imposible por construcción. Así que las dos se re-anclan **por componente**,
+sumando superficie contra los tamaños de archivo reales de arriba, y el
+total se contrasta después con el orden de complejidad del épico.
+
+**US-29 → ~2100** (×3,8 sobre la original ~550):
+
+| Componente | Base hoy | Δ | Motivo |
+|------------|----------|---|--------|
+| `packages/db/src/repositories/products.repository.ts` | 581 | +450 | 3 escrituras; **5 expresiones CHECK** que pre-validar (`products_rebaja_valida`, `products_simple_con_precio`, `products_procedencia_completa` y los dos `IN` de `product_type` y `status`, `db/schema.sql:336,360,393-404`); 3 FK salientes; los dos conjuntos de ids de pivote |
+| `products.integration.test.ts` | 348 | +550 | su homólogo de `categories` cerró en 683 con **una** CHECK y **sin** pivotes |
+| `products.service.ts` + controller + DTO | — | +400 | 3 métodos, proyección de 20 claves (la más ancha del épico) y el estreno de la comprobación de propiedad (D-5) |
+| `products.service.spec.ts` | 628 | +650 | ancla de ~500/agregado de US-27b, más los 5 casos de rol de CA-5 |
+| barrel + consulta de propiedad en `shops.repository.ts` | — | +50 | |
+| **Total** | | **~2100** | |
+
+Se sitúa en el **techo** medido del épico, no en la mediana, porque US-29 es
+el agregado más complejo que queda: el único con pivotes, el único con 3
+CHECK nombradas, el único con 3 FK salientes, el de la proyección más ancha
+(20 claves frente a 16 de `categories` y 9 de `types`) y el que estrena la
+propiedad por tienda. El arte previo (`upsertScrapedProduct`,
+`products.repository.ts`) recorta **diseño**, no volumen: su input es el del
+scraper (`source_*`), no el del admin, y su unique parcial
+`products_procedencia_key` **invalida** el remedio S-1 de US-27a (ver
+`docs/product/README.md`, «Dos herencias que NO se copian a ciegas»).
+
+**US-30 → ~1550** (×3,9 sobre la original ~400):
+
+| Componente | Base hoy | Δ | Motivo |
+|------------|----------|---|--------|
+| `packages/db/src/repositories/shops.repository.ts` | 186 | +280 | 3 escrituras; **`shops` no tiene ninguna CHECK** (verificado en `db/schema.sql:231-244`); `address`/`settings` son jsonb que pasan tal cual |
+| `shops.integration.test.ts` | 96 | +380 | es el más pequeño del paquete; hay que montarle el centinela sin romper `toBe(12)` ni `items[0].id === 15` |
+| `shops.service.ts` + controller + DTO | — | +350 | 4 rutas migradas (`create`/`update`/`approve-shop`/`disapprove-shop`) más `getStaffs` desmockeado: más superficie de ruta que ninguna otra US del épico |
+| `shops.service.spec.ts` | 143 | +500 | ancla de ~500/agregado; hoy es el spec más pequeño de la API |
+| barrel | — | +40 | |
+| **Total** | | **~1550** | |
+
+Queda **por debajo de US-29 y justo por debajo de US-28** (~1612): sin
+CHECKs ni pivotes, su forma es la de los agregados ya cerrados. Pero no baja
+al suelo del épico porque arranca desde las dos bases más pequeñas que
+quedan (spec de 143 líneas, test de integración de 96) y porque migra más
+rutas que ninguna otra.
+
+**Consecuencia operativa.** Los dos pronósticos revientan el umbral de ~900
+líneas del párrafo «Sobre las estimaciones», y ahora lo hacen **en
+planificación**, no al cerrar. Las dos US deben arrancar con una cadena de
+PRs por capa (capa de datos → API → spec de jest), como hizo US-28, y el
+corte natural si desbordan es levantar el spec de jest a una US-29b /
+US-30b — exactamente el *caveat* que el `design.md` de US-28 dejó
+vinculante.
 
 **Rutas que este épico migra:** 19 — `POST/PUT/DELETE` de `products`,
 `categories`, `tags`, `types` y `manufacturers` (15), `POST/PUT /shops`
@@ -269,13 +361,17 @@ stubs declarados:** `DELETE /shops/:id`, `POST /shops/approve`,
   API lo reenvía crudo y así `per_page` es string (contrato de facto).
   `buildPaginator` no coerciona. Solo muerde si una US añade un listado;
   decisión 12.
-- **R-8 (medio):** desborde de estimación (US-25: 420 → ~965). **Ya se
-  materializó**: la US-27 original se pronosticó en ~1500 frente a ~500
-  estimadas y se partió en US-27a/US-27b (ver "Partición de US-27" arriba).
-  Cinco US con tests reales suman ~2850 estimadas y pueden pasar de 4000.
-  Mitigación: US independientes y releasables; ninguna bloquea a otra salvo
-  US-27a. Aplicar el umbral de ~900 al pronóstico de cada `sdd-propose`, no
-  solo a las líneas reales al cerrar.
+- **R-8 (alto, ya materializado tres veces):** desborde de estimación
+  (US-25: 420 → ~965). La US-27 original se pronosticó en ~1500 frente a
+  ~500 estimadas y se partió en US-27a/US-27b (ver "Partición de US-27"
+  arriba); después US-27a, US-27b y US-28 desbordaron ×2,0, ×2,6 y ×4,6
+  sobre su estimación original. Las cinco US, con US-29 y US-30 ya
+  recalibradas, suman ~8850 líneas frente a las ~2850 estimadas de origen.
+  Mitigación: US independientes y releasables (ninguna bloquea a otra salvo
+  US-27a) y la sección **"Sesgo de estimación medido"**, que es de lectura
+  obligatoria antes de pronosticar US-29 o US-30. Aplicar el umbral de ~900
+  al pronóstico de cada `sdd-propose`, no solo a las líneas reales al
+  cerrar.
 - **R-9 (bajo):** `getCategoryTree` (US-4b) fue verificado con la
   profundidad real del seed (3 niveles). Un admin puede crear un cuarto
   nivel. US-28 debe probarlo o acotar la profundidad con un 400 declarado.

@@ -10,7 +10,8 @@
 **Fecha:** 2026-09-09
 **Status:** Listo para ejecución
 **Depende de:** US-27a
-**LOC est.:** ~400
+**LOC est.:** ~1550 (original ~400, recalibrado por el sesgo medido del épico —
+desglose por componente y aritmética en [«Sesgo de estimación medido»](./README.md))
 
 ## Historia
 **Como** administrador, **quiero** que aprobar o desactivar una tienda desde
