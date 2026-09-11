@@ -84,19 +84,25 @@ export {
   updateManufacturer,
 } from './src/repositories/manufacturers.repository';
 export type {
+  CreateProductInput,
   ListProductsInput,
   ProductDetail,
   ProductRecord,
+  UpdateProductInput,
   UpsertScrapedProductInput,
 } from './src/repositories/products.repository';
 export {
+  createProduct,
   DEFAULT_PAGE_SIZE,
+  deleteProduct,
   deleteScrapedProduct,
   findProductBySlug,
+  findProductShopId,
   IncompleteProvenanceError,
   InvalidSalePriceError,
   listProducts,
   MissingPriceError,
+  updateProduct,
   upsertScrapedProduct,
 } from './src/repositories/products.repository';
 export { getSettings } from './src/repositories/settings.repository';
@@ -107,6 +113,7 @@ export type {
 export {
   findOrCreateShopBySlug,
   findShopBySlug,
+  findShopOwnerById,
   listShops,
   listShopsNear,
 } from './src/repositories/shops.repository';

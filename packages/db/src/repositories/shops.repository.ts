@@ -6,7 +6,7 @@
 
 import type { Prisma } from '../../generated/prisma/client/client';
 import { prisma } from '../client';
-import { _toShopRecord, type ShopRecord } from '../records';
+import { _id, _toShopRecord, type ShopRecord } from '../records';
 
 export interface ListShopsInput {
   /** Solo tiendas activas por defecto. */
@@ -161,6 +161,20 @@ export async function listShopsNear(
 
   withDistance.sort((a, b) => a.distanceKm - b.distanceKm || a.id - b.id);
   return withDistance;
+}
+
+/**
+ * `ownerId` de una tienda por id, para la propiedad por tienda de
+ * `products` (D29-1, US-29). `null` si no existe **o** si `id` no es
+ * entero seguro positivo (DD29-3, nivel A'): sin esta guarda,
+ * `{"shop_id":"abc"}` → `Number('abc')` → `NaN` → `BigInt(NaN)` en el
+ * `findUnique` lanzaría un `RangeError` sin `.code`, invisible para los
+ * traductores → 500. NUNCA lanza.
+ */
+export async function findShopOwnerById(id: number): Promise<number | null> {
+  if (!Number.isSafeInteger(id) || id <= 0) return null;
+  const row = await prisma.shop.findUnique({ where: { id }, select: { ownerId: true } });
+  return row ? _id(row.ownerId) : null;
 }
 
 /**

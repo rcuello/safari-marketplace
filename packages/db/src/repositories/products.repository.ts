@@ -19,7 +19,13 @@
 import type { Prisma } from '../../generated/prisma/client/client';
 import { prisma } from '../client';
 import { now } from '../clock';
-import { InvalidReferenceError } from '../domain-errors';
+import {
+  CATALOG_ERROR_CODES,
+  CatalogWriteError,
+  InvalidReferenceError,
+  RecordNotFoundError,
+  translateCatalogWriteError,
+} from '../domain-errors';
 import {
   _dec,
   _id,
@@ -34,6 +40,7 @@ import {
   type TagRecord,
   type TypeRecord,
 } from '../records';
+import { type ExistingSlugLookup, generateSlug, normalizeSlug } from '../slug';
 
 // ---------------------------------------------------------------------------
 // Include compartido — todo listado/detalle carga las mismas relaciones,
@@ -440,34 +447,513 @@ export async function deleteScrapedProduct(
 }
 
 // ---------------------------------------------------------------------------
+// Escritura (admin) — CA-1, CA-2, CA-3 de `product-write-api` (US-29). Único
+// agregado del catálogo con pivotes propios (`category_product`/`product_tag`)
+// y con propiedad por tienda (la propiedad se valida en el servicio de Nest,
+// D29-1 — este repositorio no conoce "usuario actual").
+// ---------------------------------------------------------------------------
+
+/**
+ * Call site de `ExistingSlugLookup` (mismo patrón que `categorySlugs` en
+ * `categories.repository.ts`): el nombre de tabla nunca llega a `slug.ts`.
+ */
+const productSlugs: ExistingSlugLookup = async (prefix) =>
+  (
+    await prisma.product.findMany({
+      where: { slug: { startsWith: prefix } },
+      select: { slug: true },
+    })
+  ).map((r) => r.slug);
+
+/** `[...new Set(ids)]` — evita el `P2002` espurio de un pivote con ids repetidos (DD29-6). */
+function uniq<T>(values: T[]): T[] {
+  return [...new Set(values)];
+}
+
+/**
+ * B1 (DD29-3). Forma entera de las 3 FK salientes (`type_id`, `shop_id`,
+ * `manufacturer_id`) y de cada id de `categoryIds[]`/`tagIds[]`.
+ * `Number.isSafeInteger` (no `isInteger`): un valor como `1e21` es entero
+ * pero excede el rango de un `bigint` de Postgres y el driver lanza sin
+ * `.code` reconocible — 500 en vez de 400 (precedente
+ * `categories.repository.ts:305-317`). Reescrita local a propósito (`CA-7`
+ * prohíbe una pieza compartida nueva): la de `categories` es
+ * module-private y hardcodea su agregado. Sin `<= 0`: un id no positivo es
+ * representable como `bigint` y ya resuelve en 400 vía `P2003`/la sonda de
+ * existencia (mismo rationale que `categories.repository.ts:319-326`).
+ */
+function _assertIntegerRef(value: number | null | undefined, field: string): void {
+  if (value != null && !Number.isSafeInteger(value)) {
+    throw new InvalidReferenceError('products', field, value);
+  }
+}
+
+/**
+ * B2 (DD29-3). `price`/`salePrice`/`minPrice`/`maxPrice`: forma finita y
+ * dentro del rango de `numeric(12,2)` (`|v| >= 1e10` → 400). Sin la mitad
+ * del rango, `{"price": 1e300}` produce un `numeric field overflow` de
+ * Postgres sin `.code` → 500 — misma familia de defecto que
+ * `Number.isSafeInteger` cierra para los ids. Re-expresa el CRITERIO de
+ * `parseFiniteNumber` (`products.service.ts`); esa función NO se reutiliza
+ * ni se ensancha (su contrato es descartar en silencio para el query-string,
+ * lo opuesto del 400 que hace falta aquí).
+ */
+function _assertFiniteNumber(value: number | null | undefined, field: string): void {
+  if (value == null) return;
+  if (!Number.isFinite(value) || Math.abs(value) >= 1e10) {
+    throw new InvalidReferenceError('products', `${field} (no es un número finito)`, value);
+  }
+}
+
+/** B3 (DD29-3). `quantity`: forma entera. */
+function _assertIntegerCount(value: number | undefined, field: string): void {
+  if (value === undefined) return;
+  if (!Number.isInteger(value)) {
+    throw new InvalidReferenceError('products', `${field} (no es un entero)`, value);
+  }
+}
+
+const PRODUCT_TYPES = ['simple', 'variable'];
+const PRODUCT_STATUSES = ['publish', 'draft'];
+
+/**
+ * `product_type IN ('simple','variable')` (DD29-2/DD29-8): el conjunto
+ * cerrado de 5 códigos no nombra "valor fuera de un IN", así que se
+ * generaliza `InvalidReferenceError` a "argumento inválido" — precedente
+ * literal `DD28-3` en `categories`. `undefined` (campo ausente, el
+ * `DEFAULT 'simple'` de la columna aplica) no se valida: el default siempre
+ * es válido.
+ */
+function _assertProductType(value: string | undefined): void {
+  if (value !== undefined && !PRODUCT_TYPES.includes(value)) {
+    throw new InvalidReferenceError(
+      'products',
+      `product_type (fuera de IN ('simple','variable'))`,
+      value
+    );
+  }
+}
+
+/** `status IN ('publish','draft')` (DD29-2). Mismo criterio que `_assertProductType`. */
+function _assertStatus(value: string | undefined): void {
+  if (value !== undefined && !PRODUCT_STATUSES.includes(value)) {
+    throw new InvalidReferenceError(
+      'products',
+      `status (fuera de IN ('publish','draft'))`,
+      value
+    );
+  }
+}
+
+/**
+ * `products_rebaja_valida` heredada y ADAPTADA (DD29-9): el `disyunto
+ * price != null` es obligatorio porque, a diferencia de
+ * `upsertScrapedProduct` (donde `price: number` es obligatorio), aquí un
+ * `variable` legítimamente tiene `price === null` y `salePrice >= null`
+ * coerciona a `salePrice >= 0`, dando un 400 espurio. `products_simple_con_precio`
+ * es nueva: un `simple` sin `price` es inválido.
+ */
+function _assertPriceRules(
+  productType: string,
+  price: number | null,
+  salePrice: number | null
+): void {
+  if (salePrice != null && price != null && salePrice >= price) {
+    throw new InvalidSalePriceError(salePrice, price);
+  }
+  if (productType === 'simple' && price === null) {
+    throw new MissingPriceError();
+  }
+}
+
+/**
+ * Sonda de existencia de los ids de pivote, NORMATIVA (DD29-6): no se deja
+ * al `P2003` de un `create` anidado porque no está verificado que Prisma 7 +
+ * `adapter-pg` lo emita para la fila pivote — si no lo hiciera, el 400 que
+ * `spec/product-write-api/spec.md` exige para `categories: [999999]` se
+ * incumpliría con un 500 descubierto en producción. Una consulta `count` por
+ * tabla, no una por id.
+ */
+async function _assertPivotIdsExist(
+  categoryIds?: number[],
+  tagIds?: number[]
+): Promise<void> {
+  if (categoryIds !== undefined) {
+    const ids = uniq(categoryIds);
+    const found = await prisma.category.count({ where: { id: { in: ids } } });
+    if (found !== ids.length) {
+      throw new InvalidReferenceError('products', 'categories[]');
+    }
+  }
+  if (tagIds !== undefined) {
+    const ids = uniq(tagIds);
+    const found = await prisma.tag.count({ where: { id: { in: ids } } });
+    if (found !== ids.length) {
+      throw new InvalidReferenceError('products', 'tags[]');
+    }
+  }
+}
+
+/**
+ * Derivación de `price`/`minPrice`/`maxPrice` sobre el tipo EFECTIVO
+ * (DD29-7). `simple`: los tres valen `price`, derivados, nunca leídos del
+ * input — así una conversión `variable`→`simple` no arrastra un
+ * `min_price` desalineado que ninguna guarda vería. `variable`: `price`
+ * queda `NULL` y se persisten los `min`/`max` que el admin ya calculó.
+ */
+function _deriveProductPrices(
+  productType: string,
+  effective: { price: number | null; minPrice: number | null; maxPrice: number | null }
+): { price: number | null; minPrice: number | null; maxPrice: number | null } {
+  if (productType === 'simple') {
+    return { price: effective.price, minPrice: effective.price, maxPrice: effective.price };
+  }
+  return { price: null, minPrice: effective.minPrice, maxPrice: effective.maxPrice };
+}
+
+export interface CreateProductInput {
+  name: string;
+  slug?: string | null;
+  description?: string;
+  typeId: number;
+  shopId: number;
+  manufacturerId?: number | null;
+  productType?: string;
+  price?: number | null;
+  salePrice?: number | null;
+  minPrice?: number | null;
+  maxPrice?: number | null;
+  quantity?: number;
+  inStock?: boolean;
+  sku?: string | null;
+  unit?: string;
+  status?: string;
+  visibility?: string;
+  image?: Prisma.InputJsonValue;
+  gallery?: Prisma.InputJsonValue;
+  isTaxable?: boolean;
+  isDigital?: boolean;
+  isExternal?: boolean;
+  externalProductUrl?: string | null;
+  language?: string;
+  categoryIds?: number[];
+  tagIds?: number[];
+}
+
+/** `slug` inmutable por tipo (CA-2); `shopId` SÍ mutable (decisión de producto). */
+export type UpdateProductInput = Partial<Omit<CreateProductInput, 'slug'>>;
+
+/** Crea un producto del admin, con pivotes y las 5 guardas de DD29-2/DD29-3 pre-validadas. */
+export async function createProduct(input: CreateProductInput): Promise<ProductRecord> {
+  _assertIntegerRef(input.typeId, 'type_id');
+  _assertIntegerRef(input.shopId, 'shop_id');
+  _assertIntegerRef(input.manufacturerId, 'manufacturer_id');
+  for (const categoryId of input.categoryIds ?? []) {
+    _assertIntegerRef(categoryId, 'categories[]');
+  }
+  for (const tagId of input.tagIds ?? []) {
+    _assertIntegerRef(tagId, 'tags[]');
+  }
+
+  _assertFiniteNumber(input.price, 'price');
+  _assertFiniteNumber(input.salePrice, 'sale_price');
+  _assertFiniteNumber(input.minPrice, 'min_price');
+  _assertFiniteNumber(input.maxPrice, 'max_price');
+  _assertIntegerCount(input.quantity, 'quantity');
+
+  _assertProductType(input.productType);
+  _assertStatus(input.status);
+
+  const productType = input.productType ?? 'simple';
+  const status = input.status ?? 'publish';
+  const price = input.price ?? null;
+  const salePrice = input.salePrice ?? null;
+
+  _assertPriceRules(productType, price, salePrice);
+
+  await _assertPivotIdsExist(input.categoryIds, input.tagIds);
+
+  const derivedPrices = _deriveProductPrices(productType, {
+    price,
+    minPrice: input.minPrice ?? null,
+    maxPrice: input.maxPrice ?? null,
+  });
+  const inStock =
+    input.inStock !== undefined
+      ? input.inStock
+      : input.quantity !== undefined
+        ? input.quantity > 0
+        : undefined;
+
+  const slug = await generateSlug(
+    { name: input.name, slug: input.slug },
+    productSlugs,
+    'products'
+  );
+
+  const categoryLinks = uniq(input.categoryIds ?? []).map((categoryId) => ({ categoryId }));
+  const tagLinks = uniq(input.tagIds ?? []).map((tagId) => ({ tagId }));
+
+  try {
+    const row = await prisma.product.create({
+      data: {
+        name: input.name,
+        slug,
+        description: input.description ?? '',
+        typeId: input.typeId,
+        shopId: input.shopId,
+        manufacturerId: input.manufacturerId ?? null,
+        productType,
+        price: derivedPrices.price,
+        salePrice,
+        minPrice: derivedPrices.minPrice,
+        maxPrice: derivedPrices.maxPrice,
+        ...(input.quantity !== undefined && { quantity: input.quantity }),
+        ...(inStock !== undefined && { inStock }),
+        sku: input.sku ?? null,
+        unit: input.unit ?? '1 pc',
+        status,
+        visibility: input.visibility ?? 'visibility_public',
+        ...(input.image != null && { image: input.image }),
+        ...(input.gallery != null && { gallery: input.gallery }),
+        isTaxable: input.isTaxable ?? false,
+        isDigital: input.isDigital ?? false,
+        isExternal: input.isExternal ?? false,
+        externalProductUrl: input.externalProductUrl ?? null,
+        language: input.language ?? 'es',
+        categories: { create: categoryLinks },
+        tags: { create: tagLinks },
+      },
+      include: PRODUCT_INCLUDE,
+    });
+    const record = _toProductRecord(row);
+    if (!record) {
+      throw new InvalidReferenceError(
+        'products',
+        row.type === null ? 'type_id' : 'shop_id'
+      );
+    }
+    return record;
+  } catch (error) {
+    throw _translateCheckViolation(
+      translateCatalogWriteError(error, { aggregate: 'products' })
+    );
+  }
+}
+
+/**
+ * Actualiza un producto: escalares, pivotes y (si el body mueve `shop_id`)
+ * la fila cambia de tienda — la propiedad de ambos lados la valida el
+ * servicio de Nest (D29-1), no este repositorio. `slug` es inmutable a
+ * nivel de tipo; si llega `name` se valida con `normalizeSlug` descartando
+ * el resultado (solo su efecto lateral `EmptySlugError`). `updatedAt` NO se
+ * fija a mano: el trigger `products_updated_at` lo hace con el reloj de
+ * Postgres.
+ */
+export async function updateProduct(
+  id: number,
+  input: UpdateProductInput
+): Promise<ProductRecord> {
+  const current = await prisma.product.findUnique({ where: { id }, include: PRODUCT_INCLUDE });
+  if (!current) {
+    throw new RecordNotFoundError('products', id);
+  }
+
+  if (input.name !== undefined) {
+    await normalizeSlug(input.name, 'products');
+  }
+
+  const effectiveTypeId = input.typeId !== undefined ? input.typeId : _id(current.typeId);
+  const effectiveShopId = input.shopId !== undefined ? input.shopId : _id(current.shopId);
+  const effectiveManufacturerId =
+    input.manufacturerId !== undefined ? input.manufacturerId : _id(current.manufacturerId);
+  const effectiveProductType =
+    input.productType !== undefined ? input.productType : current.productType;
+  const effectivePrice = input.price !== undefined ? input.price : _dec(current.price);
+  const effectiveSalePrice =
+    input.salePrice !== undefined ? input.salePrice : _dec(current.salePrice);
+  const effectiveMinPrice =
+    input.minPrice !== undefined ? input.minPrice : _dec(current.minPrice);
+  const effectiveMaxPrice =
+    input.maxPrice !== undefined ? input.maxPrice : _dec(current.maxPrice);
+  const effectiveQuantity =
+    input.quantity !== undefined ? input.quantity : current.quantity;
+
+  _assertIntegerRef(effectiveTypeId, 'type_id');
+  _assertIntegerRef(effectiveShopId, 'shop_id');
+  _assertIntegerRef(effectiveManufacturerId, 'manufacturer_id');
+  for (const categoryId of input.categoryIds ?? []) {
+    _assertIntegerRef(categoryId, 'categories[]');
+  }
+  for (const tagId of input.tagIds ?? []) {
+    _assertIntegerRef(tagId, 'tags[]');
+  }
+
+  _assertFiniteNumber(effectivePrice, 'price');
+  _assertFiniteNumber(effectiveSalePrice, 'sale_price');
+  _assertFiniteNumber(effectiveMinPrice, 'min_price');
+  _assertFiniteNumber(effectiveMaxPrice, 'max_price');
+  _assertIntegerCount(effectiveQuantity, 'quantity');
+
+  _assertProductType(input.productType);
+  _assertStatus(input.status);
+  _assertPriceRules(effectiveProductType, effectivePrice, effectiveSalePrice);
+
+  await _assertPivotIdsExist(input.categoryIds, input.tagIds);
+
+  const derivedPrices = _deriveProductPrices(effectiveProductType, {
+    price: effectivePrice,
+    minPrice: effectiveMinPrice,
+    maxPrice: effectiveMaxPrice,
+  });
+  const effectiveInStock =
+    input.inStock !== undefined
+      ? input.inStock
+      : input.quantity !== undefined
+        ? input.quantity > 0
+        : undefined;
+
+  try {
+    const row = await prisma.product.update({
+      where: { id },
+      data: {
+        ...(input.name !== undefined && { name: input.name }),
+        ...(input.description !== undefined && { description: input.description }),
+        ...(input.typeId !== undefined && { typeId: input.typeId }),
+        ...(input.shopId !== undefined && { shopId: input.shopId }),
+        ...(input.manufacturerId !== undefined && { manufacturerId: input.manufacturerId }),
+        ...(input.productType !== undefined && { productType: input.productType }),
+        price: derivedPrices.price,
+        ...(input.salePrice !== undefined && { salePrice: input.salePrice }),
+        minPrice: derivedPrices.minPrice,
+        maxPrice: derivedPrices.maxPrice,
+        ...(input.quantity !== undefined && { quantity: input.quantity }),
+        ...(effectiveInStock !== undefined && { inStock: effectiveInStock }),
+        ...(input.sku !== undefined && { sku: input.sku }),
+        ...(input.unit !== undefined && { unit: input.unit }),
+        ...(input.status !== undefined && { status: input.status }),
+        ...(input.visibility !== undefined && { visibility: input.visibility }),
+        ...(input.image != null && { image: input.image }),
+        ...(input.gallery != null && { gallery: input.gallery }),
+        ...(input.isTaxable !== undefined && { isTaxable: input.isTaxable }),
+        ...(input.isDigital !== undefined && { isDigital: input.isDigital }),
+        ...(input.isExternal !== undefined && { isExternal: input.isExternal }),
+        ...(input.externalProductUrl !== undefined && {
+          externalProductUrl: input.externalProductUrl,
+        }),
+        ...(input.language !== undefined && { language: input.language }),
+        ...(input.categoryIds !== undefined && {
+          categories: {
+            deleteMany: {},
+            create: uniq(input.categoryIds).map((categoryId) => ({ categoryId })),
+          },
+        }),
+        ...(input.tagIds !== undefined && {
+          tags: {
+            deleteMany: {},
+            create: uniq(input.tagIds).map((tagId) => ({ tagId })),
+          },
+        }),
+      },
+      include: PRODUCT_INCLUDE,
+    });
+    const record = _toProductRecord(row);
+    if (!record) {
+      // La fila se está borrando sola entre esta lectura y el write (FK
+      // NOT NULL + CASCADE): 404 es la respuesta honesta (DD29-5, mismo
+      // razonamiento que deleteProduct).
+      throw new RecordNotFoundError('products', id);
+    }
+    return record;
+  } catch (error) {
+    throw _translateCheckViolation(
+      translateCatalogWriteError(error, { aggregate: 'products', id })
+    );
+  }
+}
+
+/**
+ * Borra un producto del admin. `findUnique + PRODUCT_INCLUDE` corre ANTES
+ * del `DELETE`: es a la vez la comprobación de existencia y el snapshot
+ * PRE-borrado que se devuelve (DD29-5, precedente `DD28-1`). Un `DELETE` no
+ * dispara el trigger `products_updated_at`, así que no hay ningún valor
+ * posterior con el que divergir.
+ */
+export async function deleteProduct(id: number): Promise<ProductRecord> {
+  const row = await prisma.product.findUnique({ where: { id }, include: PRODUCT_INCLUDE });
+  if (!row) {
+    throw new RecordNotFoundError('products', id);
+  }
+  const snapshot = _toProductRecord(row);
+  if (!snapshot) {
+    throw new RecordNotFoundError('products', id);
+  }
+
+  try {
+    await prisma.product.delete({ where: { id } });
+  } catch (error) {
+    throw _translateCheckViolation(
+      translateCatalogWriteError(error, { aggregate: 'products', id })
+    );
+  }
+
+  return snapshot;
+}
+
+/**
+ * `shopId` actual de un producto, para la propiedad por tienda de
+ * `update`/`remove` (D29-1, DD29-4). `null` si el producto no existe o si
+ * `id` no tiene forma entera segura. NUNCA lanza.
+ */
+export async function findProductShopId(id: number): Promise<number | null> {
+  if (!Number.isSafeInteger(id)) return null;
+  const row = await prisma.product.findUnique({
+    where: { id },
+    select: { shopId: true },
+  });
+  return row ? _id(row.shopId) : null;
+}
+
+// ---------------------------------------------------------------------------
 // Errores de dominio — traducen los CHECK constraints que Prisma no modela.
 // ---------------------------------------------------------------------------
 
-export class InvalidSalePriceError extends Error {
-  readonly code = 'PRODUCT_INVALID_SALE_PRICE';
+/**
+ * Las tres extienden `CatalogWriteError` (no `Error` a secas) con
+ * `code = CATALOG_ERROR_CODES.InvalidReference` — DD29-1. Sin esto,
+ * `isCatalogWriteError` (guard estructural por `code` contra los 5 valores
+ * cerrados) no las reconoce, `mapDomainError` devuelve `null` y
+ * `toWriteHttpException` degrada a HTTP 500 en vez de 400. Mismos mensajes,
+ * mismo `name`, mismo `instanceof`; `upsertScrapedProduct` no se toca.
+ */
+export class InvalidSalePriceError extends CatalogWriteError {
+  readonly code = CATALOG_ERROR_CODES.InvalidReference;
   constructor(salePrice: number, price: number) {
     super(
-      `El precio rebajado (${salePrice}) debe ser menor que el de lista (${price}) — CHECK products_rebaja_valida.`
+      `El precio rebajado (${salePrice}) debe ser menor que el de lista (${price}) — CHECK products_rebaja_valida.`,
+      'products'
     );
     this.name = 'InvalidSalePriceError';
   }
 }
 
-export class MissingPriceError extends Error {
-  readonly code = 'PRODUCT_MISSING_PRICE';
+export class MissingPriceError extends CatalogWriteError {
+  readonly code = CATALOG_ERROR_CODES.InvalidReference;
   constructor() {
     super(
-      `Un producto 'simple' necesita precio — CHECK products_simple_con_precio.`
+      `Un producto 'simple' necesita precio — CHECK products_simple_con_precio.`,
+      'products'
     );
     this.name = 'MissingPriceError';
   }
 }
 
-export class IncompleteProvenanceError extends Error {
-  readonly code = 'PRODUCT_INCOMPLETE_PROVENANCE';
+export class IncompleteProvenanceError extends CatalogWriteError {
+  readonly code = CATALOG_ERROR_CODES.InvalidReference;
   constructor() {
     super(
-      'source_store y source_product_id van juntos o ninguno — CHECK products_procedencia_completa.'
+      'source_store y source_product_id van juntos o ninguno — CHECK products_procedencia_completa.',
+      'products'
     );
     this.name = 'IncompleteProvenanceError';
   }

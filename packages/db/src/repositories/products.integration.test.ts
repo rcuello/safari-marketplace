@@ -12,9 +12,13 @@ import { prisma } from '../client';
 import { buildPaginator } from '../pagination';
 import { getCategoryTree } from './categories.repository';
 import {
+  createProduct,
+  deleteProduct,
   findProductBySlug,
+  findProductShopId,
   InvalidSalePriceError,
   listProducts,
+  updateProduct,
   upsertScrapedProduct,
 } from './products.repository';
 import { getSettings } from './settings.repository';
@@ -22,16 +26,58 @@ import { findTypeBySlug } from './types.repository';
 
 const TEST_STORE = 'TestStore-integration';
 
+// Centinela de las escrituras del admin (US-29, DD29-10): prefijo de slug
+// propio, nunca `sourceStore` — `source_store` es NULL en todo producto del
+// admin, así que `TEST_STORE` no alcanza estas filas.
+const SENTINEL_PREFIX = 'zz-products-';
+
+// Fixtures resueltas contra filas SEMBRADAS (nunca creadas por esta suite),
+// mismo patrón que `manufacturerFix`/`tagFix` más abajo (US-2): un type, un
+// shop y dos categorías/tags existentes del seed para los describes de
+// escritura.
+let SENTINEL_TYPE_ID: number;
+let SENTINEL_SHOP_ID: number;
+let SENTINEL_CATEGORY_A: number;
+let SENTINEL_CATEGORY_B: number;
+let SENTINEL_TAG_A: number;
+let SENTINEL_TAG_B: number;
+
 // Limpieza de ENTRADA, no solo de salida: una corrida abortada (Ctrl-C,
 // EADDRINUSE, timeout) deja filas de prueba vivas y la siguiente pasada
 // cuenta 12 donde asserta 11. Con esto los conteos absolutos dejan de
-// depender de que la corrida anterior terminara bien.
+// depender de que la corrida anterior terminara bien. Se pliega aquí,
+// dentro del `beforeAll` EXISTENTE, la limpieza del centinela de US-29
+// (DD29-10): un segundo `beforeAll`/`afterAll` no tiene ningún riesgo de
+// orden, pero un cleanup repartido en dos hooks sí duplica lógica sin
+// necesidad.
 beforeAll(async () => {
   await prisma.product.deleteMany({ where: { sourceStore: TEST_STORE } });
+  await prisma.product.deleteMany({
+    where: { slug: { startsWith: SENTINEL_PREFIX } },
+  });
+
+  const gadget = await findTypeBySlug('gadget');
+  if (!gadget) throw new Error('type gadget no existe en el seed');
+  const shopRow = await prisma.shop.findFirstOrThrow({ orderBy: { id: 'asc' } });
+  const [categoryA, categoryB] = await prisma.category.findMany({
+    orderBy: { id: 'asc' },
+    take: 2,
+  });
+  const [tagA, tagB] = await prisma.tag.findMany({ orderBy: { id: 'asc' }, take: 2 });
+
+  SENTINEL_TYPE_ID = gadget.id;
+  SENTINEL_SHOP_ID = Number(shopRow.id);
+  SENTINEL_CATEGORY_A = Number(categoryA.id);
+  SENTINEL_CATEGORY_B = Number(categoryB.id);
+  SENTINEL_TAG_A = Number(tagA.id);
+  SENTINEL_TAG_B = Number(tagB.id);
 });
 
 afterAll(async () => {
   await prisma.product.deleteMany({ where: { sourceStore: TEST_STORE } });
+  await prisma.product.deleteMany({
+    where: { slug: { startsWith: SENTINEL_PREFIX } },
+  });
   await prisma.$disconnect();
 });
 
@@ -344,5 +390,172 @@ describe('lecturas auxiliares', () => {
     const settings = await getSettings();
     expect(settings?.id).toBe(1);
     expect(settings?.options).toBeTruthy();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Escrituras del admin (US-29) — centinela `zz-products-`, describes AL
+// FINAL: vitest ejecuta los describe en orden de archivo, y estas filas no
+// deben contaminar ningún conteo absoluto afirmado arriba. Cada `it` borra
+// lo que crea, además de la red del `beforeAll`/`afterAll` de arriba
+// (DD29-10). Camino feliz solamente — la batería hostil (5 guardas, 3 FK +
+// 2 pivotes inexistentes, no-enteros/no-finitos, 404) vive en PR#2.
+// ---------------------------------------------------------------------------
+
+describe('createProduct — CA-1, centinela zz-products-', () => {
+  it("crea un 'simple': min/max derivados = price, sin pivotes", async () => {
+    const created = await createProduct({
+      name: `${SENTINEL_PREFIX}simple`,
+      slug: `${SENTINEL_PREFIX}simple`,
+      typeId: SENTINEL_TYPE_ID,
+      shopId: SENTINEL_SHOP_ID,
+      price: 100,
+    });
+
+    expect(created.productType).toBe('simple');
+    expect(created.price).toBe(100);
+    expect(created.minPrice).toBe(100);
+    expect(created.maxPrice).toBe(100);
+    expect(created.categories).toEqual([]);
+    expect(created.tags).toEqual([]);
+    expect(created.type.id).toBe(SENTINEL_TYPE_ID);
+    expect(created.shop.id).toBe(SENTINEL_SHOP_ID);
+
+    const reread = await findProductBySlug(created.slug);
+    expect(reread?.id).toBe(created.id);
+
+    await deleteProduct(created.id);
+  });
+
+  it("crea un 'variable': price NULL, min/max del input, pivotes con ids", async () => {
+    const created = await createProduct({
+      name: `${SENTINEL_PREFIX}variable`,
+      slug: `${SENTINEL_PREFIX}variable`,
+      typeId: SENTINEL_TYPE_ID,
+      shopId: SENTINEL_SHOP_ID,
+      productType: 'variable',
+      minPrice: 50,
+      maxPrice: 150,
+      categoryIds: [SENTINEL_CATEGORY_A],
+      tagIds: [SENTINEL_TAG_A],
+    });
+
+    expect(created.productType).toBe('variable');
+    expect(created.price).toBeNull();
+    expect(created.minPrice).toBe(50);
+    expect(created.maxPrice).toBe(150);
+    expect(created.categories.map((c) => c.id)).toEqual([SENTINEL_CATEGORY_A]);
+    expect(created.tags.map((t) => t.id)).toEqual([SENTINEL_TAG_A]);
+
+    await deleteProduct(created.id);
+  });
+});
+
+describe('updateProduct — CA-2, pivotes en los 3 estados, slug invariante', () => {
+  it('pivote ausente (undefined) no se toca', async () => {
+    const created = await createProduct({
+      name: `${SENTINEL_PREFIX}pivote-ausente`,
+      slug: `${SENTINEL_PREFIX}pivote-ausente`,
+      typeId: SENTINEL_TYPE_ID,
+      shopId: SENTINEL_SHOP_ID,
+      price: 10,
+      categoryIds: [SENTINEL_CATEGORY_A],
+      tagIds: [SENTINEL_TAG_A],
+    });
+
+    const updated = await updateProduct(created.id, {
+      name: `${SENTINEL_PREFIX}Pivote Ausente`,
+    });
+    expect(updated.categories.map((c) => c.id)).toEqual([SENTINEL_CATEGORY_A]);
+    expect(updated.tags.map((t) => t.id)).toEqual([SENTINEL_TAG_A]);
+    expect(updated.slug).toBe(created.slug);
+
+    await deleteProduct(created.id);
+  });
+
+  it('pivote vacío ([]) vacía el set', async () => {
+    const created = await createProduct({
+      name: `${SENTINEL_PREFIX}pivote-vacio`,
+      slug: `${SENTINEL_PREFIX}pivote-vacio`,
+      typeId: SENTINEL_TYPE_ID,
+      shopId: SENTINEL_SHOP_ID,
+      price: 10,
+      categoryIds: [SENTINEL_CATEGORY_A],
+      tagIds: [SENTINEL_TAG_A],
+    });
+
+    const updated = await updateProduct(created.id, { categoryIds: [], tagIds: [] });
+    expect(updated.categories).toEqual([]);
+    expect(updated.tags).toEqual([]);
+
+    await deleteProduct(created.id);
+  });
+
+  it('pivote con ids reemplaza el set completo', async () => {
+    const created = await createProduct({
+      name: `${SENTINEL_PREFIX}pivote-reemplazo`,
+      slug: `${SENTINEL_PREFIX}pivote-reemplazo`,
+      typeId: SENTINEL_TYPE_ID,
+      shopId: SENTINEL_SHOP_ID,
+      price: 10,
+      categoryIds: [SENTINEL_CATEGORY_A],
+      tagIds: [SENTINEL_TAG_A],
+    });
+
+    const updated = await updateProduct(created.id, {
+      categoryIds: [SENTINEL_CATEGORY_B],
+      tagIds: [SENTINEL_TAG_B],
+    });
+    expect(updated.categories.map((c) => c.id)).toEqual([SENTINEL_CATEGORY_B]);
+    expect(updated.tags.map((t) => t.id)).toEqual([SENTINEL_TAG_B]);
+
+    await deleteProduct(created.id);
+  });
+
+  it('name cambia, slug invariante, updatedAt monótono (nunca igualdad pinneada)', async () => {
+    const created = await createProduct({
+      name: `${SENTINEL_PREFIX}Original`,
+      slug: `${SENTINEL_PREFIX}slug-invariante`,
+      typeId: SENTINEL_TYPE_ID,
+      shopId: SENTINEL_SHOP_ID,
+      price: 10,
+    });
+
+    const updated = await updateProduct(created.id, {
+      name: `${SENTINEL_PREFIX}Renombrado`,
+    });
+    expect(updated.name).toBe(`${SENTINEL_PREFIX}Renombrado`);
+    expect(updated.slug).toBe(`${SENTINEL_PREFIX}slug-invariante`);
+    // `toBeGreaterThanOrEqual`, no `toBeGreaterThan` (el trigger de Postgres
+    // puede resolver dos UPDATE del mismo test en el mismo tick de reloj):
+    // nunca una igualdad PINNEADA a mano, siempre contra el `updatedAt`
+    // capturado del create anterior.
+    expect(updated.updatedAt.getTime()).toBeGreaterThanOrEqual(
+      created.updatedAt.getTime()
+    );
+
+    await deleteProduct(created.id);
+  });
+});
+
+describe('deleteProduct — CA-3, snapshot pre-borrado', () => {
+  it('borra y devuelve el snapshot pre-borrado; los pivotes constan; un GET posterior es null', async () => {
+    const created = await createProduct({
+      name: `${SENTINEL_PREFIX}borrar`,
+      slug: `${SENTINEL_PREFIX}borrar`,
+      typeId: SENTINEL_TYPE_ID,
+      shopId: SENTINEL_SHOP_ID,
+      price: 10,
+      categoryIds: [SENTINEL_CATEGORY_A],
+    });
+
+    expect(await findProductShopId(created.id)).toBe(SENTINEL_SHOP_ID);
+
+    const snapshot = await deleteProduct(created.id);
+    expect(snapshot.id).toBe(created.id);
+    expect(snapshot.categories.map((c) => c.id)).toEqual([SENTINEL_CATEGORY_A]);
+
+    expect(await findProductBySlug(created.slug)).toBeNull();
+    expect(await findProductShopId(created.id)).toBeNull();
   });
 });
