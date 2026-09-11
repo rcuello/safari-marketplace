@@ -280,12 +280,22 @@ export class CategoriesService {
    * preserva la semántica `Partial` de `UpdateCategoryInput` — un campo
    * ausente en el body nunca sobrescribe el valor actual, y "no tocar el
    * type" queda distinguible de "ponerlo al valor actual" (DD28-5).
+   *
+   * `!Number.isSafeInteger(id) || id <= 0` (no solo `!Number.isInteger`) —
+   * corrección de un `GATE: FAIL` posterior a PR#2: `PUT
+   * /api/categories/1e21` con `+id` evaluando a `1e21` pasaba
+   * `Number.isInteger` (no tiene parte decimal) y llegaba al repositorio, que
+   * intentaba `BigInt`/coerción de un id fuera del rango de `bigint` de
+   * Postgres y reventaba en HTTP 500 antes de que este guard pudiera
+   * atajarlo. `id <= 0` está aquí porque ningún id real del catálogo es
+   * `<= 0` (serial arrancando en 1): rechazarlo temprano con 404 evita un
+   * round trip al repositorio para un id que nunca puede existir.
    */
   async update(
     id: number,
     updateCategoryDto: UpdateCategoryDto
   ): Promise<Category> {
-    if (!Number.isInteger(id)) {
+    if (!Number.isSafeInteger(id) || id <= 0) {
       throw new NotFoundException(`No existe una categoría con id ${id}.`);
     }
 
@@ -323,7 +333,7 @@ export class CategoriesService {
   }
 
   async remove(id: number): Promise<Category> {
-    if (!Number.isInteger(id)) {
+    if (!Number.isSafeInteger(id) || id <= 0) {
       throw new NotFoundException(`No existe una categoría con id ${id}.`);
     }
 
