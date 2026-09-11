@@ -22,6 +22,19 @@
  * padre actual; un `parent: null` explícito sí debe re-enraizar a la
  * categoría). Esa distinción `undefined` vs. `null` es el foco central de
  * este archivo — fue el hallazgo de mayor riesgo señalado para esta PR.
+ *
+ * **`DependentRowsError` NO se ejercita aquí, a propósito** (hallazgo W-1 del
+ * gate adversarial posterior a esta PR): a diferencia de `types`/`tags`/
+ * `manufacturers`, ninguna FK apunta a `categories` con `RESTRICT` —
+ * `categories_parent_id_fkey` es `ON DELETE SET NULL` y
+ * `category_product_category_id_fkey` es `ON DELETE CASCADE` (confirmado
+ * contra la base real) — así que `DependentRowsError` es INALCANZABLE para
+ * este agregado por cualquier ruta HTTP; añadir un `it` que la fuerce a mano
+ * sería una prueba de un camino que el repositorio nunca puede tomar. El
+ * conjunto cerrado de 5 códigos SÍ tiene test directo, sin depender de este
+ * archivo, en `common/errors/domain-error.mapper.spec.ts` (la requirement
+ * normativa de `catalog-write-foundations`), que es donde corresponde
+ * probarlo con independencia del agregado.
  */
 import 'reflect-metadata';
 import {
@@ -34,7 +47,6 @@ import {
 import {
   createCategory,
   deleteCategory,
-  DependentRowsError,
   EmptySlugError,
   findCategoryByIdOrSlug,
   InvalidReferenceError,

@@ -1,5 +1,256 @@
 # Apply Progress: Escrituras del árbol de categorías (US-28)
 
+## Closeout round — `sdd-verify` PASS WITH WARNINGS, READY TO ARCHIVE: YES (W-1, W-2, W-4)
+
+`sdd-verify` ran an independent adversarial re-verification of the full
+3-PR stack (`verify-report.md`, not overwritten here — read in full before
+this round). Verdict: **PASS WITH WARNINGS**, **READY TO ARCHIVE: YES**,
+conditioned on four documentation-only fixes (W-1, W-2, W-4, plus a product
+ratification on the DoD-line-5 amendment, W-3 explicitly deferred to the
+product owner). The verifier independently reproduced every gate exactly,
+added `just build` (not run by any prior apply batch — exit 0), re-ran the
+full live contract including a real API restart, and ran a 40-case hostile
+battery with **40/40 in 4xx and zero 500s**. It also confirmed **zero
+residue** anywhere in the stack from PR#3's self-reported, already-reverted
+`categories.service.ts` mutation-test deviation (verified by blob hash
+across all three branches).
+
+This round applies W-1, W-2, and W-4 exactly as scoped by the coordinator.
+**W-3 is explicitly NOT touched** — the product owner is deciding it
+separately (whether/how to surface the two follow-up tickets — the
+`categories` clock drift and the house-wide `Number.isInteger` gap — onto a
+durable planning surface before archive). Neither follow-up ticket is
+implemented here, per the standing instruction from every prior round.
+
+### Per-warning table
+
+| # | Finding | Severity | Fix applied | Where |
+|---|---|---|---|---|
+| W-1 | `DependentRowsError` imported in `categories.service.spec.ts` and never exercised (task 5.3 at 4/5) | WARNING | Dropped the unused import; added a doc-comment explaining `DependentRowsError` is genuinely unreachable for `categories` (no FK targets it with `RESTRICT` — `parent_id` is `SET NULL`, `category_product` is `CASCADE`) and that the closed 5-code set already has a direct, aggregate-independent test in `domain-error.mapper.spec.ts`. No contrived test added — the verifier explicitly asked not to invent one. | `apps/api/rest/src/categories/categories.service.spec.ts` (PR#3, new commit) |
+| W-2 | The `undefined`-vs-`null` `parentId` semantics has service-layer coverage (PR#3) but **no repository-layer test**; the verifier's mutation (`...(input.parentId !== undefined && {parentId})` → `parentId: input.parentId ?? null`) survives all 162 `just db-check` tests | WARNING (highest value — real regression hole) | Added 2 `it`s to `categories.integration.test.ts`, both on sentinel-owned rows: (1) renaming a CHILD with only `{ name }` (no `parentId` key) MUST leave `parentId` unchanged — this is the one that dies under the mutation; (2) `updateCategory(id, { parentId: null })` explicit MUST clear the parent. `just db-check`: 162→**164**. | `packages/db/src/repositories/categories.integration.test.ts` (PR#1, new commit `21279b7`) |
+| W-3 | Both follow-up tickets (the `categories` clock-drift ticket and the house-wide `Number.isInteger` gap in `types`/`tags`/`manufacturers`) live only in `apply-progress.md`, which becomes archive-only audit trail after `sdd-archive` | WARNING | **NOT TOUCHED**, per explicit coordinator instruction — the product owner is deciding this separately (which durable planning surface: épico README "deuda declarada" section vs. standalone tickets). Both tickets remain recorded here and unimplemented. | — |
+| W-4 | 3 tasks marked `[x]` in `tasks.md` (4.5, 4.8, 5.3) whose own text records a partiality/deviation, invisible to a reader who only scans checkboxes | WARNING | Re-marked 4.5, 4.8, 5.3 as `[~]` in `tasks.md`, each with its existing one-line reason preserved plus a closing note; added a new "Desviaciones" subsection near the Review Workload Forecast summarizing all three at a glance. Also marked CA-3's `category_product` scenario **UNTESTED** (not COMPLIANT) in `specs/category-tree-api/spec.md`, per the verifier's binding archive condition, and cross-referenced it in this file's existing "CA-3 — verdict" section (Batch 2). | `openspec/changes/2026-09-10-escrituras-arbol-categorias/tasks.md`, `specs/category-tree-api/spec.md` (PR#3, new commit) |
+
+### W-2 — reasoning through why test 1 goes red under the mutation (no live mutation applied to source, per the standing file-scope boundary)
+
+The exact code on `us-28-pr1-db-categorias` (`categories.repository.ts`,
+`updateCategory`), unchanged by this round except for the new tests:
+
+```ts
+const effectiveParentId =
+  input.parentId !== undefined ? input.parentId : _id(current.parentId);
+if (effectiveParentId !== null) {
+  await _assertParentEdge(effectiveParentId, effectiveTypeId, id);
+}
+try {
+  await prisma.category.update({
+    where: { id },
+    data: {
+      // ...
+      ...(input.parentId !== undefined && { parentId: input.parentId }),
+      // ...
+    },
+  });
+}
+```
+
+**New test 1** ("renombrar una HIJA sin enviar `parent`") calls
+`updateCategory(child.id, { name: '...' })` — `input.parentId` is
+`undefined` (the key is absent from the object entirely, not set to
+`null`). Under the **shipped** code, the spread condition
+`input.parentId !== undefined` is `false`, so the `parentId` key is omitted
+from `data` altogether — Prisma's `update` never touches that column, and
+the row keeps its existing `parentId` (`parent.id`). The test asserts
+`renamed.parentId === parent.id`, which holds.
+
+Under the **verifier's mutation** (replacing that conditional spread with
+the unconditional `parentId: input.parentId ?? null`), the `data` object
+would ALWAYS include a `parentId` key, computed as
+`undefined ?? null = null` for this exact call (no other line in
+`updateCategory` changes — `effectiveParentId`, used only for the
+`_assertParentEdge` **validation** pass, still correctly resolves to
+`current.parentId` and lets the write proceed; the mutation only touches
+the literal `data` payload handed to `prisma.category.update`). So the
+actual row would have its `parentId` column overwritten to `null`,
+re-rooting the child. `_loadNode(id)` would then return `parentId: null`,
+and the test's `expect(renamed.parentId).toBe(parent.id)` would receive
+`null` — **the assertion fails, the test goes red.**
+
+**Conclusion: test 1 is genuinely load-bearing against exactly the mutation
+the verifier proposed.** This was confirmed by re-reading the actual
+unmodified source (pasted above, read fresh on this branch after the
+rebase) and tracing the single code path the mutation changes — not by
+editing `categories.repository.ts` itself. `packages/db` is not in this
+round's forbidden-edit list (only `db/schema.sql`, `domain-errors.ts`, and
+`categories.service.ts` are), but a live mutation test was avoided anyway,
+consistent with the discipline the previous round already established for
+files that are risky to touch mid-flight; reasoning through the exact call
+graph is sufficient and avoids re-introducing any transient-edit risk.
+
+**New test 2** ("`updateCategory(id, { parentId: null })` explícito") locks
+in the complementary, already-correct behavior: an explicit `null` always
+clears the parent, under both the shipped code and the mutation (since
+`null !== undefined` is `true` in both cases, the conditional spread always
+fires here) — it doesn't kill the mutation by itself, but it documents the
+other half of the `undefined` vs. `null` contract the coordinator asked to
+anchor, and guards against a *different* future regression (e.g. someone
+changing the condition to `input.parentId != null`, which would break this
+exact case while leaving test 1 green).
+
+### Git mechanics
+
+Per the coordinator's explicit authorization (same authority as the
+previous correction round): committed the 2 new integration tests on
+`us-28-pr1-db-categorias` (new commit `21279b7`, PR#1 was already amendable
+mid-flight and nothing is pushed), then rebased `us-28-pr2-api-categorias`
+onto the updated `us-28-pr1-db-categorias` (clean, no conflicts — 3 commits
+replayed), then rebased `us-28-pr3-jest-categorias` onto the updated
+`us-28-pr2-api-categorias` (clean — the PR#2 commits were already
+recognized as applied via patch-id; only PR#3's own commit was replayed).
+The W-1/W-4 fixes plus this closeout evidence land in a NEW commit on top
+of the rebased `us-28-pr3-jest-categorias`. Final stack, 9 commits total:
+
+```
+$ git log --oneline us-28-pr3-jest-categorias -9
+{closeout commit, hash filled in after commit below}
+9af4dcd Agrega los tests unitarios de CategoriesService y cierra US-28 (PR#3)
+a978f94 Documenta la ronda de correccion del gate sobre PR#2 (US-28)
+c0b908e Endurece los guards de id de ruta contra ids fuera de rango bigint (US-28, PR#2, gate adversarial)
+adb7676 Migra las escrituras de categorias del stub en memoria a @safari/db (US-28, PR#2)
+21279b7 Agrega la red de regresion que faltaba para el undefined-vs-null de parentId (US-28, PR#1, W-2 del gate)
+47b3318 Corrige el 500 por referencias numericas fuera de rango bigint (US-28, PR#1, gate adversarial post-PR#2)
+f11a4e2 Corrige los 4 hallazgos del gate adversarial sobre PR#1 (US-28)
+e2cda05 Corrige el flake de reloj cruzado en el test de updated_at (US-28, PR#1)
+```
+
+Every commit hash referenced in the Batch 1/2/3 sections below this one is
+now **stale** (rebase rewrote them) — left as-is, not rewritten, per the
+merge protocol ("MERGE your new progress in, do NOT overwrite anything").
+The hashes above are the current, authoritative ones. No `git push`, no
+`gh pr create`, no merge to `main`, no `just db-reset`.
+
+### Evidence (real command output, pasted verbatim) — Closeout round
+
+#### `just db-check` (packages/db, on `us-28-pr1-db-categorias`, before rebase) — 164/164, twice for stability
+
+```
+$ just db-check
+npm run typecheck
+> tsc --noEmit
+npm test
+> vitest run
+ Test Files  10 passed (10)
+      Tests  164 passed (164)
+   Duration  11.02s
+
+$ just db-check   # re-run
+ Test Files  10 passed (10)
+      Tests  164 passed (164)
+   Duration  12.36s
+```
+
+#### `psql` (read-only), on `us-28-pr1-db-categorias`, before and after the 2 new tests
+
+```
+$ docker compose exec postgres psql -U safari -d safari_scraper -c "SELECT count(*) FROM categories;"
+ count
+-------
+   198
+
+$ ... -c "SELECT count(*) FROM categories WHERE parent_id IS NULL;"
+ count
+-------
+    83
+
+$ ... -c "SELECT count(*) FROM categories WHERE slug LIKE 'zz-%';"
+ count
+-------
+     0
+```
+
+No sentinel leftovers — both new `it`s clean up their own rows
+(`deleteCategory` calls at the end of each), same discipline as every other
+`it` in the file.
+
+#### `just db-build` (rebuild `@safari/db` after the PR#1 amendment, before re-running jest)
+
+```
+$ just db-build
+✔ Generated Prisma Client (7.10.0) to .\generated\prisma\client in 606ms
+CJS dist\index.js     151.60 KB
+CJS ⚡️ Build success in 178ms
+DTS ⚡️ Build success in 15011ms
+DTS dist\index.d.ts 1.39 MB
+```
+
+#### `cd apps/api/rest && npx jest` (full suite, after the W-1 fix, on the rebased `us-28-pr3-jest-categorias`)
+
+```
+PASS src/common/errors/domain-error.mapper.spec.ts
+PASS src/manufacturers/manufacturers.service.spec.ts
+PASS src/types/types.service.spec.ts
+PASS src/users/user-dto.mapper.spec.ts
+PASS src/tags/tags.service.spec.ts
+PASS src/shops/shops.service.spec.ts
+PASS src/categories/categories.service.spec.ts
+PASS src/products/products.service.spec.ts
+PASS src/users/users.service.spec.ts
+
+Test Suites: 9 passed, 9 total
+Tests:       173 passed, 173 total
+Snapshots:   0 total
+Time:        41.016 s
+```
+
+**Real count after the W-1 edit: 9 suites / 173 tests — unchanged from
+before the fix.** Expected: dropping an unused import doesn't add or remove
+any `it`; `DependentRowsError` was never exercised, so removing it changes
+zero test outcomes.
+
+#### `just build-api` (on the rebased `us-28-pr3-jest-categorias`)
+
+```
+$ just build-api
+yarn build
+$ rimraf dist
+$ nest build
+Done in 83.88s.
+```
+
+#### `psql` (read-only), final, on the rebased `us-28-pr3-jest-categorias`
+
+```
+$ docker compose exec postgres psql -U safari -d safari_scraper -c "SELECT count(*) FROM categories;"
+ count
+-------
+   198
+
+$ ... -c "SELECT count(*) FROM categories WHERE parent_id IS NULL;"
+ count
+-------
+    83
+
+$ ... -c "SELECT count(*) FROM categories WHERE slug LIKE 'zz-%';"
+ count
+-------
+     0
+```
+
+**198 / 83 / 0 — unchanged.** This closeout round made zero HTTP writes
+(the W-2 tests are `packages/db` integration tests that clean up after
+themselves; the W-1/W-4 fixes are pure documentation/test-file edits).
+
+### Status after the closeout round
+
+All 4 documentation-only conditions from `sdd-verify` addressed except W-3
+(explicitly deferred to the product owner, per standing instruction — not a
+gap, a scope boundary). `just db-check` 164/164, `npx jest` 9/173,
+`just build-api` clean, `psql` 198/83/0. Stack re-coherent under
+`stacked-to-main` after the authorized rebase. Ready for the product
+owner's W-3 decision and the DoD-line-5 ratification, then archive.
+
+---
+
 ## Batch 3 — PR#3 (`apps/api/rest`), branch `us-28-pr3-jest-categorias`
 
 **Mode**: Standard (strict_tdd: false)
@@ -474,6 +725,15 @@ fuera de contrato, y ningún camino HTTP puede poblarla hasta US-29. Cero
 líneas de US-28 tocan esa tabla, así que ningún cambio de US-28 puede
 regresionarla. **Se registra como verificación diferida a US-29, no como
 trabajo inconcluso** — no bloquea el cierre de US-28.
+
+**Ratificado por el gate adversarial de cierre de US-28, con una condición
+vinculante de honestidad para el archive**: el escenario «CA-3 — los enlaces
+de producto desaparecen» de `specs/category-tree-api/spec.md` MUST quedar
+marcado **UNTESTED**, no COMPLIANT, en la matriz que `sdd-archive` fusiona a
+`openspec/specs/`. Ya aplicado en ese archivo (ver el bloque de nota bajo
+ese escenario) y en `tasks.md` (tarea 4.5, marcada `[~]`). US-29 hereda
+explícitamente la obligación de cerrar esa mitad como parte de su propia
+Definición de Done.
 
 ### Re-run evidence (las cinco reproducciones del 500, ahora 4xx)
 

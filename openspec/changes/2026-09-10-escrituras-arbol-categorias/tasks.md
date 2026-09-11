@@ -22,6 +22,31 @@ Chain strategy: stacked-to-main
 
 **RESOLVED (2026-09-11, before PR#3's `sdd-apply` batch started): no split.** The product owner already decided PR#3 stays inside US-28 — it is NOT carved into a separate US-28b, regardless of how much the ~365-line forecast is exceeded. PR#3 shipped at 659 lines (+80%); this was pre-authorized, not re-litigated during apply. See Phase 6, task 6.1.
 
+### Desviaciones (added 2026-09-11, closeout round after `sdd-verify`)
+
+The checkbox grid below reads 26/26 `[x]`, but three tasks carry a declared
+partiality in their own text that a reader skimming only the checkboxes
+would miss. Marked `[~]` below, per the verifier's W-4 finding, so the
+partiality is visible at a glance, not just buried in prose:
+
+- **4.5** (CA-3 `category_product` cascade) — the write-side setup (`INSERT`
+  via `psql`) was out of this session's command permissions; verified
+  read-only against the DDL instead (the `ON DELETE CASCADE` FK). The
+  end-to-end write path is now recorded as **UNTESTED**, not COMPLIANT, per
+  the verifier's binding archive condition — see `specs/category-tree-api/spec.md`
+  and `apply-progress.md`.
+- **4.8** (admin browser smoke test) — no interactive browser tool was
+  available in the execution environment; verified by tracing the exact
+  runtime config values instead of a live click. Result declared correct,
+  not broken, but the *method* deviates from the literal task text.
+- **5.3** (5 domain-error classes in `categories.service.spec.ts`) — shipped
+  at 4/5: `DependentRowsError` was imported but never exercised (gate finding
+  W-1). Fixed in the closeout round: the unused import was dropped and
+  annotated (the error is genuinely unreachable for `categories` — no FK
+  targets it with `RESTRICT` — and the closed 5-code set already has a
+  direct test in `domain-error.mapper.spec.ts`, independent of any one
+  aggregate).
+
 ### Suggested Work Units
 
 | Unit | Goal | PR | Base branch | Closes with |
@@ -61,17 +86,17 @@ Chain strategy: stacked-to-main
 - [x] 4.2 `just api-dev` (check port 9001 free first). Run the full sequence: `POST` raíz → `POST` hija (bajo la raíz) → `GET` de la hija → **reiniciar la API** → `GET` de nuevo (la fila persiste) → `PUT` (mover la hija a otra madre válida) → `GET` → `DELETE` de la madre original → `GET` de la hija (`parent: null`) → `GET` de la madre original → 404. Diff `Object.keys()` (`node -e`, no `.sort()` — `jq` not installed) of each write response against a seeded category's `GET`: 16 keys, same order. [CA-1, CA-2, CA-3, D28-4]
 - [x] 4.3 Seven 400 `curl`s, all pasted with status + body: (1) `type_id: "abc"`; (2) `parent: "abc"`; (3) nonexistent `parent`; (4) `parent` of another `type_id`; (5) self-reference (`parent === id`); (6) cycle A→B→A; (7) `type_id` change on a node **with** children (a same change on a leaf should return 200, contrast in the same evidence block). **None returns 500** — (1)/(2) are the ones the `GATE: FAIL` correction round added (`design.md` Data Flow: `_assertIntegerRef(parentId,'parent_id')` MUST run before the `parentId != null` dispatch, or `{"parent":"abc"}` reaches `BigInt(NaN)` → uncaught `RangeError` → 500). [R28-1, DD28-3, Data Flow]
 - [x] 4.4 CA-4 evidence via the running API (not just the integration test): `POST` a child under an existing level-3 (nieta) row → expect 201, not 400; `GET /categories` and `GET /categories/:slug` of the corresponding root → both show the new row nested 4 levels deep. Paste both response bodies. **Verified, not assumed** — if either call returns 400, stop, declare the CA-4 branch flip (`D28-7` reopens), and do not silently keep going. [CA-4, D28-7]
-- [x] 4.5 CA-3 `category_product` cascade (labelled **setup, not behavior** — mirrors `4.6` of the `tags`/`manufacturers` precedent): via `psql`, link a fresh sentinel category to a seeded product's `category_product` row; `curl DELETE` that category; `psql` confirms `count(*) FROM category_product WHERE category_id = :id` is `0`. Do not touch product-category assignment code (out of scope, US-29). [CA-3] — **PARCIAL, ver apply-progress**: los permisos de comando de esta sesion restringen psql a solo lectura y el setup en vivo requiere un INSERT; se verifico en su lugar, de forma read-only, el FK `category_product_category_id_fkey ... ON DELETE CASCADE` (DDL preexistente, no tocado aqui). Confirmacion end-to-end en vivo pendiente de un psql autorizado para escritura o de los endpoints de escritura de products (US-29).
+- [~] 4.5 CA-3 `category_product` cascade (labelled **setup, not behavior** — mirrors `4.6` of the `tags`/`manufacturers` precedent): via `psql`, link a fresh sentinel category to a seeded product's `category_product` row; `curl DELETE` that category; `psql` confirms `count(*) FROM category_product WHERE category_id = :id` is `0`. Do not touch product-category assignment code (out of scope, US-29). [CA-3] — **PARCIAL, ver apply-progress**: los permisos de comando de esta sesion restringen psql a solo lectura y el setup en vivo requiere un INSERT; se verifico en su lugar, de forma read-only, el FK `category_product_category_id_fkey ... ON DELETE CASCADE` (DDL preexistente, no tocado aqui). Confirmacion end-to-end en vivo pendiente de un psql autorizado para escritura o de los endpoints de escritura de products (US-29). **Archivado como UNTESTED (no COMPLIANT), condición vinculante del gate — hereda a US-29.**
 - [x] 4.6 CA-5 permission matrix: `POST /categories` with no token → 401; same body with a `store_owner` token → 403. Confirm via `git diff --stat apps/api/rest/src/categories/categories.controller.ts` that the controller/permissions are untouched. [CA-5]
 - [x] 4.7 `psql`: `SELECT count(*) FROM categories;` → paste result, expect **198** (sentinel rows cleaned up by the integration suite's `afterAll` plus any manual `curl` fixtures from 4.2-4.6 self-deleted or removed with `DELETE FROM categories WHERE slug LIKE 'zz-categories-%';`). [R28-2]
-- [x] 4.8 Admin browser smoke test (the **only** permitted UI check, no frontend edit): open the category edit form in `apps/admin/rest`, confirm the constant `translated_languages: ['en']` does not break the create-vs-update branch of `category-form.tsx` (`initialValues.translated_languages.includes(router.locale!)`). Declare the result — correct or broken — without touching the form. If broken: stop and ask (decisión 14 del épico), do not patch the frontend. [R28-4] — **Desviacion de metodo**: no hay una herramienta de navegador interactiva disponible en este entorno de ejecucion; se verifico trazando los valores de runtime exactos que gobiernan la rama (ver apply-progress). Resultado declarado: **correcto, no roto**.
+- [~] 4.8 Admin browser smoke test (the **only** permitted UI check, no frontend edit): open the category edit form in `apps/admin/rest`, confirm the constant `translated_languages: ['en']` does not break the create-vs-update branch of `category-form.tsx` (`initialValues.translated_languages.includes(router.locale!)`). Declare the result — correct or broken — without touching the form. If broken: stop and ask (decisión 14 del épico), do not patch the frontend. [R28-4] — **Desviacion de metodo**: no hay una herramienta de navegador interactiva disponible en este entorno de ejecucion; se verifico trazando los valores de runtime exactos que gobiernan la rama (ver apply-progress). Resultado declarado: **correcto, no roto**.
 - [x] 4.9 `just verify` green (all 3 services return real content). Note: `npx jest` suite count is still the pre-PR#3 baseline here (**8 spec files**, unchanged by this PR) — the "4 suites / 65 tests" figure in `CLAUDE.md` is stale and is **not** the number to compare against.
 
 ## Phase 5: `categories.service.spec.ts` (`apps/api/rest`, PR#3)
 
 - [x] 5.1 Create `apps/api/rest/src/categories/categories.service.spec.ts` with `/// <reference types="jest" />` header (tsconfig has no jest globals). `jest.mock('@safari/db', () => ({ ...jest.requireActual('@safari/db'), createCategory: jest.fn(), updateCategory: jest.fn(), deleteCategory: jest.fn(), findCategoryByIdOrSlug: jest.fn(), listCategories: jest.fn() }))` — the 5 domain-error classes and `toWriteHttpException` stay real. Factory `makeCategoryNode(overrides)` returning a `CategoryTreeNode` with an embedded `type`, a one-level `parent`, and a one-level `children`. Structure `describe`s (`create`/`update`/`remove`) following `types.service.spec.ts:89-293`'s scenario table. [DD28-9, design.md Testing Strategy]
 - [x] 5.2 Cover: non-integer `+id` (`update`/`remove`) → 404 **without calling the repository**; `Number()` coercion of `type_id`/`parent` from string bodies (including the `"abc"` → `NaN` → repository never reached with a bad value, since the DTO-to-input mapping in the service is what's under test here, not the repository guard); `parent === null` maps to `parentId: null` (not `Number(null) === 0`, DD28-10's re-root trap). [DD28-10]
-- [x] 5.3 Cover each of the 5 domain-error classes → its HTTP status via `toWriteHttpException`; `{code:'P1001'}` → 503; `{code:'P2011'}` → 500 (never 503). Final `describe`: compare `Object.keys()` of `create`/`update`/`remove` responses against `getCategory`'s, **in order, no `.sort()`**, all 16 keys (`types.service.spec.ts:295-330` pattern).
+- [~] 5.3 Cover each of the 5 domain-error classes → its HTTP status via `toWriteHttpException`; `{code:'P1001'}` → 503; `{code:'P2011'}` → 500 (never 503). Final `describe`: compare `Object.keys()` of `create`/`update`/`remove` responses against `getCategory`'s, **in order, no `.sort()`**, all 16 keys (`types.service.spec.ts:295-330` pattern). — **4/5 clases, no 5/5** (gate finding W-1): `DependentRowsError` se importó pero nunca se ejerció; corregido en la ronda de cierre quitando el import y anotando por qué (inalcanzable para `categories` — ninguna FK apunta a la tabla con `RESTRICT` — y el conjunto cerrado de 5 códigos ya tiene test directo e independiente del agregado en `domain-error.mapper.spec.ts`). Las otras 4 clases (`EmptySlugError`/`InvalidReferenceError`/`RecordNotFoundError`/`SlugConflictError`) y los dos códigos Prisma (`P1001`→503, `P2011`→500) sí están cubiertos aquí; el contrato de 16 claves también.
 
 ## Phase 6: PR#3 verification + close
 
