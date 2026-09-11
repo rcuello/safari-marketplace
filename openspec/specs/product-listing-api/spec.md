@@ -130,4 +130,7 @@ proceso Nest MUST NOT crashear.
 - Detalle por slug (US-3); catálogos de apoyo (US-4).
 - `popular-products`/`best-selling-products`: migrados a Postgres — ver
   `derived-catalog-api` (US-5).
-- `category_product` (vacía por diseño del seed); `db/schema.sql`; frontend.
+- `category_product`: deja de estar vacía por diseño del seed —
+  `product-write-api` (US-29) es la primera ruta capaz de poblarla, y
+  `listProducts` la lee sin cambios de código, como ya hacía; `db/schema.sql`;
+  frontend.

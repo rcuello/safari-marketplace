@@ -124,6 +124,22 @@ cubiertos.)
   cualquier agregado futuro con CHECKs propios (`products` tiene tres) MUST
   hacer lo mismo
 
+#### Scenario: Las cinco expresiones CHECK/`IN` de `products` quedan pre-validadas — cobertura confirmada (CA-7, US-29)
+- GIVEN las cinco reglas de `products` (`products_rebaja_valida`,
+  `products_simple_con_precio`, `products_procedencia_completa`, el `IN` de
+  `product_type`, el `IN` de `status`)
+- WHEN `createProduct`/`updateProduct` (`product-write-api`) construyen su
+  input antes del write
+- THEN 1 de 5 se hereda tal cual de `upsertScrapedProduct`
+  (`products_rebaja_valida`), 3 de 5 llevan guarda nueva escrita para el
+  input del admin (`products_simple_con_precio`, el `IN` de
+  `product_type`, el `IN` de `status`), y 1 de 5
+  (`products_procedencia_completa`) se cumple por construcción del tipo,
+  sin guarda de runtime
+- AND ninguna de las cinco es alcanzable como violación de CHECK sin
+  traducir sobre HTTP: cada una responde 400 antes de llegar a Postgres, y
+  el conjunto cerrado de 5 códigos no se amplía
+
 ### Requirement: Piezas listas para consumo sin reabrir el archivo (CA-7)
 
 El helper de slug y el mapeador de errores MUST exportarse desde

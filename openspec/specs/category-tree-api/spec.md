@@ -236,25 +236,27 @@ desaparecer. Un `GET /categories/:id` posterior MUST responder 404.
 - AND `GET /categories/H1` devuelve `parent: null`, y `GET /categories/M`
   responde 404
 
-#### Scenario: CA-3 — los enlaces de producto desaparecen — **UNTESTED (verificación diferida a US-29)**
-- GIVEN una categoría con filas en `category_product`
+#### Scenario: CA-3 — los enlaces de producto desaparecen (COMPLIANT, cerrado por US-29)
+- GIVEN una categoría centinela (creada vía `POST /categories`, nunca una
+  del seed) enlazada, a través de su pivote `categories`, a un producto
+  creado por `createProduct` (`product-write-api`, US-29)
 - WHEN `DELETE /categories/:id`
 - THEN `count(*) FROM category_product WHERE category_id = :id` es 0
+- AND el producto sigue existiendo — solo su enlace con esa categoría
+  desaparece
 
-**Estado real, tal como lo fija el gate adversarial de cierre de US-28
-(condición vinculante para el archive): este escenario está marcado
-`UNTESTED`, no `COMPLIANT`.** Cero código de esta US toca `category_product`
-— el desenlace es 100% el `ON DELETE CASCADE` preexistente de
-`category_product_category_id_fkey` (confirmado por lectura contra la base
-real) — y no existe hoy ninguna ruta HTTP que pueble esa tabla
-(`products.service.ts` `create`/`update` siguen siendo stubs hasta US-29).
-Poblarla habría exigido un `INSERT` por `psql`, fuera del contrato de
-comandos de solo lectura de esta sesión. La mitad observable de CA-3 que sí
-depende de código nuevo de esta US (el re-enraizado de hijas y el snapshot
-pre-borrado, escenario anterior) está `COMPLIANT` y probada en vivo. **US-29
-hereda explícitamente la obligación de cerrar este escenario como parte de
-su propia Definición de Done**, la primera vez que exista una ruta de
-escritura real para `category_product`.
+**Estado real: COMPLIANT, no `UNTESTED`.** `product-write-api` (US-29)
+implementó `createProduct`, la primera ruta HTTP capaz de poblar
+`category_product`. La evidencia `psql` de esta US — sobre una categoría
+centinela ligada a un producto también centinela (prefijo de slug
+`zz-products-`, D29-9), nunca sobre una fila del seed — confirma que el
+`ON DELETE CASCADE` preexistente de `category_product_category_id_fkey`
+sigue produciendo el efecto: 0 filas tras el borrado, sin código nuevo en
+`categories`. El escenario deja de estar `UNTESTED (verificación diferida a
+US-29)`; la obligación que archivó US-28 queda cerrada.
+(Previously: el segundo escenario estaba marcado
+`UNTESTED (verificación diferida a US-29)`, sin evidencia real porque no
+existía ninguna ruta de escritura capaz de poblar `category_product`.)
 
 ### Requirement: Las siete reglas de la arista madre→hija responden 400, nunca 500 (CA-1, CA-2)
 
