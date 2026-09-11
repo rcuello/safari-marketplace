@@ -387,6 +387,23 @@ describe('Las siete reglas de la arista madre→hija — 400 (InvalidReferenceEr
     ).rejects.toBeInstanceOf(InvalidReferenceError);
   });
 
+  it('regla 1 (parent fuera de rango): `Number.isInteger` deja pasar `1e21`; `Number.isSafeInteger` lo atrapa antes del driver (GATE: FAIL post-PR#2)', async () => {
+    // 1e21 y 2^63 son enteros para `Number.isInteger` (no tienen parte
+    // decimal), pero exceden Number.MAX_SAFE_INTEGER Y el rango de un
+    // `bigint` de Postgres (2^63-1). Sin `Number.isSafeInteger`, este valor
+    // llegaba a `prisma.category.findUnique({ where: { id: 1e21 } })`, el
+    // driver lanzaba `invalid input syntax for type bigint`/`Value out of
+    // range` (sin `.code` de Prisma reconocible) y `toWriteHttpException`
+    // degradaba a HTTP 500 — el defecto HIGH de la ronda correctiva.
+    await expect(
+      createCategory({
+        name: `${SENTINEL_PREFIX}parent-fuera-de-rango`,
+        typeId: TYPE_A,
+        parentId: 1e21,
+      })
+    ).rejects.toBeInstanceOf(InvalidReferenceError);
+  });
+
   it('regla 3: madre inexistente → InvalidReferenceError', async () => {
     await expect(
       createCategory({

@@ -301,9 +301,32 @@ const MAX_ANCESTOR_HOPS = 32;
  * `true`, así que sin este orden `{"parent":"abc"}` llegaría a
  * `_assertParentEdge(NaN, …)` y de ahí a `BigInt(NaN)` (RangeError sin
  * `.code`, HTTP 500 — ver design.md, Data Flow).
+ *
+ * `Number.isSafeInteger` (no `Number.isInteger`) — corrección de un `GATE:
+ * FAIL` posterior a PR#2. `Number.isInteger` es `true` para `1e21` o
+ * `9223372036854775808`: ambos pasan la guarda, llegan a
+ * `prisma.category.findUnique({ where: { id } })`, Prisma intenta
+ * `BigInt(1e21)`/coerciona un valor fuera del rango de un `bigint` de
+ * Postgres, y el driver lanza `invalid input syntax for type bigint` /
+ * `Value out of range` — un error SIN `.code` de Prisma reconocible, que
+ * `translateCatalogWriteError` devuelve intacto y degrada a HTTP 500
+ * (viola la decisión 6 del épico y `specs/category-tree-api/spec.md:71`,
+ * "responden 400, nunca 500"). `Number.MAX_SAFE_INTEGER` (2^53-1) es una
+ * cota conservadora muy por debajo del máximo real de `bigint` (2^63-1,
+ * `db/schema.sql`), así que ningún id/type_id/parent_id real del catálogo
+ * queda excluido por esta guarda.
+ *
+ * Sin cláusula `value <= 0`, a propósito: un `type_id`/`parent` no positivo
+ * (`0`, negativo) SÍ es representable como `bigint` sin que el driver
+ * reviente — no reproduce el defecto de este fix — y ya resuelve en un 400
+ * correcto más abajo (`_assertParentEdge`/`P2003` para una fila que no
+ * existe). Añadir `<= 0` aquí sería una regla nueva, no autorizada por la
+ * tabla cerrada de 7 reglas de `design.md`/`spec.md` (regla 1 es solo forma
+ * ENTERA, no rango de negocio); se deja fuera para no expandir el alcance
+ * de esta corrección más allá del defecto reportado.
  */
 function _assertIntegerRef(value: number | null | undefined, field: string): void {
-  if (value != null && !Number.isInteger(value)) {
+  if (value != null && !Number.isSafeInteger(value)) {
     throw new InvalidReferenceError('categories', field, value);
   }
 }
