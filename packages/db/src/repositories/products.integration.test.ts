@@ -9,6 +9,7 @@
 import 'dotenv/config';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { prisma } from '../client';
+import { InvalidReferenceError, RecordNotFoundError } from '../domain-errors';
 import { buildPaginator } from '../pagination';
 import { getCategoryTree } from './categories.repository';
 import {
@@ -18,6 +19,7 @@ import {
   findProductShopId,
   InvalidSalePriceError,
   listProducts,
+  MissingPriceError,
   updateProduct,
   upsertScrapedProduct,
 } from './products.repository';
@@ -584,5 +586,326 @@ describe('deleteProduct — CA-3, snapshot pre-borrado', () => {
 
     expect(await findProductBySlug(created.slug)).toBeNull();
     expect(await findProductShopId(created.id)).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Batería hostil de integración (US-29, PR#2) — centinela `zz-products-`,
+// misma red de limpieza del `beforeAll`/`afterAll` de arriba. Prueba CA-4
+// («nunca 500»): las 5 guardas CHECK/IN, las 3 FK + 2 pivotes inexistentes,
+// la frontera numérica (no enteros / no finitos) y los 404 de
+// `updateProduct`/`deleteProduct`. Todo vía el repositorio (no HTTP): un 500
+// aquí se manifiesta como una excepción NO instancia de las clases de
+// dominio (`RangeError`, `TypeError`, un `PrismaClientKnownRequestError` sin
+// traducir, etc.) — por eso cada aserción es `toBeInstanceOf`, nunca
+// `.rejects.toThrow()` a secas.
+// ---------------------------------------------------------------------------
+
+describe('Las cinco guardas CHECK/IN — 400, nunca 500 (Herencia 2, DD29-1/DD29-2/DD29-9)', () => {
+  it('regla 1: sale_price >= price → InvalidSalePriceError (heredada y adaptada, DD29-9)', async () => {
+    await expect(
+      createProduct({
+        name: `${SENTINEL_PREFIX}rebaja-invalida`,
+        slug: `${SENTINEL_PREFIX}rebaja-invalida`,
+        typeId: SENTINEL_TYPE_ID,
+        shopId: SENTINEL_SHOP_ID,
+        price: 50,
+        salePrice: 60,
+      })
+    ).rejects.toBeInstanceOf(InvalidSalePriceError);
+  });
+
+  it("regla 2: product_type 'simple' sin price → MissingPriceError (nueva)", async () => {
+    await expect(
+      createProduct({
+        name: `${SENTINEL_PREFIX}simple-sin-precio`,
+        slug: `${SENTINEL_PREFIX}simple-sin-precio`,
+        typeId: SENTINEL_TYPE_ID,
+        shopId: SENTINEL_SHOP_ID,
+        productType: 'simple',
+      })
+    ).rejects.toBeInstanceOf(MissingPriceError);
+  });
+
+  it("regla 3: product_type fuera de IN ('simple','variable') → InvalidReferenceError (nueva, DD29-2)", async () => {
+    await expect(
+      createProduct({
+        name: `${SENTINEL_PREFIX}type-invalido`,
+        slug: `${SENTINEL_PREFIX}type-invalido`,
+        typeId: SENTINEL_TYPE_ID,
+        shopId: SENTINEL_SHOP_ID,
+        price: 10,
+        productType: 'furniture',
+      })
+    ).rejects.toBeInstanceOf(InvalidReferenceError);
+  });
+
+  it("regla 4: status fuera de IN ('publish','draft') → InvalidReferenceError (nueva, DD29-2)", async () => {
+    await expect(
+      createProduct({
+        name: `${SENTINEL_PREFIX}status-invalido`,
+        slug: `${SENTINEL_PREFIX}status-invalido`,
+        typeId: SENTINEL_TYPE_ID,
+        shopId: SENTINEL_SHOP_ID,
+        price: 10,
+        status: 'archived',
+      })
+    ).rejects.toBeInstanceOf(InvalidReferenceError);
+  });
+
+  // regla 5 (products_procedencia_completa): SIN test de runtime, a propósito
+  // (design.md, tabla de las cinco guardas, fila 5). `CreateProductInput` no
+  // declara `sourceStore`/`sourceProductId` en absoluto — el input del admin
+  // no tiene forma de expresar la violación. `num_nonnulls(source_store,
+  // source_product_id)` es SIEMPRE 0 para estas filas, nunca ∈ (0,2):
+  // inalcanzable por construcción del tipo, no por una guarda de código que
+  // pudiera tener un bug. Documentado aquí en vez de simulado.
+});
+
+describe('Las tres FK salientes y los dos pivotes inexistentes → InvalidReferenceError, nunca 500 (DD29-4, DD29-6)', () => {
+  it('type_id inexistente → InvalidReferenceError vía P2003/translateCatalogWriteError', async () => {
+    await expect(
+      createProduct({
+        name: `${SENTINEL_PREFIX}fk-type-fantasma`,
+        slug: `${SENTINEL_PREFIX}fk-type-fantasma`,
+        typeId: 999999,
+        shopId: SENTINEL_SHOP_ID,
+        price: 10,
+      })
+    ).rejects.toBeInstanceOf(InvalidReferenceError);
+  });
+
+  it('shop_id inexistente → InvalidReferenceError vía P2003/translateCatalogWriteError', async () => {
+    await expect(
+      createProduct({
+        name: `${SENTINEL_PREFIX}fk-shop-fantasma`,
+        slug: `${SENTINEL_PREFIX}fk-shop-fantasma`,
+        typeId: SENTINEL_TYPE_ID,
+        shopId: 999999,
+        price: 10,
+      })
+    ).rejects.toBeInstanceOf(InvalidReferenceError);
+  });
+
+  it('manufacturer_id inexistente → InvalidReferenceError vía P2003 (SET NULL en el DDL, pero inexistente en la escritura NO es opcional silencioso)', async () => {
+    await expect(
+      createProduct({
+        name: `${SENTINEL_PREFIX}fk-manufacturer-fantasma`,
+        slug: `${SENTINEL_PREFIX}fk-manufacturer-fantasma`,
+        typeId: SENTINEL_TYPE_ID,
+        shopId: SENTINEL_SHOP_ID,
+        manufacturerId: 999999,
+        price: 10,
+      })
+    ).rejects.toBeInstanceOf(InvalidReferenceError);
+  });
+
+  it('categoryIds con id inexistente → InvalidReferenceError vía la sonda _assertPivotIdsExist, NO vía P2003 (pregunta empírica de DD29-6, cerrada)', async () => {
+    let error: unknown;
+    try {
+      await createProduct({
+        name: `${SENTINEL_PREFIX}pivote-categoria-fantasma`,
+        slug: `${SENTINEL_PREFIX}pivote-categoria-fantasma`,
+        typeId: SENTINEL_TYPE_ID,
+        shopId: SENTINEL_SHOP_ID,
+        price: 10,
+        categoryIds: [999999],
+      });
+    } catch (e) {
+      error = e;
+    }
+    expect(error).toBeInstanceOf(InvalidReferenceError);
+    // La sonda `count` (DD29-6) lanza `InvalidReferenceError('products',
+    // 'categories[]')` SIN un tercer argumento `value` — el mensaje es el
+    // literal exacto de abajo. Un P2003 traducido por
+    // `translateCatalogWriteError` llevaría en cambio `meta.field_name` (si
+    // Prisma 7 + adapter-pg lo emite para una fila pivote — lo que este
+    // design marcaba como no verificado) o el `'desconocida'` genérico de
+    // respaldo; ninguno de los dos produce este literal. El mensaje
+    // observado confirma que la sonda es la que disparó, no el `catch` del
+    // `create` anidado — cierra la pregunta empírica de DD29-6.
+    expect((error as Error).message).toBe(
+      '`products.categories[]` referencia un registro inexistente.'
+    );
+    // Nada se creó: la sonda corre ANTES de `generateSlug`/`prisma.create`.
+    expect(
+      await findProductBySlug(`${SENTINEL_PREFIX}pivote-categoria-fantasma`)
+    ).toBeNull();
+  });
+
+  it('tagIds con id inexistente → InvalidReferenceError vía la sonda _assertPivotIdsExist, NO vía P2003', async () => {
+    let error: unknown;
+    try {
+      await createProduct({
+        name: `${SENTINEL_PREFIX}pivote-tag-fantasma`,
+        slug: `${SENTINEL_PREFIX}pivote-tag-fantasma`,
+        typeId: SENTINEL_TYPE_ID,
+        shopId: SENTINEL_SHOP_ID,
+        price: 10,
+        tagIds: [999999],
+      });
+    } catch (e) {
+      error = e;
+    }
+    expect(error).toBeInstanceOf(InvalidReferenceError);
+    expect((error as Error).message).toBe(
+      '`products.tags[]` referencia un registro inexistente.'
+    );
+    expect(
+      await findProductBySlug(`${SENTINEL_PREFIX}pivote-tag-fantasma`)
+    ).toBeNull();
+  });
+});
+
+describe('Frontera numérica: no-enteros y no-finitos → InvalidReferenceError, nunca 500/RangeError sin traducir (DD29-3)', () => {
+  it('type_id/shop_id/manufacturer_id y ids de pivote no enteros ("abc", 1e21) → InvalidReferenceError', async () => {
+    await expect(
+      createProduct({
+        name: `${SENTINEL_PREFIX}type-abc`,
+        slug: `${SENTINEL_PREFIX}type-abc`,
+        typeId: Number('abc'),
+        shopId: SENTINEL_SHOP_ID,
+        price: 10,
+      })
+    ).rejects.toBeInstanceOf(InvalidReferenceError);
+
+    await expect(
+      createProduct({
+        name: `${SENTINEL_PREFIX}shop-1e21`,
+        slug: `${SENTINEL_PREFIX}shop-1e21`,
+        typeId: SENTINEL_TYPE_ID,
+        shopId: 1e21,
+        price: 10,
+      })
+    ).rejects.toBeInstanceOf(InvalidReferenceError);
+
+    await expect(
+      createProduct({
+        name: `${SENTINEL_PREFIX}manufacturer-abc`,
+        slug: `${SENTINEL_PREFIX}manufacturer-abc`,
+        typeId: SENTINEL_TYPE_ID,
+        shopId: SENTINEL_SHOP_ID,
+        manufacturerId: Number('abc'),
+        price: 10,
+      })
+    ).rejects.toBeInstanceOf(InvalidReferenceError);
+
+    await expect(
+      createProduct({
+        name: `${SENTINEL_PREFIX}categoria-1e21`,
+        slug: `${SENTINEL_PREFIX}categoria-1e21`,
+        typeId: SENTINEL_TYPE_ID,
+        shopId: SENTINEL_SHOP_ID,
+        price: 10,
+        categoryIds: [1e21],
+      })
+    ).rejects.toBeInstanceOf(InvalidReferenceError);
+
+    await expect(
+      createProduct({
+        name: `${SENTINEL_PREFIX}tag-abc`,
+        slug: `${SENTINEL_PREFIX}tag-abc`,
+        typeId: SENTINEL_TYPE_ID,
+        shopId: SENTINEL_SHOP_ID,
+        price: 10,
+        tagIds: [Number('abc')],
+      })
+    ).rejects.toBeInstanceOf(InvalidReferenceError);
+  });
+
+  it('price/sale_price/min_price/max_price no finitos ("abc", NaN, 1e300 fuera de numeric(12,2)) → InvalidReferenceError', async () => {
+    await expect(
+      createProduct({
+        name: `${SENTINEL_PREFIX}price-abc`,
+        slug: `${SENTINEL_PREFIX}price-abc`,
+        typeId: SENTINEL_TYPE_ID,
+        shopId: SENTINEL_SHOP_ID,
+        price: Number('abc'),
+      })
+    ).rejects.toBeInstanceOf(InvalidReferenceError);
+
+    await expect(
+      createProduct({
+        name: `${SENTINEL_PREFIX}saleprice-nan`,
+        slug: `${SENTINEL_PREFIX}saleprice-nan`,
+        typeId: SENTINEL_TYPE_ID,
+        shopId: SENTINEL_SHOP_ID,
+        price: 100,
+        salePrice: Number.NaN,
+      })
+    ).rejects.toBeInstanceOf(InvalidReferenceError);
+
+    await expect(
+      createProduct({
+        name: `${SENTINEL_PREFIX}minprice-1e300`,
+        slug: `${SENTINEL_PREFIX}minprice-1e300`,
+        typeId: SENTINEL_TYPE_ID,
+        shopId: SENTINEL_SHOP_ID,
+        productType: 'variable',
+        minPrice: 1e300,
+        maxPrice: 200,
+      })
+    ).rejects.toBeInstanceOf(InvalidReferenceError);
+
+    await expect(
+      createProduct({
+        name: `${SENTINEL_PREFIX}maxprice-1e300`,
+        slug: `${SENTINEL_PREFIX}maxprice-1e300`,
+        typeId: SENTINEL_TYPE_ID,
+        shopId: SENTINEL_SHOP_ID,
+        productType: 'variable',
+        minPrice: 50,
+        maxPrice: 1e300,
+      })
+    ).rejects.toBeInstanceOf(InvalidReferenceError);
+  });
+
+  it('quantity no entero (1.5) → InvalidReferenceError', async () => {
+    await expect(
+      createProduct({
+        name: `${SENTINEL_PREFIX}quantity-decimal`,
+        slug: `${SENTINEL_PREFIX}quantity-decimal`,
+        typeId: SENTINEL_TYPE_ID,
+        shopId: SENTINEL_SHOP_ID,
+        price: 10,
+        quantity: 1.5,
+      })
+    ).rejects.toBeInstanceOf(InvalidReferenceError);
+  });
+});
+
+describe('404 en updateProduct/deleteProduct con id inexistente, y duplicados de pivote sin P2002 espurio (DD29-6, Herencia 2)', () => {
+  it('updateProduct(999999999, …) → RecordNotFoundError', async () => {
+    await expect(
+      updateProduct(999999999, { name: `${SENTINEL_PREFIX}fantasma` })
+    ).rejects.toBeInstanceOf(RecordNotFoundError);
+  });
+
+  it('deleteProduct(999999999) → RecordNotFoundError', async () => {
+    await expect(deleteProduct(999999999)).rejects.toBeInstanceOf(RecordNotFoundError);
+  });
+
+  it('categoryIds/tagIds con ids duplicados no producen un P2002 espurio (uniq(), DD29-6)', async () => {
+    const created = await createProduct({
+      name: `${SENTINEL_PREFIX}pivote-duplicado`,
+      slug: `${SENTINEL_PREFIX}pivote-duplicado`,
+      typeId: SENTINEL_TYPE_ID,
+      shopId: SENTINEL_SHOP_ID,
+      price: 10,
+      categoryIds: [SENTINEL_CATEGORY_A, SENTINEL_CATEGORY_A],
+      tagIds: [SENTINEL_TAG_A, SENTINEL_TAG_A],
+    });
+
+    expect(created.categories.map((c) => c.id)).toEqual([SENTINEL_CATEGORY_A]);
+    expect(created.tags.map((t) => t.id)).toEqual([SENTINEL_TAG_A]);
+
+    const updated = await updateProduct(created.id, {
+      categoryIds: [SENTINEL_CATEGORY_A, SENTINEL_CATEGORY_B, SENTINEL_CATEGORY_B],
+    });
+    expect(updated.categories.map((c) => c.id).sort((a, b) => a - b)).toEqual(
+      [SENTINEL_CATEGORY_A, SENTINEL_CATEGORY_B].sort((a, b) => a - b)
+    );
+
+    await deleteProduct(created.id);
   });
 });

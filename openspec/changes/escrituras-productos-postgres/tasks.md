@@ -84,11 +84,11 @@ una US-29b**.
 
 ## Phase 2: Batería hostil de integración (`packages/db`, PR#2)
 
-- [ ] 2.1 Cubrir las 5 guardas CHECK/`IN` como violaciones HTTP-equivalentes vía repositorio (todas sobre filas centinela): `sale_price >= price` → `InvalidSalePriceError`; `simple` sin `price` → `MissingPriceError`; `product_type` fuera de `IN` → `InvalidReferenceError`; `status` fuera de `IN` → `InvalidReferenceError`; `products_procedencia_completa` documentada como inalcanzable por construcción (sin test de runtime, el input no declara `source_*`). [DD29-1, DD29-2, Herencia 2]
-- [ ] 2.2 Cubrir las 3 FK salientes (`type_id`/`shop_id`/`manufacturer_id`) inexistentes → `InvalidReferenceError` (400, vía `P2003`/`translateCatalogWriteError`), y los 2 pivotes (`categoryIds`/`tagIds`) con un id inexistente → `InvalidReferenceError` vía `_assertPivotIdsExist` (no vía `P2003`). [DD29-4, DD29-6]
-- [ ] 2.3 Cubrir la frontera numérica no entera/no finita: `type_id`/`shop_id`/`manufacturer_id`/ids de pivote no enteros (`"abc"`, `1e21`) → `InvalidReferenceError`; `price`/`sale_price`/`min_price`/`max_price` no finitos (`"abc"`, `NaN`, `1e300` fuera de `numeric(12,2)`) → `InvalidReferenceError`; `quantity` no entero → `InvalidReferenceError`. Ninguno produce 500. [DD29-3]
-- [ ] 2.4 Cubrir 404: `updateProduct`/`deleteProduct` con id inexistente → `RecordNotFoundError`. Cubrir duplicados en `categoryIds`/`tagIds` (`uniq()` evita el `P2002` espurio). [DD29-6, Herencia 2]
-- [ ] 2.5 Verificar PR#2: `just db-check` verde (con PR#1 ya aplicado). Pegar salida real, incluidos los conteos de cierre: `count(*) FROM products` restituido al valor medido antes de la corrida.
+- [x] 2.1 Cubrir las 5 guardas CHECK/`IN` como violaciones HTTP-equivalentes vía repositorio (todas sobre filas centinela): `sale_price >= price` → `InvalidSalePriceError`; `simple` sin `price` → `MissingPriceError`; `product_type` fuera de `IN` → `InvalidReferenceError`; `status` fuera de `IN` → `InvalidReferenceError`; `products_procedencia_completa` documentada como inalcanzable por construcción (sin test de runtime, el input no declara `source_*`). [DD29-1, DD29-2, Herencia 2]
+- [x] 2.2 Cubrir las 3 FK salientes (`type_id`/`shop_id`/`manufacturer_id`) inexistentes → `InvalidReferenceError` (400, vía `P2003`/`translateCatalogWriteError`), y los 2 pivotes (`categoryIds`/`tagIds`) con un id inexistente → `InvalidReferenceError` vía `_assertPivotIdsExist` (no vía `P2003`). [DD29-4, DD29-6]
+- [x] 2.3 Cubrir la frontera numérica no entera/no finita: `type_id`/`shop_id`/`manufacturer_id`/ids de pivote no enteros (`"abc"`, `1e21`) → `InvalidReferenceError`; `price`/`sale_price`/`min_price`/`max_price` no finitos (`"abc"`, `NaN`, `1e300` fuera de `numeric(12,2)`) → `InvalidReferenceError`; `quantity` no entero → `InvalidReferenceError`. Ninguno produce 500. [DD29-3]
+- [x] 2.4 Cubrir 404: `updateProduct`/`deleteProduct` con id inexistente → `RecordNotFoundError`. Cubrir duplicados en `categoryIds`/`tagIds` (`uniq()` evita el `P2002` espurio). [DD29-6, Herencia 2]
+- [x] 2.5 Verificar PR#2: `just db-check` verde (con PR#1 ya aplicado). Pegar salida real, incluidos los conteos de cierre: `count(*) FROM products` restituido al valor medido antes de la corrida.
 
 ## Phase 3: Capa API — servicio, controller, DTO (`apps/api/rest`, PR#3 — US releasable aquí)
 

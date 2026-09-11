@@ -1,8 +1,206 @@
 # Apply Progress: Escrituras de productos con categorías y tags (US-29)
 
 > Mode: Standard (strict_tdd: false). Chain strategy: stacked-to-main, 4-PR
-> chain. Este documento cubre exclusivamente **PR#1 (Phase 1, tasks 1.1–1.12)**
-> — primer batch de `sdd-apply`. No existía `apply-progress.md` previo.
+> chain. Este documento cubre **PR#1 (Phase 1, tasks 1.1–1.12)** y **PR#2
+> (Phase 2, tasks 2.1–2.5)** — segundo batch de `sdd-apply`, fusionado sobre
+> el documento de PR#1 (Merge Protocol: ninguna tarea previa se pierde).
+
+## PR#2 — Batería hostil de integración (Phase 2, tasks 2.1–2.5)
+
+**Alcance respetado: solo tests.** Único archivo tocado en este batch:
+`packages/db/src/repositories/products.integration.test.ts` (+323 líneas,
+`git diff --stat`). Ningún guard de `products.repository.ts` resultó
+defectuoso — no hizo falta tocar el repositorio; PR#1 ya cerraba las 5
+guardas, las 3 FK, la sonda de pivotes y la frontera numérica exactamente
+como el design las especifica. Cero archivos fuera de `packages/db` tocados;
+`slug.ts`, `domain-errors.ts`, `common/errors/`, `db/schema.sql` intactos
+(confirmado con `git status --short`, ver abajo).
+
+### Completed Tasks (Phase 2 / PR#2)
+
+- [x] 2.1 — Las 5 guardas CHECK/`IN`, 4 con test de runtime (`sale_price >=
+      price` → `InvalidSalePriceError`; `simple` sin `price` →
+      `MissingPriceError`; `product_type` fuera de `IN` →
+      `InvalidReferenceError`; `status` fuera de `IN` →
+      `InvalidReferenceError`) + 1 documentada como inalcanzable por
+      construcción (`products_procedencia_completa`, sin test — el input del
+      admin no declara `source_*`).
+- [x] 2.2 — Las 3 FK salientes (`type_id`/`shop_id`/`manufacturer_id`)
+      inexistentes → `InvalidReferenceError` vía `P2003`/
+      `translateCatalogWriteError`; los 2 pivotes (`categoryIds`/`tagIds`)
+      con un id inexistente → `InvalidReferenceError` vía
+      `_assertPivotIdsExist`, confirmado por el TEXTO EXACTO del mensaje
+      (ver § Hallazgo empírico abajo — cierra la pregunta abierta de DD29-6).
+- [x] 2.3 — Frontera numérica: `type_id`/`shop_id`/`manufacturer_id`/ids de
+      pivote no enteros (`Number('abc')`, `1e21`) → `InvalidReferenceError`;
+      `price`/`sale_price`/`min_price`/`max_price` no finitos (`NaN`,
+      `1e300`) → `InvalidReferenceError`; `quantity` no entero (`1.5`) →
+      `InvalidReferenceError`. Ninguno produjo 500/`RangeError` sin traducir.
+- [x] 2.4 — 404: `updateProduct(999999999, …)` y `deleteProduct(999999999)` →
+      `RecordNotFoundError`. Duplicados en `categoryIds`/`tagIds` (mismo id
+      repetido, en `create` y en `update`) no producen un `P2002` espurio
+      (`uniq()` los deduplica antes del `create`/`deleteMany+create`).
+- [x] 2.5 — `just db-build` + `npm run typecheck` limpios; `just db-check`
+      verde **3 corridas consecutivas** (186/186 cada una); conteos de
+      cierre restituidos vía `psql` (ver evidencia abajo).
+
+### Hallazgo empírico — la sonda `_assertPivotIdsExist` es la que dispara, NO un `P2003` de `create` anidado
+
+El design (DD29-6) dejaba explícitamente sin verificar si un `create`
+anidado de Prisma 7 + `adapter-pg` para la fila pivote emite `P2003` bajo
+Prisma 7 + `adapter-pg`, y por eso promovía la sonda `count` a normativa en
+vez de apostar por ese camino. Los tests 2.2 de `categoryIds`/`tagIds`
+inexistentes lo confirman con evidencia directa (no inferida): el mensaje
+observado en ambos casos es el literal EXACTO que produce
+`_assertPivotIdsExist` sin un tercer argumento `value` —
+
+```
+`products.categories[]` referencia un registro inexistente.
+`products.tags[]` referencia un registro inexistente.
+```
+
+— y no el que produciría `translateCatalogWriteError` desde un `P2003` (que
+llevaría `meta.field_name` del driver, si Prisma lo emitiera para una fila
+pivote, o el `'desconocida'` genérico de respaldo si no lo emitiera; ninguno
+de los dos coincide con este literal). Además, ambos tests confirman que
+`findProductBySlug` del slug candidato devuelve `null` tras el rechazo: la
+sonda corre ANTES de `generateSlug`/`prisma.product.create`, así que ni
+siquiera se intentó la escritura — no hay ninguna ventana donde el `P2003`
+pudiera haber disparado primero. **Conclusión: la sonda `count` de DD29-6 es
+la que efectivamente protege el 400 del spec, no una red de respaldo
+redundante** — la pregunta empírica queda cerrada a favor de la elección de
+diseño (mantener la sonda normativa, no confiar en `P2003`).
+
+### Tabla de cobertura de las 5 guardas (Herencia 2) — 1 heredada-adaptada / 3 nuevas / 1 por construcción
+
+| # | Regla | DDL | Origen | Error de dominio | Test (PR#2) |
+|---|---|---|---|---|---|
+| 1 | `products_rebaja_valida` (`sale_price < price`) | `schema.sql:393-394` | **Heredada y adaptada** de `upsertScrapedProduct` (DD29-9 añade el disyunto `price != null`) | `InvalidSalePriceError` | `regla 1: sale_price >= price → InvalidSalePriceError` |
+| 2 | `products_simple_con_precio` | `:398-399` | **Nueva** | `MissingPriceError` | `regla 2: product_type 'simple' sin price → MissingPriceError` |
+| 3 | `product_type IN ('simple','variable')` | `:335-336` | **Nueva** | `InvalidReferenceError` (DD29-2) | `regla 3: product_type fuera de IN (…) → InvalidReferenceError` |
+| 4 | `status IN ('publish','draft')` | `:359-360` | **Nueva** | `InvalidReferenceError` (DD29-2) | `regla 4: status fuera de IN (…) → InvalidReferenceError` |
+| 5 | `products_procedencia_completa` | `:403-404` | **Por construcción**: el input del admin no declara `source_*` ⇒ `num_nonnulls = 0 ∈ (0,2)` siempre falso | — (sin guarda de runtime) | **Sin test** — documentado en el `describe`, no simulado |
+
+### Divergencias / Deviations from Design (PR#2)
+
+Ninguna. No se tocó `products.repository.ts`: todas las guardas, sondas y
+traducciones de error que PR#1 implementó se comportaron exactamente como
+`design.md` las especifica — cero defectos encontrados en la batería
+hostil. Único hallazgo es el empírico de DD29-6 (arriba), que **confirma**
+la elección de diseño en vez de contradecirla.
+
+### Files Changed (PR#2)
+
+| File | Action | Δ líneas (`git diff --stat`) | Qué se hizo |
+|---|---|---|---|
+| `packages/db/src/repositories/products.integration.test.ts` | Modified | +323 / -0 | 15 `it` nuevos en 4 `describe` (5 guardas CHECK/IN, 3 FK + 2 pivotes inexistentes, frontera numérica no-entera/no-finita, 404 + dedup de pivotes), todos sobre filas centinela `zz-products-`, usando la red de limpieza `beforeAll`/`afterAll` ya existente de PR#1. Imports añadidos: `InvalidReferenceError`/`RecordNotFoundError` de `../domain-errors`, `MissingPriceError` de `./products.repository` |
+| **Total** | | **+323** | Bajo el techo forecast de PR#2 (~330) |
+
+### Issues Found (PR#2)
+
+Ninguno bloqueante.
+
+- `npx biome check src/repositories/products.integration.test.ts`: **1 solo
+  error, de formato** (mismo CRLF pre-existente que PR#1 ya documentó —
+  `git config core.autocrlf=true` en este checkout de Windows), sin ninguna
+  línea `lint/`/`assist/` real atribuible a este batch.
+- `git status --short` tras el batch: un único archivo modificado
+  (`packages/db/src/repositories/products.integration.test.ts`) — ninguna
+  superficie fuera de `packages/db` tocada, ningún archivo de la lista
+  prohibida (`slug.ts`, `domain-errors.ts`, `common/errors/`,
+  `db/schema.sql`, `apps/**`) aparece en el diff.
+
+### Verification Evidence (real output) — PR#2
+
+#### `just db-build`
+
+```
+npm run build
+> @safari/db@0.1.0 build
+> prisma generate && tsup
+✔ Generated Prisma Client (7.10.0) to .\generated\prisma\client in 565ms
+CJS Build start
+CJS dist\index.js     162.95 KB
+CJS dist\index.js.map 391.24 KB
+CJS ⚡️ Build success in 141ms
+DTS Build start
+DTS ⚡️ Build success in 9915ms
+DTS dist\index.d.ts 1.39 MB
+```
+
+#### `cd packages/db && npm run typecheck`
+
+```
+> @safari/db@0.1.0 typecheck
+> tsc --noEmit
+```
+(sin salida — limpio)
+
+#### `just db-check` — 3 corridas consecutivas
+
+```
+=== RUN 1 ===
+ Test Files  10 passed (10)
+      Tests  186 passed (186)
+   Start at  15:08:16
+   Duration  19.12s (transform 843ms, setup 0ms, import 3.98s, tests 6.11s, environment 1ms)
+
+=== RUN 2 ===
+ Test Files  10 passed (10)
+      Tests  186 passed (186)
+   Start at  15:08:50
+   Duration  18.10s (transform 788ms, setup 0ms, import 3.55s, tests 6.25s, environment 1ms)
+
+=== RUN 3 ===
+ Test Files  10 passed (10)
+      Tests  186 passed (186)
+   Start at  15:09:20
+   Duration  17.28s (transform 735ms, setup 0ms, import 3.49s, tests 5.89s, environment 1ms)
+```
+
+186 = 171 (baseline post-PR#1) + 15 nuevos `it` de la batería hostil de
+`products`. Conteos pinneados existentes reverificados con
+`vitest run --reporter=verbose`, grepeando los `it`:
+
+- `categories.integration.test.ts`: `rootsOnly true (default) → 83 raíces` ✓,
+  `rootsOnly false → 198 nodos planos (D-4)` ✓, `cierre de la suite (R28-2):
+  ningún test de escritura dejó basura: prisma.category.count() vuelve a 198` ✓.
+- `shops.integration.test.ts`: `productsCount filtrado por publish/
+  visibility_public (Decisión E)` ✓, `findShopBySlug > trae el mismo
+  productsCount filtrado que el listado (Decisión E)` ✓.
+
+#### `psql` — conteos de cierre (Postgres real, `safari-postgres`)
+
+```
+$ docker exec safari-postgres psql -U safari -d safari_scraper -t \
+    -c "SELECT count(*) FROM products;" \
+    -c "SELECT count(*) FROM category_product;" \
+    -c "SELECT count(*) FROM product_tag;" \
+    -c "SELECT count(*) FROM categories;" \
+    -c "SELECT count(*) FROM tags;" \
+    -c "SELECT count(*) FROM shops;"
+  1200
+     0
+     0
+   198
+    10
+    12
+```
+
+Idénticos a los medidos por el orquestador antes de arrancar este batch —
+ningún producto/pivote centinela quedó vivo tras las 3 corridas.
+
+### Workload / PR Boundary (PR#2)
+
+- Mode: chained PR slice (`stacked-to-main`, 4-PR chain).
+- Current work unit: **Unit 2 — `packages/db` batería hostil de
+  integración** (tasks 2.1–2.5).
+- Boundary: empieza sobre PR#1 ya aplicado (`just db-check` 171/171 verde),
+  termina en `just db-check` verde (186/186) con los conteos del seed
+  restituidos. No incluye la capa API (Phase 3 / PR#3) ni
+  `products.service.spec.ts` (Phase 4 / PR#4).
+- Estimated review budget impact: +323 líneas (`git diff --stat`), bajo el
+  techo forecast de PR#2 (~330) del roll-up de `tasks.md`.
 
 ## GATE FAILED — corrección aplicada (re-run correctivo, único permitido)
 
@@ -365,14 +563,15 @@ delegados al `DEFAULT now()` de Postgres.
 
 ## Remaining Tasks (fuera de este batch)
 
-- [ ] 2.1–2.5 — Batería hostil de integración (PR#2).
 - [ ] 3.1–3.7 — Capa API: servicio, controller, DTO (PR#3, US releasable).
 - [ ] 4.1–4.5 — `products.service.spec.ts` (PR#4).
 - [ ] 5.1–5.10 — Cierre de la DoD (evidencia, todo PR).
 
 ## Status
 
-12/33 tasks complete (Phase 1 completa, **incluida la corrección post-GATE
-FAILED**). `just db-check` verde de forma reproducible (3 corridas
-consecutivas, evidencia real pegada arriba). Ready for next batch (Phase 2 /
-PR#2) o para que el orquestador decida el siguiente slice.
+17/33 tasks complete (Phase 1 + Phase 2 completas, **incluida la corrección
+post-GATE FAILED de PR#1**). `just db-check` verde de forma reproducible
+tanto al cierre de PR#1 (171/171, 3 corridas) como al cierre de PR#2
+(186/186, 3 corridas), evidencia real pegada en sus respectivas secciones.
+Ready for next batch (Phase 3 / PR#3 — capa API, US releasable ahí) o para
+que el orquestador decida el siguiente slice.
