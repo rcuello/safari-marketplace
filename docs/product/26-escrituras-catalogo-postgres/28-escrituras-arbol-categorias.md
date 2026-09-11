@@ -7,9 +7,13 @@
 
 **Épico:** [Épico 26](./README.md)
 **Fecha:** 2026-09-09
-**Status:** Hecho (PR#1 `packages/db`, PR#2 `apps/api/rest`, PR#3 `categories.service.spec.ts` — evidencia en `openspec/changes/2026-09-10-escrituras-arbol-categorias/apply-progress.md`)
+**Status:** Implementada (2026-09-11) — PR#1 `packages/db`, PR#2 `apps/api/rest`,
+PR#3 `categories.service.spec.ts`; evidencia en
+`openspec/changes/archive/2026-09-10-escrituras-arbol-categorias/apply-progress.md`
 **Depende de:** US-27a
-**LOC est.:** ~350
+**LOC est.:** ~350 · **LOC real:** ~1612 en 3 PRs encadenados (~761 / ~142 / ~709).
+La estimación se re-ancló a ~985 en `design.md` a mitad de vuelo: el ×4.6 es
+contra el ~350 original, el ×1.64 que cita el archivo es contra el ~985.
 
 ## Historia
 **Como** administrador del marketplace, **quiero** que la taxonomía de

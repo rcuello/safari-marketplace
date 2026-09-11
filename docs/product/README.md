@@ -199,7 +199,7 @@ Feature: …
 Épico 13 Orquestación local con Docker        → US-14, US-15
 Épico 16 Despliegue y observabilidad          → US-17, US-18   ← Terraform: el README lo promete, hoy no existe
 Épico 19 Autenticación y autorización         → US-20 … US-25  (completado)
-Épico 26 Escrituras del catálogo desde Postgres → US-27a, US-27b hechas; quedan US-28, US-29, US-30 ← `types`, `tags` y `manufacturers` ya persisten; en los otros tres agregados create/update/remove siguen devolviendo la fila 0 del mock
+Épico 26 Escrituras del catálogo desde Postgres → US-27a, US-27b, US-28 hechas; quedan US-29, US-30 ← `types`, `tags`, `manufacturers` y `categories` ya persisten; en `products` y `shops` create/update/remove siguen devolviendo la fila 0 del mock
 US-31    Guardas de id fuera del rango bigint   → standalone   ← defecto vivo en `main`: `PUT /api/types/1e21` responde 500 en `types`/`tags`/`manufacturers`
 US-32    Deriva de reloj `updated_at`/`created_at` → standalone ← toca DDL y exige `just db-reset`; no la arrastra ningún épico
 ```
@@ -219,11 +219,14 @@ adversariales de US-28, no de tests):
   `created_at` y `updated_at`. **Toca DDL** y exige `just db-reset`, así que no
   puede ir dentro del Épico 26 (decisión 1 de ese épico).
 
-**US recomendada para arrancar: US-28, US-29 o US-30** — cualquiera de las
-tres, en paralelo: US-27a y US-27b ya están implementadas (2026-09-10), y con
-US-27a aterrizaron el helper de slug y el mapeo de errores de dominio → HTTP
-que las tres consumen. Solo comparten el barrel `packages/db/index.ts`, así que
-quien arranque segundo rebasea sobre él.
+**US recomendada para arrancar: US-31** — es un defecto vivo en `main` (500 en
+tres agregados), cuesta ~120 líneas y el arreglo ya está escrito en
+`categories`. Después, US-29 o US-30, en paralelo: US-27a, US-27b y US-28 ya
+están implementadas (2026-09-10/11), y con US-27a aterrizaron el helper de slug
+y el mapeo de errores de dominio → HTTP que ambas consumen. Solo comparten el
+barrel `packages/db/index.ts`, así que quien arranque segundo rebasea sobre él.
+Antes de estimar US-29 o US-30, leer el sesgo medido del épico en su README: las
+tres US cerradas desbordaron su estimación original entre ×2.0 y ×4.6.
 
 **Dos herencias que NO se copian a ciegas** (las midió el `sdd-verify` de
 US-27b; su `archive-report.md` las detalla):
