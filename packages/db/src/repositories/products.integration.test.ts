@@ -512,7 +512,29 @@ describe('updateProduct — CA-2, pivotes en los 3 estados, slug invariante', ()
     await deleteProduct(created.id);
   });
 
-  it('name cambia, slug invariante, updatedAt monótono (nunca igualdad pinneada)', async () => {
+  it('name cambia, slug invariante, updatedAt monótono entre dos PUT sucesivos (nunca create-vs-update — relojes distintos)', async () => {
+    // Comparación UPDATE-vs-UPDATE, NUNCA create-vs-update — mismo rationale
+    // corregido que `categories.integration.test.ts` (US-28, updateCategory
+    // — CA-2): `createProduct` escribe `created_at`/`updated_at` como
+    // parámetros ligados en el INSERT (columna `@default(now())` sin
+    // `@updatedAt`, resuelta CLIENT-SIDE por el driver adapter — confirmado
+    // con `log:['query']` y un script de diagnóstico ad hoc), es decir con
+    // el reloj de NODE. `updateProduct` en cambio SIEMPRE delega en el
+    // trigger `products_updated_at`, con el reloj de POSTGRES (el
+    // contenedor). Medido en este entorno con un probe de round-trip
+    // ajustado (`clock_timestamp()` bracket con `Date.now()`, RTT de 4-8ms):
+    // Node y Postgres NO comparten reloj — divergen ~150-450ms, la
+    // divergencia además DERIVA en vivo (no es un offset fijo), y no hay
+    // garantía de signo. Comparar `created.updatedAt` (reloj de Node) contra
+    // `updated.updatedAt` (reloj de Postgres) mezcla dos relojes
+    // independientes: cuando la deriva cae del lado equivocado en la
+    // ventana entre las dos llamadas, la resta puede dar NEGATIVA sin que
+    // la aplicación haya hecho nada mal — el defecto real estaba en el test,
+    // no en `updateProduct` (verificado: `just db-check` con este mismo
+    // fix, corrido en verde repetidamente; ver `apply-progress.md`). Dos
+    // `PUT` sucesivos SÍ usan el mismo reloj (el trigger, las dos veces) y
+    // son monótonos de forma fiable — precedente idéntico en
+    // `categories.integration.test.ts:277-319`.
     const created = await createProduct({
       name: `${SENTINEL_PREFIX}Original`,
       slug: `${SENTINEL_PREFIX}slug-invariante`,
@@ -521,17 +543,22 @@ describe('updateProduct — CA-2, pivotes en los 3 estados, slug invariante', ()
       price: 10,
     });
 
-    const updated = await updateProduct(created.id, {
+    const firstUpdate = await updateProduct(created.id, {
       name: `${SENTINEL_PREFIX}Renombrado`,
     });
-    expect(updated.name).toBe(`${SENTINEL_PREFIX}Renombrado`);
-    expect(updated.slug).toBe(`${SENTINEL_PREFIX}slug-invariante`);
-    // `toBeGreaterThanOrEqual`, no `toBeGreaterThan` (el trigger de Postgres
-    // puede resolver dos UPDATE del mismo test en el mismo tick de reloj):
-    // nunca una igualdad PINNEADA a mano, siempre contra el `updatedAt`
-    // capturado del create anterior.
-    expect(updated.updatedAt.getTime()).toBeGreaterThanOrEqual(
-      created.updatedAt.getTime()
+    expect(firstUpdate.name).toBe(`${SENTINEL_PREFIX}Renombrado`);
+    expect(firstUpdate.slug).toBe(`${SENTINEL_PREFIX}slug-invariante`);
+
+    const secondUpdate = await updateProduct(created.id, {
+      name: `${SENTINEL_PREFIX}Renombrado Otra Vez`,
+    });
+    expect(secondUpdate.slug).toBe(`${SENTINEL_PREFIX}slug-invariante`);
+    // `toBeGreaterThan` estricto (no `toBeGreaterThanOrEqual`): mismo reloj
+    // las dos veces (el trigger), así que una igualdad exacta SÍ sería
+    // sospechosa — sería el trigger sin disparar. Precedente idéntico:
+    // `categories.integration.test.ts:306-316`.
+    expect(secondUpdate.updatedAt.getTime()).toBeGreaterThan(
+      firstUpdate.updatedAt.getTime()
     );
 
     await deleteProduct(created.id);
