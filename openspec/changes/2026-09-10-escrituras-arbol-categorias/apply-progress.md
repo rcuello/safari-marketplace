@@ -1,5 +1,257 @@
 # Apply Progress: Escrituras del árbol de categorías (US-28)
 
+## Correction round (`GATE: FAIL`) — PR#2, single permitted re-run
+
+Una revisión adversarial de contexto fresco sobre PR#2 devolvió `GATE: FAIL`
+con **un defecto HIGH**. El revisor re-corrió toda la evidencia de Batch 2 y
+la confirmó exacta en cada punto — sin deshonestidad encontrada. Se registra
+primero **qué pasó**, para no tocarlo de nuevo:
+
+- Fidelidad de contrato byte a byte (`POST` `JSON.stringify`-igual a un `GET`
+  posterior; 16 claves en el orden del `GET`; `DELETE` devuelve el snapshot
+  pre-borrado con `children[0].parent_id` pre-borrado).
+- Semántica `Partial` **correcta**: `PUT {}` y `PUT {"name":…}` dejan
+  `parent_id` intacto, sin re-enraizado silencioso; las cuatro combinaciones
+  de `parent` verificadas en vivo.
+- Persistencia tras reinicio real (proceso matado, puerto 9001 confirmado
+  libre, `curl` con `exit 7`, relevantado, respuesta byte-idéntica).
+- Alcance, patrones de la casa, CA-1, CA-2, CA-4, CA-5 — todo limpio.
+- Dos de los tres caveats de Batch 2 quedaron **cerrados a favor**, no en
+  contra: el trazado de configuración del smoke-test del admin (4.8) fue
+  correcto Y el revisor hizo además el click real — login, categoría creada
+  por el formulario, reabierta en `/categories/zz-gate-browser/edit`,
+  renombrada, guardada → `PUT /api/categories/243` → 200, rama de
+  actualización confirmada. El hit único de `grep` de CA-6 es prosa
+  verificada, preexistente a la rama. Ambos se dan por cerrados.
+
+### El defecto — HIGH, bloqueante: referencias numéricas fuera del rango de `bigint` de Postgres devuelven HTTP 500
+
+`Number.isInteger` es `true` para `1e21` o `9223372036854775808` (no tienen
+parte decimal), así que ambos pasaban `_assertIntegerRef` y llegaban al
+driver de Postgres vía Prisma, que lanzaba `invalid input syntax for type
+bigint: "1e+21"` / `Value out of range for the type` — un error SIN `.code`
+de Prisma reconocible, que `translateCatalogWriteError` devolvía intacto y
+`toWriteHttpException` degradaba al 500 literal. Viola
+`specs/category-tree-api/spec.md:71` ("responden 400, nunca 500") y la
+decisión 6 del épico.
+
+**Alcance de la corrección, decidido por el coordinador**: arreglar el
+defecto en el código propio de US-28 únicamente. El revisor estableció que
+la mitad "id de ruta" de este agujero es **preexistente y house-wide**
+(`DELETE /api/types/1e21`, `PUT /api/types/1e21`, `DELETE /api/tags/1e21`
+ya dan 500 hoy en código de US-27a/27b ya fusionado) — **no se tocó**
+`types`/`tags`/`manufacturers`; se registra como ticket de seguimiento
+separado (ver abajo). Lo que US-28 introduce de nuevo es la mitad
+**campo del body** (`parent`/`type_id`), porque `categories` es el primer
+agregado con una referencia numérica en el body de una escritura.
+
+### Fix aplicado (opción del revisor — la correcta y consistente con la casa)
+
+1. **PR#1 enmendado** (autorizado explícitamente por el coordinador para
+   esta corrección puntual — nada estaba pusheado, así que la rama era
+   enmendable): `packages/db/src/repositories/categories.repository.ts` —
+   `_assertIntegerRef` cambia `!Number.isInteger(value)` a
+   `!Number.isSafeInteger(value)`. `Number.MAX_SAFE_INTEGER` (2^53-1) es una
+   cota conservadora muy por debajo del máximo real de `bigint` (2^63-1).
+   **Decisión sobre `value <= 0`**: NO se añadió esa cláusula en el
+   repositorio. Un `type_id`/`parent` no positivo (`0`, negativo) SÍ es
+   representable como `bigint` sin que el driver reviente — no reproduce
+   este defecto — y ya resuelve en un 400 correcto más abajo
+   (`_assertParentEdge`/`P2003` para una fila que no existe). Añadirlo ahí
+   sería una regla nueva, no autorizada por la tabla cerrada de 7 reglas de
+   `design.md`/`spec.md` (la regla 1 es solo forma ENTERA, no rango de
+   negocio) — se dejó fuera para no expandir el alcance de esta corrección
+   más allá del defecto reportado. Commit `47b3318` en
+   `us-28-pr1-db-categorias`.
+2. Nuevo test de integración en `categories.integration.test.ts`:
+   `createCategory({..., parentId: 1e21})` → `InvalidReferenceError`. `just
+   db-check` pasó de 161/161 a **162/162**.
+3. `apps/api/rest/src/categories/categories.service.ts` — los dos guards de
+   id de ruta (`update`/`remove`) endurecidos de `!Number.isInteger(id)` a
+   `!Number.isSafeInteger(id) || id <= 0`. La cláusula `id <= 0` **sí** se
+   añadió aquí (instrucción explícita del coordinador): ningún id real del
+   catálogo es `<= 0` (serial arrancando en 1), así que rechazarlo temprano
+   con 404 evita un round trip al repositorio para un id que nunca puede
+   existir. Commit `ab4de8e` en `us-28-pr2-api-categorias`.
+4. **Mecánica de git — rebase autorizado explícitamente, de forma acotada**:
+   `us-28-pr2-api-categorias` rebaseado sobre el `us-28-pr1-db-categorias`
+   enmendado (rebase limpio, sin conflictos). Sin `git push`, sin `gh pr
+   create`, sin merge a `main`.
+5. `specs/category-tree-api/spec.md` (dentro del `change` de US-28, no
+   archivado aún): añadida una nota de "consecuencia observable" al
+   requirement de las siete reglas, documentando el hallazgo MEDIUM de abajo
+   (el `field` mal atribuido).
+
+### Findings registrados pero NO corregidos (clasificados por el revisor como preexistentes o comportamiento de la casa ya declarado)
+
+| # | Sev. | Hallazgo | Disposición |
+|---|---|---|---|
+| 1 | MEDIUM | `PUT /api/categories/215 {"type_id":9}` sobre una hoja que **sí** tiene madre responde `400 "categories.parent_id (dentro de type_id 9)…"` — nombra `parent_id`, un campo que el cliente no envió. Lógicamente correcto (la arista se rompería) y coincide con la fila de la regla 4 del spec, pero un panel de admin que resalte por `field` señalaría el control equivocado. | Nota de una línea añadida a `specs/category-tree-api/spec.md` (requirement de las siete reglas). Sin cambio de código — el comportamiento es correcto, solo la UX de un futuro admin sería confusa. |
+| 2 | LOW | `{"image":"not-an-object"}` se acepta y se guarda como escalar jsonb; `{"image":null}` no limpia la imagen (decisión heredada DD-5 de US-27b + `main.ts:9` sin `whitelist`/`transform`). Consistente con `types`/`tags`. | Sin acción. |
+| 3 | LOW | El checkbox de la DoD "grep → 0 líneas" (`docs/product/26-escrituras-catalogo-postgres/28-escrituras-arbol-categorias.md:145`) queda literalmente incumplido por 1 línea de prosa; la capability real de CA-6 (sin `import` de `fuse`/`@db/`) SÍ está satisfecha. | Recomendado: enmendar la redacción de esa fila de la DoD cuando se cierre US-28 (Phase 6). NO se tocó el docstring fuera de alcance que genera el hit. |
+
+### Ticket de seguimiento registrado, NO implementado aquí (junto al de `@default(now())` de Batch 1)
+
+**`Number.isInteger` sin `isSafeInteger` en los guards de id de ruta de
+`types`/`tags`/`manufacturers` permite HTTP 500 con ids fuera de rango
+(`bigint`).** Confirmado en vivo por el revisor: `DELETE /api/types/1e21`,
+`PUT /api/types/1e21` y `DELETE /api/tags/1e21` dan 500 hoy, en código ya
+fusionado de US-27a/27b. Mismo mecanismo que el defecto HIGH de esta ronda,
+pero en la mitad "id de ruta" que **no** es nueva en esta US. Alcance
+explícitamente descartado por el coordinador para esta corrección
+(fuera de US-28); ticket-sized follow-up recomendado, scoped a
+`types.service.ts`/`tags.service.ts`/`manufacturers.service.ts`, análogo al
+de `@default(now())` vs. `@default(dbgenerated("now()"))` de Batch 1.
+
+### CA-3 — verdict, tal como lo enmarcó el revisor
+
+La mitad de re-enraizado está **probada en vivo por completo**: `DELETE 213`
+→ `GET 215` devuelve `parent: null`, aparece en `?parent=null`, `GET 213` →
+404, un segundo `DELETE` → 404. La mitad de `category_product` solo está
+probada a nivel de DDL, y esa es genuinamente la única prueba autorizada
+disponible — la tabla está vacía por diseño, las escrituras de `psql` están
+fuera de contrato, y ningún camino HTTP puede poblarla hasta US-29. Cero
+líneas de US-28 tocan esa tabla, así que ningún cambio de US-28 puede
+regresionarla. **Se registra como verificación diferida a US-29, no como
+trabajo inconcluso** — no bloquea el cierre de US-28.
+
+### Re-run evidence (las cinco reproducciones del 500, ahora 4xx)
+
+```
+=== (1) POST parent: 1e21 ===
+{"statusCode":400,"message":"`categories.parent_id` referencia un registro inexistente (`1e+21`).","error":"Bad Request"}
+HTTP:400
+
+=== (2) POST type_id: 1e21 ===
+{"statusCode":400,"message":"`categories.type_id` referencia un registro inexistente (`1e+21`).","error":"Bad Request"}
+HTTP:400
+
+=== (3) POST parent: 9223372036854775807 ===
+{"statusCode":400,"message":"`categories.parent_id` referencia un registro inexistente (`9223372036854776000`).","error":"Bad Request"}
+HTTP:400
+
+=== (4) PUT /categories/1e21 ===
+{"statusCode":404,"message":"No existe una categoría con id 1e+21.","error":"Not Found"}
+HTTP:404
+
+=== (5) PUT /categories/9223372036854775808 ===
+{"statusCode":404,"message":"No existe una categoría con id 9223372036854776000.","error":"Not Found"}
+HTTP:404
+```
+
+Ninguno de los cinco devuelve 500. (3)/(5) muestran la pérdida de precisión
+esperada de un `number` de JS al representar un entero de 19 dígitos
+(`9223372036854775807` → `9223372036854776000`) — irrelevante para el fix:
+`Number.isSafeInteger` ya rechaza el valor mucho antes de que esa pérdida de
+precisión importe.
+
+### `just db-build && just db-check`
+
+```
+$ just db-build
+CJS dist\index.js     151.60 KB
+CJS ⚡️ Build success in 147ms
+DTS ⚡️ Build success in 14477ms
+
+$ just db-check
+npm run typecheck
+> tsc --noEmit
+npm test
+> vitest run
+ Test Files  10 passed (10)
+      Tests  162 passed (162)
+   Duration  9.75s
+```
+
+### `npx jest` (apps/api/rest)
+
+```
+$ cd apps/api/rest && npx jest
+Test Suites: 8 passed, 8 total
+Tests:       138 passed, 138 total
+Time:        77.078 s
+```
+
+Sin cambios de conteo (8/138): el fix del guard de id de ruta no añade
+ningún archivo `.spec.ts` nuevo.
+
+### `just build-api`
+
+```
+$ just build-api
+yarn build
+$ rimraf dist
+$ nest build
+Done in ~97s (exit 0).
+```
+
+### `just verify`
+
+```
+$ just verify
+OK   API    :9001/api/settings  200  5503B  16ms
+OK   Shop   :3003/en  200  190788B  1304ms  cards:30
+OK   Admin  :3002/en/login  200  72821B  136ms  cards:1
+```
+
+### `psql` (read-only) — 198 filas / 83 raíces / 0 centinelas, tras las cinco reproducciones
+
+```
+$ docker compose exec postgres psql -U safari -d safari_scraper -c "SELECT count(*) FROM categories;"
+ count
+-------
+   198
+
+$ ... -c "SELECT count(*) FROM categories WHERE parent_id IS NULL;"
+ count
+-------
+    83
+
+$ ... -c "SELECT count(*) FROM categories WHERE slug LIKE 'zz-categories-%';"
+ count
+-------
+     0
+```
+
+Las cinco reproducciones del defecto fueron rechazadas (400/404) antes de
+crear ninguna fila — no hizo falta limpieza manual esta vez.
+
+### `git diff --stat main -- packages/db apps/` (final, tras la ronda de corrección)
+
+```
+ apps/api/rest/src/categories/categories.service.ts          | 136 +++++-
+ apps/api/rest/src/categories/dto/create-category.dto.ts     |  16 +-
+ packages/db/index.ts                                        |   5 +
+ .../repositories/categories.integration.test.ts             | 456 ++++++++++++++++++++-
+ .../db/src/repositories/categories.repository.ts             | 340 +++++++++++++++
+ 5 files changed, 926 insertions(+), 27 deletions(-)
+```
+
+### Commits de la ronda de corrección
+
+```
+$ git log --oneline -3
+ab4de8e Endurece los guards de id de ruta contra ids fuera de rango bigint (US-28, PR#2, gate adversarial)
+422b8fe Migra las escrituras de categorias del stub en memoria a @safari/db (US-28, PR#2)
+47b3318 Corrige el 500 por referencias numericas fuera de rango bigint (US-28, PR#1, gate adversarial post-PR#2)
+```
+
+`us-28-pr2-api-categorias` rebaseado limpiamente sobre el `us-28-pr1-db-categorias`
+enmendado — el stack sigue coherente bajo `stacked-to-main`. Nada pusheado,
+ningún PR abierto, ningún merge a `main`.
+
+### Status tras la ronda de corrección
+
+Defecto HIGH cerrado. Los tres findings menores registrados (1 documentado
+en el spec, 2 sin acción, 1 recomendación de redacción de DoD para Phase 6).
+Un ticket de seguimiento nuevo registrado (guards de id de ruta en
+`types`/`tags`/`manufacturers`), explícitamente fuera de alcance de esta US.
+CA-3 cerrado con la mitad de `category_product` diferida a US-29, no como
+trabajo pendiente de US-28. PR#1 y PR#2 listos para PR#3, bajo la misma
+decisión de producto pendiente ya señalada en Batch 2.
+
+---
+
 ## Batch 2 — PR#2 (`apps/api/rest`), branch `us-28-pr2-api-categorias`
 
 **Mode**: Standard (strict_tdd: false)

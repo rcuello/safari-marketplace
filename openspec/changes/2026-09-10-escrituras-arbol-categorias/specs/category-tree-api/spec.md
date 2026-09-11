@@ -75,7 +75,15 @@ aplicación y **antes** del write, las reglas de la tabla; cada rechazo
 MUST responder 400 con un discriminador reconocible en el campo `field`,
 sin crear ni modificar ninguna fila. Como consecuencia de la regla 7, en un
 nodo **con hijas** cambiar su `type_id` siempre responde 400; solo en una
-categoría **hoja** el `type_id` es mutable de hecho.
+categoría **hoja** el `type_id` es mutable de hecho. **Consecuencia
+observable adicional** (hallazgo de `sdd-apply`, ronda de corrección de
+PR#2): en una categoría **hoja que sí tiene madre**, cambiar solo su
+`type_id` también responde 400, pero por la regla 4 (`parent_id (dentro de
+type_id N)`), no por la regla 7 — la arista efectiva se re-valida contra la
+madre existente con el `type_id` nuevo (DD28-5) y el `field` reportado
+nombra `parent_id`, un campo que el cliente no envió en ese `PUT`. El
+rechazo es correcto (la arista rompería), pero un panel de administración
+que resalte el control por `field` señalaría el campo equivocado.
 
 | # | Regla | `field` |
 |---|---|---|
