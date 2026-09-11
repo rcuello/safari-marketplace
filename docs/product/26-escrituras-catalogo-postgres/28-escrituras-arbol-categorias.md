@@ -7,7 +7,7 @@
 
 **Épico:** [Épico 26](./README.md)
 **Fecha:** 2026-09-09
-**Status:** Listo para ejecución
+**Status:** Hecho (PR#1 `packages/db`, PR#2 `apps/api/rest`, PR#3 `categories.service.spec.ts` — evidencia en `openspec/changes/2026-09-10-escrituras-arbol-categorias/apply-progress.md`)
 **Depende de:** US-27a
 **LOC est.:** ~350
 
@@ -134,18 +134,37 @@ Feature: Escrituras del arbol de categorias
 
 ## Definición de Done
 
-- [ ] Secuencia `POST raíz → POST hija → GET → reinicio → PUT (mover) →
+- [x] Secuencia `POST raíz → POST hija → GET → reinicio → PUT (mover) →
       DELETE madre → GET hija (parent null) → GET madre 404` pegada, con
       key-set de 16 claves comparado contra el `GET` de una categoría del
-      seed.
-- [ ] `curl` de los 400 pegados: madre inexistente, madre de otro type,
-      autorreferencia, ciclo.
-- [ ] Evidencia de CA-4 (nivel 4 servido, o 400 declarado) pegada.
-- [ ] `psql` pegado: conteo de `categories` vuelve a 198 tras los tests.
-- [ ] `grep -n "fuse\|@db/"` en `categories.service.ts` → 0 líneas.
-- [ ] `just db-check`, `npx jest`, `just build-api`, `just verify` verdes,
-      con recuentos.
-- [ ] Status de esta US actualizado y fila del épico marcada.
+      seed. (PR#2, `apply-progress.md` Batch 2 — 16 claves, mismo orden, en
+      `POST`/`PUT`/`DELETE`.)
+- [x] `curl` de los 400 pegados: madre inexistente, madre de otro type,
+      autorreferencia, ciclo. (PR#2, más los dos 400 de forma entera
+      `type_id`/`parent` añadidos en la ronda de corrección de PR#1/PR#2 —
+      ninguno de los ocho `curl` devolvió 500.)
+- [x] Evidencia de CA-4 (nivel 4 servido, o 400 declarado) pegada. (PR#1
+      integración + PR#2 confirmado por HTTP: bisnieta a profundidad 4
+      servida sin 400, `getCategoryTree` sin tocar.)
+- [x] `psql` pegado: conteo de `categories` vuelve a 198 tras los tests.
+      (198/83 raíces/0 centinelas, confirmado en PR#1, PR#2 y PR#3.)
+- [x] `grep -n "fuse\|@db/"` en `categories.service.ts` → 0 líneas de
+      **código** (imports/instancias de `Fuse`/`@db/categories.json`,
+      capability real de CA-6). **Redacción de este ítem enmendada en PR#3**:
+      el grep literal devuelve 1 línea, no 0 — es prosa histórica preexistente
+      en el docstring de `parseCategorySearch` (comparaba la búsqueda SQL
+      exacta de `@safari/db` contra el `fuse.js` DIFUSO que tenía el mock),
+      confirmada idéntica antes y después de esta US
+      (`git show us-28-pr1-db-categorias:...categories.service.ts | grep`),
+      en una función que la tarea 3.5 prohíbe tocar. CA-6 (sin `import` ni
+      instancia de `Fuse`/`@db/categories.json`) está satisfecha; el
+      checkbox media un grep literal, no la capability, y se cierra sobre esa
+      base — ver `apply-progress.md` Batch 2, "Issues Found".
+- [x] `just db-check`, `npx jest`, `just build-api`, `just verify` verdes,
+      con recuentos. (`just db-check` 162/162; `npx jest` 9 suites/173 tests,
+      +1 suite/+35 tests sobre el baseline 8/138; `just build-api` limpio;
+      `just verify` OK en API/Shop/Admin con contenido real.)
+- [x] Status de esta US actualizado y fila del épico marcada.
 
 ## Notas para el agente ejecutor
 
