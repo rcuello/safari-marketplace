@@ -18,6 +18,8 @@
  */
 import 'reflect-metadata';
 import {
+  ForbiddenException,
+  HttpException,
   InternalServerErrorException,
   NotFoundException,
   ServiceUnavailableException,
@@ -25,13 +27,27 @@ import {
 import {
   findProductBySlug,
   listProducts,
+  createProduct,
+  updateProduct,
+  deleteProduct,
+  findProductShopId,
+  findShopOwnerById,
+  InvalidReferenceError,
+  InvalidSalePriceError,
+  MissingPriceError,
+  RecordNotFoundError,
+  SlugConflictError,
+  type CreateProductInput,
   type ListProductsInput,
   type ProductDetail,
   type ProductRecord,
 } from '@safari/db';
 import { ProductsService } from './products.service';
 import { GetProductsDto } from './dto/get-products.dto';
+import { CreateProductDto } from './dto/create-product.dto';
+import { UpdateProductDto } from './dto/update-product.dto';
 import { Product } from './entities/product.entity';
+import type { CurrentUserPayload } from 'src/auth/decorators/current-user.decorator';
 
 jest.mock('@safari/db', () => ({
   // El barrel es seguro de cargar sin DATABASE_URL (cliente lazy vía Proxy);
@@ -40,10 +56,24 @@ jest.mock('@safari/db', () => ({
   ...jest.requireActual<typeof import('@safari/db')>('@safari/db'),
   listProducts: jest.fn(),
   findProductBySlug: jest.fn(),
+  // US-29 (PR#4): las 5 escrituras/lecturas auxiliares que faltaban. Las
+  // clases de error (`InvalidSalePriceError`, etc.) y `CATALOG_ERROR_CODES`
+  // siguen REALES vía el `jest.requireActual` de arriba — solo se mockea el
+  // acceso a datos, nunca el contrato de errores.
+  createProduct: jest.fn(),
+  updateProduct: jest.fn(),
+  deleteProduct: jest.fn(),
+  findProductShopId: jest.fn(),
+  findShopOwnerById: jest.fn(),
 }));
 
 const listProductsMock = jest.mocked(listProducts);
 const findProductBySlugMock = jest.mocked(findProductBySlug);
+const createProductMock = jest.mocked(createProduct);
+const updateProductMock = jest.mocked(updateProduct);
+const deleteProductMock = jest.mocked(deleteProduct);
+const findProductShopIdMock = jest.mocked(findProductShopId);
+const findShopOwnerByIdMock = jest.mocked(findShopOwnerById);
 
 /**
  * `ValidationPipe` corre sin `transform` (Decision A del design de US-2):
@@ -216,6 +246,46 @@ function makeProductDetail(
     relatedProducts: [],
     ...overrides,
   };
+}
+
+/**
+ * Payload de usuario autenticado (US-29): el guard (`JwtAuthGuard`, US-23) ya
+ * corrió y `@CurrentUser()` ya lo resolvió — estos tests entran DIRECTO por
+ * la superficie del servicio, así que se construye a mano, sin JWT real.
+ */
+function makeUser(overrides: Partial<CurrentUserPayload> = {}): CurrentUserPayload {
+  return {
+    sub: 1,
+    email: 'store-owner@demo.com',
+    permissions: ['store_owner'],
+    iat: 0,
+    exp: 0,
+    ...overrides,
+  };
+}
+
+/**
+ * DTO mínimo de `POST /products` — solo los campos que `service.create()`
+ * necesita para no lanzar por su cuenta; el resto queda fuera (`categories`/
+ * `tags` como `[]`, filtrados por `Array.isArray()` igual que un body real).
+ */
+function makeCreateDto(overrides: Partial<CreateProductDto> = {}): CreateProductDto {
+  return {
+    name: 'Producto centinela',
+    type_id: 1,
+    shop_id: 9,
+    product_type: 'simple',
+    price: 100,
+    quantity: 10,
+    categories: [],
+    tags: [],
+    ...overrides,
+  } as CreateProductDto;
+}
+
+/** DTO de `PUT /products/:id` — parcial por diseño (`PartialType`), vacío si no se pasan overrides. */
+function makeUpdateDto(overrides: Partial<UpdateProductDto> = {}): UpdateProductDto {
+  return { ...overrides } as UpdateProductDto;
 }
 
 describe('ProductsService.getProducts (Postgres vía @safari/db, US-2)', () => {
@@ -625,4 +695,321 @@ describe('endpoints derivados — mapeo de errores de base (US-5)', () => {
       }
     },
   );
+});
+
+/**
+ * `ProductsService.create` (US-29, PR#4). `findShopOwnerById` mockeado
+ * devuelve al dueño real por defecto; cada `it` que necesita otro dueño lo
+ * sobreescribe. `toWriteHttpException` NUNCA se mockea (viene directo de
+ * `domain-error.mapper`, no de `@safari/db`).
+ */
+describe('ProductsService.create (Postgres vía @safari/db, US-29)', () => {
+  let service: ProductsService;
+  const OWNER_ID = 42;
+  const SHOP_ID = 9;
+
+  beforeEach(() => {
+    createProductMock.mockReset();
+    findShopOwnerByIdMock.mockReset();
+    createProductMock.mockResolvedValue(makeProductRecord({ shopId: SHOP_ID }));
+    findShopOwnerByIdMock.mockResolvedValue(OWNER_ID);
+    service = new ProductsService();
+  });
+
+  it('emite las 20 claves del contrato de escritura, mismo orden que getProduct, sin related_products', async () => {
+    const result = await service.create(
+      makeCreateDto({ shop_id: SHOP_ID }),
+      makeUser({ sub: OWNER_ID }),
+    );
+
+    expect(Object.keys(result)).toEqual(EXPECTED_KEYS);
+    expect('related_products' in result).toBe(false);
+  });
+
+  it('coerciona type_id/shop_id/manufacturer_id con Number() aunque lleguen como string del body', async () => {
+    await service.create(
+      makeCreateDto({
+        type_id: '3' as unknown as number,
+        shop_id: String(SHOP_ID) as unknown as number,
+        manufacturer_id: '5' as unknown as number,
+      }),
+      makeUser({ sub: OWNER_ID }),
+    );
+
+    expect(createProductMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        typeId: 3,
+        shopId: SHOP_ID,
+        manufacturerId: 5,
+      }),
+    );
+  });
+
+  /**
+   * R29-7 (design.md): "`manufacturer_id` como opcional silencioso... `null`
+   * explícito SÍ es válido, probado aparte." `Number(null) === 0` — si el
+   * servicio coerciona sin distinguir `null` de un string numérico, un
+   * cliente que manda `manufacturer_id: null` para decir "sin fabricante"
+   * termina enviando `manufacturerId: 0` (una FK a un fabricante que no
+   * existe) en vez de `null` (SET NULL, válido). Ver hallazgo en el reporte.
+   */
+  it('manufacturer_id: null explícito llega como null al repositorio, nunca Number(null)===0 (R29-7)', async () => {
+    await service.create(
+      makeCreateDto({
+        shop_id: SHOP_ID,
+        manufacturer_id: null as unknown as number,
+      }),
+      makeUser({ sub: OWNER_ID }),
+    );
+
+    const input = createProductMock.mock.calls[0]?.[0] as CreateProductInput;
+    expect(input.manufacturerId).toBeNull();
+  });
+});
+
+/**
+ * `ProductsService.update`/`remove` — guard de id (nivel A, DD29-4): antes
+ * de tocar el repositorio, un id sin forma de entero seguro positivo es 404.
+ */
+describe('ProductsService.update/remove — guard de id, nivel A (US-29)', () => {
+  let service: ProductsService;
+
+  beforeEach(() => {
+    findProductShopIdMock.mockReset();
+    updateProductMock.mockReset();
+    deleteProductMock.mockReset();
+    service = new ProductsService();
+  });
+
+  it.each([Number.NaN, 1.5, 0, -1])(
+    'update(id=%s) → 404 sin llamar al repositorio',
+    async (id) => {
+      await expect(
+        service.update(id, makeUpdateDto(), makeUser()),
+      ).rejects.toBeInstanceOf(NotFoundException);
+
+      expect(findProductShopIdMock).not.toHaveBeenCalled();
+      expect(updateProductMock).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([Number.NaN, 1.5, 0, -1])(
+    'remove(id=%s) → 404 sin llamar al repositorio',
+    async (id) => {
+      await expect(service.remove(id, makeUser())).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+
+      expect(findProductShopIdMock).not.toHaveBeenCalled();
+      expect(deleteProductMock).not.toHaveBeenCalled();
+    },
+  );
+
+  it('update/remove: id con forma válida pero inexistente (findProductShopId → null) → 404', async () => {
+    findProductShopIdMock.mockResolvedValue(null);
+
+    await expect(
+      service.update(999999999, makeUpdateDto(), makeUser()),
+    ).rejects.toBeInstanceOf(NotFoundException);
+    await expect(service.remove(999999999, makeUser())).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+  });
+});
+
+/**
+ * CA-5 — matriz de roles en las 3 rutas de escritura. `super_admin` corta en
+ * seco: se prueba con `expect(...).not.toHaveBeenCalled()`, no infiriendo el
+ * short-circuit del status 200 solamente. El caso "sin token → 401" se
+ * DECLARA (comentario abajo): lo produce `JwtAuthGuard` (US-23), nunca
+ * `ProductsService` — no hay rama de este archivo que lo emita.
+ */
+describe('CA-5 — matriz de roles en las 3 rutas de escritura (US-29)', () => {
+  let service: ProductsService;
+  const OWNER_ID = 42;
+  const OTHER_USER_ID = 999;
+  const SHOP_ID = 9;
+  const PRODUCT_ID = 1465;
+
+  type Route = [string, (user: CurrentUserPayload) => Promise<unknown>];
+
+  const routes: readonly Route[] = [
+    [
+      'create',
+      (user) => service.create(makeCreateDto({ shop_id: SHOP_ID }), user),
+    ],
+    [
+      'update',
+      (user) => service.update(PRODUCT_ID, makeUpdateDto(), user),
+    ],
+    ['remove', (user) => service.remove(PRODUCT_ID, user)],
+  ];
+
+  beforeEach(() => {
+    createProductMock.mockReset();
+    updateProductMock.mockReset();
+    deleteProductMock.mockReset();
+    findProductShopIdMock.mockReset();
+    findShopOwnerByIdMock.mockReset();
+
+    createProductMock.mockResolvedValue(makeProductRecord({ shopId: SHOP_ID }));
+    updateProductMock.mockResolvedValue(makeProductRecord({ shopId: SHOP_ID }));
+    deleteProductMock.mockResolvedValue(makeProductRecord({ shopId: SHOP_ID }));
+    findProductShopIdMock.mockResolvedValue(SHOP_ID);
+
+    service = new ProductsService();
+  });
+
+  it.each(routes)('%s: store_owner dueño de la tienda → 200', async (_route, invoke) => {
+    findShopOwnerByIdMock.mockResolvedValue(OWNER_ID);
+
+    await expect(
+      invoke(makeUser({ sub: OWNER_ID, permissions: ['store_owner'] })),
+    ).resolves.toBeDefined();
+  });
+
+  it.each(routes)('%s: store_owner ajeno a la tienda → 403', async (_route, invoke) => {
+    findShopOwnerByIdMock.mockResolvedValue(OWNER_ID);
+
+    await expect(
+      invoke(makeUser({ sub: OTHER_USER_ID, permissions: ['store_owner'] })),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it.each(routes)(
+    '%s: super_admin → 200 SIN sondear findShopOwnerById (short-circuit)',
+    async (_route, invoke) => {
+      await expect(
+        invoke(makeUser({ sub: OTHER_USER_ID, permissions: ['super_admin'] })),
+      ).resolves.toBeDefined();
+
+      expect(findShopOwnerByIdMock).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(routes)('%s: staff (sin relación con la tienda) → 403', async (_route, invoke) => {
+    findShopOwnerByIdMock.mockResolvedValue(OWNER_ID);
+
+    await expect(
+      invoke(makeUser({ sub: OTHER_USER_ID, permissions: ['staff'] })),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  // Sin token → 401: DECLARADO, no probado en este archivo (a nivel de
+  // guard, `JwtAuthGuard`/US-23 — `@CurrentUser()` mismo lanza 401 si no hay
+  // `request.user` ni bearer válido, ANTES de que `ProductsService` exista
+  // en la cadena). Un `it` que invocara el decorador directamente probaría
+  // el decorador, no este servicio; queda fuera del alcance de este archivo.
+});
+
+/** CA-2/CA-5 — un `PUT` que mueve `shop_id` exige propiedad de AMBAS tiendas. */
+describe('CA-5 — PUT que mueve shop_id exige propiedad de ambas tiendas (US-29)', () => {
+  let service: ProductsService;
+  const OWNER_ID = 42;
+  const CURRENT_SHOP_ID = 9;
+  const DESTINATION_SHOP_ID = 20;
+
+  beforeEach(() => {
+    updateProductMock.mockReset();
+    findProductShopIdMock.mockReset();
+    findShopOwnerByIdMock.mockReset();
+    updateProductMock.mockResolvedValue(
+      makeProductRecord({ shopId: DESTINATION_SHOP_ID }),
+    );
+    findProductShopIdMock.mockResolvedValue(CURRENT_SHOP_ID);
+    service = new ProductsService();
+  });
+
+  it('dueño de la tienda actual pero NO de la destino → 403, sondeando ambos lados', async () => {
+    findShopOwnerByIdMock.mockImplementation(async (shopId: number) =>
+      shopId === CURRENT_SHOP_ID ? OWNER_ID : 12345,
+    );
+
+    await expect(
+      service.update(
+        1465,
+        makeUpdateDto({ shop_id: DESTINATION_SHOP_ID }),
+        makeUser({ sub: OWNER_ID, permissions: ['store_owner'] }),
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+
+    expect(findShopOwnerByIdMock).toHaveBeenCalledWith(CURRENT_SHOP_ID);
+    expect(findShopOwnerByIdMock).toHaveBeenCalledWith(DESTINATION_SHOP_ID);
+  });
+
+  it('dueño de ambas tiendas (actual y destino) → 200', async () => {
+    findShopOwnerByIdMock.mockResolvedValue(OWNER_ID);
+
+    await expect(
+      service.update(
+        1465,
+        makeUpdateDto({ shop_id: DESTINATION_SHOP_ID }),
+        makeUser({ sub: OWNER_ID, permissions: ['store_owner'] }),
+      ),
+    ).resolves.toBeDefined();
+  });
+});
+
+/**
+ * CA-4/DD29-1 — cada clase de error de dominio de `products.repository.ts` →
+ * su status HTTP vía `toWriteHttpException` (real, sin mockear). Las tres
+ * primeras (`InvalidSalePriceError`/`MissingPriceError`/`InvalidReferenceError`)
+ * son donde DD29-1 paga: antes de esa decisión, `super(...)` no fijaba
+ * `code`, `isCatalogWriteError` las rechazaba y `toWriteHttpException`
+ * degradaba a 500 — se asierta 400 explícitamente, no solo "no revienta".
+ */
+describe('create/update/remove — mapeo de errores de dominio a HTTP (CA-4, DD29-1)', () => {
+  let service: ProductsService;
+  const OWNER_ID = 42;
+  const SHOP_ID = 9;
+
+  beforeEach(() => {
+    createProductMock.mockReset();
+    findShopOwnerByIdMock.mockReset();
+    findShopOwnerByIdMock.mockResolvedValue(OWNER_ID);
+    service = new ProductsService();
+  });
+
+  const casos: ReadonlyArray<[string, () => Error, number]> = [
+    [
+      'InvalidSalePriceError (DD29-1) → 400, no 500',
+      () => new InvalidSalePriceError(150, 100),
+      400,
+    ],
+    [
+      'MissingPriceError (DD29-1) → 400, no 500',
+      () => new MissingPriceError(),
+      400,
+    ],
+    [
+      'InvalidReferenceError → 400',
+      () => new InvalidReferenceError('products', 'type_id', 999999),
+      400,
+    ],
+    [
+      'RecordNotFoundError → 404',
+      () => new RecordNotFoundError('products', 1465),
+      404,
+    ],
+    [
+      'SlugConflictError → 409',
+      () => new SlugConflictError('products', 'laptop-x'),
+      409,
+    ],
+  ];
+
+  it.each(casos)('%s', async (_nombre, hacerError, status) => {
+    createProductMock.mockRejectedValue(hacerError());
+
+    expect.assertions(2);
+    try {
+      await service.create(
+        makeCreateDto({ shop_id: SHOP_ID }),
+        makeUser({ sub: OWNER_ID }),
+      );
+    } catch (error) {
+      expect(error).toBeInstanceOf(HttpException);
+      expect((error as HttpException).getStatus()).toBe(status);
+    }
+  });
 });
