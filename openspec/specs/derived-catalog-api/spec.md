@@ -65,16 +65,32 @@ aplicaba ahí. Ambos MUST devolver `{data, ...paginate(...)}` con
   1023,1024,1028`) y el segundo `total: 1` (id `454`) — si el default de
   vitrina siguiera activo, ningún borrador podría aparecer nunca
 
-### Requirement: `new-shops` — cero es el resultado correcto
+### Requirement: `new-shops` refleja la cola real de moderación
 
 `new-shops` MUST filtrar por `is_active = false` reutilizando
-`ListShopsInput.isActive` (sin código nuevo). Con las 12 tiendas activas
-del seed, `total: 0` es el resultado esperado.
+`ListShopsInput.isActive` (sin código nuevo). Con el seed sin
+modificaciones (12 tiendas activas), `total: 0` MUST seguir siendo el
+resultado correcto — esa premisa era estructural antes de US-30 y pasa a
+ser circunstancial: una vez que `shop-write-api` puede crear tiendas
+inactivas (`CA-1`, un `store_owner` crea una tienda que nace con
+`is_active = false`), el mismo endpoint MUST reflejarlas sin código nuevo
+en `derived-catalog-api`, porque ambos comparten el filtro
+`ListShopsInput.isActive`.
+(Previously: la premisa era que `total: 0` era el único resultado posible
+porque no existía ningún camino de escritura que produjera una tienda
+inactiva; US-30 abre ese camino y el requirement deja de asumirlo.)
 
-#### Scenario: Ninguna tienda inactiva en el seed actual
-- GIVEN el seed sembrado (12/12 activas)
+#### Scenario: Ninguna tienda inactiva en el seed sin escrituras
+- GIVEN el seed sembrado sin escrituras adicionales (12/12 activas)
 - WHEN pido `GET /api/new-shops`
 - THEN recibo `{data: [], total: 0, ...}` — correcto, no un error
+
+#### Scenario: La cola se puebla tras una creación de `store_owner` (CA-1)
+- GIVEN un token `store_owner` que acaba de crear una tienda vía
+  `POST /shops` de `shop-write-api`
+- WHEN pido `GET /api/new-shops`
+- THEN la respuesta incluye esa tienda con `is_active` falso, y `total`
+  sube en 1 respecto al baseline del seed
 
 ### Requirement: Cercanía real, sin radio
 
@@ -143,7 +159,4 @@ real (aceptado).
 
 ## Out of Scope
 
-`getStaffs` · escrituras reales (stubs del mock) · `db/schema.sql`/
-`schema.prisma` · árbol de categorías · `apps/shop/**`, `apps/admin/**` ·
-`shop_id` en popular/best-selling (muerto, sigue muerto) · los ~30
-servicios 100% mock.
+`getStaffs` (sin JSON, contrato preservado — ver `shop-write-api`, US-30) · escrituras reales de `shops` (`POST`/`PUT /shops`, `approve-shop`/`disapprove-shop`: viven en la capability `shop-write-api`, no aquí) · `db/schema.sql`/`schema.prisma` · árbol de categorías · `apps/shop/**`, `apps/admin/**` · `shop_id` en popular/best-selling (muerto, sigue muerto) · los ~30 servicios 100% mock.

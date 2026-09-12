@@ -432,12 +432,4 @@ mismos verbos en `/api/manufacturers`, `ADMIN_OWNER_AND_STAFF`. Sin token →
 
 ## Out of Scope
 
-`categories` (US-4b) · `authors`/`top-authors` · endpoints de escritura
-del admin de `shops` (US-30) — `types` (US-27a) y `tags`/`manufacturers`
-(US-27b) pasan a estar en alcance · `category_product` ·
-`apps/shop/**`, `apps/admin/**` · `GET /staffs`, `POST /approve-shop`,
-`POST /disapprove-shop` · `GET /new-shops` y
-`GET /near-by-shop/:lat/:lng`: migrados a Postgres — ver
-`derived-catalog-api` (US-5) · retrofit de `products.service.ts` al
-helper de búsqueda compartido (D-7) · specs de jest para los 4 servicios
-(D-10).
+`categories` (US-4b) · `authors`/`top-authors` · `types` (US-27a), `tags`/`manufacturers` (US-27b) y `shops` (US-30) pasan a estar en alcance — las escrituras de `shops` viven en la capability `shop-write-api`, no aquí · `category_product` · `apps/shop/**`, `apps/admin/**` · `GET /new-shops` y `GET /near-by-shop/:lat/:lng`: migrados a Postgres — ver `derived-catalog-api` (US-5) · retrofit de `products.service.ts` al helper de búsqueda compartido (D-7) · specs de jest para los 4 servicios (D-10).

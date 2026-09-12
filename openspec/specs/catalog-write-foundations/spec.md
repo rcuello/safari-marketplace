@@ -140,6 +140,20 @@ cubiertos.)
   traducir sobre HTTP: cada una responde 400 antes de llegar a Postgres, y
   el conjunto cerrado de 5 códigos no se amplía
 
+#### Scenario: `shops` (US-30) consume las piezas compartidas sin crear ninguna, y el conjunto cerrado no se ensancha
+- GIVEN `db/schema.sql:231-244` (`CREATE TABLE shops`), verificado sin
+  ningún CHECK ni expresión `IN`, solo una FK saliente (`owner_id`) y un
+  `UNIQUE` (`slug`)
+- WHEN `createShop`/`updateShop`/`setShopActive` (`shop-write-api`)
+  construyen su input y ejecutan el write
+- THEN únicamente `P2002` (slug duplicado → 409), `P2003` (`owner_id`
+  inexistente → 400) y `P2025` (fila inexistente → 404) son alcanzables —
+  ninguna quinta guarda de dominio se escribe para `shops`
+- AND el `git diff` de `packages/db/src/domain-errors.ts` y
+  `apps/api/rest/src/common/errors/` queda vacío: `shops` es el quinto y
+  último agregado del épico en integrarse, y el conjunto cerrado de 5
+  códigos sigue siendo exactamente el mismo que dejó `types` en US-27a
+
 ### Requirement: Piezas listas para consumo sin reabrir el archivo (CA-7)
 
 El helper de slug y el mapeador de errores MUST exportarse desde
