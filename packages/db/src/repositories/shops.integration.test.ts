@@ -6,7 +6,13 @@
 
 import 'dotenv/config';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import type { Prisma } from '../../generated/prisma/client/client';
 import { prisma } from '../client';
+import {
+  InvalidReferenceError,
+  RecordNotFoundError,
+  SlugConflictError,
+} from '../domain-errors';
 import {
   createShop,
   findShopBySlug,
@@ -239,5 +245,186 @@ describe('productsCount en updateShop (D30-4)', () => {
     expect(updated.slug).toBe(before.slug);
     expect(updated.description).toBe(before.description);
     expect(updated.isActive).toBe(before.isActive);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// US-30, PR#2: batería hostil de integración. Excluye deliberadamente "id no
+// entero" — su precondición documentada es un id ya guardado por el
+// llamador (DD30-3); ese `it` vive en PR#4 (jest), sobre `@Body('id')` del
+// servicio. `ownerId: 3` en todos los centinelas (DD30-6). Cada `it` borra
+// lo que crea.
+// ---------------------------------------------------------------------------
+
+describe('404 de P2025 en updateShop/setShopActive con id borrado (DD30-10)', () => {
+  it('updateShop(id borrado, …) → RecordNotFoundError', async () => {
+    const created = await createShop({
+      name: `${SENTINEL_PREFIX}404-update`,
+      ownerId: 3,
+      isActive: false,
+    });
+    await prisma.shop.delete({ where: { id: created.id } });
+
+    await expect(
+      updateShop(created.id, { description: 'no debería escribirse' })
+    ).rejects.toBeInstanceOf(RecordNotFoundError);
+  });
+
+  it('setShopActive(id borrado, …) → RecordNotFoundError', async () => {
+    const created = await createShop({
+      name: `${SENTINEL_PREFIX}404-toggle`,
+      ownerId: 3,
+      isActive: false,
+    });
+    await prisma.shop.delete({ where: { id: created.id } });
+
+    await expect(setShopActive(created.id, true)).rejects.toBeInstanceOf(
+      RecordNotFoundError
+    );
+  });
+});
+
+describe('409 de slug duplicado (P2002, solo por carrera) y 400 de owner_id inexistente (P2003, DD30-10)', () => {
+  it('dos createShop concurrentes con el mismo name: uno gana, el otro → SlugConflictError', async () => {
+    // `createShop` deriva el slug de `name` vía `generateSlug`: un duplicado
+    // NUNCA es alcanzable en secuencia (el segundo `POST` recibiría un
+    // sufijo `-2`). Es "solo por carrera" (`slug.ts:66-68`): dos llamadas
+    // que arrancan a la vez consultan `shopSlugs` antes de que cualquiera
+    // haya hecho `INSERT`, ambas calculan el mismo candidato base, y solo
+    // una gana el `UNIQUE` de Postgres — la otra recibe `P2002`.
+    const name = `${SENTINEL_PREFIX}carrera-slug`;
+    const [r1, r2] = await Promise.allSettled([
+      createShop({ name, ownerId: 3, isActive: false }),
+      createShop({ name, ownerId: 3, isActive: false }),
+    ]);
+
+    const winner = r1.status === 'fulfilled' ? r1 : r2.status === 'fulfilled' ? r2 : null;
+    const loser = r1.status === 'rejected' ? r1 : r2.status === 'rejected' ? r2 : null;
+
+    expect(winner).not.toBeNull();
+    expect(loser).not.toBeNull();
+    if (loser) expect(loser.reason).toBeInstanceOf(SlugConflictError);
+    if (winner) await prisma.shop.delete({ where: { id: winner.value.id } });
+  });
+
+  it('owner_id inexistente → InvalidReferenceError vía P2003, mensaje "shops.desconocida" (DD30-10, sin uniqueField)', async () => {
+    let error: unknown;
+    try {
+      await createShop({
+        name: `${SENTINEL_PREFIX}owner-fantasma`,
+        ownerId: 999999999,
+        isActive: false,
+      });
+    } catch (e) {
+      error = e;
+    }
+    expect(error).toBeInstanceOf(InvalidReferenceError);
+    // Bajo Prisma 7 + adapter-pg un P2003 llega sin `meta.field_name`
+    // (verificado en runtime, no solo leído en `translateCatalogWriteError`):
+    // el mensaje culpa a `desconocida`, divergencia ya declarada en US-28.
+    expect((error as Error).message).toContain('shops.desconocida');
+  });
+});
+
+describe('REPLACE completo de settings (D30-1, ratificada) y no-op de logo/cover_image (DD30-2/DD30-4)', () => {
+  const NULL_JSON = null as unknown as Prisma.InputJsonValue;
+
+  it('un segundo PUT sin un sub-campo previo de settings lo BORRA — la pérdida se demuestra, no se oculta (D30-1)', async () => {
+    const created = await createShop({
+      name: `${SENTINEL_PREFIX}settings-replace`,
+      ownerId: 3,
+      isActive: false,
+      settings: {
+        shopMaintenance: { isUnderMaintenance: true },
+        contact: { phone: '3000000000' },
+      },
+    });
+    expect(created.settings).toEqual({
+      shopMaintenance: { isUnderMaintenance: true },
+      contact: { phone: '3000000000' },
+    });
+
+    // El segundo PUT llega sin `shopMaintenance` (el formulario del admin no
+    // monta ese bloque para su rol, `shouldUnregister: true`): REPLACE
+    // completo, no merge. La pérdida de `shopMaintenance` es la propiedad
+    // declarada del comportamiento nuevo, no una regresión.
+    const updated = await updateShop(created.id, {
+      settings: { contact: { phone: '3111111111' } },
+    });
+    expect(updated.settings).toEqual({ contact: { phone: '3111111111' } });
+    expect(updated.settings).not.toHaveProperty('shopMaintenance');
+
+    await prisma.shop.delete({ where: { id: created.id } });
+  });
+
+  it('logo: null y cover_image: null son no-op — la columna almacenada no cambia, otros campos del mismo PUT sí se aplican', async () => {
+    const LOGO = { thumbnail: 'l.png', original: 'l-original.png' };
+    const COVER = { thumbnail: 'c.png', original: 'c-original.png' };
+    const created = await createShop({
+      name: `${SENTINEL_PREFIX}logo-noop`,
+      ownerId: 3,
+      isActive: false,
+      logo: LOGO,
+      coverImage: COVER,
+    });
+    expect(created.logo).toEqual(LOGO);
+    expect(created.coverImage).toEqual(COVER);
+
+    const updated = await updateShop(created.id, {
+      logo: NULL_JSON,
+      coverImage: NULL_JSON,
+      description: 'no-op de logo/cover, este campo sí escribe',
+    });
+    expect(updated.logo).toEqual(LOGO);
+    expect(updated.coverImage).toEqual(COVER);
+    expect(updated.description).toBe(
+      'no-op de logo/cover, este campo sí escribe'
+    );
+
+    await prisma.shop.delete({ where: { id: created.id } });
+  });
+});
+
+describe('Monotonía de updated_at: solo update→update y setActive→setActive, nunca create-vs-update (DD30-7)', () => {
+  // Mismo rationale que `products.integration.test.ts:517-567`:
+  // `createShop` liga `created_at`/`updated_at` como parámetros del INSERT
+  // desde Node (`schema.prisma` sin `@updatedAt`), mientras que `updateShop`/
+  // `setShopActive` dejan la columna al trigger `shops_updated_at`, con el
+  // reloj de Postgres. Comparar create-vs-update mezcla dos relojes que
+  // divergen en vivo — NUNCA se hace aquí. `toBeGreaterThan` estricto: con
+  // `>=`, un trigger que no dispara produce una igualdad y el test pasaría
+  // igual.
+  it('updateShop → updateShop: updatedAt estrictamente creciente', async () => {
+    const created = await createShop({
+      name: `${SENTINEL_PREFIX}monotonia-update`,
+      ownerId: 3,
+      isActive: false,
+    });
+
+    const firstUpdate = await updateShop(created.id, { description: 'primera' });
+    const secondUpdate = await updateShop(created.id, { description: 'segunda' });
+
+    expect(secondUpdate.updatedAt.getTime()).toBeGreaterThan(
+      firstUpdate.updatedAt.getTime()
+    );
+
+    await prisma.shop.delete({ where: { id: created.id } });
+  });
+
+  it('setShopActive → setShopActive (approve → disapprove): updatedAt estrictamente creciente', async () => {
+    const created = await createShop({
+      name: `${SENTINEL_PREFIX}monotonia-toggle`,
+      ownerId: 3,
+      isActive: false,
+    });
+
+    const approved = await setShopActive(created.id, true);
+    const disapproved = await setShopActive(created.id, false);
+
+    expect(disapproved.updatedAt.getTime()).toBeGreaterThan(
+      approved.updatedAt.getTime()
+    );
+
+    await prisma.shop.delete({ where: { id: created.id } });
   });
 });

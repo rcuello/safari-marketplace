@@ -79,11 +79,11 @@ levantar PR#4 a una US-30b (parar y preguntar, no decidir unilateralmente).
 > ya guardado por el llamador; ese `it` vive en PR#4 (jest), sobre
 > `@Body('id')` del servicio (`DD30-3`).
 
-- [ ] 2.1 Cubrir 404 de `P2025` en `updateShop`/`setShopActive` con id inexistente (vía sentinela borrada antes de la aserción). [DD30-10]
-- [ ] 2.2 Cubrir 409 de slug duplicado (`P2002`, solo por carrera) y 400 de `ownerId` inexistente (`P2003` → `InvalidReferenceError`, mensaje `shops.desconocida`). [DD30-10]
-- [ ] 2.3 Cubrir REPLACE completo de `settings` (un segundo `PUT` sin un sub-campo previo lo borra) y no-op de `logo: null`/`cover_image: null`. [DD30-1, DD30-2, DD30-4]
-- [ ] 2.4 Cubrir monotonía **solo** `updateShop→updateShop` y `setShopActive→setShopActive` con `toBeGreaterThan` estricto — nunca comparar contra el timestamp del `create`. [DD30-7]
-- [ ] 2.5 Verificar PR#2: `just db-check` verde (con PR#1 aplicado). Pegar salida real; `count(*) FROM shops` restituido al valor medido antes de la corrida.
+- [x] 2.1 Cubrir 404 de `P2025` en `updateShop`/`setShopActive` con id inexistente (vía sentinela borrada antes de la aserción). [DD30-10]
+- [x] 2.2 Cubrir 409 de slug duplicado (`P2002`, solo por carrera) y 400 de `ownerId` inexistente (`P2003` → `InvalidReferenceError`, mensaje `shops.desconocida`). [DD30-10]
+- [x] 2.3 Cubrir REPLACE completo de `settings` (un segundo `PUT` sin un sub-campo previo lo borra) y no-op de `logo: null`/`cover_image: null`. [DD30-1, DD30-2, DD30-4]
+- [x] 2.4 Cubrir monotonía **solo** `updateShop→updateShop` y `setShopActive→setShopActive` con `toBeGreaterThan` estricto — nunca comparar contra el timestamp del `create`. [DD30-7]
+- [x] 2.5 Verificar PR#2: `just db-check` verde (con PR#1 aplicado). Pegar salida real; `count(*) FROM shops` restituido al valor medido antes de la corrida.
 
 ## Phase 3: Capa API — servicio, controller, DTO (`apps/api/rest`, PR#3 — US releasable aquí)
 
