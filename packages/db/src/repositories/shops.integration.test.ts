@@ -211,21 +211,6 @@ describe('createShop / updateShop / setShopActive (escritura, US-30)', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Tripwire (DD30-6): NO puede apoyarse en `listShops`, que filtra
-// `isActive: input.isActive ?? true` — las 12 filas del seed están todas
-// activas, así que una centinela INACTIVA superviviente (el caso normal de
-// esta US) dejaría `toBe(12)`/`id 15` en verde por `listShops()`. La forma
-// normativa cuenta sin filtro y verifica la cola de moderación vacía.
-// ---------------------------------------------------------------------------
-describe('tripwire: rollback de escritura restituye el seed', () => {
-  it('12 filas sin filtro, cola de moderación vacía, id 15 al frente', async () => {
-    expect(await prisma.shop.count()).toBe(12);
-    expect((await listShops({ isActive: false })).total).toBe(0);
-    expect((await listShops()).items[0].id).toBe(15);
-  });
-});
-
-// ---------------------------------------------------------------------------
 // D30-4 / DD30-5: `productsCount` en una escritura debe coincidir con el de
 // la lectura, nunca `0` por el `?? 0` de `shops.service.ts`. Única mutación
 // sobre el seed: `gadget.updated_at` (ninguna prueba lee esa columna). El id
@@ -426,5 +411,26 @@ describe('Monotonía de updated_at: solo update→update y setActive→setActive
     );
 
     await prisma.shop.delete({ where: { id: created.id } });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Tripwire (DD30-6): NO puede apoyarse en `listShops`, que filtra
+// `isActive: input.isActive ?? true` — las 12 filas del seed están todas
+// activas, así que una centinela INACTIVA superviviente (el caso normal de
+// esta US) dejaría `toBe(12)`/`id 15` en verde por `listShops()`. La forma
+// normativa cuenta sin filtro y verifica la cola de moderación vacía.
+//
+// VA EL ÚLTIMO A PROPÓSITO. El diseño lo exige y PR#2 lo había dejado a
+// media altura del archivo, custodiando solo el primer describe de escritura:
+// los seis que venían después quedaban sin red. vitest ejecuta los `describe`
+// de un archivo en orden de declaración, así que solo desde el final cubre
+// toda la batería. Al añadir un describe de escritura nuevo, va ANTES de este.
+// ---------------------------------------------------------------------------
+describe('tripwire: rollback de escritura restituye el seed', () => {
+  it('12 filas sin filtro, cola de moderación vacía, id 15 al frente', async () => {
+    expect(await prisma.shop.count()).toBe(12);
+    expect((await listShops({ isActive: false })).total).toBe(0);
+    expect((await listShops()).items[0].id).toBe(15);
   });
 });

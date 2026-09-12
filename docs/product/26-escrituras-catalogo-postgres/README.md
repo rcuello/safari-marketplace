@@ -153,7 +153,7 @@ esquema.
 | [US-27b](./27b-escrituras-tags-manufacturers.md) | Escrituras de `tags` y `manufacturers` | Sí | US-27a | ~825 (real ~2109) | **Implementada** (2026-09-10) |
 | [US-28](./28-escrituras-arbol-categorias.md) | Escrituras del árbol de categorías | Sí | US-27a | ~350 (real ~1612, 3 PRs) | **Implementada** (2026-09-11) |
 | [US-29](./29-escrituras-productos-postgres.md) | Escrituras de productos con categorías y tags | Sí | US-27a | ~2100 (original ~550, recalibrado; real ~1808 código) | **Implementada** (2026-09-11), DoD pendiente de smoke visual (orquestador) |
-| [US-30](./30-escrituras-moderacion-tiendas.md) | Escrituras y moderación de tiendas | Sí | US-27a | ~1550 (original ~400, recalibrado; real ~1301 código, ~4056 con artefactos SDD) | **Implementada** (2026-09-11) |
+| [US-30](./30-escrituras-moderacion-tiendas.md) | Escrituras y moderación de tiendas | Sí | US-27a | ~1550 (original ~400, recalibrado; real ~1301 código, ~4573 con artefactos SDD) | **Implementada** (2026-09-11) |
 
 **Orden sugerido:** US-27a → (US-27b ∥ US-28 ∥ US-29 ∥ US-30). US-27a
 introduce las dos piezas compartidas (el helper de slug en `packages/db` y la
@@ -214,9 +214,12 @@ mueve nada: ×4,6 vs. ×4,8.)
 **US-30, añadida al cerrar el épico (2026-09-11).** ~1301 líneas de código
 real (`296` PR#1 + `187` PR#2 + `235` PR#3 + `583` PR#4, suma de
 `apply-progress.md`) contra la estimación **original** de ~400 (antes del
-re-anclaje a ~1550 de `design.md`): **×3,3**. Confirma el patrón de las tres
-US anteriores — aterriza dentro de la misma banda (~1470–2109) pese a
-partir de la base más baja del lote (~400). Contra el pronóstico ya
+re-anclaje a ~1550 de `design.md`): **×3,3**. Confirma el **factor** de las
+tres US anteriores, pero **no** su banda absoluta: 1301 queda *por debajo*
+del rango ~1470–2109 en el que aterrizaron US-27b/28/29, porque parte de la
+base más baja del lote (~400). Es decir, lo que se repite entre US es el
+multiplicador (~×3), no el tamaño final — corregido al verificar US-30, donde
+la redacción anterior afirmaba lo contrario. Contra el pronóstico ya
 recalibrado (~1550) queda **249 líneas por debajo** (`apply-progress.md`,
 nota de presupuesto del Slice 4): la única de las cuatro US cerradas cuyo
 real quedó bajo su propio pronóstico re-anclado, no por encima.

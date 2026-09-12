@@ -133,8 +133,18 @@ responder **404** (corrección de comportamiento intencional: hoy responde
 respondiendo `{ data: [], ...paginate(page, limit, ...) }` con el mismo
 helper `paginate()` que usa hoy (nunca `buildPaginator()`), preservando
 exactamente el mismo key-set y el mismo tipo de `per_page` (string, sin
-coerción) que el contrato actual. `POST`/`PUT`/`DELETE /staffs` MUST
-mantener su comportamiento de stub sin cambios.
+coerción) que el contrato actual.
+
+`POST /staffs` y `PUT /staffs/:id` MUST seguir siendo stubs declarados y MUST
+NOT crear ni editar una tienda. Su **cuerpo sí cambia** (divergencia #5 del
+diseño, `DD30-8`): hoy delegan en `shopsService.create`/`update`, que al
+recibir el parámetro `user` obligatorio romperían la compilación con `TS2554`
+(`shops.controller.ts:79` y `:94`); pasan a apuntar a stubs propios
+`createStaff()`/`updateStaff()`. Reenviar `@CurrentUser()` está **prohibido**:
+convertiría dos rutas explícitamente fuera de alcance en escrituras reales de
+tiendas. `DELETE /staffs/:id` sí queda intacto (delega en `remove()`, que esta
+US no migra). Lo que se preserva es el **comportamiento observable** del stub,
+no su implementación.
 
 #### Scenario: CA-4 — mismo key-set y tipo de `per_page` antes y después
 - GIVEN la migración de `getStaffs` ya aplicada
