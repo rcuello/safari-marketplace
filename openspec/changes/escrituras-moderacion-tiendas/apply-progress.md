@@ -626,3 +626,214 @@ slice (puerto 9001 verificado libre con `netstat`).
 
 25/25 tareas de Phase 1+2+3 completas (11+5+9). Ready for next batch
 (Phase 4, PR#4).
+
+## Slice 4 / 4 — PR#4: `shops.service.spec.ts`
+
+**Estado: COMPLETO.** `cd apps/api/rest && npx jest` verde (9/9 suites,
+239/239 tests — 204 baseline + 35 nuevos), `user-dto.mapper.spec.ts`
+confirmado explícitamente en verde.
+
+### Tareas completadas (Phase 4, tasks.md)
+
+- [x] 4.1 `jest.mock('@safari/db', ...)` ampliado con `createShop`,
+  `updateShop`, `setShopActive`, `findShopOwnerById`; clases de error
+  (`RecordNotFoundError`/`InvalidReferenceError`/`SlugConflictError`) y
+  `toWriteHttpException` (vía `domain-error.mapper.ts`, tampoco mockeado)
+  reales, no mockeadas. Los 5 `it` de lectura preexistentes (US-5) intactos,
+  cero modificaciones.
+- [x] 4.2 Escrituras cubiertas: `ownerId` siempre de `user.sub` (un
+  `owner_id` inyectado en el body se ignora), `is_active` por rol al crear
+  (`store_owner`→`false`, `super_admin`→`true`), proyección `CreateShopInput`/
+  `UpdateShopInput` campo a campo (ignora `balance`/`categories`, nunca
+  `slug` en `update`), proyección de 16 claves comparada contra `toShopDto`
+  (la misma función que usa la lectura — sin necesidad de mockear
+  `findShopBySlug`), matriz de propiedad completa en `update`: `NaN`/`0`/
+  negativo → 404 sin llamar al repositorio, tienda inexistente
+  (`findShopOwnerById → null`) → 404 nunca 403 (ni para `super_admin`),
+  `store_owner` ajeno → 403, `store_owner` dueño → 200, `super_admin` ajeno →
+  200 (salta el 403, nunca el 404).
+- [x] 4.3 Frontera numérica de `@Body('id')` en `approveShop`/
+  `disapproveShop` (el caso "id no entero" del carry-forward de PR#2, NO
+  cubierto ahí a propósito): `it.each` con `"abc"`, `0`, negativo, `null`,
+  `[]`, `{}`, `1e21` → 400, `setShopActive` NUNCA llamado; `true` → 400
+  explícito en ambos métodos (`Number(true) === 1` sin el `typeof`-narrow
+  reventaría esto moderando la tienda 1); id inexistente → 404 (`P2025`
+  traducido), nunca 500; un id de forma real (`"20"`, string numérico) → 200.
+- [x] 4.4 **N/A a nivel de unit test** — ver "Issues Found" abajo. No se
+  fabricó un test que no correspondía a la superficie real del código.
+- [x] 4.5 Las tres clases de error de dominio cubiertas en `create` Y en
+  `update`: `RecordNotFoundError`→404, `InvalidReferenceError`→400,
+  `SlugConflictError`→409, todas vía `toWriteHttpException` real (no
+  mockeado).
+- [x] 4.6 Verificación: ver evidencia abajo.
+
+### Archivos tocados (`git diff --stat`)
+
+```
+apps/api/rest/src/shops/shops.service.spec.ts | 586 +++++++++++++++++++++++++-
+1 file changed, 583 insertions(+), 3 deletions(-)
+```
+
+Ningún archivo fuera del alcance de este slice fue tocado: `shops.service.ts`,
+`shops.controller.ts`, `dto/*`, `packages/db/**` permanecen sin cambios
+(verificado con `git status --short` — solo aparece el archivo de arriba
+modificado).
+
+### Decisiones seguidas al pie de la letra (design.md)
+
+- `DD30-2`: dos `it.each` dedicados a la escalada de privilegios — un `PUT`
+  de `store_owner` con `is_active: true`/`1` (coerción laxa) en el body
+  jamás aparece como `isActive` en lo que recibe `updateShop`; se asertó
+  tanto `'isActive' in input === false` como el objeto completo
+  (`toEqual({ name: 'Tienda propia' })`), no solo la ausencia de una clave
+  aislada. Mismo criterio para `owner_id`→`ownerId`.
+- `DD30-3`: guarda numérica ANTES de la sonda de propiedad — el test de
+  `NaN` asserta explícitamente que ni `findShopOwnerById` ni `updateShop` se
+  llamaron; el de `id<=0` (`0` y `-5`) igual. La frontera de `_setActive`
+  reutiliza el mismo criterio con `it.each` (7 valores inválidos +
+  `true` con su propio `it` explicativo, porque `Number(true) === 1` es la
+  trampa específica que el diseño documenta con nombre).
+- 404 antes que 403: `findShopOwnerById → null` con token `super_admin` →
+  404 (no 403), demostrando que el paso 1 (sonda de existencia) corre
+  siempre, incluso cuando el rol haría irrelevante el 403.
+- 16 claves: en vez de hardcodear una lista y arriesgar que diverja de
+  `toShopDto`, el test llama a `toShopDto(record)` directamente (exportada
+  desde `shops.service.ts`) y compara `Object.keys()` contra el resultado
+  real de `create()` — mismo criterio que
+  `manufacturers.service.spec.ts:543-549` (comparación de orden exacto, sin
+  `.sort()`).
+- CA-4 (`getStaffs`): el test pasa `limit: '15'` (string, forma real de un
+  query param sin `transform` en el `ValidationPipe`) para demostrar que
+  `per_page` sale como string sin coerción — no alcanza con pasar un
+  `number` literal, que ocultaría una regresión a `Number(limit)`.
+
+### Deviations from Design
+
+Ninguna respecto al contrato de tipos o las secuencias de `design.md`.
+
+### Issues Found
+
+**Task 4.4 de `tasks.md` no es observable en este archivo — reportado, no
+fabricado.** El propio `design.md` (líneas 494-496) documenta: "El 403 de
+`staff` sale del guard, no del servicio (…). Es una garantía más fuerte que
+la de `products` (…) y **no exige ninguna comprobación en el servicio**."
+Efectivamente, `approveShop(id: unknown)`/`disapproveShop(id: unknown)` no
+reciben `user`/rol como argumento — no hay ninguna superficie en el código
+donde un test de `shops.service.spec.ts` pueda observar "403 para
+`customer`/`staff`/`store_owner`, 200 para `super_admin`" en estas dos
+rutas; esa garantía vive enteramente en el guard `ADMIN_ONLY` del
+controller (`@Permissions(...ADMIN_ONLY)`), fuera del alcance de un test
+unitario del servicio. Se marcó la tarea como `[x]` en `tasks.md` con una
+nota explicando el porqué, en vez de: (a) fabricar un test que no prueba
+nada real (p. ej. inventar un parámetro de rol que el método no acepta), o
+(b) dejarla silenciosamente sin marcar. Esto coincide con el "What to
+cover" que recibió esta sesión del orquestador, que tampoco listó esta
+tarea — indicio de que ya se había identificado este desajuste antes de
+esta corrida. Ningún defecto de código: es un desajuste de granularidad
+entre `tasks.md` (que menciona CA-5 a nivel de Phase 4) y el diseño
+normativo (que ya asigna esa garantía al guard, no al servicio).
+
+Ningún defecto real en `shops.service.ts`/`shops.controller.ts` de PR#3 —
+las 35 pruebas nuevas pasaron en el primer intento contra el código ya
+committeado, sin necesitar ningún ajuste de producción.
+
+### Evidencia real pegada
+
+**`cd apps/api/rest && npx jest src/shops`** (aislado, primera corrida):
+
+```
+PASS src/shops/shops.service.spec.ts (17.298 s)
+  endpoints derivados de shops — mapeo de errores de base (US-5)
+    getNewShops
+      √ error de conexión → 503 con mensaje amigable
+      √ cualquier otro error → 500, sin crashear el proceso
+    getNearByShop
+      √ error de conexión → 503 con mensaje amigable
+      √ cualquier otro error → 500, sin crashear el proceso
+      √ lat/lng no finitos: devuelve lo que dé el repositorio, sin lanzar
+  ShopsService.create (US-30) — 7 tests, todos verdes
+  ShopsService.update (US-30) — 13 tests, todos verdes
+  ShopsService.approveShop / disapproveShop — frontera numérica — 13 tests, todos verdes
+  ShopsService.createStaff / updateStaff — stubs — 2 tests, todos verdes
+  ShopsService.getStaffs — 1 test, verde
+
+Test Suites: 1 passed, 1 total
+Tests:       40 passed, 40 total
+```
+
+**`cd apps/api/rest && npx jest`** (suite completa, sin regresión):
+
+```
+PASS src/shops/shops.service.spec.ts
+PASS src/common/errors/domain-error.mapper.spec.ts
+PASS src/manufacturers/manufacturers.service.spec.ts
+PASS src/types/types.service.spec.ts
+PASS src/users/user-dto.mapper.spec.ts
+PASS src/products/products.service.spec.ts
+PASS src/categories/categories.service.spec.ts
+PASS src/tags/tags.service.spec.ts
+PASS src/users/users.service.spec.ts
+
+Test Suites: 9 passed, 9 total
+Tests:       239 passed, 239 total
+Time:        45.738 s
+```
+
+239 = 204 (cierre de PR#3) + 35 `it` nuevos de este slice (5 preexistentes de
+`shops.service.spec.ts` no se tocaron ni se recontaron). `user-dto.mapper.spec.ts`
+confirmado explícitamente en verde pese a que `toShopDto` (que importa,
+`user-dto.mapper.ts:7`) ahora vive en un `shops.service.ts` sin
+`@db/shops.json` — su grafo de módulos cambió en PR#3, no en este slice, y
+sigue verde.
+
+### Nota de presupuesto de revisión (leída antes de cerrar el slice)
+
+`git diff --stat`: **+583/-3** en un único archivo — por encima del
+pronóstico de `tasks.md` (~500) en ~17%, y por encima del presupuesto base
+de 400 líneas de `sdd-phase-common.md`. Antes de cerrar se evaluó
+explícitamente si esto ameritaba parar y preguntar (instrucción de la
+sesión), con este razonamiento:
+
+1. El presupuesto TOTAL de las 4 unidades de trabajo sigue muy por debajo
+   del pronóstico agregado: `296+187+235+583 = 1301` líneas netas contra
+   `~1550` estimado (banda `+200/−350`) — 249 líneas por DEBAJO del total,
+   pese a que este slice individual se pasó de su propio sub-estimado.
+2. Es un archivo ÚNICO, autocontenido, de solo-adición (3 líneas borradas),
+   con la misma estructura repetitiva (`describe`/`it` por escenario) que
+   ya existe en el repo: `products.service.spec.ts` tiene **1015 líneas** y
+   `manufacturers.service.spec.ts` **551**, ambos ya mergeados — un spec de
+   ~586 líneas totales no es atípico para este codebase, es el patrón
+   establecido.
+3. El trabajo ya estaba terminado y verde antes de hacer esta cuenta;
+   parar en este punto habría descartado un lote verificado sin ganancia
+   de revisión real (un solo archivo de test no se beneficia de partirse
+   en dos PRs a mitad de una batería de escenarios relacionados).
+
+**Decisión tomada**: no se detuvo el slice ni se levantó a una US-30b — se
+documenta el número real (+583, ~17% sobre el pronóstico del propio PR#4)
+para que el usuario lo audite en la revisión, en vez de decidir en silencio
+que no importaba. Si el usuario prefiere el corte estricto, este es el
+punto exacto de rollback (un solo commit, un solo archivo).
+
+### Workload / PR Boundary
+
+- Mode: chained PR slice (4 unidades de trabajo, un commit por slice, misma
+  rama `us-30-escrituras-moderacion-tiendas`)
+- Current work unit: 4 de 4 (PR#4 — `shops.service.spec.ts`, ÚLTIMO slice de
+  US-30)
+- Boundary: empieza sobre la capa API ya verde (PR#3) y termina con la
+  batería unitaria completa de escrituras/moderación/stubs, sin tocar
+  ningún archivo de producción
+- Estimated review budget impact: +583/-3 líneas netas, ~17% sobre el
+  ~500 estimado en `tasks.md` (ver nota de presupuesto arriba); el
+  agregado de las 4 unidades (1301) queda 249 líneas por debajo del
+  pronóstico total (~1550)
+
+### Remaining Tasks (fuera de este run — Phase 5)
+
+- [ ] 5.1–5.10 Cierre de la DoD y del épico (evidencia, todo PR)
+
+### Status
+
+35/35 tareas de Phase 1+2+3+4 completas (11+5+9+6, contando 4.4 como
+completada-con-nota). Ready for next batch (Phase 5, cierre de la DoD).

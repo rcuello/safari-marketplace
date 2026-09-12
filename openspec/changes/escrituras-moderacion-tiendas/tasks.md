@@ -99,12 +99,12 @@ levantar PR#4 a una US-30b (parar y preguntar, no decidir unilateralmente).
 
 ## Phase 4: `shops.service.spec.ts` (`apps/api/rest`, PR#4)
 
-- [ ] 4.1 Ampliar `jest.mock('@safari/db', ...)` (`:30-35`) con `createShop`, `updateShop`, `setShopActive`, `findShopOwnerById`; clases de error y `toWriteHttpException` reales vía `jest.requireActual`/import directo. Los 5 `it` de lectura no se tocan.
-- [ ] 4.2 Cubrir escrituras: proyección de 16 claves en el mismo orden que `getShop`; `is_active` por rol al crear; matriz de propiedad 404/403/200 en `update`.
-- [ ] 4.3 Cubrir la frontera numérica de `@Body('id')` en `approve`/`disapprove` (**este es el caso "id no entero" del carry-forward**, no PR#2): `"abc"`, `0`, `true`, `null`, `[]`, `{}` → 400; id inexistente → 404 (`P2025` traducido). [DD30-3]
-- [ ] 4.4 Cubrir la matriz de roles de CA-5 en `approve-shop`/`disapprove-shop`: 403 para todo lo que no sea `super_admin` (incluido `store_owner`).
-- [ ] 4.5 Cubrir cada clase de error de dominio (`InvalidReferenceError`, `RecordNotFoundError`, `SlugConflictError`) → su status HTTP vía `toWriteHttpException`.
-- [ ] 4.6 Verificar PR#4: `cd apps/api/rest && npx jest` verde, con recuentos reales pegados. **Re-correr explícitamente `user-dto.mapper.spec.ts`** aunque esta US no lo edite: `user-dto.mapper.ts:7` importa `toShopDto` desde `shops.service`, así que quitar `@db/shops.json` cambia su grafo de módulos.
+- [x] 4.1 Ampliar `jest.mock('@safari/db', ...)` (`:30-35`) con `createShop`, `updateShop`, `setShopActive`, `findShopOwnerById`; clases de error y `toWriteHttpException` reales vía `jest.requireActual`/import directo. Los 5 `it` de lectura no se tocan.
+- [x] 4.2 Cubrir escrituras: proyección de 16 claves en el mismo orden que `getShop`; `is_active` por rol al crear; matriz de propiedad 404/403/200 en `update`.
+- [x] 4.3 Cubrir la frontera numérica de `@Body('id')` en `approve`/`disapprove` (**este es el caso "id no entero" del carry-forward**, no PR#2): `"abc"`, `0`, `true`, `null`, `[]`, `{}` → 400; id inexistente → 404 (`P2025` traducido). [DD30-3]
+- [x] 4.4 N/A a nivel de unit test — ver "Deviations" en `apply-progress.md`: design.md línea 494-496 documenta que el 403 de `staff`/`customer`/`store_owner` en `approve-shop`/`disapprove-shop` sale del guard `ADMIN_ONLY` a nivel de ruta, "sin exigir ninguna comprobación en el servicio"; `approveShop(id)`/`disapproveShop(id)` no reciben `user`/rol como argumento, así que la matriz de CA-5 no es observable en `shops.service.spec.ts` (viviría en un test de guard/e2e, fuera del alcance de este archivo).
+- [x] 4.5 Cubrir cada clase de error de dominio (`InvalidReferenceError`, `RecordNotFoundError`, `SlugConflictError`) → su status HTTP vía `toWriteHttpException`.
+- [x] 4.6 Verificar PR#4: `cd apps/api/rest && npx jest` verde, con recuentos reales pegados. **Re-correr explícitamente `user-dto.mapper.spec.ts`** aunque esta US no lo edite: `user-dto.mapper.ts:7` importa `toShopDto` desde `shops.service`, así que quitar `@db/shops.json` cambia su grafo de módulos.
 
 ## Phase 5: Cierre de la DoD y del épico (evidencia, todo PR)
 
