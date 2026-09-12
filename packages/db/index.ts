@@ -107,15 +107,20 @@ export {
 } from './src/repositories/products.repository';
 export { getSettings } from './src/repositories/settings.repository';
 export type {
+  CreateShopInput,
   ListShopsInput,
   ShopNearRecord,
+  UpdateShopInput,
 } from './src/repositories/shops.repository';
 export {
+  createShop,
   findOrCreateShopBySlug,
   findShopBySlug,
   findShopOwnerById,
   listShops,
   listShopsNear,
+  setShopActive,
+  updateShop,
 } from './src/repositories/shops.repository';
 export type {
   CreateTagInput,

@@ -6,7 +6,9 @@
 
 import type { Prisma } from '../../generated/prisma/client/client';
 import { prisma } from '../client';
+import { translateCatalogWriteError } from '../domain-errors';
 import { _id, _toShopRecord, type ShopRecord } from '../records';
+import { type ExistingSlugLookup, generateSlug, normalizeSlug } from '../slug';
 
 export interface ListShopsInput {
   /** Solo tiendas activas por defecto. */
@@ -197,4 +199,144 @@ export async function findOrCreateShopBySlug(input: {
     update: {},
   });
   return _toShopRecord(row);
+}
+
+// ---------------------------------------------------------------------------
+// Escritura (admin) — CA-1, CA-2, CA-3 de `shop-write-api` (US-30). Cero
+// CHECK y cero `IN` en `shops` (db/schema.sql:231-244, DD30-10): el `catch`
+// de las tres funciones es una sola llamada a `translateCatalogWriteError`,
+// sin guarda de dominio propia.
+// ---------------------------------------------------------------------------
+
+/**
+ * Call site de `ExistingSlugLookup` (mismo patrón que `productSlugs`/
+ * `categorySlugs`): el nombre de tabla nunca llega a `slug.ts`.
+ */
+const shopSlugs: ExistingSlugLookup = async (prefix) =>
+  (
+    await prisma.shop.findMany({
+      where: { slug: { startsWith: prefix } },
+      select: { slug: true },
+    })
+  ).map((r) => r.slug);
+
+/**
+ * `slug` no existe en ningún input (DD30-2): la inmutabilidad de CA-2 es
+ * estructural, no un `Omit`. `ownerId` sale siempre del token (D30-3) e
+ * `isActive` se fija explícito por rol al crear (D30-6) — ninguno de los
+ * dos se apoya en el `DEFAULT` del DDL.
+ */
+export interface CreateShopInput {
+  name: string;
+  ownerId: number;
+  isActive: boolean;
+  description?: string | null;
+  logo?: Prisma.InputJsonValue;
+  coverImage?: Prisma.InputJsonValue;
+  address?: Prisma.InputJsonValue;
+  settings?: Prisma.InputJsonValue;
+}
+
+/**
+ * `ownerId`/`isActive` excluidos del update por seguridad (DD30-2): si
+ * `isActive` fuera editable aquí, un `store_owner` se auto-aprobaría por
+ * `PUT /shops/:propio`, esquivando `approve-shop` (`ADMIN_ONLY`).
+ */
+export type UpdateShopInput = Partial<Omit<CreateShopInput, 'ownerId' | 'isActive'>>;
+
+/**
+ * Crea una tienda del admin. `ownerId`/`isActive` llegan tal cual del
+ * servicio (el rol se decide ahí, D30-6); `slug` se deriva de `name`
+ * (`generateSlug` ya rechaza `''`/no-string vía `normalizeSlug`, DD30-9).
+ * Recalcula `productsCount` con el mismo `include: COUNT_PRODUCTS` que las
+ * lecturas (DD30-5) — para una tienda nueva siempre da `0`, no por un
+ * fallback.
+ */
+export async function createShop(input: CreateShopInput): Promise<ShopRecord> {
+  const slug = await generateSlug({ name: input.name }, shopSlugs, 'shops');
+
+  try {
+    const row = await prisma.shop.create({
+      data: {
+        name: input.name,
+        slug,
+        ownerId: input.ownerId,
+        isActive: input.isActive,
+        ...(input.description !== undefined && {
+          description: input.description ?? null,
+        }),
+        ...(input.logo != null && { logo: input.logo }),
+        ...(input.coverImage != null && { coverImage: input.coverImage }),
+        ...(input.address !== undefined && { address: input.address }),
+        ...(input.settings !== undefined && { settings: input.settings }),
+      },
+      include: COUNT_PRODUCTS,
+    });
+    return { ..._toShopRecord(row), productsCount: row._count.products };
+  } catch (error) {
+    throw translateCatalogWriteError(error, { aggregate: 'shops' });
+  }
+}
+
+/**
+ * Edita una tienda. `slug` no existe en `UpdateShopInput`: nunca cambia
+ * (CA-2). Si llega `name`, `normalizeSlug` corre solo por su efecto
+ * lateral (`EmptySlugError` → 400 ante `''`/no-string, DD30-9) — el
+ * resultado se descarta, el slug de la fila no se toca. `settings`/
+ * `address` son REPLACE completo cuando vienen (D30-1/D30-4); `logo`/
+ * `coverImage` con `!= null` (un `null` explícito es no-op, DD30-2).
+ * `updatedAt` no se fija a mano: lo hace el trigger `shops_updated_at`
+ * con el reloj de Postgres (DD30-7). Sin guarda numérica propia: la
+ * precondición documentada es `id` entero seguro positivo, garantizada
+ * por el llamador (mismo contrato que `updateProduct`).
+ */
+export async function updateShop(
+  id: number,
+  input: UpdateShopInput
+): Promise<ShopRecord> {
+  if (input.name !== undefined) {
+    await normalizeSlug(input.name, 'shops');
+  }
+
+  try {
+    const row = await prisma.shop.update({
+      where: { id },
+      data: {
+        ...(input.name !== undefined && { name: input.name }),
+        ...(input.description !== undefined && {
+          description: input.description,
+        }),
+        ...(input.logo != null && { logo: input.logo }),
+        ...(input.coverImage != null && { coverImage: input.coverImage }),
+        ...(input.address !== undefined && { address: input.address }),
+        ...(input.settings !== undefined && { settings: input.settings }),
+      },
+      include: COUNT_PRODUCTS,
+    });
+    return { ..._toShopRecord(row), productsCount: row._count.products };
+  } catch (error) {
+    throw translateCatalogWriteError(error, { aggregate: 'shops', id });
+  }
+}
+
+/**
+ * Aprueba (`true`) o desactiva (`false`) una tienda — **una** función para
+ * las dos rutas de moderación (D30-1/DD30-1): la asimetría vive en el
+ * servicio (`approveShop`/`disapproveShop` delegando en `_setActive`), no
+ * aquí. Sin guarda numérica propia: la lleva el servicio (DD30-3).
+ */
+export async function setShopActive(
+  id: number,
+  isActive: boolean
+): Promise<ShopRecord> {
+  try {
+    const row = await prisma.shop.update({
+      where: { id },
+      data: { isActive },
+      include: COUNT_PRODUCTS,
+    });
+    return { ..._toShopRecord(row), productsCount: row._count.products };
+  } catch (error) {
+    throw translateCatalogWriteError(error, { aggregate: 'shops', id });
+  }
 }
