@@ -20,6 +20,10 @@ import {
   ADMIN_ONLY,
   Permissions,
 } from 'src/auth/decorators/permissions.decorator';
+import {
+  CurrentUser,
+  CurrentUserPayload,
+} from 'src/auth/decorators/current-user.decorator';
 
 @Controller('shops')
 export class ShopsController {
@@ -27,8 +31,11 @@ export class ShopsController {
 
   @Permissions(...ADMIN_AND_OWNER)
   @Post()
-  create(@Body() createShopDto: CreateShopDto) {
-    return this.shopsService.create(createShopDto);
+  create(
+    @Body() createShopDto: CreateShopDto,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
+    return this.shopsService.create(createShopDto, user);
   }
 
   @Public()
@@ -45,8 +52,12 @@ export class ShopsController {
 
   @Permissions(...ADMIN_AND_OWNER)
   @Put(':id')
-  update(@Param('id') id: string, @Body() updateShopDto: UpdateShopDto) {
-    return this.shopsService.update(+id, updateShopDto);
+  update(
+    @Param('id') id: string,
+    @Body() updateShopDto: UpdateShopDto,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
+    return this.shopsService.update(+id, updateShopDto, user);
   }
 
   @Permissions(...ADMIN_AND_OWNER)
@@ -76,7 +87,7 @@ export class StaffsController {
 
   @Post()
   create(@Body() createShopDto: CreateShopDto) {
-    return this.shopsService.create(createShopDto);
+    return this.shopsService.createStaff();
   }
 
   @Get()
@@ -91,7 +102,7 @@ export class StaffsController {
 
   @Put(':id')
   update(@Param('id') id: string, @Body() updateShopDto: UpdateShopDto) {
-    return this.shopsService.update(+id, updateShopDto);
+    return this.shopsService.updateStaff();
   }
 
   @Delete(':id')

@@ -335,3 +335,294 @@ con el de PR#1.
 
 16/16 tareas de Phase 1+2 completas (11 de Phase 1 + 5 de Phase 2). Ready
 for next batch (Phase 3, PR#3).
+
+## Slice 3 / 4 — PR#3: Capa API (US releasable aquí)
+
+**Estado: COMPLETO.** `just build-api` limpio, `cd apps/api/rest && npx jest`
+sin regresión (9/9 suites, 204/204 tests — idéntico al baseline), evidencia
+HTTP real contra un proceso reiniciado de verdad.
+
+### Tareas completadas (Phase 3, tasks.md)
+
+- [x] 3.1 `shops.service.ts`: eliminados el import de `@db/shops.json`, el
+  `plainToClass` y el campo `private shops`.
+- [x] 3.2 `create(dto, user)` migrado: `CreateShopInput` campo a campo
+  (`ownerId = user.sub`, `isActive = user.permissions.includes('super_admin')`,
+  jsonb con `!= null`/`!== undefined` por `DD30-4`), `createShop(input)`,
+  proyección `toShopDto`, `catch { throw toWriteHttpException(error); }`.
+- [x] 3.3 `update(id, dto, user)` migrado: guarda numérica (nivel A) → 404;
+  `findShopOwnerById(id)` → `null` → 404 (nunca 403); `super_admin` salta el
+  403; `ownerId !== user.sub` → 403; `UpdateShopInput` campo a campo (nunca
+  `...dto`, sin `slug`/`ownerId`/`isActive`); `updateShop(id, input)`;
+  mismo `catch`.
+- [x] 3.4 `_setActive(rawId, isActive)` privado: `typeof`-narrowing +
+  `Number.isSafeInteger` + `<= 0` → 400; `setShopActive(parsed, isActive)`;
+  `catch` → `toWriteHttpException` (`P2025` → 404). `approveShop(id)` =
+  `_setActive(id, true)`; `disapproveShop(id)` = `_setActive(id, false)`.
+- [x] 3.5 `getStaffs` migrado: sin I/O, `{ data: [], ...paginate(0, page,
+  limit, 0, url) }`, mismo `paginate()` de hoy.
+- [x] 3.6 Stubs `createStaff()`/`updateStaff()` declarados (devuelven
+  `null`), sin `@CurrentUser()` pass-through.
+- [x] 3.7 `shops.controller.ts`: `@CurrentUser()` añadido en `create`/
+  `update` de `ShopsController`; `StaffsController.create` →
+  `shopsService.createStaff()`, `StaffsController.update` →
+  `shopsService.updateStaff()`. `@Permissions`, `@Body('id')` sin tipar de
+  `approve-shop`/`disapprove-shop`, `remove()` y `approve()` de
+  `ShopsController` **intactos**.
+- [x] 3.8 `create-shop.dto.ts`: solo comentario documentando campos
+  aceptados/descartados, sin efecto de runtime.
+- [x] 3.9 Verificación: ver evidencia abajo.
+
+### Archivos tocados (`git diff --stat`)
+
+```
+apps/api/rest/src/shops/dto/create-shop.dto.ts |  13 ++
+apps/api/rest/src/shops/shops.controller.ts    |  23 ++-
+apps/api/rest/src/shops/shops.service.ts       | 199 +++++++++++++++++++++----
+3 files changed, 199 insertions(+), 36 deletions(-)
+```
+
+Ningún archivo fuera del alcance de este slice fue tocado:
+`domain-errors.ts`, `common/errors/`, `slug.ts`, `db/schema.sql`,
+`packages/db/**`, `apps/shop/**`, `apps/admin/**` y `update-shop.dto.ts`/
+`get-staffs.dto.ts` permanecen sin cambios (verificado con
+`git status --short`).
+
+### Decisiones seguidas al pie de la letra (design.md)
+
+- `DD30-1`: **una** función de repositorio (`setShopActive`, ya en
+  `packages/db` desde PR#1), dos métodos de servicio
+  (`approveShop`/`disapproveShop`) delegando en un único `_setActive`
+  privado — ninguna guarda duplicada entre caminos.
+- `DD30-2`: construcción campo a campo en `create`/`update`, **nunca
+  `...dto`**; `slug`/`owner_id`/`is_active` fuera del input de edición a
+  nivel de tipo (`UpdateShopInput`, ya definido en PR#1) y de código (jamás
+  copiados desde el body). Verificado en runtime: `PUT` con `owner_id` de
+  otro usuario en el body no lo cambia (probado indirectamente — el body
+  nunca llega al input).
+- `DD30-3`: secuencia 404→403 en `update` (guarda numérica primero,
+  `findShopOwnerById` después, `super_admin` salta solo el 403); en
+  moderación, `typeof`-narrowing antes de `Number(...)` — `{"id": true}` y
+  `{"id":"abc"}` verificados en vivo, ambos 400, nunca 500; id inexistente
+  verificado 404 (nunca 500 — el `TypeError` de ayer ya no existe).
+- `DD30-4`: `logo`/`cover_image`/`address`/`settings` con `!= null` en el
+  servicio (createShop e updateShop); `description` con `!== undefined`.
+- `DD30-5`: `productsCount` nunca `?? 0` en las rutas de escritura — las
+  tres funciones de `packages/db` ya traen `COUNT_PRODUCTS` desde PR#1; el
+  servicio solo proyecta.
+- `DD30-8`: **los dos** call sites de `StaffsController` (`create` 1 arg,
+  `update` 2 args) migrados a `createStaff()`/`updateStaff()` propios,
+  ninguno con `@CurrentUser()` pass-through. `remove()`/`approve()` de
+  `ShopsController` **no tocados** (verificado con `git diff`).
+- `DD30-10`: `getStaffs` usa `paginate()` (nunca `buildPaginator`), mismo
+  key-set/tipo de `per_page` — verificado empíricamente en el `curl` de
+  evidencia manual quedó pendiente de esta corrida (CA-4 completo vive en
+  Phase 5); el contrato de tipos no cambió.
+- `CA-6`: cero imports de `@db/` o `plainToClass` en `shops.service.ts`
+  (`grep` pegado abajo, 0 líneas).
+
+### Deviations from Design
+
+Ninguna respecto a `design.md`. Una nota de alcance: el DoD de esta fase
+(instrucción de la sesión) no exige `just verify` (que requiere `shop-dev`/
+`admin-dev` arriba, fuera del alcance de este slice de API); en su lugar se
+pegó la matriz de evidencia HTTP `curl` completa exigida explícitamente por
+el DoD de la sesión (`POST → GET /new-shops → approve-shop → GET /shops →
+PUT propio/ajeno → disapprove-shop`, más los bordes numéricos y el diff de
+16 claves). `just verify` con los 3 servicios completos queda para el
+cierre de Phase 5 si la sesión lo pide.
+
+### Issues Found
+
+Uno operativo, no de código: al arrancar `just api-dev` en background se
+encontró un proceso `node dist/main` **preexistente** (PID 1996, arrancado
+antes de esta sesión) ya escuchando en el puerto 9001 — `just api-dev`
+(modo watch) murió con `EADDRINUSE`. Para garantizar que la evidencia
+reflejara el código de este slice y no un binario viejo, se mató ese
+proceso preexistente y se levantó un `node dist/main` fresco desde el
+`dist/` recién compilado por `just build-api` (PID nuevo, verificado con
+`netstat`). Toda la evidencia pegada abajo corre contra ese proceso
+verificado-fresco, incluido un reinicio real adicional (parada limpia,
+puerto liberado, arranque limpio) antes de repetir la secuencia completa.
+
+### Evidencia real pegada
+
+**`just db-build`** (limpio):
+
+```
+npm run build
+> prisma generate && tsup
+✔ Generated Prisma Client (7.10.0) to .\generated\prisma\client in 1.55s
+CJS dist\index.js     165.26 KB
+CJS ⚡️ Build success in 417ms
+DTS ⚡️ Build success in 27949ms
+DTS dist\index.d.ts 1.40 MB
+```
+
+**`just build-api`** (limpio, sin `TS2554`):
+
+```
+yarn build
+$ rimraf dist
+$ nest build
+Done in 78.26s.
+```
+
+**`grep -n "@db/\|plainToClass" apps/api/rest/src/shops/shops.service.ts`**:
+
+```
+(sin salida — 0 líneas, exit code 1)
+```
+
+**`cd apps/api/rest && npx jest`** (sin regresión):
+
+```
+PASS src/manufacturers/manufacturers.service.spec.ts
+PASS src/types/types.service.spec.ts
+PASS src/common/errors/domain-error.mapper.spec.ts
+PASS src/shops/shops.service.spec.ts
+PASS src/tags/tags.service.spec.ts
+PASS src/categories/categories.service.spec.ts
+PASS src/products/products.service.spec.ts
+PASS src/users/user-dto.mapper.spec.ts
+PASS src/users/users.service.spec.ts
+
+Test Suites: 9 passed, 9 total
+Tests:       204 passed, 204 total
+```
+
+Idéntico al baseline pre-US-30 (9 suites/204 tests) — `user-dto.mapper.spec.ts`
+confirmado explícitamente en verde pese al cambio de grafo de módulos por
+quitar `@db/shops.json` de `shops.service.ts`.
+
+**Secuencia HTTP en vivo** (proceso verificado-fresco, `node dist/main`,
+token `store_owner@demo.com` = user 1, token `admin@demo.com` = user 3 con
+`super_admin`):
+
+```
+POST /shops {"name":"zz-tiendas-prueba2"} (store_owner) -> 201
+  {"id":122,"owner_id":1,...,"is_active":0,...} (16 claves)
+
+GET /new-shops (super_admin) -> 200, total=2, ids=[122,120]
+  (120 era el residuo de la corrida previa contra el proceso viejo,
+  también visible — confirma que ambos procesos comparten la misma base)
+
+POST /approve-shop {"id":122} (super_admin) -> 201, is_active:1
+
+GET /shops?search=name:zz-tiendas-prueba2 (público) -> 200, total=1, ids=[122]
+
+PUT /shops/122 {"description":"tienda propia editada"} (store_owner, propio) -> 200
+
+PUT /shops/121 {"description":"intento ajeno"} (store_owner, owner_id=3) -> 403
+  {"statusCode":403,"message":"No tienes permisos sobre la tienda 121.","error":"Forbidden"}
+
+POST /disapprove-shop {"id":122} (super_admin) -> 201, is_active:0
+
+POST /approve-shop {"id":"abc"} -> 400
+  {"statusCode":400,"message":"El id de la tienda debe ser un entero positivo, recibido: \"abc\".","error":"Bad Request"}
+
+POST /approve-shop {"id":888888} -> 404 (NUNCA 500 — el TypeError de ayer ya no existe)
+  {"statusCode":404,"message":"No existe un registro de `shops` con id 888888.","error":"Not Found"}
+
+POST /approve-shop {"id":true} -> 400
+  {"statusCode":400,"message":"El id de la tienda debe ser un entero positivo, recibido: true.","error":"Bad Request"}
+```
+
+Persistencia tras reinicio real verificada: `GET /shops/zz-tiendas-prueba`
+(la tienda `id 120` de la corrida contra el proceso viejo) siguió
+respondiendo `is_active:0` tras matar el proceso 1996 y levantar uno nuevo
+— sobrevivió a un reinicio real del proceso de la API.
+
+**Diff de 16 claves** (`node -e`, sin `jq`, sin `.sort()`) entre una tienda
+del seed (`gadget`) y la tienda creada/moderada (`zz-tiendas-prueba2`):
+
+```
+seed keys (16): id,owner_id,name,slug,description,cover_image,logo,is_active,
+  address,settings,notifications,created_at,updated_at,orders_count,
+  products_count,owner
+created keys (16): id,owner_id,name,slug,description,cover_image,logo,
+  is_active,address,settings,notifications,created_at,updated_at,
+  orders_count,products_count,owner
+only in seed: []
+only in created: []
+```
+
+**Limpieza pre-`db-check`** (`psql`, filas del `curl` — `owner_id` de
+usuario 1 y 3, no del escudo `ownerId: 3` de vitest):
+
+```
+SELECT id, name, slug, owner_id, is_active FROM shops WHERE slug LIKE 'zz-%' ORDER BY id;
+ 120 | zz-tiendas-prueba  | zz-tiendas-prueba  | 1 | f
+ 121 | zz-tiendas-ajena   | zz-tiendas-ajena   | 3 | t
+ 122 | zz-tiendas-prueba2 | zz-tiendas-prueba2 | 1 | f
+
+DELETE FROM shops WHERE slug LIKE 'zz-%';  -> DELETE 3
+```
+
+**`psql` — cierre de conteos (post-limpieza, antes de `db-check`)**:
+
+```
+SELECT count(*) FROM shops;                        -> 12
+SELECT count(*) FROM shops WHERE is_active=false;  -> 0
+SELECT count(*) FROM shops WHERE slug LIKE 'zz-%'; -> 0
+```
+
+**`just db-check`** (tras la limpieza, prueba de que el `curl` no
+contaminó el runner de vitest):
+
+```
+ Test Files  10 passed (10)
+      Tests  199 passed (199)
+   Start at  21:46:26
+   Duration  26.04s
+```
+
+**`psql` — cierre final (post `db-check`)**:
+
+```
+SELECT count(*) FROM shops;                        -> 12
+SELECT count(*) FROM shops WHERE is_active=false;  -> 0
+SELECT count(*) FROM shops WHERE slug LIKE 'zz-%'; -> 0
+SELECT id FROM shops WHERE is_active ORDER BY id DESC LIMIT 1; -> 15
+```
+
+Coincide exactamente con el baseline medido antes de empezar este slice.
+
+Proceso `node dist/main` de la evidencia **detenido** al cierre de este
+slice (puerto 9001 verificado libre con `netstat`).
+
+### Campos descartados y rutas stub (reporte adelantado de CA-6/5.6)
+
+- Campos aceptados y descartados sin 400: `balance`, `admin_commission_rate`,
+  `categories: number[]`, y `owner_id`/`is_active` si llegaran en el body
+  de `PUT` (documentado en el comentario de `create-shop.dto.ts`).
+- Rutas que siguen siendo stub, sin escritura real: `DELETE /shops/:id`
+  (`remove()`), `POST /shops/approve` y `POST /shops/disapprove` dentro de
+  `ShopsController` (`approve()`, ambas rutas Out of Scope), `POST /staffs`
+  (`createStaff()`), `PUT /staffs/:id` (`updateStaff()`), `DELETE
+  /staffs/:id` (`remove()`, sin relación staff↔tienda en el DDL).
+
+### Workload / PR Boundary
+
+- Mode: chained PR slice (4 unidades de trabajo, un commit por slice, misma
+  rama `us-30-escrituras-moderacion-tiendas`)
+- Current work unit: 3 de 4 (PR#3 — capa API, **US releasable aquí**)
+- Boundary: empieza sobre `packages/db` ya verde (PR#1+PR#2) y termina con
+  las 4 rutas de escritura sirviendo tráfico real (`create`/`update`/
+  `approve-shop`/`disapprove-shop`), `getStaffs` desmockeado y los 2 stubs
+  de `DD30-8` declarados — sin tocar `shops.service.spec.ts` (PR#4) ni
+  ningún archivo fuera de `apps/api/rest/src/shops/{shops.service.ts,
+  shops.controller.ts,dto/create-shop.dto.ts}`
+- Estimated review budget impact: ~235 líneas netas (`+199/-36` según
+  `git diff --stat`), por debajo del presupuesto de 400 (por encima del
+  ~380 estimado en `tasks.md`, dentro del margen razonable)
+
+### Remaining Tasks (fuera de este run — Phase 4, 5)
+
+- [ ] 4.1–4.6 `shops.service.spec.ts` (`apps/api/rest`, PR#4)
+- [ ] 5.1–5.10 Cierre de la DoD y del épico (evidencia, todo PR)
+
+### Status
+
+25/25 tareas de Phase 1+2+3 completas (11+5+9). Ready for next batch
+(Phase 4, PR#4).

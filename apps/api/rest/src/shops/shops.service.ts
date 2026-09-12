@@ -1,33 +1,37 @@
 import {
+  BadRequestException,
+  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import { plainToClass } from 'class-transformer';
 import {
+  createShop,
   findShopBySlug,
+  findShopOwnerById,
   getUserFriendlyMessage,
   isPrismaConnectionError,
   listShops,
   listShopsNear,
+  setShopActive,
+  updateShop,
+  type CreateShopInput,
   type ListShopsInput,
+  type Prisma,
   type ShopNearRecord,
   type ShopRecord,
+  type UpdateShopInput,
 } from '@safari/db';
+import { toWriteHttpException } from 'src/common/errors/domain-error.mapper';
+import { CurrentUserPayload } from 'src/auth/decorators/current-user.decorator';
 import { CreateShopDto } from './dto/create-shop.dto';
 import { UpdateShopDto } from './dto/update-shop.dto';
 import { Shop } from './entities/shop.entity';
-import shopsJson from '@db/shops.json';
 import { GetShopsDto, ShopPaginator } from './dto/get-shops.dto';
 import { paginate } from 'src/common/pagination/paginate';
 import { GetStaffsDto } from './dto/get-staffs.dto';
 import { parseSearch } from 'src/common/search/parse-search';
-
-// Solo sostiene create()/update()/getStaffs()/dis-/approveShop() — el
-// listado y los 2 endpoints derivados (new-shops, near-by-shop) ya salen de
-// Postgres vía listShops()/listShopsNear() (US-5).
-const shops = plainToClass(Shop, shopsJson);
 
 /**
  * `ShopRecord` (camelCase, `@safari/db`) → proyección de 16 claves
@@ -92,10 +96,46 @@ function toNearShopDto(record: ShopNearRecord): Shop {
 
 @Injectable()
 export class ShopsService {
-  private shops: Shop[] = shops;
+  /**
+   * `owner_id` SIEMPRE del token (`user.sub`, D30-3), nunca del body.
+   * `is_active` explícito por rol (D30-6): `store_owner` entra a la cola de
+   * moderación (`false`); `super_admin` nace activa (`true`) — ninguno de
+   * los dos se apoya en el `DEFAULT true` del DDL. Input campo a campo
+   * (`R30-7`): nunca `...createShopDto`. `logo`/`cover_image`/`address`/
+   * `settings` con `!= null` (DD30-4): un `null` explícito es un no-op
+   * declarado, no un valor a persistir.
+   */
+  async create(
+    createShopDto: CreateShopDto,
+    user: CurrentUserPayload,
+  ): Promise<Shop> {
+    const input: CreateShopInput = {
+      name: createShopDto.name,
+      ownerId: user.sub,
+      isActive: user.permissions.includes('super_admin'),
+      ...(createShopDto.description !== undefined && {
+        description: createShopDto.description,
+      }),
+      ...(createShopDto.logo != null && {
+        logo: createShopDto.logo as unknown as Prisma.InputJsonValue,
+      }),
+      ...(createShopDto.cover_image != null && {
+        coverImage: createShopDto.cover_image as unknown as Prisma.InputJsonValue,
+      }),
+      ...(createShopDto.address != null && {
+        address: createShopDto.address as unknown as Prisma.InputJsonValue,
+      }),
+      ...(createShopDto.settings != null && {
+        settings: createShopDto.settings as unknown as Prisma.InputJsonValue,
+      }),
+    };
 
-  create(createShopDto: CreateShopDto) {
-    return this.shops[0];
+    try {
+      const record = await createShop(input);
+      return toShopDto(record);
+    } catch (error) {
+      throw toWriteHttpException(error);
+    }
   }
 
   async getShops({ search, limit, page }: GetShopsDto): Promise<ShopPaginator> {
@@ -171,19 +211,18 @@ export class ShopsService {
     };
   }
 
-  getStaffs({ shop_id, limit, page }: GetStaffsDto) {
-    const startIndex = (page - 1) * limit;
-    const endIndex = page * limit;
-    let staffs: Shop['staffs'] = [];
-    if (shop_id) {
-      staffs = this.shops.find((p) => p.id === Number(shop_id))?.staffs ?? [];
-    }
-    const results = staffs?.slice(startIndex, endIndex);
+  /**
+   * `D30-10`/CA-4: sin relación staff↔tienda en el DDL (Out of Scope del
+   * spec) — ya no lee `shops.json`, mismo `paginate()` de hoy (nunca
+   * `buildPaginator`), mismo key-set y mismo tipo de `per_page` (el
+   * `limit` crudo, sin coerción).
+   */
+  getStaffs({ limit, page }: GetStaffsDto) {
     const url = `/staffs?limit=${limit}`;
 
     return {
-      data: results,
-      ...paginate(staffs?.length, page, limit, results?.length, url),
+      data: [],
+      ...paginate(0, page, limit, 0, url),
     };
   }
 
@@ -227,8 +266,62 @@ export class ShopsService {
     }
   }
 
-  update(id: number, updateShopDto: UpdateShopDto) {
-    return this.shops[0];
+  /**
+   * Nivel A primero, siempre (`DD30-3`): la guarda numérica es lo que evita
+   * que un `"abc"` llegue a `BigInt(NaN)` (500). `findShopOwnerById(id) ===
+   * null` tras esa guarda solo puede significar «la tienda no existe» → 404
+   * (nunca 403) — el paso 1 ya eliminó la otra causa de `null`.
+   * `super_admin` salta el 403 pero nunca el 404 (un rol no cambia el
+   * status de una misma petición). Input campo a campo (`R30-7`): nunca
+   * `...updateShopDto`; excluye `slug`/`owner_id`/`is_active` (`DD30-2`) —
+   * si el `PUT` los aceptara, un `store_owner` se auto-aprobaría esquivando
+   * `approve-shop` (`ADMIN_ONLY`).
+   */
+  async update(
+    id: number,
+    updateShopDto: UpdateShopDto,
+    user: CurrentUserPayload,
+  ): Promise<Shop> {
+    if (!Number.isSafeInteger(id) || id <= 0) {
+      throw new NotFoundException(`No existe una tienda con id ${id}.`);
+    }
+
+    const ownerId = await findShopOwnerById(id);
+    if (ownerId === null) {
+      throw new NotFoundException(`No existe una tienda con id ${id}.`);
+    }
+
+    if (!user.permissions.includes('super_admin') && ownerId !== user.sub) {
+      throw new ForbiddenException(
+        `No tienes permisos sobre la tienda ${id}.`,
+      );
+    }
+
+    const input: UpdateShopInput = {
+      ...(updateShopDto.name !== undefined && { name: updateShopDto.name }),
+      ...(updateShopDto.description !== undefined && {
+        description: updateShopDto.description,
+      }),
+      ...(updateShopDto.logo != null && {
+        logo: updateShopDto.logo as unknown as Prisma.InputJsonValue,
+      }),
+      ...(updateShopDto.cover_image != null && {
+        coverImage: updateShopDto.cover_image as unknown as Prisma.InputJsonValue,
+      }),
+      ...(updateShopDto.address != null && {
+        address: updateShopDto.address as unknown as Prisma.InputJsonValue,
+      }),
+      ...(updateShopDto.settings != null && {
+        settings: updateShopDto.settings as unknown as Prisma.InputJsonValue,
+      }),
+    };
+
+    try {
+      const record = await updateShop(id, input);
+      return toShopDto(record);
+    } catch (error) {
+      throw toWriteHttpException(error);
+    }
   }
 
   approve(id: number) {
@@ -239,17 +332,63 @@ export class ShopsService {
     return `This action removes a #${id} shop`;
   }
 
-  disapproveShop(id: number) {
-    const shop = this.shops.find((s) => s.id === Number(id));
-    shop.is_active = false;
-
-    return shop;
+  /**
+   * Stubs declarados (`DD30-8`): `POST /staffs`/`PUT /staffs/:id` reusaban
+   * `create()`/`update()` con la aridad de ayer; al migrarlas a
+   * `(dto, user)` dejaban de compilar (`TS2554`). Pasarles `@CurrentUser()`
+   * crearía/editaría una tienda real desde una ruta sin relación
+   * staff↔tienda en el DDL (Out of Scope del spec) — inaceptable. Se
+   * preserva el comportamiento de stub (no escriben nada); el cuerpo
+   * byte-a-byte de la fila 0 del mock es irreproducible una vez que
+   * `shops.json` sale del servicio (CA-6), y ningún consumidor lo lee
+   * (`useAddStaffMutation`, `apps/admin/rest/src/data/staff.ts:37-38`, con
+   * `onSuccess: () => {}` sin parámetro).
+   */
+  createStaff(): null {
+    return null;
   }
 
-  approveShop(id: number) {
-    const shop = this.shops.find((s) => s.id === Number(id));
-    shop.is_active = true;
+  /** Idéntico criterio que `createStaff()` — ver `DD30-8`. */
+  updateStaff(): null {
+    return null;
+  }
 
-    return shop;
+  /**
+   * Frontera numérica y semántica de `@Body('id')` sin tipar (`DD30-3`):
+   * `typeof` estrecha ANTES de `Number(...)`, así que `{"id": true}`
+   * (`Number(true) === 1`) o `{"id": null}`/`{"id": []}`/`{"id": {}}` nunca
+   * llegan a evaluarse como número — sin el estrechamiento, `{"id": true}`
+   * moderaría la tienda 1. `Number.isSafeInteger` (nunca `Number.isInteger`,
+   * que deja pasar `1e21` hasta el driver) y `<= 0` cierran `{"id": 0}`/
+   * `{"id": ""}`. Fuera de esa guarda, `setShopActive` no lleva ninguna
+   * propia (`DD30-1`); su `P2025` se traduce a 404 vía
+   * `toWriteHttpException`.
+   */
+  private async _setActive(rawId: unknown, isActive: boolean): Promise<Shop> {
+    const parsed =
+      typeof rawId === 'number' || typeof rawId === 'string'
+        ? Number(rawId)
+        : Number.NaN;
+
+    if (!Number.isSafeInteger(parsed) || parsed <= 0) {
+      throw new BadRequestException(
+        `El id de la tienda debe ser un entero positivo, recibido: ${JSON.stringify(rawId)}.`,
+      );
+    }
+
+    try {
+      const record = await setShopActive(parsed, isActive);
+      return toShopDto(record);
+    } catch (error) {
+      throw toWriteHttpException(error);
+    }
+  }
+
+  disapproveShop(id: unknown): Promise<Shop> {
+    return this._setActive(id, false);
+  }
+
+  approveShop(id: unknown): Promise<Shop> {
+    return this._setActive(id, true);
   }
 }
