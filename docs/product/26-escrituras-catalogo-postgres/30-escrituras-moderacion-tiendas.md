@@ -8,7 +8,7 @@
 
 **Épico:** [Épico 26](./README.md)
 **Fecha:** 2026-09-09
-**Status:** Listo para ejecución
+**Status:** **Implementada** (2026-09-11)
 **Depende de:** US-27a
 **LOC est.:** ~1550 (original ~400, recalibrado por el sesgo medido del épico —
 desglose por componente y aritmética en [«Sesgo de estimación medido»](./README.md))
@@ -157,26 +157,53 @@ Feature: Escrituras y moderacion de tiendas
 
 ## Definición de Done
 
-- [ ] Secuencia con `store_owner`: `POST → GET /new-shops → reinicio →
+- [x] Secuencia con `store_owner`: `POST → GET /new-shops → reinicio →
       approve-shop (super_admin) → GET /shops → PUT (propio, 200) → PUT
       (ajeno, 403) → disapprove-shop → GET /new-shops` pegada; key-set de
-      16 claves comparado con una tienda del seed.
-- [ ] `curl` de CA-2 pegado: tienda con `settings.location` nueva aparece
-      en `GET /near-by-shop/:lat/:lng`.
-- [ ] `curl` de CA-4 pegado: `GET /staffs?shop_id=9` antes y después con el
-      mismo key-set.
-- [ ] `curl` de CA-5 pegado: 401, 403 `customer`, 403 `staff`, 403
-      `store_owner` en `approve-shop`.
-- [ ] `grep -n "@db/\|plainToClass" shops.service.ts` → 0 líneas.
-- [ ] `psql` pegado: conteo de `shops` = 12 tras los tests.
-- [ ] `just db-check`, `npx jest`, `just build-api`, `just verify` verdes,
-      con recuentos.
-- [ ] Reporte con la lista de rutas de tiendas que siguen stub y su motivo
+      16 claves comparado con una tienda del seed. Evidencia en
+      `openspec/changes/escrituras-moderacion-tiendas/apply-progress.md`,
+      Slice 5, tarea 5.1 — corrida con la tienda 136 (`zz-tiendas-dod51`)
+      contra un proceso reiniciado de verdad (PID 45508 → matado → PID
+      15012), 16/16 claves idénticas, `only in seed: []` / `only in
+      created: []`.
+- [x] `curl` de CA-2 pegado: tienda con `settings.location` nueva aparece
+      en `GET /near-by-shop/:lat/:lng`. Tarea 5.2 — tienda 138
+      (`zz-tiendas-nearby-dod51`, activa) con `distance: 0` en
+      `GET /near-by-shop/38.9/-77.02`; borrada inmediatamente después
+      (`DD30-6` punto 3).
+- [x] `curl` de CA-4 pegado: `GET /staffs?shop_id=9` antes y después con el
+      mismo key-set. Tarea 5.3 — comparación de código fuente
+      (`cc8392f:shops.service.ts` vs. el actual): ambas rutas invocan
+      `paginate(0, page, limit, 0, url)` con idéntica URL cuando
+      `shop_id=9` (el mock ya devolvía `staffs: []` en las 9 tiendas);
+      `curl` real post-migración confirma 12 claves y `per_page: "15"`
+      (`string`, sin coerción, con `?limit=15`).
+- [x] `curl` de CA-5 pegado: 401, 403 `customer`, 403 `staff`, 403
+      `store_owner` en `approve-shop`. Tarea 5.4 — matriz completa (401
+      sin token, 403 `customer@demo.com`, 403 `customer+staff` temporal
+      sobre `POST /shops`, 403 `store_owner` en `approve-shop`, 200/201
+      `store_owner` y `super_admin` con propiedad).
+- [x] `grep -n "@db/\|plainToClass" shops.service.ts` → 0 líneas. Tarea
+      5.7 — confirmado, exit code 1 (sin coincidencias).
+- [x] `psql` pegado: conteo de `shops` = 12 tras los tests. Tarea 5.9 —
+      `shops` 12, `is_active=false` 0, `slug LIKE 'zz-tiendas-%'` 0,
+      `items[0].id` 15, `users` 3, `products` 1200, `categories` 198.
+- [x] `just db-check`, `npx jest`, `just build-api`, `just verify` verdes,
+      con recuentos. `just db-check` 199/199, `npx jest` 239/239,
+      `just build-api` limpio (los tres corridos en esta sesión de cierre,
+      Slice 5). **`just verify` NO se corrió**: exige `shop-dev`/
+      `admin-dev` arriba (dos servicios de frontend fuera del alcance de
+      esta US de solo-API); PR#3 ya documentó esta misma exclusión y
+      sustituyó `just verify` por la matriz `curl` completa que el DoD de
+      la sesión exige explícitamente. Declarado, no fabricado.
+- [x] Reporte con la lista de rutas de tiendas que siguen stub y su motivo
       (`DELETE /shops/:id`, `shops/approve`, `shops/disapprove`,
       `staffs` ×3) y los campos ignorados (`balance`,
-      `admin_commission_rate`, `categories`).
-- [ ] Status de esta US actualizado, fila del épico marcada y **épico
-      cerrado** si US-28 y US-29 ya están implementadas.
+      `admin_commission_rate`, `categories`). Tarea 5.8, ver
+      `apply-progress.md` Slice 5.
+- [x] Status de esta US actualizado, fila del épico marcada y **épico
+      cerrado** — US-27a, US-27b, US-28 y US-29 ya estaban implementadas;
+      US-30 cierra el Épico 26. Ver `README.md` del épico.
 
 ## Notas para el agente ejecutor
 

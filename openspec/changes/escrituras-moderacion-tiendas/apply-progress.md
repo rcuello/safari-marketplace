@@ -837,3 +837,399 @@ punto exacto de rollback (un solo commit, un solo archivo).
 
 35/35 tareas de Phase 1+2+3+4 completas (11+5+9+6, contando 4.4 como
 completada-con-nota). Ready for next batch (Phase 5, cierre de la DoD).
+
+## Slice 5 / 5 — Phase 5: cierre de la DoD y del épico
+
+**Estado: COMPLETO.** Las 10 tareas de Phase 5 cerradas con evidencia real
+pegada. `just db-check` 199/199, `npx jest` 239/239, `just build-api`
+limpio. Baseline restituido exactamente (`shops` 12, `is_active=false` 0,
+`slug LIKE 'zz-tiendas-%'` 0, `items[0].id` 15). **Épico 26 declarado
+cerrado** — las cinco US (27a/27b/28/29/30) están implementadas.
+
+### Preparación del entorno
+
+Se encontró un `node dist/main` **preexistente** (PID 17620, arrancado el
+2026-09-11 22:05, antes de esta sesión) escuchando en 9001. Se mató, se
+corrió `just db-build` + `yarn build` (API) limpios, y se levantó un
+`node dist/main` fresco (PID 45508) desde el `dist/` recién compilado, para
+que toda la evidencia de este batch corriera contra el código de esta
+sesión y no un binario viejo.
+
+**Baseline verificado antes de tocar nada** (`docker exec safari-postgres
+psql`):
+
+```
+SELECT count(*) FROM shops;                        -> 12
+SELECT count(*) FROM shops WHERE is_active=false;  -> 0
+SELECT count(*) FROM shops WHERE slug LIKE 'zz-%'; -> 0
+SELECT count(*) FROM users;                        -> 3
+SELECT count(*) FROM products;                     -> 1200
+SELECT count(*) FROM categories;                   -> 198
+```
+
+Coincide con el baseline que traía la sesión.
+
+### 5.1 — Secuencia completa CA-1/CA-2/CA-3
+
+Tokens obtenidos con `POST /api/token`: `store_owner@demo.com` (user 1) y
+`admin@demo.com` (user 3, `super_admin`).
+
+**`POST /shops` (store_owner) → 201:**
+
+```
+{"id":136,"owner_id":1,"name":"zz-tiendas-dod51","slug":"zz-tiendas-dod51",
+ "description":null,"cover_image":null,"logo":null,"is_active":0,
+ "address":{},"settings":{},"notifications":null,
+ "created_at":"2026-09-12T03:11:22.581Z","updated_at":"2026-09-12T03:11:22.581Z",
+ "orders_count":0,"products_count":0,"owner":null}
+HTTP_STATUS:201
+```
+
+`is_active:0` correcto (nace inactiva, `store_owner`).
+
+**`GET /new-shops` (super_admin) → 200:** `total: 1, ids: [136]`.
+
+**Reinicio real de la API**: PID 45508 matado (`Stop-Process -Force`),
+puerto 9001 verificado libre (`netstat`, solo `TIME_WAIT`), `node dist/main`
+levantado de nuevo → **PID 15012** (verificado distinto del anterior).
+
+**`GET /shops/zz-tiendas-dod51` tras el reinicio → 200, `is_active:0`**
+(persistió, misma fila, mismo `created_at`).
+
+**`POST /approve-shop {"id":136}` (super_admin) → 201, `is_active:1`.**
+
+**`GET /shops?search=name:zz-tiendas-dod51` (público) → 200,** `total:1,
+ids:[136]`.
+
+**`PUT /shops/136 {"description":"tienda propia editada DoD"}`
+(store_owner, propio) → 200,** `description` actualizada.
+
+**Tienda ajena creada para el 403** (`POST /shops` con token `super_admin`
+→ `id:137, owner_id:3, is_active:1` — nace activa, `super_admin`).
+
+**`PUT /shops/137 {"description":"intento ajeno"}` (store_owner, ajena)
+→ 403:**
+
+```
+{"statusCode":403,"message":"No tienes permisos sobre la tienda 137.","error":"Forbidden"}
+```
+
+**`POST /disapprove-shop {"id":136}` (super_admin) → 201, `is_active:0`.**
+
+**`GET /new-shops` (super_admin, tras disapprove) → `total:1, ids:[136]`**
+(la tienda vuelve a la cola).
+
+**Diff de 16 claves** (`node -e`, sin `.sort()`, sin `jq`) entre `gadget`
+(seed) y `zz-tiendas-dod51` (creada/moderada):
+
+```
+seed keys (16): id,owner_id,name,slug,description,cover_image,logo,is_active,
+  address,settings,notifications,created_at,updated_at,orders_count,
+  products_count,owner
+created keys (16): id,owner_id,name,slug,description,cover_image,logo,
+  is_active,address,settings,notifications,created_at,updated_at,
+  orders_count,products_count,owner
+only in seed: []
+only in created: []
+```
+
+### 5.2 — CA-2 `near-by-shop`
+
+Tienda `id:138` (`zz-tiendas-nearby-dod51`) creada con token `super_admin`
+(nace activa). `PUT /shops/138` con
+`settings.location = {lat:38.9, lng:-77.02, city:"Washington", ...}` → 200.
+
+`GET /near-by-shop/38.9/-77.02` → 200, primer elemento del array:
+
+```
+{"id":138,"name":"zz-tiendas-nearby-dod51", ... ,"distance":0}
+```
+
+seguido de las tiendas del seed con `distance` creciente (`grocery-shop`
+0.37, `furniture-shop` 324, …). La tienda con `location` nuevo **aparece**
+en `near-by-shop`.
+
+**Limpieza inmediata** (`DD30-6` punto 3: una centinela activa con
+`location` debe borrarse en el mismo `it`/paso): `DELETE FROM shops WHERE
+id = 138` → `DELETE 1`, corrido justo después de la comprobación.
+
+### 5.3 — CA-4 `GET /staffs` — key-set y tipo de `per_page` antes/después
+
+**Comparación de código fuente** (no solo lectura — verificado con `git
+show`): `git show cc8392f:apps/api/rest/src/shops/shops.service.ts` (antes
+de PR#3) muestra `getStaffs({shop_id, limit, page})` resolviendo
+`staffs = this.shops.find(p => p.id === Number(shop_id))?.staffs ?? []`
+(siempre `[]`, porque las 9 tiendas de `shops.json` traen `staffs: []`) y
+cerrando con `paginate(staffs?.length, page, limit, results?.length, url)`
+donde `url = `/staffs?limit=${limit}``. El código actual (post-migración)
+tiene `getStaffs({limit, page})` con
+`paginate(0, page, limit, 0, url)` y el mismo `url`. Para `shop_id=9` ambos
+caminos evalúan a los mismos cuatro argumentos (`0, page, limit, 0`) y la
+misma URL — el `paginate()` que arma la respuesta (`common/pagination/paginate.ts`,
+**no tocado por esta US**) es literalmente la misma función en ambos casos.
+
+**`curl` real post-migración** (`GET /staffs?shop_id=9&limit=15`, con
+token, `main.ts:9` sin `transform`):
+
+```
+keys: data,total,current_page,count,last_page,firstItem,lastItem,per_page,
+      first_page_url,last_page_url,next_page_url,prev_page_url
+per_page value: "15"  typeof: string
+```
+
+12 claves, `per_page` sigue siendo `string` sin coerción — mismo contrato
+que documenta `design.md` (`R-7`/decisión 12). Ningún diff detectable entre
+antes y después para este `shop_id`.
+
+### 5.4 — CA-5: matriz de permisos sobre HTTP
+
+**Rol `staff` sin cuenta demo dedicada** (`users`: solo `store_owner`,
+`customer`, `admin`/`super_admin` en `db/seed.sql`; verificado con
+`SELECT u.email, p.name FROM users u JOIN permission_user … JOIN
+permissions …`, permiso `staff` existe con `id:4` pero sin ningún usuario
+asignado). Se otorgó temporalmente el permiso `staff` a `customer@demo.com`
+(`INSERT INTO permission_user (user_id, permission_id) VALUES (2,4)`), se
+emitió un token fresco, se corrió la matriz, y se **revocó** el permiso
+(`DELETE FROM permission_user WHERE user_id=2 AND permission_id=4`) antes
+de continuar — confirmado con una relectura de `permission_user` que solo
+deja `customer`.
+
+```
+401 sin token (POST /shops):
+  {"statusCode":401,"message":"Token de autenticación ausente o inválido.","error":"Unauthorized"}
+
+403 staff (POST /shops, permiso staff+customer temporal):
+  {"statusCode":403,"message":"No tienes permisos suficientes para esta operación.","error":"Forbidden"}
+
+403 store_owner en approve-shop:
+  {"statusCode":403,"message":"No tienes permisos suficientes para esta operación.","error":"Forbidden"}
+
+403 customer (token limpio, solo permiso customer, tras revocar staff):
+  {"statusCode":403,"message":"No tienes permisos suficientes para esta operación.","error":"Forbidden"}
+
+200/201 store_owner (POST /shops propio, PUT propio): ver 5.1 (id 136)
+200/201 super_admin (POST /shops, PUT propio id 137, approve-shop id 136): ver 5.1
+```
+
+**200 super_admin en `PUT` propio, confirmación adicional** (`PUT
+/shops/137`, dueño `owner_id:3`, token `admin@demo.com`) → 200,
+`description` actualizada.
+
+### 5.5 — `D30-1` REPLACE de `settings`, demostrado con `psql`
+
+**Antes** — `PUT /shops/136` con `settings.shopMaintenance` poblado:
+
+```
+PUT {"settings":{"shopMaintenance":{"start":"...","until":"...","isUnderMaintenance":true},"contact":"555-0000"}}
+-> 200
+
+psql: SELECT settings FROM shops WHERE id=136;
+{"contact": "555-0000", "shopMaintenance": {"start": "...", "until": "...", "isUnderMaintenance": true}}
+```
+
+**Después** — segundo `PUT` sin `shopMaintenance`:
+
+```
+PUT {"settings":{"contact":"555-1111"}}
+-> 200
+
+psql: SELECT settings FROM shops WHERE id=136;
+{"contact": "555-1111"}
+```
+
+`shopMaintenance` **desaparece** de la columna — el REPLACE completo se
+demuestra en la propia fila de Postgres, no solo en la respuesta HTTP.
+Pérdida ratificada por el dueño del repo (`D30-1`), evidencia hecha
+visible por pedido explícito de la sesión.
+
+### 5.6 — Corrección 500 → 404/400
+
+**`approve-shop`:**
+
+```
+{"id":999999} -> 404 {"message":"No existe un registro de `shops` con id 999999."}
+{"id":"abc"}  -> 400 {"message":"El id de la tienda debe ser un entero positivo, recibido: \"abc\"."}
+{"id":true}   -> 400 {"message":"El id de la tienda debe ser un entero positivo, recibido: true."}
+{"id":0}      -> 400 {"message":"El id de la tienda debe ser un entero positivo, recibido: 0."}
+```
+
+**`{"id":true}` verificado que NO modera la tienda 1**: `GET /shops` antes
+→ `shop 1 is_active: 1`; tras el `POST /approve-shop {"id":true}` (400) →
+`GET /shops` de nuevo → `shop 1 is_active: 1` (sin cambio). `Number(true)
+=== 1` habría aprobado la tienda 1 sin el estrechamiento por `typeof`
+(`DD30-3`); no ocurrió.
+
+**`disapprove-shop`** (misma batería): `999999` → 404, `"abc"` → 400,
+`true` → 400, `0` → 400. Ninguna de las 8 llamadas (4+4) devolvió 500.
+
+### 5.7 — `grep`/`git diff --stat`
+
+```
+grep -n "@db/\|plainToClass" apps/api/rest/src/shops/shops.service.ts
+(sin salida — 0 líneas, exit code 1)
+```
+
+```
+git diff --stat main...HEAD -- packages/db/src/repositories/slug.ts \
+  apps/api/rest/src/common/errors/ db/schema.sql apps/shop apps/admin
+(sin salida — diff vacío, exit code 0)
+```
+
+`git diff --stat main...HEAD` completo (16 archivos, 4056(+)/41(-)): solo
+los 7 archivos de código declarados en `design.md` («File Changes») más los
+9 artefactos SDD (`apply-progress.md`, `design.md`, `exploration.md`,
+`proposal.md`, `tasks.md`, 4 `spec.md`). Ningún archivo fuera de alcance
+tocado.
+
+### 5.8 — Reporte de rutas stub y campos ignorados (CA-6)
+
+**Rutas de tiendas que siguen stub, sin escritura real:**
+
+| Ruta | Motivo |
+|---|---|
+| `DELETE /shops/:id` | Sin consumidor en el admin (`data/shop.ts` no exporta `useDeleteShopMutation`); arrastraría los productos de la tienda (`products.shop_id … ON DELETE CASCADE`) — decisión 7 del épico |
+| `POST /shops/approve` | Ruta del scaffold sin `:id` ligable, sin consumidor — se declara, no se borra (es contrato publicado) |
+| `POST /shops/disapprove` | Ídem |
+| `POST /staffs` | Sin relación staff↔tienda en el DDL (`users` no tiene `shop_id`); stub propio `createStaff()` para no reventar `just build-api` al migrar `create()` (`DD30-8`) |
+| `PUT /staffs/:id` | Ídem; stub propio `updateStaff()` (`DD30-8`) |
+| `DELETE /staffs/:id` | Sin relación staff↔tienda; `remove()` no se toca |
+
+**Campos aceptados en el body y descartados sin 400** (`ValidationPipe` sin
+`whitelist`, `main.ts:9`): `balance`, `admin_commission_rate` (del
+`approve-shop`), `categories: number[]`, y `owner_id`/`is_active` si
+llegaran en el body de `PUT` (nunca se copian al input — construcción
+campo a campo, `DD30-2`).
+
+### 5.9 — Limpieza previa + cierre de conteos + gates
+
+**Limpieza de las filas `curl`** (antes de correr cualquier gate):
+
+```
+SELECT id, name, slug, owner_id, is_active FROM shops WHERE slug LIKE 'zz-%' ORDER BY id;
+ 136 | zz-tiendas-dod51       | zz-tiendas-dod51       | 1 | f
+ 137 | zz-tiendas-ajena-dod51 | zz-tiendas-ajena-dod51 | 3 | t
+
+DELETE FROM shops WHERE slug LIKE 'zz-%';  -> DELETE 2
+```
+
+(La tienda 138 de `near-by-shop` ya se había borrado en 5.2, en el momento
+en que su riesgo era máximo — `DD30-6` punto 3.)
+
+**Permiso `staff` temporal ya revocado** en 5.4, antes de esta limpieza.
+
+**API detenida** (PID 15012, `Stop-Process -Force`; puerto 9001 verificado
+libre con `netstat`) antes de correr los gates.
+
+**`just db-check`:**
+
+```
+ Test Files  10 passed (10)
+      Tests  199 passed (199)
+   Start at  22:17:49
+   Duration  17.99s
+```
+
+**`cd apps/api/rest && npx jest`:**
+
+```
+PASS src/tags/tags.service.spec.ts
+PASS src/users/user-dto.mapper.spec.ts
+PASS src/manufacturers/manufacturers.service.spec.ts
+PASS src/shops/shops.service.spec.ts
+PASS src/common/errors/domain-error.mapper.spec.ts
+PASS src/products/products.service.spec.ts
+PASS src/categories/categories.service.spec.ts
+PASS src/users/users.service.spec.ts
+PASS src/types/types.service.spec.ts
+
+Test Suites: 9 passed, 9 total
+Tests:       239 passed, 239 total
+```
+
+**`just build-api`**: limpio (corrido al inicio de este slice, sin
+`TS2554`; ver «Preparación del entorno»).
+
+**`just verify` NO se corrió**: exige `shop-dev`/`admin-dev` levantados
+(dos servicios de frontend), fuera del alcance de una US de solo-API. PR#3
+ya declaró esta misma exclusión y la sustituyó por la matriz `curl`
+completa exigida por el DoD de la sesión (que sí se corrió, íntegra, en
+5.1–5.6). Se declara explícitamente aquí en vez de fabricar una corrida que
+no ocurrió.
+
+**`psql` — cierre final de conteos:**
+
+```
+SELECT count(*) FROM shops;                              -> 12
+SELECT count(*) FROM shops WHERE is_active=false;         -> 0
+SELECT count(*) FROM shops WHERE slug LIKE 'zz-tiendas-%'; -> 0
+SELECT id FROM shops WHERE is_active ORDER BY id DESC LIMIT 1; -> 15
+SELECT count(*) FROM users;                               -> 3
+SELECT count(*) FROM products;                             -> 1200
+SELECT count(*) FROM categories;                           -> 198
+```
+
+Coincide exactamente con el baseline medido al abrir este slice y con el
+que traía la sesión.
+
+### 5.10 — Cierre de documentación
+
+- `docs/product/26-escrituras-catalogo-postgres/30-escrituras-moderacion-tiendas.md`:
+  `Status` → **Implementada** (2026-09-11); las 9 casillas de la Definición
+  de Done marcadas `[x]` con nota de evidencia y ubicación (`apply-progress.md`),
+  incluida la nota explícita de que `just verify` no corrió y por qué.
+- `docs/product/26-escrituras-catalogo-postgres/README.md`: `Status` del
+  épico → **Cerrado** (2026-09-11); fila de US-30 → **Implementada** con
+  LOC real (~1301 código); nueva fila US-30 en «Sesgo de estimación
+  medido» (~400 → ~1301, ×3,3) con nota de que es la única de las cuatro
+  US medidas que aterrizó **por debajo** de su propio pronóstico
+  re-anclado (~1550); mediana del factor recalculada sobre 4 US (×3,0).
+
+### Archivos tocados en este slice (documentación, `git diff --stat`)
+
+```
+docs/product/26-escrituras-catalogo-postgres/30-escrituras-moderacion-tiendas.md | ~35 ++
+docs/product/26-escrituras-catalogo-postgres/README.md                          | ~20 ++
+openspec/changes/escrituras-moderacion-tiendas/tasks.md                         | ~10 ++
+openspec/changes/escrituras-moderacion-tiendas/apply-progress.md                | (este archivo)
+```
+
+Ningún archivo de código de producción tocado en este slice — es
+puramente evidencia + documentación, como corresponde a Phase 5.
+
+### Deviations from Design
+
+Ninguna respecto a `design.md`. Una nota de alcance, ya declarada arriba:
+`just verify` no corrió (requiere `shop-dev`/`admin-dev`, fuera del
+alcance de una US de solo-API); se sustituyó por la matriz `curl` completa
+del DoD de la sesión, que sí es exhaustiva para las 6 CA.
+
+### Issues Found
+
+Ninguno de código. Un hallazgo operativo: no existe cuenta demo con el rol
+`staff` puro en el seed; se resolvió otorgando y revocando el permiso
+`staff` temporalmente sobre `customer@demo.com` (documentado en 5.4), sin
+dejar rastro permanente (confirmado con una relectura de `permission_user`
+tras la revocación).
+
+### Workload / PR Boundary
+
+- Mode: chained PR slice (5ª y última unidad de trabajo: la evidencia de
+  la DoD, sin código de producción)
+- Current work unit: 5 de 5 (Phase 5 — cierre de la DoD y del épico)
+- Boundary: empieza sobre las 4 unidades de código ya verdes (PR#1-#4) y
+  termina con toda la evidencia de la DoD pegada, la documentación
+  actualizada y el baseline restituido — sin tocar ningún archivo de
+  producción
+- Estimated review budget impact: ~65 líneas netas de documentación (no
+  código); no aplica presupuesto de 400 líneas de revisión de código
+
+### Remaining Tasks
+
+Ninguna. Las 41 tareas de `tasks.md` (11+5+9+6+10, Phase 1 a 5) están
+completas.
+
+### Status final
+
+**41/41 tareas completas.** US-30 implementada. **Épico 26 cerrado.**
+Ready for `sdd-verify` (o `sdd-archive` si el usuario decide saltar
+verify dado que esta misma sesión ya corrió los gates con evidencia real).

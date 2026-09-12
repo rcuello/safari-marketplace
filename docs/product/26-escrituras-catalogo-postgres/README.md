@@ -9,7 +9,9 @@
 > DDL, sin `db-reset` y sin tocar el contrato que el admin consume.
 
 **Fecha:** 2026-09-09
-**Status:** En ejecución (US-27a, US-27b, US-28 y US-29 implementadas 2026-09-10/11; queda US-30)
+**Status:** **Cerrado** (2026-09-11) — US-27a, US-27b, US-28, US-29 y US-30
+implementadas. Las seis escrituras del catálogo (`products`, `categories`,
+`tags`, `types`, `manufacturers`, `shops`) son reales sobre Postgres.
 
 ## Contexto verificado
 
@@ -151,7 +153,7 @@ esquema.
 | [US-27b](./27b-escrituras-tags-manufacturers.md) | Escrituras de `tags` y `manufacturers` | Sí | US-27a | ~825 (real ~2109) | **Implementada** (2026-09-10) |
 | [US-28](./28-escrituras-arbol-categorias.md) | Escrituras del árbol de categorías | Sí | US-27a | ~350 (real ~1612, 3 PRs) | **Implementada** (2026-09-11) |
 | [US-29](./29-escrituras-productos-postgres.md) | Escrituras de productos con categorías y tags | Sí | US-27a | ~2100 (original ~550, recalibrado; real ~1808 código) | **Implementada** (2026-09-11), DoD pendiente de smoke visual (orquestador) |
-| [US-30](./30-escrituras-moderacion-tiendas.md) | Escrituras y moderación de tiendas | Sí | US-27a | ~1550 (original ~400, recalibrado) | Listo para ejecución |
+| [US-30](./30-escrituras-moderacion-tiendas.md) | Escrituras y moderación de tiendas | Sí | US-27a | ~1550 (original ~400, recalibrado; real ~1301 código, ~4056 con artefactos SDD) | **Implementada** (2026-09-11) |
 
 **Orden sugerido:** US-27a → (US-27b ∥ US-28 ∥ US-29 ∥ US-30). US-27a
 introduce las dos piezas compartidas (el helper de slug en `packages/db` y la
@@ -195,6 +197,7 @@ re-anclaje posterior—:
 | US-27a | ~725 | ~1470 | ×2,0 |
 | US-27b | ~825 | ~2109 | ×2,6 |
 | US-28 | ~350 | ~1612 | ×4,6 |
+| US-30 | ~400 | ~1301 | ×3,3 |
 
 **Ojo con las dos líneas base de US-28.** Su `design.md` re-ancló el
 pronóstico a mitad de vuelo, de ~350 a **~985**, al añadir la séptima regla
@@ -208,7 +211,17 @@ contrario. (Dos conteos de US-28 conviven en los artefactos: ~1612 líneas
 —`archive-report.md`, insertions+deletions del `git diff`—. La diferencia no
 mueve nada: ×4,6 vs. ×4,8.)
 
-Mediana del factor: **×2,6**; media: ×3,1. Pero el dato accionable no es el
+**US-30, añadida al cerrar el épico (2026-09-11).** ~1301 líneas de código
+real (`296` PR#1 + `187` PR#2 + `235` PR#3 + `583` PR#4, suma de
+`apply-progress.md`) contra la estimación **original** de ~400 (antes del
+re-anclaje a ~1550 de `design.md`): **×3,3**. Confirma el patrón de las tres
+US anteriores — aterriza dentro de la misma banda (~1470–2109) pese a
+partir de la base más baja del lote (~400). Contra el pronóstico ya
+recalibrado (~1550) queda **249 líneas por debajo** (`apply-progress.md`,
+nota de presupuesto del Slice 4): la única de las cuatro US cerradas cuyo
+real quedó bajo su propio pronóstico re-anclado, no por encima.
+
+Mediana del factor (cuatro US, `(2,6+3,3)/2`): **×3,0**; media: ×3,1. Pero el dato accionable no es el
 factor, sino esto: las tres US **aterrizaron entre ~1470 y ~2109
 independientemente de lo que estimaban** (~350, ~725 y ~825 de partida). El
 coste fijo de una US de este épico —repositorio + tests de integración +

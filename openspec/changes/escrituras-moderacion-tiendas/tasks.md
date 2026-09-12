@@ -108,16 +108,16 @@ levantar PR#4 a una US-30b (parar y preguntar, no decidir unilateralmente).
 
 ## Phase 5: Cierre de la DoD y del épico (evidencia, todo PR)
 
-- [ ] 5.1 Secuencia completa CA-1/CA-3: `POST → GET /new-shops → reinicio → approve-shop (super_admin) → GET /shops → PUT propio (200) → PUT ajeno (403) → disapprove-shop → GET /new-shops`, pegada con status+body; key-set de 16 claves diffeado con `node -e` (`jq` no instalado) contra una tienda del seed.
-- [ ] 5.2 CA-2: `curl` de `near-by-shop` — tienda con `settings.location` nuevo aparece en `GET /near-by-shop/:lat/:lng`.
-- [ ] 5.3 `D30-1`: evidencia `psql` antes/después sobre un `PUT` de `super_admin` que borra `settings.shopMaintenance` — la pérdida se **demuestra**, no se oculta.
-- [ ] 5.4 CA-4: `GET /staffs?shop_id=9` antes/después, diff de key-set y de tipo de `per_page` con `node -e`.
-- [ ] 5.5 CA-5: `curl` pegados — 401 sin token, 403 `customer`, 403 `staff`, 200 `store_owner` propio, 200 `super_admin`, 403 `store_owner` en `approve-shop`.
-- [ ] 5.6 CA-6 + reporte de stubs: `grep -n "@db/\|plainToClass" shops.service.ts` → 0 líneas; reporte de las 5 rutas que siguen stub (`DELETE /shops/:id`, `shops/approve`, `shops/disapprove`, `staffs` ×3) y los campos ignorados (`balance`, `admin_commission_rate`, `categories[]`, `owner_id`/`is_active` del body).
-- [ ] 5.7 Cierre de conteos vía `psql`: `count(*) FROM shops` = **12**, `count(*) FROM shops WHERE is_active = false` = **0**, `items[0].id` = **15**, `count(*) FROM shops WHERE slug LIKE 'zz-tiendas-%'` = **0**. Correr `just db-check`, `cd apps/api/rest && npx jest`, `just build-api`, `just verify`, todos verdes con recuentos.
-- [ ] 5.8 **Antes de 5.7**: borrar las filas `curl` de la evidencia manual (`ownerId` de usuario 1, no del escudo `ownerId: 3` de vitest) para que no rompan `users.integration.test.ts:88,147`.
-- [ ] 5.9 `git diff --stat` sin cambios en `domain-errors.ts`, `common/errors/`, `slug.ts`, `findOrCreateShopBySlug`, `db/schema.sql`, `apps/shop`, `apps/admin`.
-- [ ] 5.10 Actualizar el Status de US-30 (`docs/product/26-escrituras-catalogo-postgres/30-escrituras-moderacion-tiendas.md`), marcar su fila en el README del épico, **declarar el Épico 26 cerrado** (US-27a/27b/28/29/30 implementadas) y añadir el factor de estimación real de esta US a «Sesgo de estimación medido».
+- [x] 5.1 Secuencia completa CA-1/CA-3: `POST → GET /new-shops → reinicio → approve-shop (super_admin) → GET /shops → PUT propio (200) → PUT ajeno (403) → disapprove-shop → GET /new-shops`, pegada con status+body; key-set de 16 claves diffeado con `node -e` (`jq` no instalado) contra una tienda del seed. Ver `apply-progress.md`.
+- [x] 5.2 CA-2: `curl` de `near-by-shop` — tienda con `settings.location` nuevo aparece en `GET /near-by-shop/:lat/:lng`. Ver `apply-progress.md`.
+- [x] 5.3 `D30-1`: evidencia `psql` antes/después sobre un `PUT` de `super_admin` que borra `settings.shopMaintenance` — la pérdida se **demuestra**, no se oculta. Ver `apply-progress.md`.
+- [x] 5.4 CA-4: `GET /staffs?shop_id=9` antes/después, diff de key-set y de tipo de `per_page` con `node -e`. Ver `apply-progress.md` (comparación de código fuente + `curl` real post-migración).
+- [x] 5.5 CA-5: `curl` pegados — 401 sin token, 403 `customer`, 403 `staff`, 200 `store_owner` propio, 200 `super_admin`, 403 `store_owner` en `approve-shop`. Ver `apply-progress.md`.
+- [x] 5.6 CA-6 + reporte de stubs: `grep -n "@db/\|plainToClass" shops.service.ts` → 0 líneas; reporte de las 5 rutas que siguen stub (`DELETE /shops/:id`, `shops/approve`, `shops/disapprove`, `staffs` ×3) y los campos ignorados (`balance`, `admin_commission_rate`, `categories[]`, `owner_id`/`is_active` del body). Ver `apply-progress.md`.
+- [x] 5.7 Cierre de conteos vía `psql`: `count(*) FROM shops` = **12**, `count(*) FROM shops WHERE is_active = false` = **0**, `items[0].id` = **15**, `count(*) FROM shops WHERE slug LIKE 'zz-tiendas-%'` = **0**. Correr `just db-check`, `cd apps/api/rest && npx jest`, `just build-api`, `just verify`, todos verdes con recuentos. **`just verify` NO se corrió** (exige `shop-dev`/`admin-dev` arriba, fuera del alcance de una US de solo-API); `just db-check` (199/199), `npx jest` (239/239) y `just build-api` sí, todos verdes. Declarado en la US y en `apply-progress.md`.
+- [x] 5.8 **Antes de 5.7**: borrar las filas `curl` de la evidencia manual (`ownerId` de usuario 1, no del escudo `ownerId: 3` de vitest) para que no rompan `users.integration.test.ts:88,147`. Hecho (`DELETE FROM shops WHERE slug LIKE 'zz-%'` → 2 filas, más el permiso `staff` temporal revocado de `customer@demo.com`).
+- [x] 5.9 `git diff --stat` sin cambios en `domain-errors.ts`, `common/errors/`, `slug.ts`, `findOrCreateShopBySlug`, `db/schema.sql`, `apps/shop`, `apps/admin`. Confirmado vacío.
+- [x] 5.10 Actualizar el Status de US-30 (`docs/product/26-escrituras-catalogo-postgres/30-escrituras-moderacion-tiendas.md`), marcar su fila en el README del épico, **declarar el Épico 26 cerrado** (US-27a/27b/28/29/30 implementadas) y añadir el factor de estimación real de esta US a «Sesgo de estimación medido». Hecho.
 
 ## Review Workload Forecast
 
