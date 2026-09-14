@@ -184,9 +184,12 @@ sin anotar antes de tocar los guards.
   filtro cableable (`RefundsService.findAll()` no acepta argumentos). Ambos
   siguen pendientes. La nota original los emplazaba a US-25, pero US-25
   ("Endpoints de usuarios y staff desde Postgres") ya se implementó y migró
-  `users`, no `orders`/`refunds`: esos dos módulos siguen leyendo JSON estático
-  y no tienen tabla en `db/schema.sql`. El corte que los cubriría está sin
-  decidir — ver
+  `users`, no `orders`/`refunds`. Ninguno de los dos tiene tabla en
+  `db/schema.sql`, pero **no están en el mismo estado**: `orders` sí lee JSON
+  estático (`@db/orders.json`), mientras que `refunds` no lee nada — todos sus
+  handlers devuelven literales (`'This action adds a new refund'`,
+  `{ data: [] }`), así que ahí no hay ni datos de muestra. El corte que los
+  cubriría está sin decidir — ver
   `docs/product/_backlog/api-mock-restante-dominio-transaccional.md`.
 
 ## Recuperación de contraseña y OTP (US-24)
@@ -320,8 +323,10 @@ Ruido cosmético, no fallos: `fetchPriority` (desajuste Next 13 / React 18.3) y
   `shops`, `tags`, `types` y `users`— leen y escriben la base vía `@safari/db`,
   y sin ella la API arranca pero esos endpoints fallan. Se necesita la
   `DATABASE_URL` del entorno y el esquema aplicado (`db/schema.sql` + `db/seed.sql`).
-  Los otros 25 módulos sí siguen sirviendo JSON estático desde
-  `api/rest/src/db/pickbazar/`, así que esa parte no necesita estado.
+  De los 33 módulos restantes, 24 sirven JSON estático desde
+  `api/rest/src/db/pickbazar/` y los otros 9 (`addresses`, `ai`, `feedbacks`,
+  `imports`, `newsletters`, `notify-logs`, `refunds`, `uploads`, `web-hook`)
+  no sirven nada: devuelven literales. Esa parte no necesita estado.
 - `shop` y `admin` sí son stateless: solo consumen la API por HTTP.
 - `api/rest` lee `PORT` del entorno (fallback `5000`), lo que encaja con
   App Service / Cloud Run / Heroku sin cambios.

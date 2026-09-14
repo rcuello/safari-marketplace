@@ -86,17 +86,27 @@ apps/
 ├── api/rest/       NestJS 9. HÍBRIDA (verificado 2026-09-14): 9 módulos leen y
 │                   escriben Postgres vía @safari/db -- auth, categories,
 │                   manufacturers, products, settings, shops, tags, types y
-│                   users (78 de las 250 rutas, contadas). Los otros 25 módulos
-│                   siguen sirviendo JSON estático desde src/db/pickbazar/: el
-│                   dominio transaccional (orders, payment*, taxes, shippings,
-│                   coupons, withdraws), el de contenido (reviews, questions,
-│                   wishlists, conversations, messages, store-notices, authors),
-│                   el legal (faqs, terms-and-conditions, refund-*,
-│                   ownership-transfer, become-seller) y analytics, reports,
-│                   attributes y flash-sale. db/schema.sql:13-16 excluye esas
-│                   tablas a propósito; el siguiente corte está razonado con
-│                   evidencia en docs/product/_backlog/
-│                   api-mock-restante-dominio-transaccional.md.
+│                   users. En esos 9 viven 78 de las 250 rutas, pero OJO: 78 es
+│                   "rutas alojadas en modulos migrados", no "rutas que tocan la
+│                   base" -- 14 de ellas son stubs declarados (staffs, profiles,
+│                   los DELETE, logout, contact-us), asi que las que de verdad
+│                   llegan al driver son ~65. Los 33 modulos restantes NO son
+│                   todos mock: 24 sirven JSON estatico desde src/db/pickbazar/
+│                   -- transaccional (orders, payment-intent, payment-method,
+│                   taxes, shippings, coupons, withdraws), contenido (reviews,
+│                   questions, wishlists, conversations, messages, authors,
+│                   store-notices), legal (faqs, terms-and-conditions, refund-
+│                   policies, refund-reasons, ownership-transfer, become-seller)
+│                   y analytics, reports, attributes, flash-sale -- y los otros
+│                   9 no sirven NADA: addresses, ai, feedbacks, imports,
+│                   newsletters, notify-logs, refunds, uploads y web-hook
+│                   devuelven literales ("This action...", {data: []}), sin JSON
+│                   ni base. store-notices es hibrido: GET getUsersToNotify va a
+│                   Postgres via UsersService. src/payment/ no tiene controlador
+│                   (solo servicios de stripe/paypal) y tambien lee JSON.
+│                   db/schema.sql:13-16 excluye esas tablas a propósito; el
+│                   siguiente corte está razonado con evidencia en
+│                   docs/product/_backlog/api-mock-restante-dominio-transaccional.md.
 │                   FUERA del workspace de yarn: requiere su propio `yarn install`.
 ├── api/graphql/    Variante GraphQL de la API (no usada en el stack REST).
 └── deployment/     Scripts zx originales de Pickbazar para VM+Nginx (referencia, no el camino).
