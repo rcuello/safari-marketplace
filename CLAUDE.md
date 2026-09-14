@@ -62,14 +62,18 @@ es US-10 del backlog, Épico 9). Hoy existen y pasan dos suites automatizadas:
 
 - `just db-check` — vitest de integración en `packages/db` (requiere
   `just db-up` antes). Es el único gate envuelto en una receta de `just`.
-- `cd apps/api/rest && npx jest` — 4 suites / 65 tests (`products`, `shops`,
-  `users` y `user-dto.mapper`). Ninguna receta de `just` lo envuelve. Las
+- `cd apps/api/rest && npx jest` — 9 suites / 285 tests (`products`, `shops`,
+  `users`, `user-dto.mapper`, `types`, `tags`, `manufacturers`, `categories`
+  y `domain-error.mapper`). Cifra medida en la rama `correcciones-post-us-31`:
+  incluye los 17 tests de US-31 y los 11 de su red CA-2; `main` sin esos
+  commits marca menos. Ninguna receta de `just` lo envuelve. Las
   suites mockean `@safari/db` (no necesitan Postgres levantado); el bloque
   `jest` de su `package.json` mapea `@db/*` y `src/*` con `moduleNameMapper`
   y excluye `packages/db/dist` en `transformIgnorePatterns`, por eso resuelve
   el mock JSON y el `@safari/db` ya construido (`just db-build` antes). No es
-  cobertura general: las suites de `products` y `shops` no importan `auth`
-  ni `users`.
+  cobertura general: no hay suite de `auth` (las de `products`, `shops` y
+  `users` solo importan de ahí el tipo `CurrentUserPayload`, que se borra al
+  compilar).
 
 ## Arquitectura
 

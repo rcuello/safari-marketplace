@@ -25,13 +25,15 @@ context: |
 strict_tdd: false   # no hay runner de tests repo-wide todavia (ver testing.test_command)
 
 testing:
-  framework: mixed             # vitest (packages/db), jest con 4 specs (apps/api/rest), script Python (scraper)
+  framework: mixed             # vitest (packages/db), jest con 9 specs (apps/api/rest), script Python (scraper)
   # PENDIENTE: no existe un comando de test repo-wide. Los tests reales hoy:
   #   - packages/db: `npm test` (vitest, integracion; requiere `just db-up` antes)  -> envuelto en `just db-check`
-  #   - apps/api/rest: `cd apps/api/rest && npx jest` (4 suites / 65 tests: products, shops, users,
-  #     user-dto.mapper; mockean @safari/db, no requieren Postgres). SIN receta de `just` que lo envuelva.
+  #   - apps/api/rest: `cd apps/api/rest && npx jest` (9 suites / 285 tests: products, shops, users,
+  #     user-dto.mapper, types, tags, manufacturers, categories, domain-error.mapper; mockean @safari/db,
+  #     no requieren Postgres). Cifra medida en la rama correcciones-post-us-31 (incluye los 17 tests de
+  #     US-31 y los 11 de su red CA-2). SIN receta de `just` que lo envuelva.
   #     Su package.json resuelve `@db/*` y `src/*` via moduleNameMapper y excluye packages/db/dist
-  #     del transform (requiere `just db-build` antes). No cubre auth ni users desde products/shops.
+  #     del transform (requiere `just db-build` antes). No hay suite de auth.
   #   - scraper: `just db-test` (services/scraper-worker/test_pipeline.py) — HOY ROTO:
   #     el pipeline escribe en la tabla `productos`, que ya no existe en db/schema.sql
   # Crear el gate agregador (`just check`) es una US del backlog (Epico 9 / US-10).
@@ -72,7 +74,7 @@ rules:
     # Inner loop por paquete (elegir segun el area tocada):
     #   packages/db  -> cd packages/db && npm test          (vitest; requiere just db-up)
     #   scraper      -> just db-test                        (hoy roto: ver testing.test_command)
-    #   apps/api     -> cd apps/api/rest && npx jest      (4 suites; sin receta de just) + build + curl contra el endpoint
+    #   apps/api     -> cd apps/api/rest && npx jest      (9 suites; sin receta de just) + build + curl contra el endpoint
     test_command: "just db-check"
     follow_existing_patterns: true
   verify:
