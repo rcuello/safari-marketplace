@@ -6,7 +6,7 @@ Guía verificada en Windows 11 + Node 22.14 + yarn 1.22.22 (2026-08-24).
 
 | Servicio | Carpeta | Stack | Puerto |
 |---|---|---|---|
-| API mock | `api/rest` | NestJS 9 | `9001` |
+| API (híbrida: Postgres + mock) | `api/rest` | NestJS 9 | `9001` |
 | Tienda | `shop` | Next.js 13.5 (pages router) | `3003` |
 | Admin | `admin/rest` | Next.js 13.5 (pages router) | `3002` |
 
@@ -182,7 +182,12 @@ sin anotar antes de tocar los guards.
   (`orders.controller.ts`), pero `OrdersService.getOrders` hoy ignora ese
   campo y solo filtra por `shop_id`. `GET /refunds` queda autenticado sin
   filtro cableable (`RefundsService.findAll()` no acepta argumentos). Ambos
-  quedan para US-25, cuando el servicio deje de ser un mock en memoria.
+  siguen pendientes. La nota original los emplazaba a US-25, pero US-25
+  ("Endpoints de usuarios y staff desde Postgres") ya se implementó y migró
+  `users`, no `orders`/`refunds`: esos dos módulos siguen leyendo JSON estático
+  y no tienen tabla en `db/schema.sql`. El corte que los cubriría está sin
+  decidir — ver
+  `docs/product/_backlog/api-mock-restante-dominio-transaccional.md`.
 
 ## Recuperación de contraseña y OTP (US-24)
 
@@ -309,8 +314,15 @@ Ruido cosmético, no fallos: `fetchPriority` (desajuste Next 13 / React 18.3) y
 
 ## Notas para el despliegue en nube
 
-- Los tres servicios son **stateless**: la API sirve JSON estático desde
-  `api/rest/src/db/pickbazar/`. No hay base de datos que aprovisionar.
+- **La API YA NO es stateless: hay que aprovisionar Postgres** (corregido
+  2026-09-14; esta nota decía lo contrario y habría roto un despliegue). Nueve
+  módulos —`auth`, `categories`, `manufacturers`, `products`, `settings`,
+  `shops`, `tags`, `types` y `users`— leen y escriben la base vía `@safari/db`,
+  y sin ella la API arranca pero esos endpoints fallan. Se necesita la
+  `DATABASE_URL` del entorno y el esquema aplicado (`db/schema.sql` + `db/seed.sql`).
+  Los otros 25 módulos sí siguen sirviendo JSON estático desde
+  `api/rest/src/db/pickbazar/`, así que esa parte no necesita estado.
+- `shop` y `admin` sí son stateless: solo consumen la API por HTTP.
 - `api/rest` lee `PORT` del entorno (fallback `5000`), lo que encaja con
   App Service / Cloud Run / Heroku sin cambios.
 - Las `NEXT_PUBLIC_*` se inlinean **en build time**: hay que fijarlas antes de

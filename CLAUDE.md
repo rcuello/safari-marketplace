@@ -83,8 +83,20 @@ apps/
 │                   Variantes dev:rest (la usada) y dev:gql (requiere codegen graphql-let).
 ├── admin/rest/     Next.js 13.5, panel de administración, puerto 3002.
 ├── admin/graphql/  Variante GraphQL del admin (instalada por el workspace, no usada en el stack REST).
-├── api/rest/       NestJS 9. API mock: sirve JSON estático desde src/db/pickbazar/,
-│                   SALVO /api/settings, que ya sale de Postgres vía @safari/db.
+├── api/rest/       NestJS 9. HÍBRIDA (verificado 2026-09-14): 9 módulos leen y
+│                   escriben Postgres vía @safari/db -- auth, categories,
+│                   manufacturers, products, settings, shops, tags, types y
+│                   users (78 de las 250 rutas, contadas). Los otros 25 módulos
+│                   siguen sirviendo JSON estático desde src/db/pickbazar/: el
+│                   dominio transaccional (orders, payment*, taxes, shippings,
+│                   coupons, withdraws), el de contenido (reviews, questions,
+│                   wishlists, conversations, messages, store-notices, authors),
+│                   el legal (faqs, terms-and-conditions, refund-*,
+│                   ownership-transfer, become-seller) y analytics, reports,
+│                   attributes y flash-sale. db/schema.sql:13-16 excluye esas
+│                   tablas a propósito; el siguiente corte está razonado con
+│                   evidencia en docs/product/_backlog/
+│                   api-mock-restante-dominio-transaccional.md.
 │                   FUERA del workspace de yarn: requiere su propio `yarn install`.
 ├── api/graphql/    Variante GraphQL de la API (no usada en el stack REST).
 └── deployment/     Scripts zx originales de Pickbazar para VM+Nginx (referencia, no el camino).
