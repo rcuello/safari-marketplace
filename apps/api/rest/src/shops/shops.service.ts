@@ -324,8 +324,20 @@ export class ShopsService {
     }
   }
 
+  /**
+   * Stubs del scaffold de Pickbazar para las rutas muertas
+   * `POST /shops/approve` y `POST /shops/disapprove` (ver el comentario en
+   * `shops.controller.ts`). No tocan la base. La moderación real es
+   * `approveShop`/`disapproveShop` → `_setActive`, más abajo. El texto
+   * original de `approve` decía «removes» (copiado de `remove`); se
+   * corrige para que el stub no mienta sobre lo que representa.
+   */
   approve(id: number) {
-    return `This action removes a #${id} shop`;
+    return `This action approves a #${id} shop`;
+  }
+
+  disapprove(id: number) {
+    return `This action disapproves a #${id} shop`;
   }
 
   remove(id: number) {

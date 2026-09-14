@@ -66,7 +66,22 @@ export class ShopsController {
     return this.shopsService.remove(+id);
   }
 
-  // Moderación (toda aprobación es ADMIN_ONLY, design.md Decisión B).
+  // RUTAS MUERTAS del scaffold de Pickbazar — no las creas funcionales.
+  //
+  // `POST /api/shops/approve` y `POST /api/shops/disapprove` no tienen
+  // consumidor: el admin usa `POST /api/approve-shop` y
+  // `POST /api/disapprove-shop` (`apps/admin/rest/src/data/client/
+  // api-endpoints.ts`), servidos por `ApproveShopController` /
+  // `DisapproveShopController` (abajo) con `@Body('id')`. Además están
+  // estructuralmente rotas: `@Param('id')` sobre una ruta que no declara
+  // `:id` siempre vale `undefined`, así que `+id` es `NaN`.
+  //
+  // La moderación real vive en `ShopsService.approveShop` /
+  // `disapproveShop` → `_setActive` (toda aprobación es ADMIN_ONLY,
+  // design.md Decisión B). Estos dos handlers solo llaman a stubs que
+  // devuelven un string y no tocan la base. Borrarlas o recablearlas es
+  // decisión del dueño del repo; aquí solo se corrige que `disapprove`
+  // llamara al stub de `approve`.
   @Permissions(...ADMIN_ONLY)
   @Post('approve')
   approveShop(@Param('id') id: string) {
@@ -76,7 +91,7 @@ export class ShopsController {
   @Permissions(...ADMIN_ONLY)
   @Post('disapprove')
   disapproveShop(@Param('id') id: string) {
-    return this.shopsService.approve(+id);
+    return this.shopsService.disapprove(+id);
   }
 }
 
