@@ -98,7 +98,7 @@ export class UsersService {
    * syntax for type bigint` (500, sin `.code` de Prisma reconocible por
    * `withPrismaErrorTranslation`). `id <= 0` porque ningún id real es no
    * positivo (`bigserial` arrancando en 1). El mensaje deliberadamente NO
-   * interpola el id (superficie admin-only, D31-A) — no se homogeneiza con
+   * interpola el id (superficie admin-only, DD31-A) — no se homogeneiza con
    * el mensaje del catálogo, que sí lo hace.
    */
   async findOne(id: number): Promise<User> {
