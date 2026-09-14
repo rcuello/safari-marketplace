@@ -344,6 +344,26 @@ describe('ManufacturersService.update (US-27b)', () => {
     }
   });
 
+  // Inverso de CA-4 (CA-2, US-31): un id grande pero seguro atraviesa la
+  // guarda y el 404 lo decide la fila inexistente, no el guard. Se pone rojo
+  // si alguien adelanta el corte (p. ej. `|| id > 1e6`).
+  it('id 123456789012345 (seguro) → llega al repositorio; el 404 lo da la fila inexistente (CA-2, US-31)', async () => {
+    updateManufacturerMock.mockRejectedValue(
+      new RecordNotFoundError('manufacturers', 123456789012345),
+    );
+
+    expect.assertions(3);
+    try {
+      await service.update(123456789012345, updateDto({ name: 'x' }));
+    } catch (error) {
+      expect(error).toBeInstanceOf(NotFoundException);
+      expect((error as NotFoundException).getStatus()).toBe(404);
+      expect(updateManufacturerMock).toHaveBeenCalledWith(123456789012345, {
+        name: 'x',
+      });
+    }
+  });
+
   it('proyecta el DTO campo a campo, sin `slug` (inmutable) ni `socials`/`cover_image`/`language`/`shop_id`', async () => {
     updateManufacturerMock.mockResolvedValue(
       makeManufacturerRecord({ name: 'Marca Prueba Renombrada' }),
@@ -499,6 +519,21 @@ describe('ManufacturersService.remove (US-27b)', () => {
       expect(error).toBeInstanceOf(NotFoundException);
       expect((error as NotFoundException).getStatus()).toBe(404);
       expect(deleteManufacturerMock).not.toHaveBeenCalled();
+    }
+  });
+
+  it('id 123456789012345 (seguro) → llega al repositorio; el 404 lo da la fila inexistente (CA-2, US-31)', async () => {
+    deleteManufacturerMock.mockRejectedValue(
+      new RecordNotFoundError('manufacturers', 123456789012345),
+    );
+
+    expect.assertions(3);
+    try {
+      await service.remove(123456789012345);
+    } catch (error) {
+      expect(error).toBeInstanceOf(NotFoundException);
+      expect((error as NotFoundException).getStatus()).toBe(404);
+      expect(deleteManufacturerMock).toHaveBeenCalledWith(123456789012345);
     }
   });
 

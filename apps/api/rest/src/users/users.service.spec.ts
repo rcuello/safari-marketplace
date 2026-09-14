@@ -252,6 +252,25 @@ describe('UsersService (US-25 PR3 — migración a Postgres)', () => {
       },
     );
 
+    // Inverso de CA-4 (CA-2, US-31): un id grande pero seguro atraviesa la
+    // guarda y el 404 lo decide la fila inexistente, no el guard — el
+    // mensaje distinto lo delata. Se pone rojo si alguien adelanta el corte
+    // (p. ej. `|| id > 1e6`).
+    it('id 123456789012345 (seguro) → llega al repositorio; el 404 lo da la fila inexistente (CA-2, US-31)', async () => {
+      findUserWithRelationsMock.mockResolvedValue(null);
+
+      expect.assertions(3);
+      try {
+        await service.findOne(123456789012345);
+      } catch (error) {
+        expect(error).toBeInstanceOf(NotFoundException);
+        expect((error as NotFoundException).message).toBe(
+          'No existe un usuario con id 123456789012345.',
+        );
+        expect(findUserWithRelationsMock).toHaveBeenCalledWith(123456789012345);
+      }
+    });
+
     it('id existente devuelve las mismas 15 claves que /me', async () => {
       findUserWithRelationsMock.mockResolvedValue(buildFixture({ id: 3 }));
 
@@ -423,6 +442,38 @@ describe('UsersService (US-25 PR3 — migración a Postgres)', () => {
         }
       },
     );
+
+    it('block-user: id 123456789012345 (seguro) → llega al repositorio; el 404 lo da la fila inexistente (CA-2, US-31)', async () => {
+      findUserWithRelationsMock.mockResolvedValue(null);
+
+      expect.assertions(4);
+      try {
+        await service.banUser(123456789012345, currentUser(1));
+      } catch (error) {
+        expect(error).toBeInstanceOf(NotFoundException);
+        expect((error as NotFoundException).message).toBe(
+          'No existe un usuario con id 123456789012345.',
+        );
+        expect(findUserWithRelationsMock).toHaveBeenCalledWith(123456789012345);
+        expect(setUserActiveMock).not.toHaveBeenCalled();
+      }
+    });
+
+    it('unblock-user: id 123456789012345 (seguro) → llega al repositorio; el 404 lo da la fila inexistente (CA-2, US-31)', async () => {
+      findUserWithRelationsMock.mockResolvedValue(null);
+
+      expect.assertions(4);
+      try {
+        await service.activeUser(123456789012345);
+      } catch (error) {
+        expect(error).toBeInstanceOf(NotFoundException);
+        expect((error as NotFoundException).message).toBe(
+          'No existe un usuario con id 123456789012345.',
+        );
+        expect(findUserWithRelationsMock).toHaveBeenCalledWith(123456789012345);
+        expect(setUserActiveMock).not.toHaveBeenCalled();
+      }
+    });
   });
 
   describe('make-admin — D-H/D-5', () => {
@@ -451,6 +502,24 @@ describe('UsersService (US-25 PR3 — migración a Postgres)', () => {
         }
       },
     );
+
+    it('user_id "123456789012345" (seguro) → llega a grantPermission; el 404 lo da la fila inexistente (CA-2, US-31)', async () => {
+      grantPermissionMock.mockResolvedValue(null);
+
+      expect.assertions(3);
+      try {
+        await service.makeAdmin('123456789012345');
+      } catch (error) {
+        expect(error).toBeInstanceOf(NotFoundException);
+        expect((error as NotFoundException).message).toBe(
+          'No existe un usuario con id 123456789012345.',
+        );
+        expect(grantPermissionMock).toHaveBeenCalledWith(
+          123456789012345,
+          'super_admin',
+        );
+      }
+    });
 
     it('usuario inexistente (grantPermission → null) → 404', async () => {
       grantPermissionMock.mockResolvedValue(null);
@@ -561,6 +630,21 @@ describe('UsersService (US-25 PR3 — migración a Postgres)', () => {
         }
       },
     );
+
+    it('id 123456789012345 (seguro) → llega al repositorio; el 404 lo da la fila inexistente (CA-2, US-31)', async () => {
+      findUserWithRelationsMock.mockResolvedValue(null);
+
+      expect.assertions(3);
+      try {
+        await service.update(123456789012345, {} as never);
+      } catch (error) {
+        expect(error).toBeInstanceOf(NotFoundException);
+        expect((error as NotFoundException).message).toBe(
+          'No existe un usuario con id 123456789012345.',
+        );
+        expect(findUserWithRelationsMock).toHaveBeenCalledWith(123456789012345);
+      }
+    });
   });
 
   describe('remove — stub sin cambios (A11)', () => {
