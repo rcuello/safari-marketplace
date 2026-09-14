@@ -112,9 +112,9 @@ Feature: Guardas de id fuera del rango bigint
     And no es 500
 
   Scenario: CA-2 — el limite no se adelanta
-    Given un id 10000000000000000 que no existe en la tabla
-    When se hace DELETE /api/tags/10000000000000000
-    Then la respuesta es 404 y no 400
+    Given un id 123456789012345 (dentro de MAX_SAFE_INTEGER) que no existe en la tabla
+    When se hace DELETE /api/tags/123456789012345
+    Then la respuesta es 404 por fila inexistente y no 400
 
   Scenario: CA-1 — id de users en notacion exponencial
     Given la API levantada y un Bearer de admin
@@ -139,12 +139,16 @@ Feature: Guardas de id fuera del rango bigint
 
 ## Definición de Done
 
-- [x] `curl` con Bearer admin real (nunca sin token) pegados: `1e21`/`0`/`-1`
+- [x] `curl` con Bearer admin real (nunca sin token) pegados: los **cinco**
+      valores de CA-1 (`1e21`, `9223372036854775808`, `-1`, `0`, `1.5`)
       contra las 11 rutas de `types`/`tags`/`manufacturers`/`users` → 404
-      exacto en las 33 combinaciones, cero 500. `type_id` de `tags`/
-      `manufacturers` con `-1`/`0`/`1e21` → 400 vía `P2003`/guarda, cero 500.
-      Evidencia completa en `openspec/changes/guardas-id-fuera-de-rango-bigint/apply-progress.md`
-      (Fase 4).
+      exacto en las 55 combinaciones, cero 500. `type_id` de `tags`/
+      `manufacturers` con esos mismos valores → 400 vía `P2003`/guarda, cero
+      500 y cero filas creadas. `apply` cubrió en vivo 33 de las 55
+      combinaciones (`1e21`/`0`/`-1`); las 22 restantes
+      (`9223372036854775808` y `1.5`) las ejecutó `sdd-verify`. Evidencia en
+      `openspec/changes/guardas-id-fuera-de-rango-bigint/apply-progress.md`
+      (Fase 4) y en `verify-report.md` del mismo directorio.
 - [x] `curl` pegado del caso límite de CA-2 (`DELETE /api/types/123456789012345`
       → 404 por fila inexistente, nunca 400; ver hallazgo sobre el ejemplo
       `1e16` en `apply-progress.md`, Fase 4 — `1e16` en realidad excede
