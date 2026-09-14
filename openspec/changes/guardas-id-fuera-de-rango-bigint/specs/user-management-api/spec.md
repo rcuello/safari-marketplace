@@ -15,7 +15,7 @@ en `users.service.ts`, ambos leen vía `findUserWithRelations` antes de
 responder) MUST rechazarse con 404 cuando `!Number.isSafeInteger(id) || id
 <= 0`: cubre `NaN`, decimales, cero, negativos y valores por encima de
 `Number.MAX_SAFE_INTEGER` (`1e21`, `9223372036854775808`). Un id dentro del
-rango seguro que no exista (p. ej. `1e16`) MUST seguir respondiendo 404 por
+rango seguro que no exista (p. ej. `123456789012345`) MUST seguir respondiendo 404 por
 fila inexistente, nunca 400: el corte está exactamente en
 `Number.isSafeInteger`, no antes.
 (Previously: exigía 404 para un id inexistente sin fijar el criterio de
@@ -33,8 +33,8 @@ validez del id; el guard usaba `!Number.isInteger(id)`, que deja pasar
 - AND `findUserWithRelations` no se invoca
 
 #### Scenario: CA-3 — el límite no se adelanta
-- GIVEN un id `1e16` (dentro de `Number.MAX_SAFE_INTEGER`) que no existe
-- WHEN se hace `GET /api/users/1e16` o `PUT /api/users/1e16`
+- GIVEN un id `123456789012345` (dentro de `Number.MAX_SAFE_INTEGER`) que no existe
+- WHEN se hace `GET /api/users/123456789012345` o `PUT /api/users/123456789012345`
 - THEN la respuesta es 404 por fila inexistente, nunca 400
 
 #### Scenario: CA-3 — antirregresión del predicado de rango

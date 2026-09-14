@@ -80,8 +80,17 @@ Además, el `type_id` de body en `POST`/`PUT /api/tags` y `/api/manufacturers`
 con esos mismos valores fuera de rango también devuelve 400, nunca 500.
 
 ### CA-2 — El límite queda fijado donde corresponde
-`1e16` (dentro de `MAX_SAFE_INTEGER`) sigue comportándose como hoy: 404 si no
-existe la fila, no 400. El corte está en `Number.isSafeInteger`, no antes.
+`123456789012345` (dentro de `MAX_SAFE_INTEGER`) sigue comportándose como hoy:
+404 si no existe la fila, no 400. El corte está en `Number.isSafeInteger`, no
+antes.
+
+> Corrección (2026-09-14, gate de `apply`): este CA decía `1e16`, que **no**
+> está dentro de `MAX_SAFE_INTEGER` — `1e16 = 10000000000000000` y
+> `MAX_SAFE_INTEGER = 9007199254740991`, así que `Number.isSafeInteger(1e16)`
+> es `false`. El ejemplo original no probaba lo que afirmaba: lo cazaba la
+> propia guarda, no la búsqueda de fila. Sustituido por `123456789012345`,
+> verificado seguro. El error venía de la redacción de la US y se propagó a la
+> propuesta, el diseño y ambos delta specs sin que ninguna fase lo detectara.
 
 ### CA-3 — Sin regresión de contrato
 Los códigos de estado y los cuerpos de las rutas existentes no cambian para

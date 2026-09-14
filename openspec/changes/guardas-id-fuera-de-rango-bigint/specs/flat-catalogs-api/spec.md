@@ -15,7 +15,7 @@ El `id` de ruta de `PUT`/`DELETE /api/types/:id` MUST rechazarse con 404
 (antes de invocar el repositorio) cuando `!Number.isSafeInteger(id) || id <=
 0`: cubre `NaN`, decimales (`1.5`), cero, negativos, y cualquier valor por
 encima de `Number.MAX_SAFE_INTEGER` (`1e21`, `9223372036854775808`). Un id
-dentro del rango seguro que no exista en la tabla (p. ej. `1e16`) MUST
+dentro del rango seguro que no exista en la tabla (p. ej. `123456789012345`) MUST
 seguir respondiendo 404 por fila inexistente, nunca 400: el corte está
 exactamente en `Number.isSafeInteger`, no antes.
 (Previously: exigía 404 sin fijar el criterio de validez del id; el guard
@@ -43,9 +43,9 @@ usaba `!Number.isInteger(id)`, que deja pasar `1e21` hasta el driver.)
 - AND el repositorio no se invoca
 
 #### Scenario: CA-4 — el límite no se adelanta
-- GIVEN un id de ruta `1e16` (dentro de `Number.MAX_SAFE_INTEGER`) que no
+- GIVEN un id de ruta `123456789012345` (dentro de `Number.MAX_SAFE_INTEGER`) que no
   existe en la tabla
-- WHEN se hace `DELETE /api/types/1e16`
+- WHEN se hace `DELETE /api/types/123456789012345`
 - THEN la respuesta es 404 por fila inexistente, nunca 400
 
 #### Scenario: CA-4 — antirregresión del predicado de rango
@@ -113,9 +113,9 @@ el driver.)
 - AND no se crea ninguna fila
 
 #### Scenario: CA-4 — el límite no se adelanta
-- GIVEN un id de ruta `1e16` (dentro de `Number.MAX_SAFE_INTEGER`) que no
+- GIVEN un id de ruta `123456789012345` (dentro de `Number.MAX_SAFE_INTEGER`) que no
   existe en la tabla
-- WHEN se hace `DELETE /api/tags/1e16` o `DELETE /api/manufacturers/1e16`
+- WHEN se hace `DELETE /api/tags/123456789012345` o `DELETE /api/manufacturers/123456789012345`
 - THEN la respuesta es 404 por fila inexistente, nunca 400
 
 #### Scenario: CA-4 — antirregresión del predicado de rango

@@ -156,7 +156,7 @@ inconsistente.
       las 2 de FK sin él.
 - [ ] CA-1: `1e21`, `9223372036854775808`, `-1`, `0` y `1.5` dan 4xx con cuerpo
       útil en las 11 rutas. Cero 500. `curl` pegados.
-- [ ] CA-2: `1e16` (dentro de `MAX_SAFE_INTEGER`) sigue dando 404 por fila
+- [ ] CA-2: `123456789012345` (dentro de `MAX_SAFE_INTEGER`) sigue dando 404 por fila
       inexistente, no 400. `curl` pegado.
 - [ ] CA-4: cada guarda tiene un caso que falla si se revierte a
       `Number.isInteger` (el caso `NaN` **no** sirve: pasa con ambos).
