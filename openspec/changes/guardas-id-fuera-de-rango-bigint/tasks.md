@@ -47,12 +47,12 @@ size:exception: **no requerida** (~290 estimadas < 400 de presupuesto)
 
 ## Phase 3: PR2 — Guardas de `users`
 
-- [ ] 3.1 `users.service.ts:94` (`findOne`) guard + doc-comment nuevo (4-6 líneas, ancla de los 5 guards).
-- [ ] 3.2 `:113` (`update`), `:142` (`makeAdmin`, string), `:165` (`banUser`, antes del auto-bloqueo), `:211` (`activeUser`): mismo guard + 1 línea c/u.
-- [ ] 3.3 `users.service.spec.ts`: `it.each` (`NaN`/`0`/`-5`/`1e21`) `findOne`/`update`, testigo `findUserWithRelationsMock.not.toHaveBeenCalled()` (no status — DD31-E).
-- [ ] 3.4 `it.each` `banUser`/`activeUser`: `findUserWithRelationsMock` y `setUserActiveMock` ambos `not.toHaveBeenCalled()`.
-- [ ] 3.5 `it.each` de strings (`'abc'`,`'0'`,`'-5'`,`'1e21'`) `makeAdmin`, testigo `grantPermissionMock.not.toHaveBeenCalled()`.
-- [ ] 3.6 `cd apps/api/rest && npx jest` en verde; pegar recuento.
+- [x] 3.1 `users.service.ts:94` (`findOne`) guard + doc-comment nuevo (4-6 líneas, ancla de los 5 guards).
+- [x] 3.2 `:113` (`update`), `:142` (`makeAdmin`, string), `:165` (`banUser`, antes del auto-bloqueo), `:211` (`activeUser`): mismo guard + 1 línea c/u.
+- [x] 3.3 `users.service.spec.ts`: `it.each` (`NaN`/`0`/`-5`/`1e21`) `findOne`/`update`, testigo `findUserWithRelationsMock.not.toHaveBeenCalled()` (no status — DD31-E).
+- [x] 3.4 `it.each` `banUser`/`activeUser`: `findUserWithRelationsMock` y `setUserActiveMock` ambos `not.toHaveBeenCalled()`.
+- [x] 3.5 `it.each` de strings (`'abc'`,`'0'`,`'-5'`,`'1e21'`) `makeAdmin`, testigo `grantPermissionMock.not.toHaveBeenCalled()`.
+- [x] 3.6 `cd apps/api/rest && npx jest` en verde; pegar recuento.
 
 ## Phase 4: Verificación viva (CA-1, CA-2, DoD)
 

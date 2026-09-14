@@ -228,15 +228,29 @@ describe('UsersService (US-25 PR3 — migración a Postgres)', () => {
       );
     });
 
-    it('id no numérico (NaN, de "/api/users/abc") → 404, nunca 500', async () => {
-      const result = service.findOne(Number('abc'));
-      await expect(result).rejects.toBeInstanceOf(NotFoundException);
-      // El mensaje no debe filtrar el valor coercionado (`NaN`).
-      await expect(result).rejects.toThrow(
-        'El identificador de usuario no es válido.',
-      );
-      expect(findUserWithRelationsMock).not.toHaveBeenCalled();
-    });
+    it.each([
+      ['NaN', NaN],
+      ['cero', 0],
+      ['negativo', -5],
+      ['fuera del rango seguro de bigint (1e21)', 1e21],
+    ])(
+      'id %s → 404 sin llamar al repositorio (`!Number.isSafeInteger(id) || id <= 0`, US-31)',
+      async (_label, id) => {
+        expect.assertions(3);
+        try {
+          await service.findOne(id);
+        } catch (error) {
+          expect(error).toBeInstanceOf(NotFoundException);
+          // El mensaje no debe filtrar el valor coercionado.
+          expect((error as NotFoundException).message).toBe(
+            'El identificador de usuario no es válido.',
+          );
+          // Testigo real (DD31-E): las dos aserciones de arriba no distinguen
+          // "la guarda atajó" de "la fila no existía" — solo esta lo hace.
+          expect(findUserWithRelationsMock).not.toHaveBeenCalled();
+        }
+      },
+    );
 
     it('id existente devuelve las mismas 15 claves que /me', async () => {
       findUserWithRelationsMock.mockResolvedValue(buildFixture({ id: 3 }));
@@ -372,11 +386,43 @@ describe('UsersService (US-25 PR3 — migración a Postgres)', () => {
       expect(setUserActiveMock).toHaveBeenCalledWith(3, false);
     });
 
-    it('block-user con id no numérico → 404, nunca 500', async () => {
-      await expect(
-        service.banUser(Number('abc'), currentUser(1)),
-      ).rejects.toBeInstanceOf(NotFoundException);
-    });
+    it.each([
+      ['NaN', NaN],
+      ['cero', 0],
+      ['negativo', -5],
+      ['fuera del rango seguro de bigint (1e21)', 1e21],
+    ])(
+      'block-user: id %s → 404 sin llamar al repositorio ni a setUserActive (`!Number.isSafeInteger(id) || id <= 0`, US-31)',
+      async (_label, id) => {
+        expect.assertions(3);
+        try {
+          await service.banUser(id, currentUser(1));
+        } catch (error) {
+          expect(error).toBeInstanceOf(NotFoundException);
+          expect(findUserWithRelationsMock).not.toHaveBeenCalled();
+          expect(setUserActiveMock).not.toHaveBeenCalled();
+        }
+      },
+    );
+
+    it.each([
+      ['NaN', NaN],
+      ['cero', 0],
+      ['negativo', -5],
+      ['fuera del rango seguro de bigint (1e21)', 1e21],
+    ])(
+      'unblock-user: id %s → 404 sin llamar al repositorio ni a setUserActive (`!Number.isSafeInteger(id) || id <= 0`, US-31)',
+      async (_label, id) => {
+        expect.assertions(3);
+        try {
+          await service.activeUser(id);
+        } catch (error) {
+          expect(error).toBeInstanceOf(NotFoundException);
+          expect(findUserWithRelationsMock).not.toHaveBeenCalled();
+          expect(setUserActiveMock).not.toHaveBeenCalled();
+        }
+      },
+    );
   });
 
   describe('make-admin — D-H/D-5', () => {
@@ -388,12 +434,23 @@ describe('UsersService (US-25 PR3 — migración a Postgres)', () => {
       expect(grantPermissionMock).toHaveBeenCalledWith(2, 'super_admin');
     });
 
-    it('user_id no numérico → 404, nunca 500', async () => {
-      await expect(service.makeAdmin('abc')).rejects.toBeInstanceOf(
-        NotFoundException,
-      );
-      expect(grantPermissionMock).not.toHaveBeenCalled();
-    });
+    it.each([
+      ['no numérico', 'abc'],
+      ['cero', '0'],
+      ['negativo', '-5'],
+      ['fuera del rango seguro de bigint (1e21)', '1e21'],
+    ])(
+      'user_id %s → 404 sin conceder el permiso (`!Number.isSafeInteger(id) || id <= 0`, US-31)',
+      async (_label, userId) => {
+        expect.assertions(2);
+        try {
+          await service.makeAdmin(userId);
+        } catch (error) {
+          expect(error).toBeInstanceOf(NotFoundException);
+          expect(grantPermissionMock).not.toHaveBeenCalled();
+        }
+      },
+    );
 
     it('usuario inexistente (grantPermission → null) → 404', async () => {
       grantPermissionMock.mockResolvedValue(null);
@@ -486,6 +543,24 @@ describe('UsersService (US-25 PR3 — migración a Postgres)', () => {
         NotFoundException,
       );
     });
+
+    it.each([
+      ['NaN', NaN],
+      ['cero', 0],
+      ['negativo', -5],
+      ['fuera del rango seguro de bigint (1e21)', 1e21],
+    ])(
+      'id %s → 404 sin llamar al repositorio (`!Number.isSafeInteger(id) || id <= 0`, US-31)',
+      async (_label, id) => {
+        expect.assertions(2);
+        try {
+          await service.update(id, {} as never);
+        } catch (error) {
+          expect(error).toBeInstanceOf(NotFoundException);
+          expect(findUserWithRelationsMock).not.toHaveBeenCalled();
+        }
+      },
+    );
   });
 
   describe('remove — stub sin cambios (A11)', () => {

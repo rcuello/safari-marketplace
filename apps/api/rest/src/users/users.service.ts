@@ -90,8 +90,19 @@ export class UsersService {
     return result.items.map(toUserDto);
   }
 
+  /**
+   * Guarda de id (US-31), ancla de los cinco guards de este archivo
+   * (`findOne`, `update`, `makeAdmin`, `banUser`, `activeUser`):
+   * `!Number.isSafeInteger(id) || id <= 0` — no solo `!Number.isInteger`,
+   * que deja pasar `1e21` hasta el driver y revienta en `invalid input
+   * syntax for type bigint` (500, sin `.code` de Prisma reconocible por
+   * `withPrismaErrorTranslation`). `id <= 0` porque ningún id real es no
+   * positivo (`bigserial` arrancando en 1). El mensaje deliberadamente NO
+   * interpola el id (superficie admin-only, D31-A) — no se homogeneiza con
+   * el mensaje del catálogo, que sí lo hace.
+   */
   async findOne(id: number): Promise<User> {
-    if (!Number.isInteger(id)) {
+    if (!Number.isSafeInteger(id) || id <= 0) {
       throw new NotFoundException('El identificador de usuario no es válido.');
     }
 
@@ -108,9 +119,10 @@ export class UsersService {
   /**
    * Stub declarado (A11): lee y devuelve el usuario vía `findUserWithRelations`
    * (404 si no existe), sin persistir ningún campo de `updateUserDto`.
+   * Guarda de id: misma regla y mismo porqué que `findOne` (US-31).
    */
   async update(id: number, _updateUserDto: UpdateUserDto): Promise<User> {
-    if (!Number.isInteger(id)) {
+    if (!Number.isSafeInteger(id) || id <= 0) {
       throw new NotFoundException('El identificador de usuario no es válido.');
     }
 
@@ -135,11 +147,13 @@ export class UsersService {
    * afecta al guard hasta el siguiente login del usuario promovido — el
    * guard lee permisos del JWT, nunca consulta la base
    * (`permissions.guard.ts:18-26`). No se añade un lookup nuevo para
-   * disimular el retardo.
+   * disimular el retardo. Guarda de id: misma regla y mismo porqué que
+   * `findOne` (US-31); opera sobre el `id` numérico ya derivado, no sobre
+   * el `userId` de string del body.
    */
   async makeAdmin(userId: string): Promise<User> {
     const id = Number(userId);
-    if (!Number.isInteger(id)) {
+    if (!Number.isSafeInteger(id) || id <= 0) {
       throw new NotFoundException('El identificador de usuario no es válido.');
     }
 
@@ -159,10 +173,12 @@ export class UsersService {
    * el actor se bloquea a sí mismo o si el objetivo es el único
    * `super_admin` (conteo SIN filtrar `isActive` — conservador a propósito,
    * D-F). El `findUserWithRelations` previo sirve dos propósitos: el 404 y
-   * las relaciones que necesita `toUserDto`.
+   * las relaciones que necesita `toUserDto`. Guarda de id: misma regla y
+   * mismo porqué que `findOne` (US-31); corre antes del chequeo de
+   * auto-bloqueo.
    */
   async banUser(id: number, currentUser: CurrentUserPayload): Promise<User> {
-    if (!Number.isInteger(id)) {
+    if (!Number.isSafeInteger(id) || id <= 0) {
       throw new NotFoundException('El identificador de usuario no es válido.');
     }
 
@@ -205,10 +221,11 @@ export class UsersService {
    * `unblock-user`: fija `is_active: true` explícitamente. Sin guardas de
    * negocio (reactivar nunca deja el panel sin admin) pero SÍ lee
    * `findUserWithRelations` antes de escribir — necesita las relaciones
-   * para el DTO de 15 claves y el 404 (D-F).
+   * para el DTO de 15 claves y el 404 (D-F). Guarda de id: misma regla y
+   * mismo porqué que `findOne` (US-31).
    */
   async activeUser(id: number): Promise<User> {
-    if (!Number.isInteger(id)) {
+    if (!Number.isSafeInteger(id) || id <= 0) {
       throw new NotFoundException('El identificador de usuario no es válido.');
     }
 

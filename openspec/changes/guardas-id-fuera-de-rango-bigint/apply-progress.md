@@ -119,8 +119,53 @@ $ grep -rn "users.service.ts:94" apps/api/rest/src/
 
 ## PR2 — `us-31-pr2-guardas-users` (Fase 3)
 
-Pendiente al momento de este commit de apply-progress (se actualiza en el
-siguiente batch de este mismo apply).
+- [x] 3.1 `users.service.ts:findOne` (línea ~99 tras el doc-comment nuevo):
+      `!Number.isSafeInteger(id) || id <= 0`; doc-comment de 8 líneas, ancla
+      de los cinco guards de este archivo.
+- [x] 3.2 `update`, `makeAdmin` (sobre el `id` numérico ya derivado de
+      `userId`), `banUser` (antes del chequeo de auto-bloqueo) y
+      `activeUser`: mismo guard; 1 línea añadida al doc-comment ya existente
+      de cada uno, apuntando a `findOne` (US-31).
+- [x] 3.3 `users.service.spec.ts`: el `it` único de `NaN` en
+      `findOne` (:231-239) reemplazado por `it.each` de 4 casos
+      (`NaN`/`0`/`-5`/`1e21`); nuevo `it.each` agregado en `update` (no
+      tenía ningún test de id inválido). Testigo:
+      `findUserWithRelationsMock.not.toHaveBeenCalled()` — las otras dos
+      aserciones (instancia + mensaje) NO discriminan por sí solas
+      (DD31-E).
+- [x] 3.4 `it.each` nuevos en `banUser` (reemplaza el `it` único de `NaN`) y
+      en `activeUser` (no tenía ninguno): ambos afirman
+      `findUserWithRelationsMock` y `setUserActiveMock`
+      `not.toHaveBeenCalled()`.
+- [x] 3.5 `it.each` de strings (`'abc'`,`'0'`,`'-5'`,`'1e21'`) en
+      `makeAdmin` (reemplaza el `it` único de `'abc'`), testigo
+      `grantPermissionMock.not.toHaveBeenCalled()`.
+- [x] 3.6 `cd apps/api/rest && npx jest` verde (ver evidencia abajo).
+
+### Evidencia real — PR2
+
+**`cd apps/api/rest && npx jest`**:
+
+```
+PASS src/users/users.service.spec.ts (25.693 s)
+PASS src/shops/shops.service.spec.ts (25.817 s)
+PASS src/common/errors/domain-error.mapper.spec.ts (25.992 s)
+PASS src/manufacturers/manufacturers.service.spec.ts (26.443 s)
+PASS src/tags/tags.service.spec.ts (26.612 s)
+PASS src/users/user-dto.mapper.spec.ts (26.639 s)
+PASS src/categories/categories.service.spec.ts (26.93 s)
+PASS src/products/products.service.spec.ts (27.612 s)
+PASS src/types/types.service.spec.ts (27.612 s)
+
+Test Suites: 9 passed, 9 total
+Tests:       274 passed, 274 total
+Snapshots:   0 total
+Time:        34.057 s
+```
+
+Recuento: 257 (PR1) → 274 (PR2): +17 tests nuevos en `users.service.spec.ts`
+(4 `findOne` + 4 `update` + 4 `banUser` + 4 `activeUser` + 4 `makeAdmin` −
+3 `it` únicos reemplazados, netos +17 sobre el archivo).
 
 ## PR3 — `us-31-pr3-docs` (Fase 5)
 
