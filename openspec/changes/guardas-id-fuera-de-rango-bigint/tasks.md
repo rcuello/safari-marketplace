@@ -56,12 +56,12 @@ size:exception: **no requerida** (~290 estimadas < 400 de presupuesto)
 
 ## Phase 4: Verificación viva (CA-1, CA-2, DoD)
 
-- [ ] 4.1 `just db-build` → `just build-api` en verde.
-- [ ] 4.2 `curl` con Bearer admin (nunca sin token) a las 11 rutas con `1e21`/`0`/`-1`: status exacto 404, no "4xx" genérico; pegar salida.
-- [ ] 4.3 `curl` Bearer admin `POST /api/tags`/`manufacturers` con `type_id -1`/`0`/`1e21`: 400 vía `P2003`; `DELETE /api/types/1e16` (rango válido, inexistente): 404 por fila, nunca 400 (CA-2); pegar salidas.
-- [ ] 4.4 `just verify` en verde; pegar salida.
+- [x] 4.1 `just db-build` → `just build-api` en verde.
+- [x] 4.2 `curl` con Bearer admin (nunca sin token) a las 11 rutas con `1e21`/`0`/`-1`: status exacto 404, no "4xx" genérico; pegar salida.
+- [x] 4.3 `curl` Bearer admin `POST /api/tags`/`manufacturers` con `type_id -1`/`0`/`1e21`: 400 vía `P2003`; `DELETE /api/types/1e16` (rango válido, inexistente): 404 por fila, nunca 400 (CA-2); pegar salidas.
+- [x] 4.4 `just verify` en verde; pegar salida.
 
 ## Phase 5: PR3 — Documentación
 
-- [ ] 5.1 Enmendar `docs/product/31-guardas-id-fuera-de-rango-bigint.md` (DD31-G, sin renumerar CA): blockquote, LOC `~230`, `Incluye`/`NO incluye`, CA-1, Gherkin (+1 escenario `users`), tabla de archivos, DoD con evidencia de Fases 1-4, `Status` → `Implementada`.
-- [ ] 5.2 Actualizar `docs/product/README.md` (2-3 líneas: agregados cubiertos + LOC real).
+- [x] 5.1 Enmendar `docs/product/31-guardas-id-fuera-de-rango-bigint.md` (DD31-G, sin renumerar CA): blockquote, LOC `~230`, `Incluye`/`NO incluye`, CA-1, Gherkin (+1 escenario `users`), tabla de archivos, DoD con evidencia de Fases 1-4, `Status` → `Implementada`.
+- [x] 5.2 Actualizar `docs/product/README.md` (2-3 líneas: agregados cubiertos + LOC real).

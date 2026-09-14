@@ -200,7 +200,7 @@ Feature: …
 Épico 16 Despliegue y observabilidad          → US-17, US-18   ← Terraform: el README lo promete, hoy no existe
 Épico 19 Autenticación y autorización         → US-20 … US-25  (completado)
 Épico 26 Escrituras del catálogo desde Postgres → US-27a, US-27b, US-28 hechas; quedan US-29, US-30 ← `types`, `tags`, `manufacturers` y `categories` ya persisten; en `products` y `shops` create/update/remove siguen devolviendo la fila 0 del mock
-US-31    Guardas de id fuera del rango bigint   → standalone   ← defecto vivo en `main`: `PUT /api/types/1e21` responde 500 en `types`/`tags`/`manufacturers`
+US-31    Guardas de id fuera del rango bigint   → standalone   ← implementada: cubrió `types`/`tags`/`manufacturers`, `users` y las 2 FK de `packages/db`
 US-32    Deriva de reloj `updated_at`/`created_at` → standalone ← toca DDL y exige `just db-reset`; no la arrastra ningún épico
 ```
 
@@ -212,9 +212,10 @@ dominio transaccional) está inventariado con evidencia en
 adversariales de US-28, no de tests):
 
 - [US-31](./31-guardas-id-fuera-de-rango-bigint.md) — guardas de id fuera del
-  rango `bigint`. Es un **defecto vivo en `main`**, no una regresión: por eso
-  va antes que US-32. El arreglo ya está escrito en `categories` (US-28); es
-  copiar el precedente a `types`/`tags`/`manufacturers`.
+  rango `bigint`. Era un **defecto vivo en `main`**, no una regresión.
+  **Implementada** (~230 LOC reales, no ~120): cubrió `types`/`tags`/
+  `manufacturers`, las 5 guardas de `users` y las 2 guardas de FK
+  (`type_id`) de `packages/db`.
 - [US-32](./32-deriva-reloj-updated-at-created-at.md) — deriva de reloj entre
   `created_at` y `updated_at`. **Toca DDL** y exige `just db-reset`, así que no
   puede ir dentro del Épico 26 (decisión 1 de ese épico).
