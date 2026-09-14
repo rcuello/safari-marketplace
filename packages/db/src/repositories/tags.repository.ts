@@ -110,9 +110,21 @@ export type UpdateTagInput = Partial<Omit<CreateTagInput, 'slug'>>;
  * `type_id` mal formado (`"abc"`, `NaN`, no entero) da 400 con el campo
  * correcto SIN tocar Postgres. `null` es legal (limpia la FK); `undefined`
  * ni siquiera llega aquí porque el spread condicional lo filtra antes.
+ *
+ * `Number.isSafeInteger` (no `Number.isInteger`, US-31): `Number.isInteger`
+ * es `true` para `1e21`, que llega a Postgres como `bigint` y revienta en
+ * `invalid input syntax for type bigint` — un error SIN `.code` de Prisma
+ * que `translateCatalogWriteError` no reconoce y degrada a 500. Precedente
+ * exacto: `categories.repository.ts:298-327`.
+ *
+ * Sin cláusula `<= 0`, a propósito: un `type_id` cero o negativo SÍ es
+ * representable como `bigint` (el driver no revienta) y ya resuelve en 400
+ * correcto más abajo vía `P2003` → `InvalidReferenceError` — no reproduce el
+ * defecto de este fix. Añadir `<= 0` aquí sería una regla de negocio nueva
+ * no autorizada (D31-2 de `design.md`).
  */
 function _assertValidTypeId(typeId: number | null | undefined): void {
-  if (typeId != null && !Number.isInteger(typeId)) {
+  if (typeId != null && !Number.isSafeInteger(typeId)) {
     throw new InvalidReferenceError('tags', 'type_id', typeId);
   }
 }

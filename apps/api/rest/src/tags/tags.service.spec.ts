@@ -331,10 +331,15 @@ describe('TagsService.update (US-27b)', () => {
     service = new TagsService();
   });
 
-  it('id no entero → 404 sin llamar al repositorio (design.md DD-10)', async () => {
+  it.each([
+    ['NaN', NaN],
+    ['cero', 0],
+    ['negativo', -5],
+    ['fuera del rango seguro de bigint (1e21)', 1e21],
+  ])('id %s → 404 sin llamar al repositorio (`!Number.isSafeInteger(id) || id <= 0`)', async (_label, id) => {
     expect.assertions(3);
     try {
-      await service.update(NaN, updateDto({ name: 'x' }));
+      await service.update(id, updateDto({ name: 'x' }));
     } catch (error) {
       expect(error).toBeInstanceOf(NotFoundException);
       expect((error as NotFoundException).getStatus()).toBe(404);
@@ -437,10 +442,15 @@ describe('TagsService.remove (US-27b)', () => {
     service = new TagsService();
   });
 
-  it('id no entero → 404 sin llamar al repositorio', async () => {
+  it.each([
+    ['NaN', NaN],
+    ['cero', 0],
+    ['negativo', -5],
+    ['fuera del rango seguro de bigint (1e21)', 1e21],
+  ])('id %s → 404 sin llamar al repositorio (`!Number.isSafeInteger(id) || id <= 0`)', async (_label, id) => {
     expect.assertions(3);
     try {
-      await service.remove(NaN);
+      await service.remove(id);
     } catch (error) {
       expect(error).toBeInstanceOf(NotFoundException);
       expect((error as NotFoundException).getStatus()).toBe(404);

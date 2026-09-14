@@ -163,11 +163,16 @@ export class TagsService {
    * `+id` llega como `NaN` desde el controlador si `PUT /api/tags/abc`
    * (`tags.controller.ts:43`); sin esta guarda, `BigInt(NaN)` revienta en
    * 500 dentro del repositorio (design.md, DD-10 — precedente exacto
-   * `users.service.ts:94,113,142`). El `slug` del DTO se ignora siempre: es
-   * inmutable (`UpdateTagInput` ni siquiera lo declara).
+   * `categories.service.ts:275-293`). El `slug` del DTO se ignora siempre:
+   * es inmutable (`UpdateTagInput` ni siquiera lo declara).
+   *
+   * `Number.isSafeInteger` (no `Number.isInteger`, US-31): `Number.isInteger`
+   * deja pasar `1e21` hasta el driver, que revienta en `invalid input syntax
+   * for type bigint` (500). `id <= 0` porque ningún id real es no positivo
+   * (`bigserial` arrancando en 1).
    */
   async update(id: number, updateTagDto: UpdateTagDto): Promise<Tag> {
-    if (!Number.isInteger(id)) {
+    if (!Number.isSafeInteger(id) || id <= 0) {
       throw new NotFoundException(`No existe un tag con id ${id}.`);
     }
 
@@ -196,8 +201,9 @@ export class TagsService {
     }
   }
 
+  /** Misma guarda de id que `update` (US-31). */
   async remove(id: number): Promise<Tag> {
-    if (!Number.isInteger(id)) {
+    if (!Number.isSafeInteger(id) || id <= 0) {
       throw new NotFoundException(`No existe un tag con id ${id}.`);
     }
 

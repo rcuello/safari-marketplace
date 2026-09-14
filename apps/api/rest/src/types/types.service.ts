@@ -119,11 +119,16 @@ export class TypesService {
    * `+id` llega como `NaN` desde el controlador si `PUT /api/types/abc`
    * (`types.controller.ts:43`); sin esta guarda, `BigInt(NaN)` revienta en
    * 500 dentro del repositorio (design.md, Decisión 6 — precedente exacto
-   * `users.service.ts:94,113,142`). El slug del DTO se ignora siempre: es
+   * `categories.service.ts:275-293`). El slug del DTO se ignora siempre: es
    * inmutable (`UpdateTypeInput` ni siquiera lo declara).
+   *
+   * `Number.isSafeInteger` (no `Number.isInteger`, US-31): `Number.isInteger`
+   * deja pasar `1e21` hasta el driver, que revienta en `invalid input syntax
+   * for type bigint` (500). `id <= 0` porque ningún id real es no positivo
+   * (`bigserial` arrancando en 1).
    */
   async update(id: number, updateTypeDto: UpdateTypeDto): Promise<Type> {
-    if (!Number.isInteger(id)) {
+    if (!Number.isSafeInteger(id) || id <= 0) {
       throw new NotFoundException(`No existe un type con id ${id}.`);
     }
 
@@ -147,8 +152,9 @@ export class TypesService {
     }
   }
 
+  /** Misma guarda de id que `update` (US-31). */
   async remove(id: number): Promise<Type> {
-    if (!Number.isInteger(id)) {
+    if (!Number.isSafeInteger(id) || id <= 0) {
       throw new NotFoundException(`No existe un type con id ${id}.`);
     }
 

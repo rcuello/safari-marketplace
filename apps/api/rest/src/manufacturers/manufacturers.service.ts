@@ -210,12 +210,17 @@ export class ManufacturersService {
    * revienta en 500 dentro del repositorio (design.md, DD-10). El `slug`
    * del DTO se ignora siempre: es inmutable (`UpdateManufacturerInput` ni
    * siquiera lo declara).
+   *
+   * `Number.isSafeInteger` (no `Number.isInteger`, US-31): `Number.isInteger`
+   * deja pasar `1e21` hasta el driver, que revienta en `invalid input syntax
+   * for type bigint` (500). `id <= 0` porque ningún id real es no positivo
+   * (`bigserial` arrancando en 1).
    */
   async update(
     id: number,
     updateManufacturesDto: UpdateManufacturerDto
   ): Promise<Manufacturer> {
-    if (!Number.isInteger(id)) {
+    if (!Number.isSafeInteger(id) || id <= 0) {
       throw new NotFoundException(`No existe una marca con id ${id}.`);
     }
 
@@ -250,8 +255,9 @@ export class ManufacturersService {
     }
   }
 
+  /** Misma guarda de id que `update` (US-31). */
   async remove(id: number): Promise<Manufacturer> {
-    if (!Number.isInteger(id)) {
+    if (!Number.isSafeInteger(id) || id <= 0) {
       throw new NotFoundException(`No existe una marca con id ${id}.`);
     }
 

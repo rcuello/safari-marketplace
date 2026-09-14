@@ -108,6 +108,41 @@ describe('createTag — CA-1, centinela zz-tags-', () => {
 
     expect(await findTagBySlug(`${SENTINEL_PREFIX}type-invalido`)).toBeNull();
   });
+
+  it('typeId fuera del rango seguro de bigint (1e21) ⇒ InvalidReferenceError, sin tocar Postgres (US-31, antirregresión)', async () => {
+    // `Number.isInteger` deja pasar `1e21` (no tiene parte decimal); sin
+    // `Number.isSafeInteger` este valor llegaría a Postgres como `bigint` y
+    // reventaría en `invalid input syntax for type bigint` (500). Precedente
+    // exacto: `categories.integration.test.ts:450-465`.
+    await expect(
+      createTag({
+        name: `${SENTINEL_PREFIX}Type Fuera De Rango`,
+        typeId: 1e21,
+      })
+    ).rejects.toBeInstanceOf(InvalidReferenceError);
+
+    expect(await findTagBySlug(`${SENTINEL_PREFIX}type-fuera-de-rango`)).toBeNull();
+  });
+
+  it('typeId negativo (-5) ⇒ InvalidReferenceError por P2003 (FK), NO por la guarda (US-31, D31-2)', async () => {
+    expect.assertions(3);
+    // Discriminador: la guarda pasa el tercer argumento `value` a
+    // `InvalidReferenceError` y el mensaje lo interpola; la rama `P2003` de
+    // `translateCatalogWriteError` NO lo pasa. Si alguien añade `<= 0` a
+    // `_assertValidTypeId` por inercia, este test falla porque el mensaje
+    // pasaría a contener `-5`.
+    try {
+      await createTag({
+        name: `${SENTINEL_PREFIX}Type Negativo`,
+        typeId: -5,
+      });
+    } catch (error) {
+      expect(error).toBeInstanceOf(InvalidReferenceError);
+      expect((error as InvalidReferenceError).message).not.toContain('-5');
+    }
+
+    expect(await findTagBySlug(`${SENTINEL_PREFIX}type-negativo`)).toBeNull();
+  });
 });
 
 describe('updateTag — CA-2, slug inmutable, updatedAt explícito', () => {
