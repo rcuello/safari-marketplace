@@ -247,7 +247,7 @@ Todo lo de abajo está verificado contra el código, no contra el épico.
   `tocar_updated_at` y sus cinco triggers; hoy **ninguna tabla lleva
   trigger** y cada ruta de `UPDATE`/`upsert` fija `updatedAt: now()` desde
   `packages/db/src/clock.ts` (`types.repository.ts:136` como patrón; la
-  política está escrita en `db/schema.sql:477-487` y especificada en
+  política está escrita en `db/schema.sql:540-550` y especificada en
   `openspec/specs/data-layer-clock-policy/spec.md`). **Las 8 tablas de
   entidad de esta US nacen bajo ella: NO crear triggers**, y cada `update`
   nuevo del repositorio fija el reloj explícitamente — el test del

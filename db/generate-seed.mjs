@@ -32,6 +32,7 @@ const products = leer('products');
 const popularProducts = leer('popular-products');
 const bestSellingProducts = leer('best-selling-products');
 const users = leer('users');
+const becomeSeller = leer('become-seller');
 
 // ── Literales SQL ────────────────────────────────────────────────────────
 const txt = (v) =>
@@ -79,6 +80,16 @@ const permissionsCatalogo = [
 const asignaciones = users.flatMap((u) =>
   (u.permissions ?? []).map((p) => ({ user_id: u.id, permission_id: p.id }))
 );
+
+// ── Staff por tienda (US-41, array literal validado, no viene del mock) ──
+// Usuario 1 excluido a propósito: es dueño de las 12 tiendas de shops.json
+// (owner_id ?? 1), así que asignarlo como staff de sus propias tiendas sería
+// redundante con la relación de propiedad que ya expresa shops.owner_id.
+const staffAsignaciones = [
+  { user_id: 2, shop_id: 1 },
+  { user_id: 2, shop_id: 2 },
+  { user_id: 3, shop_id: 1 },
+];
 
 // ── Recuperación de los shops que shops.json no trae ─────────────────────
 // 190 de los 1.200 productos apuntan a shop_id 12, 14 y 15, que NO existen
@@ -139,6 +150,21 @@ for (const u of users) {
 }
 if (!HASH_DEMO.startsWith('$2')) problemas.push(`HASH_DEMO no parece un hash bcrypt (prefijo esperado '$2')`);
 
+// ── Validación de shop_staff / become_seller (US-41) ─────────────────────
+for (const s of staffAsignaciones) {
+  if (!idsDeUsers.has(s.user_id)) problemas.push(`shop_staff: user_id ${s.user_id} inexistente`);
+  if (!idsFinalesShops.has(s.shop_id)) problemas.push(`shop_staff: shop_id ${s.shop_id} inexistente`);
+  const tienda = shopsTodos.find((t) => t.id === s.shop_id);
+  if ((tienda?.owner_id ?? 1) === s.user_id)
+    problemas.push(`shop_staff: el usuario ${s.user_id} ya es dueño de la tienda ${s.shop_id}`);
+}
+if (new Set(staffAsignaciones.map((s) => `${s.user_id}:${s.shop_id}`)).size !== staffAsignaciones.length)
+  problemas.push('shop_staff: par (user_id, shop_id) duplicado');
+if (!becomeSeller.page_options?.page_options)
+  problemas.push('become-seller: falta data.page_options.page_options');
+if (!Array.isArray(becomeSeller.commissions) || becomeSeller.commissions.length !== 2)
+  problemas.push('become-seller: commissions no es un array de 2 tiers');
+
 if (problemas.length) {
   console.error(`\nEl mock viola ${problemas.length} restriccion(es) del esquema:`);
   problemas.slice(0, 20).forEach((p) => console.error('  - ' + p));
@@ -164,7 +190,8 @@ L.push(
   '--',
   `-- ${types.length} types · ${shopsTodos.length} shops · ${categories.length} categorías · ` +
     `${manufacturers.length} manufacturers · ${tags.length} tags · ${products.length} productos · ` +
-    `${users.length} usuarios · ${permissionsCatalogo.length} permisos`,
+    `${users.length} usuarios · ${permissionsCatalogo.length} permisos · ` +
+    `1 become_seller · ${staffAsignaciones.length} shop_staff`,
   '-- =====================================================================',
   '',
   'BEGIN;'
@@ -178,6 +205,20 @@ L.push(
   'INSERT INTO settings (id, options, language) VALUES',
   `  (1, ${json(settings.options)}, ${txt(settings.language ?? 'en')})`,
   'ON CONFLICT (id) DO UPDATE SET options = EXCLUDED.options, language = EXCLUDED.language;'
+);
+
+// become_seller ------------------------------------------------------------
+bloque('become_seller — la fila única de la página "vender con nosotros"');
+L.push(
+  '-- page_options guarda el objeto INTERNO del mock (data.page_options.',
+  '-- page_options, 24 claves), NO el envoltorio con forma de settings: sus',
+  '-- id/language/created_at/updated_at son estas mismas columnas, y meterlos',
+  '-- en el jsonb fosilizaría las fechas del mock.',
+  'INSERT INTO become_seller (id, page_options, commissions, language) VALUES',
+  `  (1, ${json(becomeSeller.page_options.page_options)}, ${json(becomeSeller.commissions)}, ` +
+    `${txt(becomeSeller.page_options.language ?? 'en')})`,
+  'ON CONFLICT (id) DO UPDATE SET page_options = EXCLUDED.page_options, ' +
+    'commissions = EXCLUDED.commissions, language = EXCLUDED.language;'
 );
 
 // types ------------------------------------------------------------------
@@ -276,6 +317,14 @@ L.push(
         `${json(s.address ?? {})}, ${json(s.settings ?? {})})`
     )
     .join(',\n') + '\nON CONFLICT (id) DO NOTHING;'
+);
+
+// shop_staff (US-41, orden obligatorio: referencia shops recién insertadas) -
+bloque(`shop_staff — ${staffAsignaciones.length} asignaciones deterministas (array literal, no del mock)`);
+L.push(
+  'INSERT INTO shop_staff (user_id, shop_id) VALUES',
+  staffAsignaciones.map((s) => `  (${s.user_id}, ${s.shop_id})`).join(',\n') +
+    '\nON CONFLICT (user_id, shop_id) DO NOTHING;'
 );
 
 // categories -------------------------------------------------------------
@@ -427,5 +476,6 @@ console.log(
     `  ${types.length} types · ${shopsTodos.length} shops (${recuperados.size} recuperados) · ` +
     `${categories.length} categorías · ${manufacturers.length} manufacturers · ` +
     `${tags.length} tags · ${products.length} productos · ` +
-    `${users.length} usuarios · ${permissionsCatalogo.length} permisos`
+    `${users.length} usuarios · ${permissionsCatalogo.length} permisos · ` +
+    `1 become_seller · ${staffAsignaciones.length} shop_staff`
 );

@@ -12,7 +12,8 @@
 //     products_simple_con_precio (simple ⇒ price NOT NULL),
 //     products_procedencia_completa (source_store y source_product_id
 //     van juntos o ninguno), products_status_check, categories_no_
-//     autoreferencia, settings_fila_unica. Los repositorios los validan
+//     autoreferencia, settings_fila_unica, become_seller_fila_unica. Los
+//     repositorios los validan
 //     antes de escribir y traducen la violación a errores de dominio.
 //   · El índice de expresión products_nombre_trgm_idx
 //     (gin (lower(name) gin_trgm_ops)) que acelera la búsqueda por
@@ -81,8 +82,9 @@ model Shop {
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt   DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
 
-  owner    User      @relation(fields: [ownerId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  owner    User        @relation(fields: [ownerId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   products Product[]
+  staff    ShopStaff[]
 
   @@map("shops")
 }
@@ -244,6 +246,7 @@ model User {
   permissions         PermissionUser[]
   passwordResetTokens PasswordResetToken[]
   shops               Shop[]
+  staffShops          ShopStaff[]
 
   @@map("users")
 }
@@ -316,4 +319,32 @@ model OtpCode {
 
   @@index([phone], map: "otp_codes_phone_idx")
   @@map("otp_codes")
+}
+
+// =====================================================================
+// Identidad extendida (US-41)
+// =====================================================================
+
+model ShopStaff {
+  userId    BigInt   @map("user_id")
+  shopId    BigInt   @map("shop_id")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([userId, shopId])
+  @@index([shopId], map: "shop_staff_tienda_idx")
+  @@map("shop_staff")
+}
+
+model BecomeSeller {
+  id          Int      @id @default(1) @db.SmallInt
+  pageOptions Json     @map("page_options")
+  commissions Json
+  language    String   @default("es")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  @@map("become_seller")
 }

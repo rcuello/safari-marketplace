@@ -193,7 +193,7 @@ export async function createManufacturer(
  * `manufacturers.name` es `text NOT NULL` donde `''` es legal para Postgres,
  * así que sin esta guarda la fila quedaría silenciosamente corrupta.
  * `updatedAt: now()` se fija explícito, como en el resto de tablas de la
- * política de reloj único (`db/schema.sql:477-487`, US-32) — ninguna tabla
+ * política de reloj único (`db/schema.sql:540-550`, US-32) — ninguna tabla
  * tiene ya trigger `updated_at`.
  */
 export async function updateManufacturer(

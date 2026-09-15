@@ -436,6 +436,64 @@ CREATE TABLE IF NOT EXISTS product_tag (
 
 
 -- =====================================================================
+-- Identidad extendida (US-41, Épico 40) — staff por tienda y la página
+-- "vender con nosotros".
+--
+-- Van al FINAL del bloque de tablas: shop_staff referencia users y shops
+-- (ambas arriba), y así las citas `db/schema.sql:N` vivas del repo no se
+-- desplazan más de lo inevitable.
+--
+-- NINGUNA lleva trigger: la política de reloj único de abajo las gobierna
+-- igual que al resto -- `updated_at` lo fija la capa de datos, y shop_staff
+-- ni siquiera tiene esa columna.
+-- =====================================================================
+
+-- shop_staff — pivote puro user<->shop, calco de permission_user.
+--
+-- SIN columna de rol, a propósito: StaffsController.getStaffs devuelve
+-- UserPaginator (usuarios, no filas de pivote), GetStaffsDto solo filtra por
+-- shop_id y AddStaffInput del admin es {email,password,name,shop_id}. Un
+-- `role` sería especulativo. Sin `updated_at`: un pivote se crea o se borra,
+-- nunca se actualiza (igual que permission_user y product_tag).
+--
+-- El título de CA-1 en la US dice "con rol"
+-- (41-esquema-identidad-extendida.md:61); el código no lo respalda y la spec
+-- ya zanja que gana el código (extended-identity-schema/spec.md:24-26).
+CREATE TABLE IF NOT EXISTS shop_staff (
+    user_id     bigint       NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    shop_id     bigint       NOT NULL REFERENCES shops(id) ON DELETE CASCADE,
+    created_at  timestamptz  NOT NULL DEFAULT now(),
+    PRIMARY KEY (user_id, shop_id)
+);
+
+
+-- ---------------------------------------------------------------------
+-- become_seller — la fila única de la página "vender con nosotros".
+--
+-- Mismo patrón que settings: id smallint fijo + CHECK de fila única. DOS
+-- columnas jsonb, no una: become-seller.json trae `page_options` y
+-- `commissions` como claves HERMANAS y el GET real sirve ambas
+-- (plainToClass sin excludeExtraneousValues); fundirlas bajo un nombre que
+-- dice `page_options` haría mentir a la columna.
+--
+-- `page_options` guarda el objeto INTERNO (data.page_options.page_options,
+-- 24 claves), NO el envoltorio con forma de settings: los id/language/
+-- created_at/updated_at de ese envoltorio son exactamente estas cuatro
+-- columnas y meterlos en el jsonb fosilizaría las fechas del mock. El
+-- envoltorio se recompone en el servicio (US-44).
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS become_seller (
+    id            smallint     PRIMARY KEY DEFAULT 1,
+    page_options  jsonb        NOT NULL,
+    commissions   jsonb        NOT NULL,
+    language      text         NOT NULL DEFAULT 'es',
+    created_at    timestamptz  NOT NULL DEFAULT now(),
+    updated_at    timestamptz  NOT NULL DEFAULT now(),
+    CONSTRAINT become_seller_fila_unica CHECK (id = 1)
+);
+
+
+-- =====================================================================
 -- Índices.
 --
 -- No son decorativos: cada uno responde a un filtro que el frontend
@@ -472,6 +530,11 @@ CREATE INDEX IF NOT EXISTS product_tag_tag_idx            ON product_tag (tag_id
 CREATE INDEX IF NOT EXISTS permission_user_permiso_idx    ON permission_user (permission_id);
 CREATE INDEX IF NOT EXISTS password_reset_tokens_user_idx ON password_reset_tokens (user_id);
 CREATE INDEX IF NOT EXISTS otp_codes_phone_idx            ON otp_codes (phone);
+
+-- El inverso del pivote de staff: GetStaffsDto filtra por shop_id, que la PK
+-- (user_id, shop_id) no cubre por la izquierda. Gemelo de
+-- permission_user_permiso_idx.
+CREATE INDEX IF NOT EXISTS shop_staff_tienda_idx ON shop_staff (shop_id);
 
 
 -- ---------------------------------------------------------------------

@@ -78,7 +78,7 @@ Ninguna de las tablas nuevas lleva trigger. La política de reloj es la de
 US-32: `updatedAt: now()` desde `packages/db/src/clock.ts` en cada ruta de
 escritura, especificada en
 `openspec/specs/data-layer-clock-policy/spec.md`. El comentario de política
-de `db/schema.sql:477-487` no se toca ni se le añaden triggers.
+de `db/schema.sql:540-550` no se toca ni se le añaden triggers.
 
 ### CA-4 — Capa de datos tipada
 `packages/db` expone los `*Record` de ambas tablas por el barrel, con la
