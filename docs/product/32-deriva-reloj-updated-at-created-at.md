@@ -6,9 +6,22 @@
 
 **Épico:** ninguno (US standalone)
 **Fecha:** 2026-09-11
-**Status:** Listo para ejecución
+**Status:** Listo para ejecución — **es la siguiente US a ejecutar**
 **Depende de:** ninguna
-**LOC est.:** ~80 (requiere `db-reset`)
+**LOC est.:** ~80 (requiere `db-reset`, **autorizado 2026-09-14**)
+
+> **Prerrequisito de US-34 (decidido 2026-09-14).** Esta US dejó de ser una
+> standalone suelta: su elección de fuente de reloj (CA-1) es **insumo del
+> DDL** del [Épico 33](./33-contenido-configuracion-postgres/README.md). Las 8
+> tablas de entidad que crea US-34 reciben `PUT` reales y tienen que nacer
+> bajo una sola política; hoy conviven dos en el repo (trigger en 5 tablas,
+> `db/schema.sql:488-500`, y `updatedAt: now()` desde el repositorio en
+> `types`/`tags`/`manufacturers`, decisión 9 del Épico 26). Ejecutar US-34
+> antes garantizaría que esta US acabe tocando 13 tablas en vez de 5. Ver R-3
+> del Épico 33 y la sección P-1 de US-34.
+>
+> **`just db-reset` autorizado por el dueño (2026-09-14)**, junto con US-34;
+> registrado como decisión 6 del Épico 33.
 
 ## Historia
 **Como** consumidor de la API y como alumno leyendo la base, **quiero** que los

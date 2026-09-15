@@ -485,10 +485,10 @@ sin partirse en varios PRs.
 
 ## Definición de Done
 
-- [ ] **Autorización de `just db-reset` renovada por el dueño** y pegada. Es
-      lo único que quedaba abierto: P-1 y P-2 los confirmó el 2026-09-14. La
-      autorización previa (2026-08-31) se dio para el Épico 19 y no se hereda
-      — decisión 1 del Épico 26.
+- [x] **Autorización de `just db-reset`: CONCEDIDA por el dueño (2026-09-14)**,
+      renovando la del 2026-08-31 del Épico 19. Registrada como decisión 6 del
+      [Épico 33](./README.md) y cubre también a US-32. No quedan decisiones
+      abiertas: P-1 y P-2 se confirmaron el mismo día.
 - [ ] US-32 con Status `Implementada`. Es dependencia dura (P-1): esta US no
       arranca antes.
 - [ ] `node db/generate-seed.mjs` con la salida pegada: los conteos nuevos

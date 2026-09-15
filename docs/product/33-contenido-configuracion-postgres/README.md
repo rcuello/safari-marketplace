@@ -66,6 +66,7 @@ Son 43 rutas HTTP en total: `faqs` 5, `terms-and-conditions` 7,
 | 3 | DDL del épico | **Todo en US-34, un solo `just db-reset`.** Precedente del Épico 19 y del 26: este repo no tiene migraciones incrementales, así que el esquema completo se diseña antes de escribir la primera línea de servicio. |
 | 4 | Alcance de `attributes` | Entra el CRUD de `attributes` + `attribute_values`. **NO entra** persistir las variaciones de producto que desbloquea: eso es épico aparte. |
 | 5 | `store-notices` | Va en su propia US. No es CRUD plano: trae N:M con `users` y con `shops`, más estado de lectura por usuario. |
+| 6 | `just db-reset` | **Autorizado por el dueño del repo (2026-09-14)**, renovando la del 2026-08-31 que se dio para el Épico 19 y que la decisión 1 del Épico 26 declaró no heredable. El proyecto no está en producción y `db/schema.sql` es idempotente (`IF NOT EXISTS`), así que **no** altera tablas existentes: adoptar las 12 tablas nuevas exige recrear la base. La autorización cubre **US-32 y US-34**, que son las dos únicas del plan que tocan DDL. Un DDL, un reset, por US — precedente de la decisión 2 del Épico 19. |
 
 ## Visión técnica compartida
 
