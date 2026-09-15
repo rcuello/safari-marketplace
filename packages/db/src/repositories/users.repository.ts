@@ -13,6 +13,7 @@
 
 import type { Prisma } from '../../generated/prisma/client/client';
 import { prisma } from '../client';
+import { now } from '../clock';
 import {
   _id,
   _toPermissionRecord,
@@ -327,7 +328,7 @@ export async function updateUserPasswordHash(
   try {
     const row = await prisma.user.update({
       where: { id },
-      data: { passwordHash },
+      data: { passwordHash, updatedAt: now() },
     });
     return _toUserRecord(row);
   } catch (error) {
@@ -344,7 +345,7 @@ export async function setUserActive(
   try {
     const row = await prisma.user.update({
       where: { id },
-      data: { isActive },
+      data: { isActive, updatedAt: now() },
     });
     return _toUserRecord(row);
   } catch (error) {

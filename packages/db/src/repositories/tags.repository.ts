@@ -166,7 +166,9 @@ export async function createTag(input: CreateTagInput): Promise<TagRecord> {
  * `EmptySlugError` (precedente `updateType`, `types.repository.ts:110-125`):
  * `tags.name` es `text NOT NULL` donde `''` es legal para Postgres, así que
  * sin esta guarda la fila quedaría silenciosamente corrupta. `updatedAt: now()`
- * se fija explícito — `tags` no tiene trigger `updated_at` (`db/schema.sql:480-500`).
+ * se fija explícito, como en el resto de tablas de la política de reloj
+ * único (`db/schema.sql:477-487`, US-32) — ninguna tabla tiene ya trigger
+ * `updated_at`.
  */
 export async function updateTag(
   id: number,

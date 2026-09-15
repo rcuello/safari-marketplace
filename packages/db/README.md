@@ -34,7 +34,9 @@ prisma/schema.prisma            introspección de la base, revisada a mano
 generated/                      cliente Prisma (gitignored; `npm run generate`)
 src/
   client.ts                     singleton lazy de PrismaClient (adapter pg)
-  clock.ts                      now() inyectable para tests
+  clock.ts                      now() inyectable para tests (alcance de
+                                 _setNowProvider documentado en su cabecera,
+                                 US-32 CA-3)
   errors.ts                     parseo/clasificación de errores de Prisma
   health.ts                     pingDatabase() para /health endpoints
   pagination.ts                 buildPaginator() — el envoltorio del mock

@@ -475,29 +475,16 @@ CREATE INDEX IF NOT EXISTS otp_codes_phone_idx            ON otp_codes (phone);
 
 
 -- ---------------------------------------------------------------------
--- updated_at automático.
+-- updated_at — reloj único, sin triggers (US-32 CA-1).
+-- NINGUNA tabla lleva trigger BEFORE UPDATE. `updated_at` lo fija la capa de
+-- datos con el reloj de Node (`packages/db/src/clock.ts` -> `now()`), el mismo
+-- del que sale `created_at` (`@default(now())` de Prisma): una fila, un reloj.
+-- Hasta 2026-09-14 hubo un `tocar_updated_at()` sobre products/categories/
+-- shops/users/profiles; el reloj de Postgres derivaba del de Node hasta
+-- ±676 ms y con signo variable, así que una fila podía servirse con
+-- `updated_at` ANTERIOR a `created_at`. NO re-añadir triggers: toda tabla
+-- nueva hereda esta política y cada `update`/`upsert` fija `updatedAt: now()`.
 -- ---------------------------------------------------------------------
-CREATE OR REPLACE FUNCTION tocar_updated_at()
-RETURNS trigger LANGUAGE plpgsql AS $$
-BEGIN
-    NEW.updated_at = now();
-    RETURN NEW;
-END;
-$$;
-
-CREATE OR REPLACE TRIGGER products_updated_at   BEFORE UPDATE ON products
-    FOR EACH ROW EXECUTE FUNCTION tocar_updated_at();
-CREATE OR REPLACE TRIGGER categories_updated_at BEFORE UPDATE ON categories
-    FOR EACH ROW EXECUTE FUNCTION tocar_updated_at();
-CREATE OR REPLACE TRIGGER shops_updated_at      BEFORE UPDATE ON shops
-    FOR EACH ROW EXECUTE FUNCTION tocar_updated_at();
--- users y profiles reciben UPDATE de verdad (US-25 block-user/unblock-user,
--- PUT /api/users/:id): igual criterio que products/categories/shops.
--- permissions NO: 4 filas de catálogo estático, el perfil de types/tags.
-CREATE OR REPLACE TRIGGER users_updated_at      BEFORE UPDATE ON users
-    FOR EACH ROW EXECUTE FUNCTION tocar_updated_at();
-CREATE OR REPLACE TRIGGER profiles_updated_at   BEFORE UPDATE ON profiles
-    FOR EACH ROW EXECUTE FUNCTION tocar_updated_at();
 
 
 COMMIT;

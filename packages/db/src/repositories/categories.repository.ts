@@ -16,6 +16,7 @@
 
 import type { Prisma } from '../../generated/prisma/client/client';
 import { prisma } from '../client';
+import { now } from '../clock';
 import {
   InvalidReferenceError,
   RecordNotFoundError,
@@ -499,9 +500,9 @@ export async function createCategory(
  * Actualiza una categoría: campos, madre y/o type. El `slug` es inmutable a
  * nivel de tipo (`UpdateCategoryInput` lo omite); si llega `name`, se valida
  * con `normalizeSlug` y se descarta el resultado — solo por su efecto
- * lateral `EmptySlugError` (DD28-8, precedente `updateType`). `updatedAt`
- * NO se fija a mano: el trigger `categories_updated_at`
- * (`db/schema.sql:490`) lo hace con el reloj de Postgres (DD28-7).
+ * lateral `EmptySlugError` (DD28-8, precedente `updateType`). `updatedAt` lo
+ * fija `updatedAt: now()` desde `clock.ts` (US-32); ya no hay trigger de
+ * base de datos.
  */
 export async function updateCategory(
   id: number,
@@ -541,6 +542,7 @@ export async function updateCategory(
         ...(input.parentId !== undefined && { parentId: input.parentId }),
         ...(input.typeId !== undefined && { typeId: input.typeId }),
         ...(input.language !== undefined && { language: input.language }),
+        updatedAt: now(),
       },
     });
   } catch (error) {

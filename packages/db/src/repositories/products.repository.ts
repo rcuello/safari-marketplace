@@ -403,6 +403,7 @@ export async function upsertScrapedProduct(
         ...(input.tagIds !== undefined && {
           tags: { deleteMany: {}, create: tagLinks },
         }),
+        updatedAt: now(),
       },
       include: PRODUCT_INCLUDE,
     });
@@ -746,9 +747,9 @@ export async function createProduct(input: CreateProductInput): Promise<ProductR
  * la fila cambia de tienda — la propiedad de ambos lados la valida el
  * servicio de Nest (D29-1), no este repositorio. `slug` es inmutable a
  * nivel de tipo; si llega `name` se valida con `normalizeSlug` descartando
- * el resultado (solo su efecto lateral `EmptySlugError`). `updatedAt` NO se
- * fija a mano: el trigger `products_updated_at` lo hace con el reloj de
- * Postgres.
+ * el resultado (solo su efecto lateral `EmptySlugError`). `updatedAt` lo
+ * fija `updatedAt: now()` desde `clock.ts` (US-32); ya no hay trigger de
+ * base de datos.
  */
 export async function updateProduct(
   id: number,
@@ -854,6 +855,7 @@ export async function updateProduct(
             create: uniq(input.tagIds).map((tagId) => ({ tagId })),
           },
         }),
+        updatedAt: now(),
       },
       include: PRODUCT_INCLUDE,
     });
@@ -876,8 +878,8 @@ export async function updateProduct(
  * Borra un producto del admin. `findUnique + PRODUCT_INCLUDE` corre ANTES
  * del `DELETE`: es a la vez la comprobación de existencia y el snapshot
  * PRE-borrado que se devuelve (DD29-5, precedente `DD28-1`). Un `DELETE` no
- * dispara el trigger `products_updated_at`, así que no hay ningún valor
- * posterior con el que divergir.
+ * escribe `updated_at`, así que no hay ningún valor posterior con el que
+ * divergir.
  */
 export async function deleteProduct(id: number): Promise<ProductRecord> {
   const row = await prisma.product.findUnique({ where: { id }, include: PRODUCT_INCLUDE });

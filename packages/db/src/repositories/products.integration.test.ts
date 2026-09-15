@@ -7,7 +7,8 @@
  */
 
 import 'dotenv/config';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { _setNowProvider } from '../clock';
 import { prisma } from '../client';
 import { InvalidReferenceError, RecordNotFoundError } from '../domain-errors';
 import { buildPaginator } from '../pagination';
@@ -329,6 +330,46 @@ describe('findProductBySlug', () => {
 });
 
 describe('upsertScrapedProduct', () => {
+  afterEach(() => {
+    _setNowProvider(() => new Date());
+  });
+
+  it('el segundo upsert (rama update) fija updatedAt desde clock.ts (CA-2 de US-32)', async () => {
+    const gadget = await findTypeBySlug('gadget');
+    const [shopSample] = (await listProducts({ limit: 1 })).items;
+    expect(gadget).not.toBeNull();
+    if (!gadget) return;
+
+    const base = {
+      sourceStore: TEST_STORE,
+      sourceProductId: 'sku-003-reloj',
+      sourceUrl: 'https://example.test/p/sku-003-reloj',
+      name: 'Producto de integración — reloj',
+      slug: 'producto-de-integracion-reloj-test',
+      typeId: gadget.id,
+      shopId: shopSample.shopId,
+      price: 100,
+    };
+
+    const created = await upsertScrapedProduct(base);
+
+    const future = new Date(Date.now() + 60_000);
+    _setNowProvider(() => future);
+    const updated = await upsertScrapedProduct({ ...base, price: 95 });
+
+    expect(updated.id).toBe(created.id); // misma fila, rama update del upsert
+
+    // (a) ruta olvidada: sin `updatedAt` en la rama `update:` el valor
+    // seguiría siendo el del INSERT original y esta aserción FALLARÍA.
+    expect(updated.updatedAt.getTime()).toBe(future.getTime());
+    // (b) el invariante de CA-2.
+    expect(updated.updatedAt.getTime()).toBeGreaterThanOrEqual(
+      updated.createdAt.getTime()
+    );
+    // (c) createdAt NO es mockeable (D-5, no-goal declarado).
+    expect(updated.createdAt.getTime()).toBeLessThan(future.getTime());
+  });
+
   it('crea por procedencia y el segundo upsert actualiza la misma fila', async () => {
     const gadget = await findTypeBySlug('gadget');
     const [shopSample] = (await listProducts({ limit: 1 })).items;
@@ -453,7 +494,38 @@ describe('createProduct — CA-1, centinela zz-products-', () => {
   });
 });
 
-describe('updateProduct — CA-2, pivotes en los 3 estados, slug invariante', () => {
+describe('updateProduct — CA-2, pivotes en los 3 estados, slug invariante, updatedAt explícito', () => {
+  afterEach(() => {
+    _setNowProvider(() => new Date());
+  });
+
+  it('updated_at sale de clock.ts y cumple updated_at >= created_at (CA-2 de US-32)', async () => {
+    const created = await createProduct({
+      name: `${SENTINEL_PREFIX}reloj`,
+      slug: `${SENTINEL_PREFIX}reloj`,
+      typeId: SENTINEL_TYPE_ID,
+      shopId: SENTINEL_SHOP_ID,
+      price: 10,
+    });
+
+    const future = new Date(Date.now() + 60_000);
+    _setNowProvider(() => future);
+    const updated = await updateProduct(created.id, {
+      name: `${SENTINEL_PREFIX}Reloj Renombrado`,
+    });
+
+    // (a) ruta olvidada: sin `updatedAt` el valor sería el del INSERT y FALLA.
+    expect(updated.updatedAt.getTime()).toBe(future.getTime());
+    // (b) el invariante de CA-2.
+    expect(updated.updatedAt.getTime()).toBeGreaterThanOrEqual(
+      updated.createdAt.getTime()
+    );
+    // (c) createdAt NO es mockeable (D-5, no-goal declarado).
+    expect(updated.createdAt.getTime()).toBeLessThan(future.getTime());
+
+    await deleteProduct(created.id);
+  });
+
   it('pivote ausente (undefined) no se toca', async () => {
     const created = await createProduct({
       name: `${SENTINEL_PREFIX}pivote-ausente`,
@@ -514,29 +586,14 @@ describe('updateProduct — CA-2, pivotes en los 3 estados, slug invariante', ()
     await deleteProduct(created.id);
   });
 
-  it('name cambia, slug invariante, updatedAt monótono entre dos PUT sucesivos (nunca create-vs-update — relojes distintos)', async () => {
-    // Comparación UPDATE-vs-UPDATE, NUNCA create-vs-update — mismo rationale
-    // corregido que `categories.integration.test.ts` (US-28, updateCategory
-    // — CA-2): `createProduct` escribe `created_at`/`updated_at` como
-    // parámetros ligados en el INSERT (columna `@default(now())` sin
-    // `@updatedAt`, resuelta CLIENT-SIDE por el driver adapter — confirmado
-    // con `log:['query']` y un script de diagnóstico ad hoc), es decir con
-    // el reloj de NODE. `updateProduct` en cambio SIEMPRE delega en el
-    // trigger `products_updated_at`, con el reloj de POSTGRES (el
-    // contenedor). Medido en este entorno con un probe de round-trip
-    // ajustado (`clock_timestamp()` bracket con `Date.now()`, RTT de 4-8ms):
-    // Node y Postgres NO comparten reloj — divergen ~150-450ms, la
-    // divergencia además DERIVA en vivo (no es un offset fijo), y no hay
-    // garantía de signo. Comparar `created.updatedAt` (reloj de Node) contra
-    // `updated.updatedAt` (reloj de Postgres) mezcla dos relojes
-    // independientes: cuando la deriva cae del lado equivocado en la
-    // ventana entre las dos llamadas, la resta puede dar NEGATIVA sin que
-    // la aplicación haya hecho nada mal — el defecto real estaba en el test,
-    // no en `updateProduct` (verificado: `just db-check` con este mismo
-    // fix, corrido en verde repetidamente; ver `apply-progress.md`). Dos
-    // `PUT` sucesivos SÍ usan el mismo reloj (el trigger, las dos veces) y
-    // son monótonos de forma fiable — precedente idéntico en
-    // `categories.integration.test.ts:277-319`.
+  it('name cambia, slug invariante, updatedAt monótono entre dos PUT sucesivos', async () => {
+    // `updateProduct` fija `updatedAt: now()` desde `clock.ts` (US-32); ya no
+    // hay trigger de base de datos. Hasta 2026-09-14, `created.updatedAt`
+    // (reloj de Node) y `updated.updatedAt` (reloj de Postgres vía trigger)
+    // divergían ~150-450ms medidos en este entorno, así que la comparación
+    // create-vs-update era inestable — ahora ambas columnas salen del mismo
+    // reloj de Node y esa restricción ya no aplica. Este `it` sigue
+    // comparando update-vs-update por monotonía.
     const created = await createProduct({
       name: `${SENTINEL_PREFIX}Original`,
       slug: `${SENTINEL_PREFIX}slug-invariante`,
@@ -556,9 +613,9 @@ describe('updateProduct — CA-2, pivotes en los 3 estados, slug invariante', ()
     });
     expect(secondUpdate.slug).toBe(`${SENTINEL_PREFIX}slug-invariante`);
     // `toBeGreaterThan` estricto (no `toBeGreaterThanOrEqual`): mismo reloj
-    // las dos veces (el trigger), así que una igualdad exacta SÍ sería
-    // sospechosa — sería el trigger sin disparar. Precedente idéntico:
-    // `categories.integration.test.ts:306-316`.
+    // las dos veces (`clock.ts`), así que una igualdad exacta SÍ sería
+    // sospechosa — sería una ruta que olvidó fijar `updatedAt: now()`.
+    // Precedente idéntico: `categories.integration.test.ts`.
     expect(secondUpdate.updatedAt.getTime()).toBeGreaterThan(
       firstUpdate.updatedAt.getTime()
     );

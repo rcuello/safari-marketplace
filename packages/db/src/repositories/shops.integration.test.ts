@@ -5,9 +5,10 @@
  */
 
 import 'dotenv/config';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import type { Prisma } from '../../generated/prisma/client/client';
 import { prisma } from '../client';
+import { _setNowProvider } from '../clock';
 import {
   InvalidReferenceError,
   RecordNotFoundError,
@@ -15,6 +16,7 @@ import {
 } from '../domain-errors';
 import {
   createShop,
+  findOrCreateShopBySlug,
   findShopBySlug,
   listShops,
   listShopsNear,
@@ -283,8 +285,10 @@ describe('409 de slug duplicado (P2002, solo por carrera) y 400 de owner_id inex
       createShop({ name, ownerId: 3, isActive: false }),
     ]);
 
-    const winner = r1.status === 'fulfilled' ? r1 : r2.status === 'fulfilled' ? r2 : null;
-    const loser = r1.status === 'rejected' ? r1 : r2.status === 'rejected' ? r2 : null;
+    const winner =
+      r1.status === 'fulfilled' ? r1 : r2.status === 'fulfilled' ? r2 : null;
+    const loser =
+      r1.status === 'rejected' ? r1 : r2.status === 'rejected' ? r2 : null;
 
     expect(winner).not.toBeNull();
     expect(loser).not.toBeNull();
@@ -370,15 +374,38 @@ describe('REPLACE completo de settings (D30-1, ratificada) y no-op de logo/cover
   });
 });
 
-describe('Monotonía de updated_at: solo update→update y setActive→setActive, nunca create-vs-update (DD30-7)', () => {
-  // Mismo rationale que `products.integration.test.ts:517-567`:
-  // `createShop` liga `created_at`/`updated_at` como parámetros del INSERT
-  // desde Node (`schema.prisma` sin `@updatedAt`), mientras que `updateShop`/
-  // `setShopActive` dejan la columna al trigger `shops_updated_at`, con el
-  // reloj de Postgres. Comparar create-vs-update mezcla dos relojes que
-  // divergen en vivo — NUNCA se hace aquí. `toBeGreaterThan` estricto: con
-  // `>=`, un trigger que no dispara produce una igualdad y el test pasaría
-  // igual.
+describe('Monotonía de updated_at: solo update→update y setActive→setActive, updatedAt explícito', () => {
+  // `updateShop`/`setShopActive` fijan `updatedAt: now()` desde `clock.ts`
+  // (US-32); ya no hay trigger de base de datos. `toBeGreaterThan` estricto:
+  // con `>=`, una ruta que olvide fijar `updatedAt` produce una igualdad y
+  // el test pasaría igual.
+  afterEach(() => {
+    _setNowProvider(() => new Date());
+  });
+
+  it('updated_at sale de clock.ts y cumple updated_at >= created_at (CA-2 de US-32)', async () => {
+    const created = await createShop({
+      name: `${SENTINEL_PREFIX}reloj`,
+      ownerId: 3,
+      isActive: false,
+    });
+
+    const future = new Date(Date.now() + 60_000);
+    _setNowProvider(() => future);
+    const updated = await updateShop(created.id, { description: 'reloj' });
+
+    // (a) ruta olvidada: sin `updatedAt` el valor sería el del INSERT y FALLA.
+    expect(updated.updatedAt.getTime()).toBe(future.getTime());
+    // (b) el invariante de CA-2.
+    expect(updated.updatedAt.getTime()).toBeGreaterThanOrEqual(
+      updated.createdAt.getTime()
+    );
+    // (c) createdAt NO es mockeable (D-5, no-goal declarado).
+    expect(updated.createdAt.getTime()).toBeLessThan(future.getTime());
+
+    await prisma.shop.delete({ where: { id: created.id } });
+  });
+
   it('updateShop → updateShop: updatedAt estrictamente creciente', async () => {
     const created = await createShop({
       name: `${SENTINEL_PREFIX}monotonia-update`,
@@ -386,8 +413,12 @@ describe('Monotonía de updated_at: solo update→update y setActive→setActive
       isActive: false,
     });
 
-    const firstUpdate = await updateShop(created.id, { description: 'primera' });
-    const secondUpdate = await updateShop(created.id, { description: 'segunda' });
+    const firstUpdate = await updateShop(created.id, {
+      description: 'primera',
+    });
+    const secondUpdate = await updateShop(created.id, {
+      description: 'segunda',
+    });
 
     expect(secondUpdate.updatedAt.getTime()).toBeGreaterThan(
       firstUpdate.updatedAt.getTime()
@@ -411,6 +442,23 @@ describe('Monotonía de updated_at: solo update→update y setActive→setActive
     );
 
     await prisma.shop.delete({ where: { id: created.id } });
+  });
+});
+
+describe('findOrCreateShopBySlug — excepción de update vacío (D-4 de US-32)', () => {
+  it('correr el scraper dos veces sobre la misma tienda no mueve updated_at', async () => {
+    const primero = await findOrCreateShopBySlug({
+      slug: `${SENTINEL_PREFIX}scraper`,
+      name: `${SENTINEL_PREFIX}scraper`,
+    });
+    const segundo = await findOrCreateShopBySlug({
+      slug: `${SENTINEL_PREFIX}scraper`,
+      name: `${SENTINEL_PREFIX}scraper`,
+    });
+
+    expect(segundo.updatedAt.getTime()).toBe(primero.updatedAt.getTime());
+
+    await prisma.shop.delete({ where: { id: primero.id } });
   });
 });
 

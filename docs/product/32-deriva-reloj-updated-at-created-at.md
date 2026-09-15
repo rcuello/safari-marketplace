@@ -6,9 +6,12 @@
 
 **Épico:** ninguno (US standalone)
 **Fecha:** 2026-09-11
-**Status:** Listo para ejecución — **es la siguiente US a ejecutar**
+**Status:** Implementada y verificada (2026-09-15) — Opción B (retirar los 5
+triggers; `updatedAt: now()` desde `packages/db/src/clock.ts` en cada
+`update`/`upsert`); ver `openspec/changes/deriva-reloj-timestamps/`.
 **Depende de:** ninguna
-**LOC est.:** ~80 (requiere `db-reset`, **autorizado 2026-09-14**)
+**LOC est.:** ~80 (requiere `db-reset`, **autorizado 2026-09-14**) — real:
+~349 adds / ~123 dels (14 archivos)
 
 > **Prerrequisito de US-34 (decidido 2026-09-14).** Esta US dejó de ser una
 > standalone suelta: su elección de fuente de reloj (CA-1) es **insumo del
@@ -113,13 +116,44 @@ Feature: Coherencia de timestamps
 
 ## Definición de Done
 
-- [ ] `psql` pegado mostrando `created_at`/`updated_at` de una fila creada y
+- [x] `psql` pegado mostrando `created_at`/`updated_at` de una fila creada y
       actualizada en cada una de las 5 tablas, con `updated_at >= created_at`.
-- [ ] Salida de `just db-reset` + `just db-up` pegada, y conteos del seed
-      verificados.
-- [ ] `just db-check`, `npx jest`, `just build-api`, `just verify` verdes.
-- [ ] Decisión de CA-1 declarada con su razonamiento en el reporte.
-- [ ] Status de esta US actualizado.
+      Evidencia (creada vía `@safari/db` dist, no vía trigger — todas `ok = t`):
+
+      ```
+       id  |         created_at         |         updated_at         | ok
+      -----+----------------------------+----------------------------+----
+       241 | 2026-09-15 13:00:10.006+00 | 2026-09-15 13:00:10.123+00 | t   (categories)
+        31 | 2026-09-15 13:00:10.176+00 | 2026-09-15 13:00:10.22+00  | t   (shops)
+      1274 | 2026-09-15 13:00:10.259+00 | 2026-09-15 13:00:10.453+00 | t   (products)
+        19 | 2026-09-15 13:00:10.505+00 | 2026-09-15 13:00:10.547+00 | t   (users)
+      ```
+
+      `profiles` (user_id=19): `created_at = updated_at`
+      (`2026-09-15 13:00:10.505+00` ambas) — **esperado**, no hay ruta de
+      `UPDATE` sobre `profiles` (sub-decisión b). Filas de evidencia borradas
+      tras la verificación (centinelas `zz-verify-*`); conteos del seed
+      re-confirmados intactos después del borrado.
+- [x] Salida de `just db-reset` + `just db-up` pegada, y conteos del seed
+      verificados: `categories` = 198, `categories WHERE parent_id IS NULL` =
+      83; `SELECT tgname FROM pg_trigger WHERE NOT tgisinternal;` → 0 filas.
+- [x] `just db-check`, `npx jest`, `just build-api`, `just verify` verdes —
+      salida real pegada en
+      `openspec/changes/deriva-reloj-timestamps/apply-progress.md`
+      (`db-check`: typecheck limpio + 209/209 tests; `jest`: 9/9 suites,
+      285/285 tests; `build-api`: `nest build` sin errores; `verify`: API
+      200/5503B, Shop 200 cards:30, Admin 200 cards:1).
+- [x] Decisión de CA-1 declarada con su razonamiento en el reporte: **Opción
+      B** (quitar los 5 triggers; `updatedAt: now()` desde `clock.ts` en cada
+      ruta de `UPDATE`/`upsert` de la capa de datos), ya cerrada en
+      `proposal.md` y ejecutada tal cual en `design.md` D-1/D-2/D-3. Ver
+      también el hallazgo D-4 (abajo): con la política de reloj en la capa de
+      datos, `findOrCreateShopBySlug` deja de mover `updated_at` en corridas
+      repetidas del scraper — y de hecho **nunca lo movió**, porque Prisma no
+      emite `UPDATE` para un `upsert` con `update: {}` cuando la fila existe
+      (confirmado con `log:['query']`: la segunda llamada solo emite
+      `SELECT`s + `COMMIT`, ningún `UPDATE shops`).
+- [x] Status de esta US actualizado (arriba).
 
 ## Notas para el agente ejecutor
 

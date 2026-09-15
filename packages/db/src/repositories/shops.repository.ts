@@ -6,6 +6,7 @@
 
 import type { Prisma } from '../../generated/prisma/client/client';
 import { prisma } from '../client';
+import { now } from '../clock';
 import { translateCatalogWriteError } from '../domain-errors';
 import { _id, _toShopRecord, type ShopRecord } from '../records';
 import { type ExistingSlugLookup, generateSlug, normalizeSlug } from '../slug';
@@ -195,7 +196,17 @@ export async function findOrCreateShopBySlug(input: {
       name: input.name,
       description: input.description ?? null,
     },
-    // El upsert exige `update`; no se pisa nada si ya existe.
+    // El upsert exige `update`; no se pisa nada si ya existe. VACÍO A
+    // PROPÓSITO (US-32): verificado con `log:['query']` (apply-progress.md,
+    // hallazgo D-4) que Prisma NO emite ningún `UPDATE` para un `update: {}`
+    // cuando la fila ya existe — solo relee la fila con `SELECT`s. La
+    // promesa ("no se pisa nada si ya existe") ya era cierta ANTES de este
+    // change, porque el trigger nunca llegaba a dispararse en esta ruta; el
+    // motivo de mantener el `update: {}` vacío ahora es no aplicar
+    // mecánicamente la regla "todo `update` fija `updatedAt`" a una llamada
+    // que de hecho no actualiza nada. NO añadir `updatedAt: now()` aquí; el
+    // resto de `update`s de este archivo sí lo llevan, y esa asimetría es la
+    // decisión, no un olvido.
     update: {},
   });
   return _toShopRecord(row);
@@ -285,10 +296,11 @@ export async function createShop(input: CreateShopInput): Promise<ShopRecord> {
  * resultado se descarta, el slug de la fila no se toca. `settings`/
  * `address` son REPLACE completo cuando vienen (D30-1/D30-4); `logo`/
  * `coverImage` con `!= null` (un `null` explícito es no-op, DD30-2).
- * `updatedAt` no se fija a mano: lo hace el trigger `shops_updated_at`
- * con el reloj de Postgres (DD30-7). Sin guarda numérica propia: la
- * precondición documentada es `id` entero seguro positivo, garantizada
- * por el llamador (mismo contrato que `updateProduct`).
+ * `updatedAt` lo fija `updatedAt: now()` desde `clock.ts` (US-32,
+ * histórico DD30-7: antes lo hacía el trigger `shops_updated_at`). Sin
+ * guarda numérica propia: la precondición documentada es `id` entero
+ * seguro positivo, garantizada por el llamador (mismo contrato que
+ * `updateProduct`).
  */
 export async function updateShop(
   id: number,
@@ -310,6 +322,7 @@ export async function updateShop(
         ...(input.coverImage != null && { coverImage: input.coverImage }),
         ...(input.address !== undefined && { address: input.address }),
         ...(input.settings !== undefined && { settings: input.settings }),
+        updatedAt: now(),
       },
       include: COUNT_PRODUCTS,
     });
@@ -332,7 +345,7 @@ export async function setShopActive(
   try {
     const row = await prisma.shop.update({
       where: { id },
-      data: { isActive },
+      data: { isActive, updatedAt: now() },
       include: COUNT_PRODUCTS,
     });
     return { ..._toShopRecord(row), productsCount: row._count.products };

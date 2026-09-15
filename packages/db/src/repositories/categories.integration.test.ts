@@ -12,7 +12,8 @@
  */
 
 import 'dotenv/config';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { _setNowProvider } from '../clock';
 import { prisma } from '../client';
 import { EmptySlugError, InvalidReferenceError, RecordNotFoundError } from '../domain-errors';
 import { _id } from '../records';
@@ -274,19 +275,40 @@ describe('createCategory — CA-1, centinela zz-categories-', () => {
   });
 });
 
-describe('updateCategory — CA-2, slug inmutable, updatedAt por trigger de base', () => {
-  it('renombrar no cambia el slug; updated_at avanza (monotonía entre dos PUT sucesivos, ambos por el reloj de la base, DD28-7)', async () => {
-    // La comparación es UPDATE-vs-UPDATE, nunca create-vs-update: `created.updatedAt`
-    // lo computa Prisma Client en Node (comportamiento estándar de `@default(now())`
-    // en prisma/schema.prisma, confirmado con `log:['query']` — el INSERT trae
-    // `created_at`/`updated_at` como parámetros ligados, no delegados al DEFAULT
-    // de la columna), mientras que `updateCategory` SÍ delega en el trigger de
-    // Postgres (DD28-7). Comparar create vs update mezcla dos relojes distintos
-    // (Node del proceso vs Postgres del contenedor) y, verificado empíricamente
-    // en este entorno (Docker Desktop/Windows), pueden divergir varios cientos
-    // de ms — un hallazgo real para `design.md`, no un flake a ignorar. Dos
-    // `PUT` sucesivos comparados entre sí SÍ usan el mismo reloj (el trigger,
-    // ambas veces) y son monótonos de forma fiable.
+describe('updateCategory — CA-2, slug inmutable, updatedAt explícito', () => {
+  afterEach(() => {
+    _setNowProvider(() => new Date());
+  });
+
+  it('updated_at sale de clock.ts y cumple updated_at >= created_at (CA-2 de US-32)', async () => {
+    const created = await createCategory({
+      name: `${SENTINEL_PREFIX}Reloj`,
+      slug: `${SENTINEL_PREFIX}reloj`,
+      typeId: TYPE_A,
+    });
+
+    const future = new Date(Date.now() + 60_000);
+    _setNowProvider(() => future);
+    const updated = await updateCategory(created.id, {
+      name: `${SENTINEL_PREFIX}Reloj Renombrada`,
+    });
+
+    // (a) ruta olvidada: sin `updatedAt` el valor sería el del INSERT y FALLA.
+    expect(updated.updatedAt.getTime()).toBe(future.getTime());
+    // (b) el invariante de CA-2.
+    expect(updated.updatedAt.getTime()).toBeGreaterThanOrEqual(
+      updated.createdAt.getTime()
+    );
+    // (c) createdAt NO es mockeable (D-5, no-goal declarado).
+    expect(updated.createdAt.getTime()).toBeLessThan(future.getTime());
+
+    await deleteCategory(created.id);
+  });
+
+  it('renombrar no cambia el slug; updated_at avanza (monotonía entre dos PUT sucesivos)', async () => {
+    // `updateCategory` fija `updatedAt: now()` desde `clock.ts` (US-32); ya
+    // no hay trigger de base de datos. Este `it` sigue comparando
+    // update-vs-update por monotonía (independiente de `_setNowProvider`).
     const created = await createCategory({
       name: `${SENTINEL_PREFIX}Original`,
       slug: `${SENTINEL_PREFIX}original`,
@@ -305,12 +327,12 @@ describe('updateCategory — CA-2, slug inmutable, updatedAt por trigger de base
     expect(secondUpdate.slug).toBe(`${SENTINEL_PREFIX}original`);
     // `toBeGreaterThan`, NUNCA `toBeGreaterThanOrEqual` (gate corrective,
     // finding 2): con `>=`, el fallo exacto que este test existe para cazar
-    // — el trigger `categories_updated_at` sin disparar, `updated_at`
-    // congelado en su valor de INSERT — produce una IGUALDAD exacta y el
-    // test PASA igual. El spec (`category-tree-api/spec.md:30-31,38`) exige
-    // «avanza»/«posterior», no «no retrocede». Delta medido entre dos `PUT`
-    // sucesivos: 17-45ms según la corrida — nunca cero — así que `>` estricto
-    // es estable.
+    // — una ruta de `update` que olvide fijar `updatedAt: now()`, dejando
+    // `updated_at` congelado en su valor de INSERT — produce una IGUALDAD
+    // exacta y el test PASA igual. El spec (`category-tree-api/spec.md:30-
+    // 31,38`) exige «avanza»/«posterior», no «no retrocede». Delta medido
+    // entre dos `PUT` sucesivos: 17-45ms según la corrida — nunca cero — así
+    // que `>` estricto es estable.
     expect(secondUpdate.updatedAt.getTime()).toBeGreaterThan(
       firstUpdate.updatedAt.getTime()
     );

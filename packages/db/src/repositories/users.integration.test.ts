@@ -15,8 +15,9 @@
  */
 
 import 'dotenv/config';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { prisma } from '../client';
+import { _setNowProvider } from '../clock';
 import {
   createUser,
   DuplicateEmailError,
@@ -139,7 +140,9 @@ describe('listUsersWithRelations', () => {
   });
 
   it('el usuario 1 trae perfil, sus 2 permisos y las 12 tiendas de las que es dueño', async () => {
-    const { items } = await listUsersWithRelations({ text: 'store_owner@demo.com' });
+    const { items } = await listUsersWithRelations({
+      text: 'store_owner@demo.com',
+    });
     const owner = items.find((u) => u.email === 'store_owner@demo.com');
     expect(owner).toBeDefined();
     expect(owner?.profile).not.toBeNull();
@@ -148,13 +151,47 @@ describe('listUsersWithRelations', () => {
   });
 
   it('un permiso sin titulares (staff) devuelve total 0, no un error', async () => {
-    const { items, total } = await listUsersWithRelations({ permissionName: 'staff' });
+    const { items, total } = await listUsersWithRelations({
+      permissionName: 'staff',
+    });
     expect(total).toBe(0);
     expect(items).toEqual([]);
   });
 });
 
 describe('escrituras de identidad (CA-4) — dominio centinela, nunca los sembrados', () => {
+  afterEach(() => {
+    _setNowProvider(() => new Date());
+  });
+
+  it('setUserActive: updated_at sale de clock.ts y cumple updated_at >= created_at (CA-2 de US-32)', async () => {
+    const email = `Reloj-User${TEST_DOMAIN}`;
+    const user = await createUser({
+      name: 'Reloj',
+      email,
+      passwordHash: 'hash-reloj',
+      isActive: true,
+    });
+
+    const future = new Date(Date.now() + 60_000);
+    _setNowProvider(() => future);
+    const updated = await setUserActive(user.id, false);
+
+    // `setUserActive` devuelve `UserRecord | null` (`strict: true`): hay que
+    // estrechar el tipo antes de leer `.updatedAt`.
+    expect(updated).not.toBeNull();
+    if (!updated) throw new Error('setUserActive devolvió null');
+
+    // (a) ruta olvidada: sin `updatedAt` el valor sería el del INSERT y FALLA.
+    expect(updated.updatedAt.getTime()).toBe(future.getTime());
+    // (b) el invariante de CA-2.
+    expect(updated.updatedAt.getTime()).toBeGreaterThanOrEqual(
+      updated.createdAt.getTime()
+    );
+    // (c) createdAt NO es mockeable (D-5, no-goal declarado).
+    expect(updated.createdAt.getTime()).toBeLessThan(future.getTime());
+  });
+
   it('createUser crea usuario + perfil + permiso inicial', async () => {
     const email = `Create-User${TEST_DOMAIN}`;
     const user = await createUser({
@@ -243,7 +280,9 @@ describe('grantPermission — idempotente, dominio centinela con store_owner (nu
     expect(result?.permissions.map((p) => p.name)).toContain('store_owner');
 
     const withRelations = await findUserWithRelations(user.id);
-    expect(withRelations?.permissions.map((p) => p.name)).toContain('store_owner');
+    expect(withRelations?.permissions.map((p) => p.name)).toContain(
+      'store_owner'
+    );
   });
 
   it('conceder un permiso ya poseído es idempotente: sin error, sin fila duplicada en permission_user', async () => {
@@ -255,7 +294,9 @@ describe('grantPermission — idempotente, dominio centinela con store_owner (nu
     });
 
     await grantPermission(user.id, 'store_owner');
-    await expect(grantPermission(user.id, 'store_owner')).resolves.not.toThrow();
+    await expect(
+      grantPermission(user.id, 'store_owner')
+    ).resolves.not.toThrow();
 
     const pivotRows = await prisma.permissionUser.findMany({
       where: { userId: BigInt(user.id) },
@@ -276,9 +317,9 @@ describe('grantPermission — idempotente, dominio centinela con store_owner (nu
       passwordHash: 'hash-de-prueba',
     });
 
-    await expect(grantPermission(user.id, 'permiso-que-no-existe')).rejects.toThrow(
-      /no existe en el catálogo/
-    );
+    await expect(
+      grantPermission(user.id, 'permiso-que-no-existe')
+    ).rejects.toThrow(/no existe en el catálogo/);
 
     const pivotRows = await prisma.permissionUser.findMany({
       where: { userId: BigInt(user.id) },
