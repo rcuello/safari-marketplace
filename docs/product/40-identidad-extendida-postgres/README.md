@@ -24,14 +24,19 @@ sus tres dominios cuelgan de `users` y `shops`, ya migradas en el Épico 19.
 
 | US | Título | Releasable solo | Depende de | LOC est. |
 |----|--------|-----------------|------------|----------|
-| US-41 | Esquema y capa de datos de identidad extendida | No (habilitadora) | ninguna | ~1200 |
-| US-42 | `staffs` desde Postgres (`/staffs`, `/my-staffs`, `/all-staffs`) | Sí | US-41 | ~1400 |
-| US-43 | `ownership-transfer` desde Postgres | Sí | US-41 | ~1300 |
-| US-44 | `become-seller` desde Postgres | Sí | US-41 | ~700 |
+| [US-41](./41-esquema-identidad-extendida.md) | Esquema y capa de datos de identidad extendida | No (habilitadora) | ninguna | ~700 |
+| [US-42](./42-staffs-postgres.md) | `staffs` desde Postgres (`/staffs`, `/my-staffs`, `/all-staffs`) | Sí | US-41 | ~1200 |
+| [US-43](./43-ownership-transfer-postgres.md) | `ownership-transfer` desde Postgres — **BLOQUEADA** | Sí | US-41 + decisión del dueño | ~1300 |
+| [US-44](./44-become-seller-postgres.md) | `become-seller` desde Postgres | Sí | US-41 | ~500 |
 
-**Total estimado: ~4600 LOC.** US-42, US-43 y US-44 no dependen entre sí:
-tras US-41 admiten agentes en paralelo, con la salvedad del barrel
-(`packages/db/index.ts`), que comparten — quien arranque segundo rebasea.
+**Total ejecutable hoy: ~2400 LOC** (US-41 + US-42 + US-44). Con US-43
+desbloqueada, ~3700. US-42 y US-44 no dependen entre sí: tras US-41 admiten
+agentes en paralelo, con la salvedad del barrel (`packages/db/index.ts`), que
+comparten — quien arranque segundo rebasea.
+
+**Orden recomendado:** US-41 → **US-44** → US-42. US-44 son 2 rutas sin
+relaciones ni guards: valida que el DDL de US-41 sirve de verdad antes de
+meterse con `staffs`, que toca dos servicios vivos.
 
 Las cifras parten de los reales del Épico 26 y del 33, no de una intuición
 optimista. Aun así son **suelo, no techo**: el Épico 26 desbordó su estimación
@@ -42,6 +47,8 @@ original entre ×2.0 y ×4.6, y US-32 (cerrada ayer) desbordó ×5 la suya.
 | # | Tema | Decisión |
 |---|------|----------|
 | 1 | Alcance de `balance`/`withdraws` | **FUERA de este épico.** El inventario los listaba en la Fase 2, pero `withdraws` cuelga de `balance` y *wallets* está nombrado en la exclusión de `db/schema.sql:13`. Migrarlos exigiría levantarla, que es justo lo que la decisión del 2026-09-14 congeló. Se sacan para que este épico no dependa de una decisión pendiente. Ver R-1. |
+| 1b | `ownership-transfer` arrastra `balance` | **US-43 queda BLOQUEADA** (hallazgo al redactarla, 2026-09-15). Su contrato incluye `balance_info`, y en el mock **no es `null`**: es una fila entera de la tabla wallet (`shop_id`, `admin_commission_rate`, `total_earnings`, `withdrawn_amount`, `current_balance`, `payment_info`). Con el contrato preservado byte a byte no se puede migrar sin esa tabla. La decisión 1 no bastaba: la dependencia de wallet no estaba solo en `withdraws`. Tres salidas con su coste en [US-43](./43-ownership-transfer-postgres.md); la recomendación es aplazarla a la Fase 3. |
+| 1c | Sitio de `become-seller` | **Tabla singleton propia, NO fila en `settings`.** El inventario lo listaba como «candidato a fila en `settings`», pero la respuesta de `/api/settings` está congelada byte a byte (5503 B) y `page_options` la haría crecer. Se copia el patrón de `settings` (`id smallint PRIMARY KEY DEFAULT 1` + CHECK de fila única), no su fila. |
 | 2 | DDL del épico | **Todo en US-41, un solo `just db-reset`.** Precedente de los Épicos 19, 26 y 33: este repo no tiene migraciones incrementales, así que el esquema completo se diseña antes de la primera línea de servicio. |
 | 3 | `just db-reset` | **Requiere autorización nueva del dueño.** La del 2026-09-14 cubría explícitamente **solo US-32 y US-34** (decisión 6 del Épico 33); no es heredable, igual que la decisión 1 del Épico 26 declaró no heredable la del 2026-08-31. **US-41 no arranca sin ella.** |
 | 4 | Repositorios y tests | Van **con su US consumidora** (US-42..44), no en la habilitadora. Patrón de los Épicos 26 y 33 (P-2 de US-34): baja US-41 a ~1200 LOC y evita el cuello de botella. |
@@ -87,15 +94,20 @@ servicios de Nest.
 
 ### Riesgos (R-N)
 
-**R-1 — `withdraws` queda huérfano.** Sus 5 rutas
-(`apps/api/rest/src/withdraws/`) siguen sirviendo JSON después de este épico,
-y el dashboard del admin las consume (`data/withdraw.ts` →
-`pages/withdraws/*`, `dashboard/admin.tsx`). No es una regresión —hoy ya es
-mock— pero el épico **no** deja «identidad extendida» completa. Cerrarlo
-exige la decisión sobre la exclusión de wallets, que hoy está congelada.
-La `Balance` del shop es un objeto anidado de la entidad
-(`apps/api/rest/src/shops/entities/shop.entity.ts:14,27,33`) sin columna en
-la tabla `shops`: verificado.
+**R-1 — `balance` bloquea más de lo previsto: dos de los cuatro dominios.**
+No solo `withdraws` (5 rutas, consumidas por `data/withdraw.ts` →
+`pages/withdraws/*` y `dashboard/admin.tsx`), sino también
+`ownership-transfer` (5 rutas), cuyo contrato embebe una fila de balance
+completa — ver decisión 1b y [US-43](./43-ownership-transfer-postgres.md).
+Verificado: la tabla `shops` **no** tiene columna `balance`; es un objeto
+anidado de la entidad
+(`apps/api/rest/src/shops/entities/shop.entity.ts:14,27,33`).
+
+Consecuencia honesta: este épico **no deja «identidad extendida» completa**.
+Entrega `staffs` y `become-seller` (10 rutas de 20); las otras 10 siguen mock
+hasta que se decida sobre wallets. Si el dueño prefiere el dominio cerrado a
+la entrega parcial, la alternativa es levantar la exclusión solo para el
+balance de tienda —opción A de US-43— y meter esa tabla en US-41.
 
 **R-2 — US-41 es cuello de botella.** Bloquea las tres siguientes. Se la
 mantiene en lo mínimo que exige `db-reset` y en lo que las tres comparten:
