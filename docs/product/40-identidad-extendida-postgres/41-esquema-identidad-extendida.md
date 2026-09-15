@@ -7,7 +7,8 @@
 
 **Épico:** [Épico 40](./README.md)
 **Fecha:** 2026-09-15
-**Status:** Bloqueada — requiere autorización nueva de `just db-reset` (ver Notas)
+**Status:** Listo para ejecución — **`just db-reset` autorizado por el dueño
+el 2026-09-15** (ver Notas)
 **Depende de:** ninguna
 **LOC est.:** ~700
 
@@ -129,10 +130,13 @@ Feature: Esquema de identidad extendida
 
 ## Notas para el agente ejecutor
 
-- **NO ARRANCAR sin autorización nueva de `just db-reset`.** La del
-  2026-09-14 cubría por nombre solo US-32 y US-34 (decisión 6 del Épico 33) y
-  este repo tiene precedente explícito de que no se hereda (decisión 1 del
-  Épico 26).
+- **`just db-reset` AUTORIZADO por el dueño el 2026-09-15**, renovando la del
+  2026-09-14 que cubría por nombre solo US-32 y US-34 (decisión 6 del Épico
+  33) y que este repo declara no heredable (decisión 1 del Épico 26). La
+  autorización cubre **esta US**, que es la única del Épico 40 que toca DDL.
+  Un DDL, un reset, por US.
+- El reset va **después** de escribir el DDL de las dos tablas, no antes:
+  correrlo con el `schema.sql` sin tocar reconstruye lo mismo que ya hay.
 - **Esta US toca DDL.** El camino es `db/schema.sql` → `just db-reset` →
   `prisma db pull` + renombres. No escribir migraciones incrementales ni
   editar `schema.prisma` a mano para cambiar el modelo.
