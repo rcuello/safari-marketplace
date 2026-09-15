@@ -18,6 +18,7 @@
  */
 
 import type {
+  BecomeSeller,
   Category,
   Manufacturer,
   Permission,
@@ -25,6 +26,7 @@ import type {
   Profile,
   Setting,
   Shop,
+  ShopStaff,
   Tag,
   Type,
   User,
@@ -171,6 +173,26 @@ export interface PermissionRecord {
   updatedAt: Date;
 }
 
+/** Pivote puro: la tabla no tiene `updated_at` (US-41 CA-1). */
+export interface ShopStaffRecord {
+  userId: number;
+  shopId: number;
+  createdAt: Date;
+}
+
+/**
+ * Singleton de "vender con nosotros". `pageOptions` es el objeto INTERNO del
+ * mock (24 claves) y `commissions` la lista de tiers: hermanas (US-41 CA-2).
+ */
+export interface BecomeSellerRecord {
+  id: number;
+  pageOptions: Prisma.JsonValue;
+  commissions: Prisma.JsonValue;
+  language: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 // ---------------------------------------------------------------------------
 // Mappers (internos del paquete)
 // ---------------------------------------------------------------------------
@@ -297,6 +319,25 @@ export function _toPermissionRecord(row: Permission): PermissionRecord {
     id: _id(row.id),
     name: row.name,
     guardName: row.guardName,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+export function _toShopStaffRecord(row: ShopStaff): ShopStaffRecord {
+  return {
+    userId: _id(row.userId),
+    shopId: _id(row.shopId),
+    createdAt: row.createdAt,
+  };
+}
+
+export function _toBecomeSellerRecord(row: BecomeSeller): BecomeSellerRecord {
+  return {
+    id: row.id, // smallint -> Int: sin _id(), como _toSettingRecord (:180)
+    pageOptions: row.pageOptions,
+    commissions: row.commissions,
+    language: row.language,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };

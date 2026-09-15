@@ -12,6 +12,7 @@
 import 'dotenv/config';
 import { afterAll, describe, expect, it } from 'vitest';
 import { prisma } from '../client';
+import { _toBecomeSellerRecord } from '../records';
 
 afterAll(async () => {
   await prisma.$disconnect();
@@ -67,5 +68,20 @@ describe('sin trigger BEFORE UPDATE (CA-3)', () => {
       WHERE NOT tgisinternal AND tgrelid = 'become_seller'::regclass
     `;
     expect(Number(triggers[0].count)).toBe(0);
+  });
+});
+
+describe('_toBecomeSellerRecord (mapper, extended-identity-data-layer)', () => {
+  it('pageOptions y commissions cruzan como valores sueltos, ninguno anidado en el otro', async () => {
+    const row = await prisma.becomeSeller.findUniqueOrThrow({ where: { id: 1 } });
+    const record = _toBecomeSellerRecord(row);
+
+    expect(record.id).toBe(1);
+    const pageOptions = record.pageOptions as Record<string, unknown>;
+    const commissions = record.commissions as unknown[];
+    expect(Object.keys(pageOptions)).toHaveLength(24);
+    expect(commissions).toHaveLength(2);
+    expect(pageOptions).not.toHaveProperty('commissions');
+    expect(() => JSON.stringify(record)).not.toThrow();
   });
 });

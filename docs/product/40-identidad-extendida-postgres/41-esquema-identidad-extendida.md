@@ -7,8 +7,8 @@
 
 **Épico:** [Épico 40](./README.md)
 **Fecha:** 2026-09-15
-**Status:** Listo para ejecución — **`just db-reset` autorizado por el dueño
-el 2026-09-15** (ver Notas)
+**Status:** Hecho — ejecutada en dos cortes (`5af81ad` + capa de datos/tests),
+Definición de Done cerrada con evidencia real abajo
 **Depende de:** ninguna
 **LOC est.:** ~700
 
@@ -58,12 +58,22 @@ de `balance`/`withdraws`/`ownership_transfers`; levantar la exclusión de
 
 ## Criterios de aceptación
 
-### CA-1 — Pivote staff↔tienda con rol
+### CA-1 — Pivote staff↔tienda, **sin columna de rol**
 Existe una tabla que relaciona `users` y `shops` en N:M, con PK compuesta y
 FKs `ON DELETE CASCADE`, siguiendo el patrón de `permission_user`
 (`db/schema.sql:173-178`). Un usuario MUST poder ser staff de varias tiendas y
 una tienda MUST poder tener varios staff. La tabla NO sustituye a
 `permission_user`: aquel es global al usuario, éste es por tienda.
+
+> **Titulaba «con rol» hasta el 2026-09-15; se implementó sin rol.** No es un
+> recorte silencioso: ningún consumidor pide rol hoy, y se verificó uno a uno
+> —`GetStaffsDto` devuelve `UserPaginator` (usuarios, no filas del pivote);
+> el `AddStaffInput` del admin es `{email, password, name, shop_id}`;
+> `StaffList` pinta solo name/email/is_active; y `users` no tiene columna
+> `shop_id` pese a que el mock la trae—. Una columna sin consumidor es una
+> abstracción no ganada. Añadir el rol más adelante es un requisito nuevo, no
+> un arreglo, y cuesta otro `db-reset`. Razonado en `proposal.md` y fijado en
+> `specs/extended-identity-schema/spec.md`.
 
 ### CA-2 — Singleton de `become-seller`
 Existe una tabla singleton con el mismo patrón de `settings` (PK `DEFAULT 1`
@@ -125,17 +135,111 @@ Feature: Esquema de identidad extendida
 
 ## Definición de Done
 
-- [ ] Autorización de `just db-reset` concedida por el dueño y citada aquí.
-- [ ] Salida de `just db-reset` pegada, con los conteos del seed verificados.
-- [ ] `psql` mostrando las cascadas de CA-1 y el rechazo de la segunda fila
+- [x] Autorización de `just db-reset` concedida por el dueño y citada aquí.
+      Concedida el 2026-09-15, registrada en la decisión 3 del Épico 40 y en
+      `openspec/changes/esquema-identidad-extendida/design.md` (sección
+      "Migration / Rollout").
+- [x] Salida de `just db-reset` pegada, con los conteos del seed verificados.
+
+  ```
+  $ just db-reset
+  docker compose down -v
+  ...
+  just db-up
+  ... Container safari-postgres  Started
+  esperando a Postgres. listo
+  ... psql schema.sql (ON_ERROR_STOP=1) ...
+  ... psql seed.sql (ON_ERROR_STOP=1) ...
+    * esquema y datos de referencia aplicados
+  ```
+
+  ```sql
+         tabla       | count
+  -------------------+-------
+   categories        |   198
+   categories_raices |    83
+   shops             |    12
+   users             |     3
+   products          |  1200
+   shop_staff        |     3
+   become_seller     |     1
+  ```
+
+  Pares de `shop_staff`: `(2,1)`, `(2,2)`, `(3,1)`, ninguno con `user_id=1`.
+  `become_seller`: `id=1`, `jsonb_array_length(commissions)=2`.
+  `SELECT count(*) FROM pg_trigger WHERE NOT tgisinternal` → `0`.
+
+- [x] `psql` mostrando las cascadas de CA-1 y el rechazo de la segunda fila
       de CA-2.
-- [ ] `git diff packages/db/prisma/schema.prisma` clasificado: cosmético
+
+  ```sql
+  -- Cascada de tienda (fixture desechable, ROLLBACK al final)
+          momento         | pivote
+  ------------------------+--------
+   antes de borrar tienda |      1
+           momento          | pivote
+  --------------------------+--------
+   despues de borrar tienda |      0
+        chequeo       | existe
+  --------------------+--------
+   usuario sigue vivo |      1
+
+  -- Cascada de usuario (fixture desechable, ROLLBACK al final)
+           momento         | pivote
+  -------------------------+--------
+   antes de borrar usuario |      1
+            momento          | pivote
+  ---------------------------+--------
+   despues de borrar usuario |      0
+        chequeo      | existe
+  -------------------+--------
+   tienda sigue viva |      1
+
+  -- Rechazo de la CHECK de fila única
+  INSERT INTO become_seller (id, page_options, commissions)
+  VALUES (2, '{}'::jsonb, '[]'::jsonb);
+  ERROR:  new row for relation "become_seller" violates check constraint
+  "become_seller_fila_unica"
+  ```
+
+- [x] `git diff packages/db/prisma/schema.prisma` clasificado: cosmético
       (renombres re-aplicados) vs semántico. Un diff semántico inesperado
       para y se reporta.
-- [ ] `just db-check` verde con el recuento, sin bajar de 210.
-- [ ] `cd apps/api/rest && npx jest` verde (no debería tocarlo: mockea
+      Clasificado en `openspec/changes/esquema-identidad-extendida/apply-progress.md`
+      (sección "Phase 4 — re-introspection classification"): únicamente
+      cosmético (realineado de columnas, cabecera/banner perdidos y
+      reaplicados, `onDelete: Restrict` de `Shop.owner` omitido por ser el
+      default de Prisma — verificado que Postgres sigue en `RESTRICT` vía
+      `pg_constraint.confdeltype`, `map` de `otp_codes_phone_idx` omitido por
+      coincidir con el nombre por defecto) + los 2 modelos nuevos y 2
+      back-relations esperados. Ningún diff semántico inesperado. Diff final
+      reaplicado: 32 líneas.
+- [x] `just db-check` verde con el recuento, sin bajar de 210.
+
+  ```
+  $ just db-check
+  npm run typecheck
+  > tsc --noEmit
+  (sin errores)
+
+  npm test
+  > vitest run
+   Test Files  12 passed (12)
+        Tests  225 passed (225)
+  ```
+
+- [x] `cd apps/api/rest && npx jest` verde (no debería tocarlo: mockea
       `@safari/db`).
-- [ ] Status de esta US actualizado y su fila marcada en el épico.
+
+  ```
+  Test Suites: 9 passed, 9 total
+  Tests:       285 passed, 285 total
+  ```
+
+  Sin cambio respecto a la línea base (285): confirma que mockear
+  `@safari/db` aísla la capa de datos como se esperaba.
+
+- [x] Status de esta US actualizado y su fila marcada en el épico.
 
 ## Notas para el agente ejecutor
 

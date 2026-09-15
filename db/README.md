@@ -82,6 +82,29 @@ Ninguna de las 6 tablas tiene consumidor en código de aplicación todavía:
 el login sigue siendo mock (US-22) y recuperación/OTP no tienen endpoint
 real (US-24).
 
+## Identidad extendida: staff por tienda y "vender con nosotros"
+
+Desde US-41, dos tablas más, ninguna con trigger de `updated_at` (misma
+política que el resto del archivo desde US-32):
+
+- **`shop_staff`** — pivote puro `user_id`/`shop_id`, calco de
+  `permission_user`. PK compuesta, ambas FK `ON DELETE CASCADE`. **Sin
+  columna de rol, a propósito**: ningún consumidor real la pide hoy
+  (`StaffsController.getStaffs` devuelve `UserPaginator`, no filas de
+  pivote; `AddStaffInput` del admin es `{email, password, name, shop_id}`
+  sin rol). Solo `created_at`: un pivote se crea o se borra, nunca se
+  actualiza. Sembrado con 3 filas deterministas — `(2,1)`, `(2,2)`, `(3,1)`
+  — inventadas (no hay mock de staff), excluyendo siempre al usuario 1
+  (dueño de las 12 tiendas).
+- **`become_seller`** — singleton calco de `settings`: `id smallint
+  DEFAULT 1` + `CHECK become_seller_fila_unica`. Dos columnas `jsonb`
+  hermanas, no una: `page_options` (el objeto INTERNO de
+  `become-seller.json`, 24 claves — NO el envoltorio con forma de
+  `settings` que trae el mock, cuyos `id`/`language`/`created_at`/
+  `updated_at` son estas mismas columnas) y `commissions` (el array
+  completo de 2 tiers). Fundirlas en una sola columna perdería
+  `commissions` en silencio.
+
 ## Cómo se adapta el scraper
 
 **El seed contiene solo datos de la aplicación.** El scraper no aporta filas

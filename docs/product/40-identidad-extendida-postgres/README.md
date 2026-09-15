@@ -22,12 +22,12 @@ sus tres dominios cuelgan de `users` y `shops`, ya migradas en el Épico 19.
 
 ## Subdivisión en sub-historias
 
-| US | Título | Releasable solo | Depende de | LOC est. |
-|----|--------|-----------------|------------|----------|
-| [US-41](./41-esquema-identidad-extendida.md) | Esquema y capa de datos de identidad extendida | No (habilitadora) | ninguna | ~700 |
-| [US-42](./42-staffs-postgres.md) | `staffs` desde Postgres (`/staffs`, `/my-staffs`, `/all-staffs`) | Sí | US-41 | ~1200 |
-| [US-43](./43-ownership-transfer-postgres.md) | `ownership-transfer` desde Postgres — **BLOQUEADA** | Sí | US-41 + decisión del dueño | ~1300 |
-| [US-44](./44-become-seller-postgres.md) | `become-seller` desde Postgres | Sí | US-41 | ~500 |
+| US | Título | Releasable solo | Depende de | LOC est. | Status |
+|----|--------|-----------------|------------|----------|--------|
+| [US-41](./41-esquema-identidad-extendida.md) | Esquema y capa de datos de identidad extendida | No (habilitadora) | ninguna | ~700 | ✅ Implementada |
+| [US-42](./42-staffs-postgres.md) | `staffs` desde Postgres (`/staffs`, `/my-staffs`, `/all-staffs`) | Sí | US-41 | ~1200 | |
+| [US-43](./43-ownership-transfer-postgres.md) | `ownership-transfer` desde Postgres — **BLOQUEADA** | Sí | US-41 + decisión del dueño | ~1300 | |
+| [US-44](./44-become-seller-postgres.md) | `become-seller` desde Postgres | Sí | US-41 | ~500 | |
 
 **Total ejecutable hoy: ~2400 LOC** (US-41 + US-42 + US-44). Con US-43
 desbloqueada, ~3700. US-42 y US-44 no dependen entre sí: tras US-41 admiten
@@ -69,11 +69,18 @@ Postgres**. Consecuencia: US-42 no migra un módulo entero, sino que rellena
 huecos declarados en dos servicios vivos — más barato que un módulo nuevo,
 pero con más riesgo de regresión sobre `users`/`shops`.
 
-**D-2 — La relación staff↔tienda es N:M con rol.** Un usuario puede ser staff
-de varias tiendas y una tienda tiene varios staff. Pivote con PK compuesta y
-FKs `ON DELETE CASCADE`, patrón de `permission_user`
+**D-2 — La relación staff↔tienda es N:M, y el pivote va SIN columna de rol.**
+Un usuario puede ser staff de varias tiendas y una tienda tiene varios staff.
+Pivote con PK compuesta y FKs `ON DELETE CASCADE`, patrón de `permission_user`
 (`db/schema.sql:173-178`). El `users.permissions` existente **no** lo
 sustituye: es global al usuario, no por tienda.
+
+Esta D-2 decía «con rol» hasta el 2026-09-15. Al ejecutar US-41 se verificó
+que **ningún consumidor lo pide** (`GetStaffsDto` devuelve `UserPaginator`; el
+`AddStaffInput` del admin es `{email, password, name, shop_id}`; `StaffList`
+pinta solo name/email/is_active; `users` no tiene `shop_id`), así que el
+pivote se implementó bare. Añadir el rol es un requisito nuevo y cuesta otro
+`db-reset`; no se hereda como supuesto.
 
 **D-3 — `transfer-shop-ownership` es una ruta que el frontend llama y la API
 no tiene.** Verificado: el admin declara

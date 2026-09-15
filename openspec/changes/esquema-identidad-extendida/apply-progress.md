@@ -3,14 +3,35 @@
 ## Delivery decision
 
 `ask-on-risk` → owner resolved: **split into two commits directly on `main`**
-(no PRs in this repo's history). **This batch is Slice 1 only**: Phase 1
-(DDL), Phase 2 (seed generator), Phase 3 (rebuild + counts), Phase 4
-(re-introspección), Phase 6 (citation maintenance), Phase 7 tests 1-11 (schema
-tests). Slice 2 (`records.ts` + mappers + barrel, Phase 7 tests 12-13, Phase
-8 full verification) is explicitly NOT started — left `[ ]` in `tasks.md`.
+(no PRs in this repo's history). Slice 1 (Phase 1 DDL, Phase 2 seed generator,
+Phase 3 rebuild + counts, Phase 4 re-introspección, Phase 6 citation
+maintenance, Phase 7 tests 1-11) was applied, fresh-context audited, and
+committed as `5af81ad`. **Slice 2** — `records.ts` + mappers + barrel
+(Phase 5), Phase 7 tests 12-13 (mappers), and Phase 8 (full verification) —
+is documented below.
 
-No commit/branch/push was made; everything is in the working tree per the
-orchestrator's instruction (git handled between slices by the orchestrator).
+No commit/branch/push was made in this batch either; the coordinator handles
+git. Three coordinator-made adjustments landed on top of slice 1 before this
+batch started (see "Coordinator adjustments on top of slice 1" below) — they
+were read and respected, not redone.
+
+## Coordinator adjustments on top of slice 1 (read before slice 2, not redone)
+
+1. Three stale `db/schema.sql:N` citations fixed in
+   `specs/extended-identity-schema/spec.md:15` (`:472`→`:530`) and in two
+   `docs/product/` files (`:477-487`→`:540-550`).
+2. `become_seller_fila_unica` added to the "what Prisma does NOT model"
+   header list in `packages/db/prisma/schema.prisma:10-16`, alongside its
+   twin `settings_fila_unica`.
+3. A closing tripwire `describe` added at the end of
+   `shop-staff.integration.test.ts`, asserting that the 3 SEEDED pairs
+   survived (not a total count, since this file's cleanup is `afterAll` and
+   sentinel-derived rows are still live at that point — measured 6, not 3,
+   for a total count). The mapper test (7.8) was added **before** this
+   tripwire, per the coordinator's stated convention.
+
+New baseline after these adjustments: 12 files / 223 tests (was 12/222 at
+slice-1 handoff).
 
 ## Completed tasks (Slice 1)
 
@@ -35,15 +56,21 @@ orchestrator's instruction (git handled between slices by the orchestrator).
   integration test files created, 12 new tests (7 in `shop-staff`, 5 in
   `become-seller`), all passing under `just db-check`.
 
-## Deliberately NOT started (Slice 2 — left `[ ]` in tasks.md)
+## Completed tasks (Slice 2)
 
-- Phase 5 (`packages/db/src/records.ts` interfaces/mappers, `index.ts`
-  barrel).
-- Phase 7 task 7.8 (test 12, mapper `_toShopStaffRecord`) and 7.15 (test 13,
-  mapper `_toBecomeSellerRecord`) — both depend on Phase 5.
-- Phase 8 (full verification: `just db-check` final count, `npx jest`,
-  `just build-api`, `just verify`, `db/README.md` subsection, DoD evidence
-  paste).
+- [x] Phase 5: 5.1-5.7 — `ShopStaffRecord`/`BecomeSellerRecord` interfaces
+  and `_toShopStaffRecord`/`_toBecomeSellerRecord` mappers added to
+  `records.ts` at the design's anchors; barrel exports added to
+  `packages/db/index.ts`; `just db-build` green.
+- [x] Phase 7: 7.8, 7.15 — tests 12 and 13 (mappers) added; 7.8 placed
+  before the coordinator's new tripwire `describe` in
+  `shop-staff.integration.test.ts`, per its stated convention.
+- [x] Phase 8: 8.1-8.7 — full verification (`just db-check`, `npx jest`,
+  `just build-api`, `just verify` with all 3 dev servers actually brought
+  up, `psql` cascade/CHECK/count evidence, `db/README.md` subsection, DoD
+  evidence pasted into the US-41 doc).
+
+All 53/53 tasks in `tasks.md` are now `[x]`.
 
 ## Evidence
 
@@ -296,6 +323,150 @@ Test 12/13 (mappers) were NOT written — they import `_toShopStaffRecord`/
 `_toBecomeSellerRecord` from `../records`, which Phase 5 (slice 2) has not
 created yet.
 
+## Evidence (Slice 2)
+
+### Phase 5 — records.ts + barrel
+
+Added to `packages/db/src/records.ts`: `BecomeSeller`/`ShopStaff` type
+imports (alphabetical: `BecomeSeller` before `Category`, `ShopStaff` between
+`Shop` and `Tag`), `ShopStaffRecord`/`BecomeSellerRecord` interfaces after
+`PermissionRecord`, and `_toShopStaffRecord`/`_toBecomeSellerRecord` mappers
+after `_toPermissionRecord`. `BecomeSellerRecord.id` copied directly (no
+`_id()` — smallint → Int, same as `_toSettingRecord`). Added to
+`packages/db/index.ts`: `BecomeSellerRecord` before `CategoryRecord`,
+`ShopStaffRecord` between `ShopRecord` and `TagRecord`, no new `export {`.
+
+```
+$ just db-build
+✔ Generated Prisma Client (7.10.0) to .\generated\prisma\client in 450ms
+CJS dist\index.js     173.95 KB
+DTS dist\index.d.ts   1.55 MB
+DTS ⚡️ Build success in 8487ms
+```
+
+### Phase 7 — mapper tests (12, 13)
+
+Test 12 added to `shop-staff.integration.test.ts` as
+`describe('_toShopStaffRecord (mapper, extended-identity-data-layer)', ...)`,
+placed immediately before the coordinator's closing tripwire `describe`
+(per its stated convention). Test 13 added to
+`become-seller.integration.test.ts` as a new trailing `describe` (that file
+has no tripwire).
+
+```
+$ just db-check
+npm run typecheck
+> tsc --noEmit
+(no errors)
+
+npm test
+> vitest run
+ Test Files  12 passed (12)
+      Tests  225 passed (225)
+   Start at  13:16:31
+   Duration  28.46s
+```
+
+225 = the coordinator's post-adjustment baseline of 223 + the 2 new mapper
+tests, exactly as predicted.
+
+### Phase 8 — full verification
+
+**`just db-check`** (repeated from above): 12 files / 225 tests, typecheck
+clean.
+
+**`cd apps/api/rest && npx jest`**:
+
+```
+Test Suites: 9 passed, 9 total
+Tests:       285 passed, 285 total
+Snapshots:   0 total
+Time:        65.897 s
+```
+
+No change from baseline (285), confirming `@safari/db` is fully mocked in
+this layer as expected.
+
+**`just build-api`**:
+
+```
+yarn build
+$ rimraf dist
+$ nest build
+Done in 49.38s.
+```
+
+**`just verify`** — all three dev servers brought up manually for this
+verification (`just api-dev`, `just shop-dev`, `just admin-dev` in the
+background), confirmed responsive before running the command, then stopped
+afterward:
+
+```
+OK   API    :9001/api/settings  200  5503B  30ms
+OK   Shop   :3003/en  200  190788B  959ms  cards:30
+OK   Admin  :3002/en/login  200  72821B  2185ms  cards:1
+```
+
+**`psql` evidence** — cascades and CHECK, using disposable fixtures inside a
+transaction with `ROLLBACK` at the end (no residue left; `just db-reset` was
+NOT re-run per the coordinator's explicit instruction not to risk the
+already-verified state):
+
+```sql
+-- Cascada de tienda
+        momento         | pivote
+------------------------+--------
+ antes de borrar tienda |      1
+         momento          | pivote
+--------------------------+--------
+ despues de borrar tienda |      0
+      chequeo       | existe
+--------------------+--------
+ usuario sigue vivo |      1
+
+-- Cascada de usuario
+         momento         | pivote
+-------------------------+--------
+ antes de borrar usuario |      1
+          momento          | pivote
+---------------------------+--------
+ despues de borrar usuario |      0
+      chequeo      | existe
+-------------------+--------
+ tienda sigue viva |      1
+
+-- CHECK de fila única
+INSERT INTO become_seller (id, page_options, commissions)
+VALUES (2, '{}'::jsonb, '[]'::jsonb);
+ERROR:  new row for relation "become_seller" violates check constraint
+"become_seller_fila_unica"
+```
+
+**Final seed counts** (unchanged, confirming no drift from any of the above):
+
+```sql
+     tabla     | count
+---------------+-------
+ categories    |   198
+ shops         |    12
+ users         |     3
+ products      |  1200
+ shop_staff    |     3
+ become_seller |     1
+```
+
+**`db/README.md`**: added subsection "Identidad extendida: staff por tienda
+y 'vender con nosotros'" after the close of the "Identidad" section
+(line 83), documenting both tables' shape and rationale, calco of the
+existing "Identidad" subsection's style.
+
+**DoD evidence pasted** into
+`docs/product/40-identidad-extendida-postgres/41-esquema-identidad-extendida.md`
+(all 7 checkboxes now `[x]` with the real command output above embedded);
+its `**Status:**` field updated to "Hecho"; the Epic 40 README's US table
+gained a `Status` column with `✅ Implementada` for US-41 (US-42/43/44 left
+blank — matching the convention already used in Epic 19's README).
+
 ## Files changed (Slice 1)
 
 | File | Action | Lines |
@@ -313,6 +484,19 @@ created yet.
 6 deletions(-). Plus 280 lines across the 2 new untracked test files.
 Estimated total slice-1 diff: ~449 lines (well within a single reviewable
 PR/commit boundary, consistent with the tasks.md forecast's Unit 1 scope).
+(Slice 1 was committed as `5af81ad` before this batch started.)
+
+## Files changed (Slice 2)
+
+| File | Action | What Was Done |
+|---|---|---|
+| `packages/db/src/records.ts` | Modified | +2 imports, 2 interfaces, 2 mappers |
+| `packages/db/index.ts` | Modified | +2 types in the alphabetized barrel block |
+| `packages/db/src/repositories/shop-staff.integration.test.ts` | Modified | +1 mapper test (test 12), before the tripwire |
+| `packages/db/src/repositories/become-seller.integration.test.ts` | Modified | +1 mapper test (test 13) |
+| `db/README.md` | Modified | New subsection after the "Identidad" close |
+| `docs/product/40-identidad-extendida-postgres/41-esquema-identidad-extendida.md` | Modified | DoD checkboxes closed with real evidence; `Status` field updated |
+| `docs/product/40-identidad-extendida-postgres/README.md` | Modified | `Status` column added to the US table, US-41 marked `✅ Implementada` |
 
 ## Deviations from design
 
@@ -332,14 +516,23 @@ None substantive. Two minor clarifications only:
    and was permitted by the design's "re-aplicar contra la copia .pre"
    instruction, which does not mandate starting from the raw pull output.
 
+## Deviations from design (Slice 2)
+
+None. Phase 5 implemented exactly at the anchors the design names; the two
+mapper tests import only `_toShopStaffRecord`/`_toBecomeSellerRecord` and
+create no repository, per the design's explicit non-goal.
+
 ## Issues found
 
-None. All Phase 1-4, 6, and 7 (tests 1-11) verification gates passed on the
-first attempt; no STOP was triggered at any checkpoint.
+None in either slice. All Phase 1-8 verification gates passed; no STOP was
+triggered at any checkpoint, in either slice.
 
 ## Status
 
-Slice 1: 7/7 phases's assigned tasks complete (Phases 1, 2, 3, 4, 6 fully;
-Phase 7 tests 1-11 done, tests 12-13 correctly deferred to slice 2). Slice 2
-(Phase 5, Phase 7 tests 12-13, Phase 8) intentionally not started. Ready for
-the orchestrator to commit slice 1 and then dispatch slice 2.
+53/53 tasks complete across both slices. Slice 1 committed as `5af81ad`.
+Slice 2 (this batch) is in the working tree, not committed — the coordinator
+handles git. Final verification: `just db-check` 12 files / 225 tests,
+`npx jest` 9 suites / 285 tests (unchanged), `just build-api` green,
+`just verify` green on all 3 services, all `psql` cascade/CHECK/count
+evidence matches expectations, `db/README.md` and the US-41 DoD/epic docs
+updated with real evidence. Ready for `sdd-verify` / `sdd-archive`.

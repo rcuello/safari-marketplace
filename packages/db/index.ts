@@ -28,12 +28,14 @@ export { pingDatabase } from './src/health';
 export type { BuildPaginatorInput, Paginator } from './src/pagination';
 export { buildPaginator } from './src/pagination';
 export type {
+  BecomeSellerRecord,
   CategoryRecord,
   ManufacturerRecord,
   PermissionRecord,
   ProfileRecord,
   SettingRecord,
   ShopRecord,
+  ShopStaffRecord,
   TagRecord,
   TypeRecord,
   UserRecord,

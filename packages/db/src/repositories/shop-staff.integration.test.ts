@@ -18,6 +18,7 @@
 import 'dotenv/config';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { prisma } from '../client';
+import { _toShopStaffRecord } from '../records';
 
 const SHOP_SENTINEL_PREFIX = 'zz-tiendas-staff-';
 const USER_DOMAIN = '@shop-staff-integration.test';
@@ -205,6 +206,22 @@ describe('shop_staff sin columna de rol, sin updated_at, sin trigger (CA-1, CA-3
       WHERE NOT tgisinternal AND tgrelid = 'shop_staff'::regclass
     `;
     expect(Number(triggers[0].count)).toBe(0);
+  });
+});
+
+describe('_toShopStaffRecord (mapper, extended-identity-data-layer)', () => {
+  it('userId/shopId cruzan como number, sin updatedAt, JSON-safe', async () => {
+    const row = await prisma.shopStaff.findFirstOrThrow({
+      where: { userId: 2, shopId: 1 },
+    });
+    const record = _toShopStaffRecord(row);
+
+    expect(typeof record.userId).toBe('number');
+    expect(typeof record.shopId).toBe('number');
+    expect(record.userId).toBe(2);
+    expect(record.shopId).toBe(1);
+    expect(record).not.toHaveProperty('updatedAt');
+    expect(() => JSON.stringify(record)).not.toThrow();
   });
 });
 

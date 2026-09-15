@@ -144,30 +144,30 @@ al dueño qué `chain_strategy` usar (`stacked-to-main` | `feature-branch-chain`
 
 ## Phase 5: Data layer (`packages/db/src/records.ts`, `packages/db/index.ts`)
 
-- [ ] 5.1 Imports de tipo en `:20-31` (orden alfabético, `organizeImports` de
+- [x] 5.1 Imports de tipo en `:20-31` (orden alfabético, `organizeImports` de
   biome): `BecomeSeller` antes de `Category`, `ShopStaff` entre `Shop` y
   `Tag`.
-- [ ] 5.2 `ShopStaffRecord` tras `PermissionRecord` (`:166-172`): `userId`,
+- [x] 5.2 `ShopStaffRecord` tras `PermissionRecord` (`:166-172`): `userId`,
   `shopId`, `createdAt` — sin `updatedAt`. Traces: `extended-identity-schema`
   CA-1 + `extended-identity-data-layer` scenario "ShopStaffRecord no declara
   updatedAt".
-- [ ] 5.3 `BecomeSellerRecord`, justo después: `id`, `pageOptions`/
+- [x] 5.3 `BecomeSellerRecord`, justo después: `id`, `pageOptions`/
   `commissions` como `Prisma.JsonValue`, `language`, `createdAt`,
   `updatedAt`.
-- [ ] 5.4 `_toShopStaffRecord` tras `_toPermissionRecord` (`:295-303`):
+- [x] 5.4 `_toShopStaffRecord` tras `_toPermissionRecord` (`:295-303`):
   `userId`/`shopId` vía `_id()`, `createdAt` directo. Traces: scenario "Los
   ids del pivote cruzan como number".
-- [ ] 5.5 `_toBecomeSellerRecord`: `id` **copiado directo, sin `_id()`**
+- [x] 5.5 `_toBecomeSellerRecord`: `id` **copiado directo, sin `_id()`**
   (smallint → Int; precedente `_toSettingRecord`, `:180`), resto directo.
   Traces: scenario "BecomeSellerRecord conserva ambas colecciones jsonb sin
   fusionarlas".
-- [ ] 5.6 `packages/db/index.ts`: añadir `ShopStaffRecord` y
+- [x] 5.6 `packages/db/index.ts`: añadir `ShopStaffRecord` y
   `BecomeSellerRecord` al bloque alfabetizado `export type { … } from
   './src/records'` (`:30-40`) — `BecomeSellerRecord` antes de
   `CategoryRecord`, `ShopStaffRecord` entre `ShopRecord` y `TagRecord`.
   Ninguna línea `export {` nueva. Traces: "Exportación por el barrel del
   paquete" (CA-4), ambos scenarios.
-- [ ] 5.7 `just db-build`.
+- [x] 5.7 `just db-build`.
   Falla ⇒ `git checkout --` de ambos archivos.
 
 ## Phase 6: Mantenimiento de citas
@@ -203,10 +203,10 @@ al dueño qué `chain_strategy` usar (`stacked-to-main` | `feature-branch-chain`
   template) a `information_schema.columns` → exactamente `{user_id,
   shop_id, created_at}`; `pg_trigger WHERE NOT tgisinternal AND tgrelid =
   'shop_staff'::regclass` = 0.
-- [ ] 7.8 Test 12 (mapper): `_toShopStaffRecord(fila)` → `typeof userId`/
+- [x] 7.8 Test 12 (mapper): `_toShopStaffRecord(fila)` → `typeof userId`/
   `shopId === 'number'`, sin `updatedAt`, `JSON.stringify(...)` no lanza.
-  **Slice 2** — depende de `_toShopStaffRecord` (Fase 5, no implementada en
-  este batch).
+  Añadido en `shop-staff.integration.test.ts`, antes del `describe` de
+  tripwire final.
 - [x] 7.9 Crear
   `packages/db/src/repositories/become-seller.integration.test.ts`.
 - [x] 7.10 Test 7: singleton — `prisma.becomeSeller.count()` = 1, `id` = 1.
@@ -219,36 +219,40 @@ al dueño qué `chain_strategy` usar (`stacked-to-main` | `feature-branch-chain`
   unknown[])` longitud 2; ninguno anidado en el otro.
 - [x] 7.13 Test 10: `updatedAt.getTime() === createdAt.getTime()`.
 - [x] 7.14 Test 11: `pg_trigger` sobre `become_seller` = 0.
-- [ ] 7.15 Test 13 (mapper): `_toBecomeSellerRecord(fila)` → `pageOptions` y
-  `commissions` como valores sueltos. **Slice 2** — depende de
-  `_toBecomeSellerRecord` (Fase 5, no implementada en este batch).
+- [x] 7.15 Test 13 (mapper): `_toBecomeSellerRecord(fila)` → `pageOptions` y
+  `commissions` como valores sueltos. Añadido en
+  `become-seller.integration.test.ts`.
 - [x] 7.16 Narrowing explícito (`as Record<string, unknown>` / `as
-  unknown[]`, NUNCA `as any`) en los asserts `jsonb` del test 9 (tests 12 y
-  13 quedan para slice 2, junto con sus mappers): una columna `Json`
-  requerida genera `runtime.JsonValue`, no asignable a `Object.keys(o:
-  object)` con `"strict": true` (`packages/db/tsconfig.json:7`); `just
-  db-check` corre el typecheck ANTES de vitest (`justfile:343-345`) y pasó en
-  verde.
+  unknown[]`, NUNCA `as any`) en los asserts `jsonb` de los tests 9, 12 y 13:
+  una columna `Json` requerida genera `runtime.JsonValue`, no asignable a
+  `Object.keys(o: object)` con `"strict": true`
+  (`packages/db/tsconfig.json:7`); `just db-check` corre el typecheck ANTES
+  de vitest (`justfile:343-345`) y pasó en verde (12 archivos / 225 tests).
   Traces: `extended-identity-schema` (CA-1, CA-2, CA-3, CA-5),
+  `extended-identity-data-layer` (CA-4, ambos scenarios de mapper),
   `data-layer-clock-policy` (los 2 scenarios de `become_seller` + el
-  scenario de exclusión de `shop_staff`). `extended-identity-data-layer`
-  (CA-4, ambos scenarios de mapper) queda pendiente de slice 2.
+  scenario de exclusión de `shop_staff`).
   Falla ⇒ `git checkout --` de ambos archivos nuevos.
 
 ## Phase 8: Verificación
 
-- [ ] 8.1 `just db-check` — debe subir de la línea base 210 (esperado ≥ 223);
-  pegar salida real.
-- [ ] 8.2 `cd apps/api/rest && npx jest` — esperado 285 (mockea `@safari/db`,
-  impacto cero esperado); pegar salida real.
-- [ ] 8.3 `just build-api`.
-- [ ] 8.4 `just verify` (requiere `api-dev`/`shop-dev`/`admin-dev`
-  levantados).
-- [ ] 8.5 Evidencia `psql`: cascadas (borrar tienda → pivote 0, usuario vivo;
+- [x] 8.1 `just db-check` — debe subir de la línea base 210 (esperado ≥ 223);
+  pegar salida real. Resultado: 12 archivos / 225 tests.
+- [x] 8.2 `cd apps/api/rest && npx jest` — esperado 285 (mockea `@safari/db`,
+  impacto cero esperado); pegar salida real. Resultado: 9 suites / 285 tests,
+  sin cambio.
+- [x] 8.3 `just build-api`.
+- [x] 8.4 `just verify` (requiere `api-dev`/`shop-dev`/`admin-dev`
+  levantados). Los tres servicios levantados manualmente para esta
+  verificación; resultado: API/Shop/Admin los 3 en verde con contenido real.
+- [x] 8.5 Evidencia `psql`: cascadas (borrar tienda → pivote 0, usuario vivo;
   borrar usuario → pivote 0, tienda viva), rechazo de la CHECK de
   `become_seller`, y los conteos finales del seed (198/83, 12, 3, 1200, 3
-  `shop_staff`, 1 `become_seller`).
-- [ ] 8.6 `db/README.md`: subsección nueva tras `:83` (cierre de
+  `shop_staff`, 1 `become_seller`). Cascadas verificadas con fixtures
+  desechables dentro de una transacción con `ROLLBACK` final (sin residuo);
+  `just db-reset` NO se volvió a correr (instrucción explícita del
+  coordinador: el estado ya verificado no debía arriesgarse).
+- [x] 8.6 `db/README.md`: subsección nueva tras `:83` (cierre de
   "Identidad") documentando `shop_staff`/`become_seller`.
-- [ ] 8.7 Pegar esta evidencia en la Definición de Done de
+- [x] 8.7 Pegar esta evidencia en la Definición de Done de
   `docs/product/40-identidad-extendida-postgres/41-esquema-identidad-extendida.md`.
