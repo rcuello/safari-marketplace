@@ -9,18 +9,19 @@
 
 **Épico:** [Épico 33](./README.md)
 **Fecha:** 2026-09-14
-**Status:** Listo para ejecución **tras** el visto bueno del dueño sobre P-1 y P-2
-**Depende de:** US-32 (propuesto en P-1; la tabla del épico decía «ninguna»)
-**LOC est.:** ~1450 (alcance recomendado en P-2; ~4600 si los repositorios entran aquí)
+**Status:** Listo para ejecución
+**Depende de:** US-32 (dependencia dura — ver P-1)
+**LOC est.:** ~1450
 
 ---
 
-## Decisiones pendientes del visto bueno del dueño
+## Decisiones del refinamiento — CONFIRMADAS por el dueño (2026-09-14)
 
-Dos puntos del épico quedaron abiertos «para el refinamiento de US-34». Aquí
-van resueltos con recomendación; **el dueño confirma o corrige antes de que
-arranque el ciclo SDD**. Si corrige, la sección afectada de esta US se
-reescribe en el mismo commit de la confirmación.
+Dos puntos del épico quedaron abiertos «para el refinamiento de US-34». Se
+resolvieron con las recomendaciones de abajo y **el dueño las confirmó ambas
+el 2026-09-14**: P-1 (US-32 va antes, no se pliega) y P-2 (los repositorios y
+sus tests viven en US-35..39, no aquí). El argumento se conserva íntegro como
+registro de por qué, no como propuesta abierta.
 
 ### P-1 — R-3 del épico: US-32 **no se pliega**; va **antes**, como dependencia dura
 
@@ -484,9 +485,12 @@ sin partirse en varios PRs.
 
 ## Definición de Done
 
-- [ ] **Confirmación del dueño pegada** (P-1, P-2 y renovación de la
-      autorización de `db-reset`), y esta US corregida si difiere.
-- [ ] US-32 con Status `Implementada` (salvo que P-1 se resuelva plegando).
+- [ ] **Autorización de `just db-reset` renovada por el dueño** y pegada. Es
+      lo único que quedaba abierto: P-1 y P-2 los confirmó el 2026-09-14. La
+      autorización previa (2026-08-31) se dio para el Épico 19 y no se hereda
+      — decisión 1 del Épico 26.
+- [ ] US-32 con Status `Implementada`. Es dependencia dura (P-1): esta US no
+      arranca antes.
 - [ ] `node db/generate-seed.mjs` con la salida pegada: los conteos nuevos
       en consola, y el mensaje de fallo pegado de una corrida con un JSON
       alterado a propósito (email de creador inexistente), restaurado

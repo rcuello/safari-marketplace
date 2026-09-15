@@ -202,7 +202,7 @@ Feature: …
 Épico 26 Escrituras del catálogo desde Postgres → US-27a … US-30  (completado 2026-09-11)
 Épico 33 Contenido y configuración desde Postgres → US-34 … US-39   ← Fase 1 del inventario de mocks; NO levanta la exclusión de db/schema.sql:13-16
 US-31    Guardas de id fuera del rango bigint   → standalone   ← implementada: cubrió `types`/`tags`/`manufacturers`, `users` y las 2 FK de `packages/db`
-US-32    Deriva de reloj `updated_at`/`created_at` → standalone ← toca DDL y exige `just db-reset`; candidata a plegarse dentro de US-34 (ver R-3 del Épico 33)
+US-32    Deriva de reloj `updated_at`/`created_at` → standalone ← PRERREQUISITO de US-34: su elección de reloj es insumo del DDL del Épico 33 (R-3, resuelto 2026-09-14)
 ```
 
 Lo que sigue mock está inventariado con evidencia en
@@ -226,12 +226,19 @@ adversariales de US-28, no de tests):
   `created_at` y `updated_at`. **Toca DDL** y exige `just db-reset`, así que no
   puede ir dentro del Épico 26 (decisión 1 de ese épico).
 
-**US recomendada para arrancar: US-34** (Épico 33) — es la habilitadora del
-épico y bloquea a las cinco siguientes, así que nada del Épico 33 avanza sin
-ella. Lleva todo el DDL del épico en una sola pasada, con un único
-`just db-reset`, siguiendo el precedente de los Épicos 19 y 26. En su
-refinamiento hay que decidir si **US-32 se pliega dentro** (también toca DDL y
-también exige `db-reset`: hacerlas juntas ahorra una recreación de la base).
+**US recomendada para arrancar: US-32**, y justo después US-34 (Épico 33). No
+es el orden que parecía: el refinamiento de US-34 (2026-09-14) determinó que
+**US-32 es prerrequisito duro**, no una vecina que ahorra un `db-reset`. Su
+elección de fuente de reloj es un **insumo del DDL**: las 8 tablas de entidad
+que crea US-34 reciben `PUT` reales y deben nacer bajo una sola política, y
+hoy conviven dos en el repo. Crear 12 tablas antes de decidir garantiza que
+US-32 termine tocando 13 tablas en vez de 5.
+
+US-34 es después la habilitadora del Épico 33 y bloquea a las cinco
+siguientes: lleva todo el DDL del épico en una pasada, con un único
+`just db-reset`, siguiendo el precedente de los Épicos 19 y 26. Se la mantiene
+deliberadamente fina (~1450 LOC: DDL, seed, `schema.prisma`, `records.ts`,
+barrel); los repositorios y sus tests van en US-35..39.
 
 Tras US-34, las US-35 a US-39 no dependen entre sí y admiten agentes en
 paralelo; solo comparten el barrel `packages/db/index.ts`, así que quien

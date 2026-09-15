@@ -27,7 +27,7 @@ las variaciones de producto que el Épico 26 dejó sin persistir.
 
 | US | Título | Releasable solo | Depende de | LOC est. |
 |----|--------|-----------------|------------|----------|
-| [US-34](./34-esquema-capa-datos-contenido.md) | Esquema y capa de datos de contenido y configuración | No (habilitadora) | US-32 (propuesto, P-1) | ~1450 (~4600 si lleva los repositorios, P-2) |
+| [US-34](./34-esquema-capa-datos-contenido.md) | Esquema, seed y modelos de contenido y configuración | No (habilitadora) | **US-32** | ~1450 |
 | US-35 | `faqs` y `terms-and-conditions` desde Postgres | Sí | US-34 | ~1500 |
 | US-36 | `refund-policies` y `refund-reasons` desde Postgres | Sí | US-34 | ~1400 |
 | US-37 | `taxes` y `shippings` desde Postgres | Sí | US-34 | ~1300 |
@@ -38,20 +38,20 @@ las variaciones de producto que el Épico 26 dejó sin persistir.
 US-39 no dependen entre sí: tras US-34 pueden ir en paralelo con agentes
 distintos, siempre que no coincidan en el barrel `packages/db/index.ts`.
 
-**Refinamiento de US-34 (2026-09-14), pendiente del visto bueno del dueño.**
-Su documento resuelve las dos preguntas que este README dejó abiertas y las
-marca como P-1 y P-2: **R-3** — US-32 **no se pliega**, va antes como
-dependencia dura (dos `db-reset`, un solo pedido de autorización); **alcance**
-— los repositorios de funciones planas y sus tests de integración van en
-US-35..39 (como en el Épico 26), y US-34 se queda con lo que exige `db-reset`
-y lo que las cinco comparten (DDL, seed, `schema.prisma`, `records.ts`,
-barrel). La estimación ~1200 de la fila anterior solo cuadraba con esa
-lectura; con los repositorios dentro son ~4600 por anclas reales. Al
-verificar los JSON aparecieron además dos inexactitudes de D-1:
-`terms-and-conditions` siembra **5** filas (los ids 8-12 son copias exactas
-de 1-5 y `slug` es UNIQUE) y `store-notices.created_by = 6` **no existe** en
-el seed (se remapea por email al admin, id 3). Si el dueño confirma, R-3 y
-R-4 se reescriben en ese mismo commit; hasta entonces, la US manda.
+**Refinamiento de US-34 (2026-09-14) — CONFIRMADO por el dueño.** Las dos
+preguntas que este README dejaba abiertas están resueltas y volcadas en R-3 y
+R-4: US-32 va **antes** como dependencia dura, y los repositorios con sus
+tests viven en **US-35..39**, no en la habilitadora.
+
+Al verificar los JSON del mock aparecieron además **dos inexactitudes de D-1**,
+ambas comprobadas contra los datos y ya corregidas en la tabla:
+`terms-and-conditions` siembra **5** filas y no 10 (los ids 8-12 son copias
+exactas de 1-5 y `slug` es UNIQUE en todo el esquema), y
+`store_notices.created_by` vale `6` en las tres filas, **un usuario que no
+existe** (el seed tiene 1, 2 y 3). Se remapea por `creator.email` →
+`admin@demo.com` → id 3. Esa trampa ya mordió a este repo una vez:
+`db/generate-seed.mjs:76-81` documenta el mismo `model_id = 6` de admin
+violando la FK de `permission_user`.
 
 Son 43 rutas HTTP en total: `faqs` 5, `terms-and-conditions` 7,
 `refund-policies` 5, `refund-reasons` 5, `taxes` 5, `shippings` 5,
@@ -77,14 +77,14 @@ real, leído de la forma de los JSON del mock:
 | Tabla | Origen | Notas |
 |---|---|---|
 | `faqs` | `faqs.json` (19 filas) | plana; `faq_title`, `slug`, `faq_description`, `faq_type`, `issued_by` |
-| `terms_and_conditions` | `terms-and-conditions.json` (10) | plana + `is_approved` (cola de moderación en el admin) |
+| `terms_and_conditions` | `terms-and-conditions.json` (10 filas → **5** tras dedupe) | plana + `is_approved` (cola de moderación en el admin). Los ids 8-12 duplican por slug a 1-5; con `slug` UNIQUE solo entran 5 |
 | `refund_policies` | `refund-policies.json` (5) | plana; `target`, `status` |
 | `refund_reasons` | `refund-reasons.json` (8) | plana |
 | `taxes` | `taxes.json` (1) | plana; `rate`, `is_global`, `on_shipping`, geo (`country`/`state`/`zip`/`city`) |
 | `shippings` | `shippings.json` (1) | plana; `amount`, `type`, `is_global` |
 | `attributes` | `attributes.json` (8) | FK `shop_id` → `shops` |
 | `attribute_values` | `attributes[].values` | hijo de `attributes` |
-| `store_notices` | `store-notices.json` (3) | `priority`, `type`, `effective_from`, `expired_at`, `created_by`/`updated_by` → `users` |
+| `store_notices` | `store-notices.json` (3) | `priority`, `type`, `effective_from`, `expired_at`, `created_by`/`updated_by` → `users`. **OJO**: `created_by` vale `6`, que no existe en el seed; se remapea por `creator.email` (precedente: `db/generate-seed.mjs:76-81`) |
 | `store_notice_user` | `store-notices[].users` | pivote N:M |
 | `store_notice_shop` | `store-notices[].shops` | pivote N:M |
 | `store_notice_read` | `is_read` / `read_status` | estado de lectura por usuario |
@@ -127,14 +127,24 @@ este documento como suelo, no como techo.
 apuntan a `users` y `shops`. Es la única US del épico que puede romper algo
 que hoy funciona; por eso va sola y al final.
 
-**R-3 — Colisión de `db-reset` con US-32.** La US-32 standalone (deriva de
-reloj `created_at`/`updated_at`) también exige `just db-reset` y toca DDL.
-Conviene **plegarla dentro de US-34** o ejecutarla antes, para no gastar dos
-recreaciones de la base. Decisión para el refinamiento de US-34.
+**R-3 — RESUELTO (2026-09-14): US-32 va ANTES, como dependencia dura.** No se
+pliega. La razón que decidió el empate no fue el ahorro de `db-reset` —que
+cuesta segundos y está sobrevalorado— sino que **la elección de reloj de US-32
+es un insumo del DDL de US-34**: las 8 tablas de entidad nuevas reciben `PUT`
+reales y tienen que nacer bajo una sola política. Hoy conviven dos (trigger en
+5 tablas, `db/schema.sql:488-500`; y `updatedAt: now()` desde el repositorio
+en `types`/`tags`/`manufacturers`, decisión 9 del Épico 26). Crear 12 tablas
+sin decidir garantiza que US-32 luego toque 13 en vez de 5 y pida un tercer
+reset. Añade que US-34 es puramente aditiva y US-32 modifica 5 tablas vivas:
+separadas, ese riesgo de regresión no cae sobre la habilitadora del épico. El
+argumento completo está en la sección P-1 de US-34.
 
-**R-4 — US-34 es cuello de botella.** Bloquea las cinco siguientes. Si se
-desborda, se desborda el épico entero. Argumento a favor de mantenerla
-estrictamente en DDL + repositorios, sin tocar ningún servicio de Nest.
+**R-4 — US-34 es cuello de botella; MITIGADO (2026-09-14).** Bloquea las cinco
+siguientes, así que se la mantiene en lo mínimo que exige `db-reset` y en lo
+que las cinco comparten: DDL, seed, `schema.prisma`, `records.ts` y barrel.
+**Los repositorios de funciones planas y sus tests de integración van en
+US-35..39**, cada una el suyo — patrón del Épico 26. Eso baja US-34 de ~4600 a
+~1450 LOC. US-34 no toca ningún servicio de Nest. Ver P-2 de US-34.
 
 **R-5 — `taxes` y `shippings` se leen desde `settings`.** El admin los
 consume también en `pages/settings/*`. Verificar en el refinamiento de US-37
