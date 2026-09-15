@@ -32,9 +32,15 @@ el 2026-09-15** (ver Notas)
   devuelve `{ data: [], ...paginate(0, …) }` (`shops.service.ts:220-226`).
   El seed de staff, por tanto, **no** se copia de un mock: se inventa
   coherente con los 3 usuarios y 12 tiendas ya sembrados.
-- `become-seller.json` sí existe y es un único objeto con `page_options`
-  (banner, `defaultCommissionRate`, textos). Es contenido de página, no una
-  entidad transaccional.
+- `become-seller.json` sí existe y tiene **dos** claves de nivel superior,
+  no una: `page_options` (banner, `defaultCommissionRate`, textos) y
+  `commissions` (array de niveles de comisión con `id`, `level`, `sub_level`,
+  `description`). Ambas las sirve `become-seller.service.ts` verbatim.
+  Es contenido de página, no una entidad transaccional.
+  **Corregido el 2026-09-15**: las versiones previas de esta US y de US-44
+  decían «un único objeto con `page_options`». Era falso —se redactó leyendo
+  el JSON truncado— y una sola columna `page_options` habría perdido
+  `commissions` en silencio.
 
 ## Scope
 
@@ -60,9 +66,12 @@ una tienda MUST poder tener varios staff. La tabla NO sustituye a
 `permission_user`: aquel es global al usuario, éste es por tienda.
 
 ### CA-2 — Singleton de `become-seller`
-Existe una tabla singleton con `page_options jsonb`, con el mismo patrón de
-`settings` (PK `DEFAULT 1` + CHECK de fila única). Su seed reproduce
-`apps/api/rest/src/db/pickbazar/become-seller.json` sin pérdida.
+Existe una tabla singleton con el mismo patrón de `settings` (PK `DEFAULT 1`
++ CHECK de fila única) y **dos columnas `jsonb`: `page_options` y
+`commissions`**, una por cada clave de nivel superior del JSON. Su seed
+reproduce `apps/api/rest/src/db/pickbazar/become-seller.json` **sin pérdida
+de ninguna de las dos**: US-44 debe poder emitir la respuesta byte a byte sin
+pedir otro `db-reset`, lo que contradiría la decisión 2 del épico.
 
 ### CA-3 — Sin trigger de `updated_at`
 Ninguna de las tablas nuevas lleva trigger. La política de reloj es la de

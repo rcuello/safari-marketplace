@@ -56,8 +56,13 @@ consulta no encontró filas**.
 repetida MUST ser idempotente (PK compuesta), no un 500.
 
 ### CA-3 — Autorización preservada
-`all-staffs` sigue tras `ADMIN_ONLY`. `my-staffs` sigue acotada al usuario
-autenticado. Ningún cambio de guard: los de US-23 se respetan tal cual.
+**`my-staffs` y `all-staffs` están AMBAS tras `@Permissions(...ADMIN_ONLY)`
+a nivel de clase** (`apps/api/rest/src/users/users.controller.ts:120` y
+`:130`). Corregido el 2026-09-15: esta CA afirmaba antes que `my-staffs`
+estaba «acotada al usuario autenticado», leído de un volcado que cortaba el
+decorador. Ningún cambio de guard: los de US-23 se respetan tal cual. Si el
+comportamiento correcto fuera acotar `my-staffs` al dueño de la tienda, eso
+es un cambio de contrato y **no** entra en esta US: se menciona en el reporte.
 
 ### CA-4 — Errores de dominio, nunca crudos de Prisma
 Usuario o tienda inexistente responde 404/400 según el precedente de US-25 y

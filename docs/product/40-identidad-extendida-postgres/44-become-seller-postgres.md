@@ -19,11 +19,18 @@ tocar un JSON del repo y desplegar.
 
 - Solo **2 rutas** (`apps/api/rest/src/become-seller/become-seller.controller.ts`).
   Es el módulo más pequeño de los que quedan mock con consumidor.
-- `apps/api/rest/src/db/pickbazar/become-seller.json` es **un solo objeto**
-  con `page_options`: banner, `defaultCommissionRate`,
-  `defaultCommissionDetails`, textos de la landing. Es **contenido de página**,
-  no una entidad transaccional — por eso US-41 le da una tabla singleton y no
-  una colección.
+- `apps/api/rest/src/db/pickbazar/become-seller.json` tiene **dos** claves de
+  nivel superior (corregido el 2026-09-15; antes esta US decía «un solo
+  objeto», leído de un volcado truncado):
+  - `page_options` — banner, `defaultCommissionRate`,
+    `defaultCommissionDetails`, textos de la landing.
+  - `commissions` — array de niveles de comisión (`id`, `level`, `sub_level`,
+    `description`).
+  `become-seller.service.ts` sirve ambas verbatim, así que **CA-1 no se puede
+  cumplir si US-41 solo persiste `page_options`**. US-41 CA-2 ya crea las dos
+  columnas `jsonb`.
+  Es **contenido de página**, no una entidad transaccional — por eso US-41 le
+  da una tabla singleton y no una colección.
 - **No va dentro de `settings`.** Aunque el inventario lo listaba como
   «candidato a fila en `settings`», la respuesta de `/api/settings` está
   congelada byte a byte (5503 B) y meter `page_options` ahí la haría crecer.
