@@ -18,7 +18,20 @@
 >
 > La Fase 1 ya está promovida a épico:
 > [Épico 33 — Contenido y configuración desde Postgres](../33-contenido-configuracion-postgres/README.md).
-> Las Fases 2, 3 y 4 de este documento siguen siendo inventario sin decisión.
+>
+> **La Fase 4 NO sigue abierta**: la decisión (b) de arriba la resuelve
+> (`authors` y `flash-sale` → mock declarado permanente, junto con
+> `payment-intent` y `payment-method`). Solo quedaban las Fases 2 y 3.
+>
+> **Fase 2 promovida a épico el 2026-09-15** (prioridad del dueño):
+> [Épico 40 — Identidad extendida desde Postgres](../40-identidad-extendida-postgres/README.md).
+> Se promovió **sin `balance`/`withdraws`**, que esta Fase 2 listaba: cuelgan
+> de *wallets*, nombrado en la exclusión de `db/schema.sql:13`, así que
+> migrarlos exigiría levantarla — justo lo que la decisión (a) congeló. Ver
+> la decisión 1 y el riesgo R-1 de ese épico.
+>
+> **Queda abierta solo la Fase 3** (núcleo transaccional), y sigue esperando
+> a que cierre la Fase 1.
 
 **Origen:** refinamiento del Épico 26 (verificado 2026-09-09 con grep y
 `node -e` sobre `apps/shop/src`, `apps/admin/rest/src` y
