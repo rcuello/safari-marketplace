@@ -1,6 +1,16 @@
-# Delta for extended-identity-schema
+# Extended Identity Schema Specification
 
-## ADDED Requirements
+## Purpose
+
+Esta capability extiende el esquema de identidad de US-20 con dos tablas nuevas:
+`shop_staff` (pivote sin rol entre tienda y usuario) y `become_seller` (singleton
+de configuración con dos columnas `jsonb`). Ambas se integran en el reloj común de
+la capa de datos (US-32) sin triggers de Postgres. La tabla `shop_staff` permite
+asignar usuarios como staff de tiendas específicas, respetando la topología de
+dueño único por tienda. La tabla `become_seller` centraliza la configuración
+pública de "vender con nosotros": opciones de página y estructura de comisiones.
+
+## Requirements
 
 ### Requirement: Pivote `shop_staff` bare, sin columna de rol
 
@@ -102,7 +112,7 @@ capability. (CA-2)
 ### Requirement: Sin trigger de `updated_at` en las tablas nuevas
 
 Ninguna de las dos tablas nuevas MUST tener un trigger `BEFORE UPDATE` de
-Postgres. El comentario de política de `db/schema.sql:477-487` MUST
+Postgres. El comentario de política de `db/schema.sql:540-550` MUST
 permanecer sin modificar y MUST NOT ganar entradas nuevas para estas tablas.
 (CA-3)
 
@@ -133,3 +143,9 @@ permanecer intactos: 198 categorías / 83 raíces, 12 tiendas, 3 usuarios,
 - GIVEN `just db-reset` corrido con el DDL de esta capability
 - WHEN se cuentan filas de `categories`, `shops`, `users` y `products`
 - THEN los resultados son 198 (83 raíces), 12, 3 y 1200 respectivamente
+
+## Out of Scope
+
+Repositorios de funciones planas de `shop_staff` (US-42) · cualquier servicio,
+controlador, DTO o guard de Nest · frontends · esta capability cubre
+únicamente DDL y seed.
