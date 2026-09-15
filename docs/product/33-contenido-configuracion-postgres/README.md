@@ -27,16 +27,31 @@ las variaciones de producto que el Épico 26 dejó sin persistir.
 
 | US | Título | Releasable solo | Depende de | LOC est. |
 |----|--------|-----------------|------------|----------|
-| US-34 | Esquema y capa de datos de contenido y configuración | No (habilitadora) | ninguna | ~1200 |
+| [US-34](./34-esquema-capa-datos-contenido.md) | Esquema y capa de datos de contenido y configuración | No (habilitadora) | US-32 (propuesto, P-1) | ~1450 (~4600 si lleva los repositorios, P-2) |
 | US-35 | `faqs` y `terms-and-conditions` desde Postgres | Sí | US-34 | ~1500 |
 | US-36 | `refund-policies` y `refund-reasons` desde Postgres | Sí | US-34 | ~1400 |
 | US-37 | `taxes` y `shippings` desde Postgres | Sí | US-34 | ~1300 |
 | US-38 | `attributes` y sus valores desde Postgres | Sí | US-34 | ~1600 |
 | US-39 | `store-notices` desde Postgres (N:M + estado de lectura) | Sí | US-34 | ~1800 |
 
-**Total estimado: ~8800 LOC.** No es un error de tecleo — ver R-1. US-35 a
+**Total estimado: ~9050 LOC.** No es un error de tecleo — ver R-1. US-35 a
 US-39 no dependen entre sí: tras US-34 pueden ir en paralelo con agentes
 distintos, siempre que no coincidan en el barrel `packages/db/index.ts`.
+
+**Refinamiento de US-34 (2026-09-14), pendiente del visto bueno del dueño.**
+Su documento resuelve las dos preguntas que este README dejó abiertas y las
+marca como P-1 y P-2: **R-3** — US-32 **no se pliega**, va antes como
+dependencia dura (dos `db-reset`, un solo pedido de autorización); **alcance**
+— los repositorios de funciones planas y sus tests de integración van en
+US-35..39 (como en el Épico 26), y US-34 se queda con lo que exige `db-reset`
+y lo que las cinco comparten (DDL, seed, `schema.prisma`, `records.ts`,
+barrel). La estimación ~1200 de la fila anterior solo cuadraba con esa
+lectura; con los repositorios dentro son ~4600 por anclas reales. Al
+verificar los JSON aparecieron además dos inexactitudes de D-1:
+`terms-and-conditions` siembra **5** filas (los ids 8-12 son copias exactas
+de 1-5 y `slug` es UNIQUE) y `store-notices.created_by = 6` **no existe** en
+el seed (se remapea por email al admin, id 3). Si el dueño confirma, R-3 y
+R-4 se reescriben en ese mismo commit; hasta entonces, la US manda.
 
 Son 43 rutas HTTP en total: `faqs` 5, `terms-and-conditions` 7,
 `refund-policies` 5, `refund-reasons` 5, `taxes` 5, `shippings` 5,
