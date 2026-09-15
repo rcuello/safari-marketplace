@@ -30,8 +30,19 @@
 > migrarlos exigiría levantarla — justo lo que la decisión (a) congeló. Ver
 > la decisión 1 y el riesgo R-1 de ese épico.
 >
-> **Queda abierta solo la Fase 3** (núcleo transaccional), y sigue esperando
-> a que cierre la Fase 1.
+> **`ownership-transfer` también se movió a la Fase 3 (2026-09-15, opción C
+> del dueño).** Al redactar su US se descubrió que su contrato embebe una
+> fila entera de balance (`balance_info`, no-null en las 6 filas del mock y
+> consumido por el admin en `shop-transfer/details.tsx:50-52` y
+> `templates/header.tsx:134`). Con el contrato byte a byte no se puede migrar
+> sin la tabla wallet. El análisis de las tres salidas se conserva en
+> [US-43](../40-identidad-extendida-postgres/43-ownership-transfer-postgres.md).
+> Por tanto la Fase 2 entrega **solo `staffs` y `become-seller`**, y la lista
+> de la Fase 3 de abajo crece: hereda `ownership-transfer` **y**
+> `balance`/`withdraws`.
+>
+> **Queda abierta solo la Fase 3** (núcleo transaccional + lo heredado de la
+> Fase 2), y sigue esperando a que cierre la Fase 1.
 
 **Origen:** refinamiento del Épico 26 (verificado 2026-09-09 con grep y
 `node -e` sobre `apps/shop/src`, `apps/admin/rest/src` y
@@ -120,19 +131,28 @@ autorización del dueño (la de 2026-08-31 se dio para aquel épico).
    con consumidor en el admin y la mitad también en el shop. Riesgo bajo;
    es el "Épico 27" natural. `attributes` desbloquea además persistir las
    variaciones de producto que el Épico 26 ignora (decisión 10).
-2. **Identidad extendida** — relación staff↔tienda (`GET/POST/DELETE
-   /staffs`, hoy lista vacía), `become-seller` (un singleton de página,
-   candidato a fila en `settings` o tabla propia), `ownership-transfer`
-   (+ la ruta `transfer-shop-ownership` que el admin llama y no existe),
-   `balance`/`withdraws`. Toca `users`/`shops`: conviene hacerlo junto.
+2. **Identidad extendida** — ~~relación staff↔tienda, `become-seller`,
+   `ownership-transfer`, `balance`/`withdraws`~~. **Redimensionada al
+   promoverla** ([Épico 40](../40-identidad-extendida-postgres/README.md),
+   2026-09-15): entrega **solo** la relación staff↔tienda (`GET/POST/DELETE
+   /staffs`, hoy lista vacía) y `become-seller` (singleton de página; acabó
+   en tabla propia, **no** en una fila de `settings` — la respuesta de
+   `/api/settings` está congelada byte a byte). Toca `users`/`shops`, ya
+   migradas. Los otros dos dominios se fueron a la Fase 3 por depender de
+   *wallets*. La ruta `transfer-shop-ownership` que el admin llama y no
+   existe sigue sin dueño: es independiente de `balance`.
 3. **Núcleo transaccional** — `orders` (+ `order-status`, `downloads`,
    export), `reviews`, `questions`, `wishlists`, `coupons`, `refunds`,
    `analytics` (agregados sobre órdenes), `payment-intent`/
    `payment-method` (requieren pasarela externa: misma clase de decisión
-   que el social login del Épico 19, decisión 11). Es el corte que
-   **confronta la exclusión de `db/schema.sql:13-16`**: necesita que el
-   dueño la levante por escrito, como US-20 la levantó solo para
-   identidad.
+   que el social login del Épico 19, decisión 11). **Hereda de la Fase 2**
+   (2026-09-15): `balance`/`withdraws` y `ownership-transfer`
+   ([US-43](../40-identidad-extendida-postgres/43-ownership-transfer-postgres.md)
+   conserva el análisis). Es el corte que **confronta la exclusión de
+   `db/schema.sql:13-16`**: necesita que el dueño la levante por escrito,
+   como US-20 la levantó solo para identidad. Modelar `balance` aquí y no
+   antes es deliberado: `total_earnings` y `withdrawn_amount` sólo tienen
+   forma con las órdenes delante.
 4. **`authors` y `flash-sale`** — vivos pero de valor bajo para el dominio
    del scraper (tecnología, sin autores). Candidatos a quedarse mock de
    forma declarada, o a ir al final.

@@ -201,7 +201,7 @@ Feature: …
 Épico 19 Autenticación y autorización         → US-20 … US-25  (completado)
 Épico 26 Escrituras del catálogo desde Postgres → US-27a … US-30  (completado 2026-09-11)
 Épico 33 Contenido y configuración desde Postgres → US-34 … US-39   ← Fase 1 del inventario de mocks; NO levanta la exclusión de db/schema.sql:13-16
-Épico 40 Identidad extendida desde Postgres      → US-41 … US-44   ← Fase 2 del inventario; sin `balance`/`withdraws` (cuelgan de wallets, excluido)
+Épico 40 Identidad extendida desde Postgres      → US-41 ✅, US-42, US-44   ← Fase 2; `balance`/`withdraws` Y `ownership-transfer` (US-43) van a la Fase 3: cuelgan de wallets, excluido
 US-31    Guardas de id fuera del rango bigint   → standalone   ← implementada: cubrió `types`/`tags`/`manufacturers`, `users` y las 2 FK de `packages/db`
 US-32    Deriva de reloj `updated_at`/`created_at` → standalone ← PRERREQUISITO de US-34: su elección de reloj es insumo del DDL del Épico 33 (R-3, resuelto 2026-09-14)
 ```
@@ -210,9 +210,11 @@ Lo que sigue mock está inventariado con evidencia en
 [`_backlog/api-mock-restante-dominio-transaccional.md`](./_backlog/api-mock-restante-dominio-transaccional.md).
 Su **Fase 1** ya es el [Épico 33](./33-contenido-configuracion-postgres/README.md)
 y su **Fase 2** el [Épico 40](./40-identidad-extendida-postgres/README.md)
-(promovida el 2026-09-15, sin `balance`/`withdraws`: cuelgan de *wallets*, que
-la exclusión nombra). Solo queda sin decisión la **Fase 3** (núcleo
-transaccional), que exige levantar por escrito la exclusión de
+(promovida el 2026-09-15). La Fase 2 entrega solo `staffs` y `become-seller`:
+`balance`/`withdraws` y `ownership-transfer` cuelgan de *wallets*, que la
+exclusión nombra, y el dueño los **aplazó a la Fase 3 el 2026-09-15**
+(opción C). Solo queda sin decisión la **Fase 3** (núcleo transaccional más
+lo heredado), que exige levantar por escrito la exclusión de
 `db/schema.sql:13-16` y que el dueño congeló hasta que cierre la Fase 1.
 `payment-intent`, `payment-method`, `authors` y `flash-sale` quedaron como
 **mock declarado permanente** (decisión del 2026-09-14).

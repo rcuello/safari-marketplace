@@ -26,13 +26,15 @@ sus tres dominios cuelgan de `users` y `shops`, ya migradas en el Épico 19.
 |----|--------|-----------------|------------|----------|--------|
 | [US-41](./41-esquema-identidad-extendida.md) | Esquema y capa de datos de identidad extendida | No (habilitadora) | ninguna | ~700 | ✅ Implementada |
 | [US-42](./42-staffs-postgres.md) | `staffs` desde Postgres (`/staffs`, `/my-staffs`, `/all-staffs`) | Sí | US-41 | ~1200 | |
-| [US-43](./43-ownership-transfer-postgres.md) | `ownership-transfer` desde Postgres — **BLOQUEADA** | Sí | US-41 + decisión del dueño | ~1300 | |
+| [US-43](./43-ownership-transfer-postgres.md) | `ownership-transfer` desde Postgres | — | — | ~1300 | ⏭️ **Aplazada a la Fase 3** (2026-09-15) |
 | [US-44](./44-become-seller-postgres.md) | `become-seller` desde Postgres | Sí | US-41 | ~500 | |
 
-**Total ejecutable hoy: ~2400 LOC** (US-41 + US-42 + US-44). Con US-43
-desbloqueada, ~3700. US-42 y US-44 no dependen entre sí: tras US-41 admiten
-agentes en paralelo, con la salvedad del barrel (`packages/db/index.ts`), que
-comparten — quien arranque segundo rebasea.
+**El épico son tres US, no cuatro.** US-43 salió del alcance el 2026-09-15
+(decisión 1b'): se ejecutará en el épico de la Fase 3, no aquí. Alcance total
+**~2400 LOC**, de los que US-41 (~700) ya está hecha — quedan **~1700 en
+US-42 + US-44**. No dependen entre sí: admiten agentes en paralelo, con la
+salvedad del barrel (`packages/db/index.ts`), que comparten — quien arranque
+segundo rebasea.
 
 **Orden recomendado:** US-41 → **US-44** → US-42. US-44 son 2 rutas sin
 relaciones ni guards: valida que el DDL de US-41 sirve de verdad antes de
@@ -47,13 +49,14 @@ original entre ×2.0 y ×4.6, y US-32 (cerrada ayer) desbordó ×5 la suya.
 | # | Tema | Decisión |
 |---|------|----------|
 | 1 | Alcance de `balance`/`withdraws` | **FUERA de este épico.** El inventario los listaba en la Fase 2, pero `withdraws` cuelga de `balance` y *wallets* está nombrado en la exclusión de `db/schema.sql:13`. Migrarlos exigiría levantarla, que es justo lo que la decisión del 2026-09-14 congeló. Se sacan para que este épico no dependa de una decisión pendiente. Ver R-1. |
-| 1b | `ownership-transfer` arrastra `balance` | **US-43 queda BLOQUEADA** (hallazgo al redactarla, 2026-09-15). Su contrato incluye `balance_info`, y en el mock **no es `null`**: es una fila entera de la tabla wallet (`shop_id`, `admin_commission_rate`, `total_earnings`, `withdrawn_amount`, `current_balance`, `payment_info`). Con el contrato preservado byte a byte no se puede migrar sin esa tabla. La decisión 1 no bastaba: la dependencia de wallet no estaba solo en `withdraws`. Tres salidas con su coste en [US-43](./43-ownership-transfer-postgres.md); la recomendación es aplazarla a la Fase 3. |
+| 1b | `ownership-transfer` arrastra `balance` | Hallazgo al redactar US-43 (2026-09-15). Su contrato incluye `balance_info`, y en el mock **no es `null` en ninguna de las 6 filas**: es una fila entera de la tabla wallet (`shop_id`, `admin_commission_rate`, `total_earnings`, `withdrawn_amount`, `current_balance`, `payment_info`). Y el admin lo consume de verdad: `shop-transfer/details.tsx:50-52` parsea su `payment_info` y `templates/header.tsx:134` condiciona UI a `current_balance`. Con el contrato preservado byte a byte no se puede migrar sin esa tabla, y no se puede omitir el campo. La decisión 1 no bastaba: la dependencia de wallet no estaba solo en `withdraws`. |
+| 1b' | Qué se hace con US-43 | **APLAZADA a la Fase 3 — opción C, decidida por el dueño el 2026-09-15.** Sale del alcance de este épico. Se descartaron: (A) crear una tabla `balance` mínima, porque revertiría de facto el «todavía no» del 2026-09-14 sin haber cerrado la Fase 1, que era la condición puesta entonces; y (B) servir `balance_info` como mock declarado, porque dejaría una respuesta mitad Postgres mitad mock y rompería la frontera que hoy permite decir con precisión qué endpoint sale de la base. A y B son irreversibles en direcciones opuestas; C no cierra ninguna puerta y deja modelar `balance` con el contexto de órdenes delante. |
 | 1c | Sitio de `become-seller` | **Tabla singleton propia, NO fila en `settings`.** El inventario lo listaba como «candidato a fila en `settings`», pero la respuesta de `/api/settings` está congelada byte a byte (5503 B) y `page_options` la haría crecer. Se copia el patrón de `settings` (`id smallint PRIMARY KEY DEFAULT 1` + CHECK de fila única), no su fila. |
 | 2 | DDL del épico | **Todo en US-41, un solo `just db-reset`.** Precedente de los Épicos 19, 26 y 33: este repo no tiene migraciones incrementales, así que el esquema completo se diseña antes de la primera línea de servicio. |
 | 3 | `just db-reset` | **AUTORIZADO por el dueño el 2026-09-15**, renovando la del 2026-09-14 que cubría explícitamente **solo US-32 y US-34** (decisión 6 del Épico 33) y que no es heredable, igual que la decisión 1 del Épico 26 declaró no heredable la del 2026-08-31. Cubre **US-41**, la única del épico que toca DDL. Un DDL, un reset, por US. **US-41 desbloqueada.** |
 | 4 | Repositorios y tests | Van **con su US consumidora** (US-42..44), no en la habilitadora. Patrón de los Épicos 26 y 33 (P-2 de US-34): baja US-41 a ~1200 LOC y evita el cuello de botella. |
 | 5 | Política de reloj | Las tablas nuevas **NO llevan trigger**: `updatedAt: now()` desde `packages/db/src/clock.ts` en cada ruta de escritura. Política fijada por US-32 y especificada en `openspec/specs/data-layer-clock-policy/spec.md`. |
-| 6 | Ruta `transfer-shop-ownership` | Se resuelve **dentro de US-43**, no como US aparte. Ver D-3. |
+| 6 | Ruta `transfer-shop-ownership` | Decía «se resuelve dentro de US-43». **Revisada el 2026-09-15 al aplazar US-43**: el defecto (constante declarada en el admin, ruta inexistente en la API) es independiente de `balance`, así que no debe irse a la Fase 3 con ella. Queda **sin dueño asignado**: candidata a US standalone pequeña, o a resolverse de paso en US-42, que ya toca `shops`. Ver D-3 y R-1. |
 
 ## Visión técnica compartida
 
@@ -110,11 +113,21 @@ Verificado: la tabla `shops` **no** tiene columna `balance`; es un objeto
 anidado de la entidad
 (`apps/api/rest/src/shops/entities/shop.entity.ts:14,27,33`).
 
-Consecuencia honesta: este épico **no deja «identidad extendida» completa**.
-Entrega `staffs` y `become-seller` (10 rutas de 20); las otras 10 siguen mock
-hasta que se decida sobre wallets. Si el dueño prefiere el dominio cerrado a
-la entrega parcial, la alternativa es levantar la exclusión solo para el
-balance de tienda —opción A de US-43— y meter esa tabla en US-41.
+Consecuencia honesta, **asumida a propósito** (decisión 1b'): este épico
+**no deja «identidad extendida» completa**. Entrega `staffs` y
+`become-seller` (10 rutas de 20); las otras 10 —`ownership-transfer` y
+`withdraws`— siguen mock hasta que la Fase 3 decida sobre wallets. No es un
+descuido ni un recorte por coste: es la opción que no compromete el modelado
+de `balance` antes de tener delante órdenes y reembolsos, que son los que dan
+forma a `total_earnings` y `withdrawn_amount`.
+
+**Suelto que sobrevive al aplazamiento:** la ruta `transfer-shop-ownership`
+(D-3) está declarada en `apps/admin/rest/src/data/client/api-endpoints.ts:102`
+y **no existe en la API**. Ese defecto es independiente de `balance` y se
+resolvía «dentro de US-43» (decisión 6). Con US-43 fuera del épico, queda
+huérfano: o se retira la constante, o se crea la ruta con evidencia de
+consumidor — en ambos casos, trabajo pequeño que no tiene por qué esperar a
+la Fase 3.
 
 **R-2 — US-41 es cuello de botella.** Bloquea las tres siguientes. Se la
 mantiene en lo mínimo que exige `db-reset` y en lo que las tres comparten:

@@ -4,11 +4,27 @@
 > contrato incluye una fila completa de `balance`, que es territorio *wallet*
 > y está excluido de `db/schema.sql:13-16`.
 
-**Épico:** [Épico 40](./README.md)
+**Épico:** [Épico 40](./README.md) — **ya no forma parte de su alcance**
 **Fecha:** 2026-09-15
-**Status:** **Bloqueada por decisión de producto** — ver «El bloqueo»
-**Depende de:** [US-41](./41-esquema-identidad-extendida.md) + decisión del dueño
+**Status:** **APLAZADA a la Fase 3** (opción C, decidida por el dueño el
+2026-09-15). No se ejecuta en el Épico 40; se ejecutará dentro del épico que
+promueva la Fase 3 del inventario de mocks, donde `balance` se decide junto a
+órdenes y reembolsos. El archivo se conserva aquí por la evidencia y el
+análisis de opciones; su número global (43) no cambia.
+**Depende de:** la decisión sobre la exclusión de wallets (`db/schema.sql:13-16`),
+que se reevalúa cuando cierre la Fase 1 (Épico 33)
 **LOC est.:** ~1300 (sin dimensionar el coste de `balance`)
+
+> **Decisión del dueño, 2026-09-15 — opción C.** De las tres salidas que
+> analiza «Qué decisión la desbloquea», se eligió **aplazar**. Razonamiento
+> registrado: (a) la opción A revertiría de facto el «todavía no» del
+> 2026-09-14 sin haber cerrado la Fase 1, que era la condición puesta
+> entonces; (b) la opción B dejaría una respuesta mitad Postgres mitad mock,
+> rompiendo la frontera que hoy permite decir con precisión qué endpoint sale
+> de la base — justo en el sitio donde nadie lo recordaría; (c) A y B son
+> irreversibles en direcciones opuestas, mientras que C no cierra ninguna
+> puerta y deja modelar `balance` con el contexto de órdenes delante, que es
+> lo que da forma a `total_earnings` y `withdrawn_amount`.
 
 ## El bloqueo
 
