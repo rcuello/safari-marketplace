@@ -10,7 +10,8 @@
 **Épico:** [Épico 33](./README.md)
 **Fecha:** 2026-09-14
 **Status:** Listo para ejecución
-**Depende de:** US-32 (dependencia dura — ver P-1)
+**Depende de:** US-32 — **satisfecha**: cerrada el 2026-09-15 (Opción B, sin
+triggers). Dependencia dura levantada; ver P-1
 **LOC est.:** ~1450
 
 ---
@@ -24,6 +25,12 @@ sus tests viven en US-35..39, no aquí). El argumento se conserva íntegro como
 registro de por qué, no como propuesta abierta.
 
 ### P-1 — R-3 del épico: US-32 **no se pliega**; va **antes**, como dependencia dura
+
+> **RESUELTO (2026-09-15).** US-32 se ejecutó por separado y cerró con la
+> Opción B: no queda ningún trigger y la política de reloj es única. El
+> argumento de abajo se conserva como registro de por qué se ordenó así;
+> **su presente ya no describe el repo** — en particular, la frase «hoy el
+> archivo tiene dos [políticas]» del punto 1 dejó de ser cierta.
 
 **Recomendación:** ejecutar
 [US-32](../32-deriva-reloj-updated-at-created-at.md) como sesión propia,
@@ -235,10 +242,19 @@ Todo lo de abajo está verificado contra el código, no contra el épico.
   `:425-435`; `permission_user`, `:173-178`). Cada FK saliente con su índice
   (`:453-474`). Comentario-banner por tabla explicando la decisión, no la
   columna.
-- **Política de `updated_at`.** Trigger `tocar_updated_at` en `products`,
-  `categories`, `shops`, `users`, `profiles` (`:488-500`); `types`/`tags`/
-  `manufacturers` sin trigger y con `updatedAt: now()` en el repositorio
-  (`types.repository.ts:136`). Es la deriva que US-32 corrige; ver P-1.
+- **Política de `updated_at`.** **Una sola, ya vigente: la fija el
+  repositorio, nunca la base.** US-32 (cerrada 2026-09-15, Opción B) retiró
+  `tocar_updated_at` y sus cinco triggers; hoy **ninguna tabla lleva
+  trigger** y cada ruta de `UPDATE`/`upsert` fija `updatedAt: now()` desde
+  `packages/db/src/clock.ts` (`types.repository.ts:136` como patrón; la
+  política está escrita en `db/schema.sql:477-487` y especificada en
+  `openspec/specs/data-layer-clock-policy/spec.md`). **Las 8 tablas de
+  entidad de esta US nacen bajo ella: NO crear triggers**, y cada `update`
+  nuevo del repositorio fija el reloj explícitamente — el test del
+  invariante NO detecta una ruta olvidada (`updated_at == created_at` pasa
+  un `>=`), así que la garantía es el inventario de rutas, no la suite.
+  `created_at` sigue saliendo del `@default(now())` de Prisma: mismo reloj
+  de Node, y deliberadamente NO mockeable con `_setNowProvider`. Ver P-1.
 - **Introspección.** `packages/db/prisma/schema.prisma` se regenera con
   `prisma db pull` y **pisa los renombres** (`packages/db/README.md:94-100`);
   hoy 15 modelos en 319 líneas. No quitar el preview `partialIndexes`
@@ -248,7 +264,8 @@ Todo lo de abajo está verificado contra el código, no contra el épico.
   `BigInt → number` con `_id()`, `Decimal → number` con `_dec()`, fechas como
   `Date`; mappers `_to*Record` internos, tipos `*Record` públicos vía el
   barrel `packages/db/index.ts`.
-- **Suites hoy.** `just db-check`: 10 archivos / 203 tests (cierre de US-31).
+- **Suites hoy.** `just db-check`: 10 archivos / 209 tests (línea base tras
+  el cierre de US-32; eran 203 al cerrar US-31).
   `cd apps/api/rest && npx jest`: 8 archivos `*.spec.ts` (CLAUDE.md dice «4
   suites / 65 tests»: está desactualizado; el número real se pega al
   ejecutar, no se copia de ahí). Los asserts por conteo de las suites
@@ -311,8 +328,9 @@ comentada en el DDL. Cada FK saliente tiene índice. La cabecera del archivo
 
 ### CA-2 — Ninguna tabla existente cambia
 `git diff db/schema.sql` no toca ninguna sentencia `CREATE TABLE` previa ni
-los 5 triggers de `:488-500` (eso es US-32). Solo hay adiciones y el cambio
-de cabecera.
+el comentario de política de reloj de `:477-487` (US-32 ya retiró de ahí la
+función y los cinco triggers; **no re-añadirlos**). Solo hay adiciones y el
+cambio de cabecera.
 
 ### CA-3 — Las tablas nacen bajo la política de reloj de US-32
 Las 8 tablas de entidad aplican para `created_at`/`updated_at` **la misma

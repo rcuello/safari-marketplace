@@ -139,6 +139,13 @@ sin decidir garantiza que US-32 luego toque 13 en vez de 5 y pida un tercer
 reset. Añade que US-34 es puramente aditiva y US-32 modifica 5 tablas vivas:
 separadas, ese riesgo de regresión no cae sobre la habilitadora del épico. El
 argumento completo está en la sección P-1 de US-34.
+>
+> **Cerrado el 2026-09-15.** US-32 se ejecutó y eligió la Opción B: se
+> retiraron la función y los cinco triggers, y **ya no conviven dos
+> políticas** — el reloj lo fija siempre el repositorio (`updatedAt: now()`
+> desde `clock.ts`). El párrafo de arriba describe el estado de antes, que
+> era la razón de ordenarlo así. Las tablas nuevas del épico **no llevan
+> trigger**; la política está en `openspec/specs/data-layer-clock-policy/`.
 
 **R-4 — US-34 es cuello de botella; MITIGADO (2026-09-14).** Bloquea las cinco
 siguientes, así que se la mantiene en lo mínimo que exige `db-reset` y en lo
