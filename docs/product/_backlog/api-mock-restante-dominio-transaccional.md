@@ -1,9 +1,24 @@
 # Idea — API mock restante: contenido, staff y dominio transaccional
 
-> Sin decisión de "se hace" todavía. NO es una US ni un épico. Documenta lo
-> que el [Épico 26](../26-escrituras-catalogo-postgres/README.md) dejó
-> fuera a propósito, con la evidencia de qué frontend llama a cada módulo,
+> Documenta lo que el [Épico 26](../26-escrituras-catalogo-postgres/README.md)
+> dejó fuera a propósito, con la evidencia de qué frontend llama a cada módulo,
 > para que el siguiente corte se decida con datos y no por número de rutas.
+
+> **DECIDIDO PARCIALMENTE (2026-09-14).** El dueño resolvió las dos preguntas
+> que cerraban este documento:
+>
+> - **(a) La exclusión transaccional de `db/schema.sql:13-16` NO se levanta
+>   todavía.** Se arranca por la Fase 1, que no la necesita. La decisión sobre
+>   el núcleo transaccional (Fase 3) se reevalúa cuando cierre la Fase 1.
+> - **(b) `payment-intent`, `payment-method`, `authors` y `flash-sale` pasan a
+>   mock declarado permanente.** Los dos primeros porque dependen de pasarelas
+>   externas reales; los dos últimos porque su valor es bajo en un marketplace
+>   de tecnología. El objetivo del repo pasa a ser "cero mocks **no
+>   declarados**".
+>
+> La Fase 1 ya está promovida a épico:
+> [Épico 33 — Contenido y configuración desde Postgres](../33-contenido-configuracion-postgres/README.md).
+> Las Fases 2, 3 y 4 de este documento siguen siendo inventario sin decisión.
 
 **Origen:** refinamiento del Épico 26 (verificado 2026-09-09 con grep y
 `node -e` sobre `apps/shop/src`, `apps/admin/rest/src` y
