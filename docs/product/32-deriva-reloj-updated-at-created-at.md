@@ -140,7 +140,7 @@ Feature: Coherencia de timestamps
 - [x] `just db-check`, `npx jest`, `just build-api`, `just verify` verdes —
       salida real pegada en
       `openspec/changes/deriva-reloj-timestamps/apply-progress.md`
-      (`db-check`: typecheck limpio + 209/209 tests; `jest`: 9/9 suites,
+      (`db-check`: typecheck limpio + 210/210 tests; `jest`: 9/9 suites,
       285/285 tests; `build-api`: `nest build` sin errores; `verify`: API
       200/5503B, Shop 200 cards:30, Admin 200 cards:1).
 - [x] Decisión de CA-1 declarada con su razonamiento en el reporte: **Opción
@@ -154,6 +154,16 @@ Feature: Coherencia de timestamps
       (confirmado con `log:['query']`: la segunda llamada solo emite
       `SELECT`s + `COMMIT`, ningún `UPDATE shops`).
 - [x] Status de esta US actualizado (arriba).
+- [x] **W-1 del `verify-report` cerrado (2026-09-15).** Era la única de las 7
+      rutas de la política cuyo `updatedAt: now()` ningún test protegía:
+      `updateUserPasswordHash`. Test añadido en
+      `users.integration.test.ts` sobre el dominio centinela (nunca el
+      usuario 3, cuya credencial `demodemo` sostiene la DoD de US-22).
+      **Verificado que detecta la regresión**, no solo que pasa: retirando
+      `updatedAt: now()` de `users.repository.ts` la suite baja a
+      `1 failed | 24 passed` con `expected 1789485718743 to be
+      1789485778747` — exactamente los 60 s del reloj fijado. Línea
+      restaurada y suite en 210/210.
 
 ## Notas para el agente ejecutor
 

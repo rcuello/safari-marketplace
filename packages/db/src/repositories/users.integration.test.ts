@@ -192,6 +192,37 @@ describe('escrituras de identidad (CA-4) — dominio centinela, nunca los sembra
     expect(updated.createdAt.getTime()).toBeLessThan(future.getTime());
   });
 
+  it('updateUserPasswordHash: updated_at sale de clock.ts y cumple updated_at >= created_at (CA-2 de US-32)', async () => {
+    // Cierra W-1 del verify-report: era la única de las 7 rutas de la política
+    // de reloj cuyo `updatedAt: now()` ningún test protegía — borrar esa línea
+    // de `users.repository.ts` dejaba la suite entera en verde. Va sobre el
+    // dominio centinela: `updateUserPasswordHash(3, …)` destruiría la
+    // credencial `demodemo` de la que depende la DoD de US-22 (ver cabecera).
+    const email = `Reloj-Password${TEST_DOMAIN}`;
+    const user = await createUser({
+      name: 'Reloj Password',
+      email,
+      passwordHash: 'hash-inicial',
+      isActive: true,
+    });
+
+    const future = new Date(Date.now() + 60_000);
+    _setNowProvider(() => future);
+    const updated = await updateUserPasswordHash(user.id, 'hash-rotado');
+
+    expect(updated).not.toBeNull();
+    if (!updated) throw new Error('updateUserPasswordHash devolvió null');
+
+    // (a) ruta olvidada: sin `updatedAt` el valor sería el del INSERT y FALLA.
+    expect(updated.updatedAt.getTime()).toBe(future.getTime());
+    // (b) el invariante de CA-2.
+    expect(updated.updatedAt.getTime()).toBeGreaterThanOrEqual(
+      updated.createdAt.getTime()
+    );
+    // (c) createdAt NO es mockeable (D-5, no-goal declarado).
+    expect(updated.createdAt.getTime()).toBeLessThan(future.getTime());
+  });
+
   it('createUser crea usuario + perfil + permiso inicial', async () => {
     const email = `Create-User${TEST_DOMAIN}`;
     const user = await createUser({

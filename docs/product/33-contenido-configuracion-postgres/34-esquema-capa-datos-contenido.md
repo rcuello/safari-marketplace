@@ -264,7 +264,7 @@ Todo lo de abajo está verificado contra el código, no contra el épico.
   `BigInt → number` con `_id()`, `Decimal → number` con `_dec()`, fechas como
   `Date`; mappers `_to*Record` internos, tipos `*Record` públicos vía el
   barrel `packages/db/index.ts`.
-- **Suites hoy.** `just db-check`: 10 archivos / 209 tests (línea base tras
+- **Suites hoy.** `just db-check`: 10 archivos / 210 tests (línea base tras
   el cierre de US-32; eran 203 al cerrar US-31).
   `cd apps/api/rest && npx jest`: 8 archivos `*.spec.ts` (CLAUDE.md dice «4
   suites / 65 tests»: está desactualizado; el número real se pega al
