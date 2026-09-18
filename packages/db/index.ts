@@ -56,6 +56,8 @@ export {
   findUserIdByProfileContact,
   purgeExpiredAuthTokens,
 } from './src/repositories/auth-tokens.repository';
+export type { UpdateBecomeSellerInput } from './src/repositories/become-seller.repository';
+export { getBecomeSeller, updateBecomeSeller } from './src/repositories/become-seller.repository';
 export type {
   CategoryAncestor,
   CategoryDescendant,

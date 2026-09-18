@@ -53,63 +53,71 @@ preguntar al dueño qué `chain_strategy` usar (`stacked-to-main` |
 
 ## Phase 1: Línea base (medir antes de tocar código)
 
-- [ ] 1.1 `curl -s localhost:9001/api/became-seller > antes.json`; medir
+- [x] 1.1 `curl -s localhost:9001/api/became-seller > antes.json`; medir
   `body.length` (esperado 11 458 B) con `node -e`. Precondición de todo lo
   demás.
-- [ ] 1.2 `just db-check`, pegar el conteo real (NO citar 210 sin medir).
+- [x] 1.2 `just db-check`, pegar el conteo real (NO citar 210 sin medir).
   **STOP** si ya está rojo: la deriva es previa a esta US.
-- [ ] 1.3 `cd apps/api/rest && npx jest`, pegar el conteo real (NO citar 285
+- [x] 1.3 `cd apps/api/rest && npx jest`, pegar el conteo real (NO citar 285
   sin medir).
-- [ ] 1.4 `curl -s localhost:9001/api/settings`, confirmar 5503 B
+- [x] 1.4 `curl -s localhost:9001/api/settings`, confirmar 5503 B
   (`body.length`) como línea base propia, no heredada de `CLAUDE.md`.
 
 ## Phase 2: Repositorio + barrel (D-1)
 
-- [ ] 2.1 Crear `packages/db/src/repositories/become-seller.repository.ts`:
+- [x] 2.1 Crear `packages/db/src/repositories/become-seller.repository.ts`:
   `getBecomeSeller()` — calco `settings.repository.ts:11-14`
   (`findUnique({where:{id:1}})` + `_toBecomeSellerRecord`).
-- [ ] 2.2 En el mismo archivo: `UpdateBecomeSellerInput` (3 columnas
+- [x] 2.2 En el mismo archivo: `UpdateBecomeSellerInput` (3 columnas
   opcionales, `pageOptions`/`commissions` como `Prisma.InputJsonValue`) +
   `updateBecomeSeller(input)` — `prisma.becomeSeller.update({where:{id:1},
   data:{...spreads condicionales, updatedAt: now()}})` en `try/catch` que
   traduce P2025 → `null`; `_isRecordNotFound` privado calco
   `users.repository.ts:391-397`. NUNCA `create`/`upsert` (CA-3).
-- [ ] 2.3 `packages/db/index.ts`: insertar `export type {
+- [x] 2.3 `packages/db/index.ts`: insertar `export type {
   UpdateBecomeSellerInput }` + `export { getBecomeSeller, updateBecomeSeller
   }` justo ANTES del bloque `./src/repositories/categories.repository`
   (`:59`), orden alfabético. **Coordinación de rebase**: este archivo es
   superficie compartida con US-42 (`shop_staff`); quien llegue segundo a
   `main` rebasea sobre el otro.
-- [ ] 2.4 `just db-build`. Falla ⇒ `git checkout -- packages/db/`.
+- [x] 2.4 `just db-build`. Falla ⇒ `git checkout -- packages/db/`.
 
 ## Phase 3: Extender la integración (D-5, determinismo)
 
-- [ ] 3.1 En `become-seller.integration.test.ts`, agregar snapshot en
+- [x] 3.1 En `become-seller.integration.test.ts`, agregar snapshot en
   `beforeAll`: `prisma.becomeSeller.findUniqueOrThrow({where:{id:1}})`
   guardado en `let` de módulo (`pageOptions`, `commissions`, `language`,
   `updatedAt`). No muta nada.
-- [ ] 3.2 Ampliar el `afterAll` YA EXISTENTE (`:17-19`) con
+- [x] 3.2 Ampliar el `afterAll` YA EXISTENTE (`:17-19`) con
   `try { restore } finally { await prisma.$disconnect() }`. NO crear un
   segundo `afterAll` (vitest `sequence.hooks: 'stack'` correría LIFO sobre
   un cliente ya desconectado, precedente `auth-tokens.integration.test.ts:9-11`).
-- [ ] 3.3 Agregar `describe` "getBecomeSeller devuelve la fila": `id===1`,
+  **Corrección encontrada al implementar** (ver apply-progress): el
+  `afterAll` único, al correr al FINAL de todo el archivo, no puede por sí
+  solo dejar la fila en reposo ANTES de que el tripwire (que corre a mitad
+  de archivo) se ejecute. Se agregó `_restoreSeedRow()` — la MISMA lógica
+  de restauración, factorizada — llamada TAMBIÉN desde el `afterEach` de
+  cada `describe` de escritura (3.4/3.5), y el `afterAll` sigue siendo el
+  único de todo el archivo (red de seguridad ante una corrida abortada).
+- [x] 3.3 Agregar `describe` "getBecomeSeller devuelve la fila": `id===1`,
   `pageOptions` 24 claves, `commissions` longitud 2, `language==='en'`, con
   narrowing explícito (`as Record<string, unknown>`/`as unknown[]`, nunca
   `as any`, precedente `:41-42` del propio archivo).
-- [ ] 3.4 Agregar `describe` "updateBecomeSeller persiste y fija el reloj":
+- [x] 3.4 Agregar `describe` "updateBecomeSeller persiste y fija el reloj":
   `_setNowProvider(() => fija)` → update → `updatedAt.getTime()===fija.getTime()`
   y `> createdAt`; relectura con `getBecomeSeller` confirma el valor nuevo;
   `afterEach(() => _setNowProvider(() => new Date()))` (patrón
-  `types.integration.test.ts:93-95`).
-- [ ] 3.5 Agregar `describe` "no crea segunda fila (CA-3)":
+  `types.integration.test.ts:93-95`) — ampliado con `_restoreSeedRow()`
+  (ver nota de 3.2).
+- [x] 3.5 Agregar `describe` "no crea segunda fila (CA-3)":
   `prisma.becomeSeller.count()` sigue en 1 tras el update.
-- [ ] 3.6 Los 3 `describe` de 3.3-3.5 van declarados ANTES del `describe`
+- [x] 3.6 Los 3 `describe` de 3.3-3.5 van declarados ANTES del `describe`
   "reloj sin ruta de update" (`:57-62`), convención citada literal en
   `shops.integration.test.ts:472-476`.
-- [ ] 3.7 Reencuadrar SOLO la prosa (comentario) del `describe` de `:57-62`:
+- [x] 3.7 Reencuadrar SOLO la prosa (comentario) del `describe` de `:57-62`:
   pasa de "no existe ruta de update" a "tripwire de estado de reposo".
   **La aserción `updatedAt===createdAt` NO se toca.**
-- [ ] 3.8 `just db-check`, pegar el conteo real (debe subir sobre la línea
+- [x] 3.8 `just db-check`, pegar el conteo real (debe subir sobre la línea
   base de 1.2). Falla ⇒ `git checkout --` del archivo.
 
 ## Phase 4: Servicio Nest (D-2, D-4, D-6)
