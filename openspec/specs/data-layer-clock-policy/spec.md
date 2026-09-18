@@ -151,32 +151,34 @@ explícitamente — este es el status quo ya vigente en `types`/`tags`/
 
 ### Requirement: `become_seller` vincula su primera ruta de update a esta política
 
-`become_seller` nace con columna `updated_at`, a diferencia de `shop_staff`.
-Esta política MUST vincular la PRIMERA función de repositorio que en el
-futuro actualice `become_seller` (llega con US-44) a fijar `updatedAt:
-now()` desde `packages/db/src/clock.ts`, igual que `products`, `categories`,
-`shops`, `users` y la vinculación ya declarada para `profiles`.
+`become_seller` nace con columna `updated_at`, a diferencia de
+`shop_staff`. `updateBecomeSeller()`
+(`packages/db/src/repositories/become-seller.repository.ts`, nuevo, US-44)
+MUST fijar `updatedAt: now()` desde `packages/db/src/clock.ts` en su
+función de escritura, igual que `products`, `categories`, `shops`, `users`
+y la vinculación ya declarada para `profiles`. `updateBecomeSeller` MUST
+usar `update({ where: { id: 1 }, ... })`, nunca `create`/`upsert` — la fila
+fija la garantiza la CHECK `become_seller_fila_unica` (US-41 CA-3).
 `become_seller` MUST NOT tener trigger `BEFORE UPDATE` de Postgres
-gobernando `updated_at` (CA-3 de US-41). Esta requirement MUST NOT crear
-ninguna función de escritura nueva sobre `become_seller` — esa función no
-existe hoy (US-41 solo entrega DDL, seed y capa tipada) y crearla sería
-expandir el alcance de esta capability.
+gobernando `updated_at`.
+(Previously: la vinculación era condicional a una función de escritura que
+todavía no existía — "la PRIMERA que se cree" — y esta requirement solo
+prometía el comportamiento futuro. US-44 crea esa función; esta requirement
+documenta el hecho ya verificable, no la promesa.)
 
-#### Scenario: `become_seller` sin ruta de update conserva `updated_at = created_at`
+#### Scenario: `become_seller` recién sembrado, sin ningún `POST` real todavía, conserva `updated_at = created_at`
 
-- GIVEN la única fila de `become_seller` recién sembrada, sin ninguna
-  función de repositorio que la actualice todavía
+- GIVEN la fila de `become_seller` recién sembrada o repuesta por
+  `just db-up`, sin ninguna llamada real a `updateBecomeSeller` todavía
 - WHEN se consulta la fila
-- THEN `updated_at` es igual a `created_at`, lo cual satisface el invariante
-  por ausencia de update, no por diseño de una función nueva
+- THEN `updated_at` es igual a `created_at`
 
-#### Scenario: La primera función de update que se cree hereda la política
+#### Scenario: `updateBecomeSeller` avanza el reloj (ya no hipotético)
 
-- GIVEN que en el futuro (US-44) se cree la primera función de repositorio
-  que actualice `become_seller`
-- WHEN esa función emite su `update` de Prisma
-- THEN MUST fijar `updatedAt: now()` desde `clock.ts`, igual que `products`,
-  `categories`, `shops`, `users` y `profiles`
+- GIVEN la fila de `become_seller`
+- WHEN `updateBecomeSeller(input)` corre
+- THEN `updated_at` queda estrictamente después de su valor previo, fijado
+  por `now()` de `clock.ts`, no por el reloj de Postgres
 
 #### Scenario: `become_seller` no tiene trigger `BEFORE UPDATE`
 
@@ -200,3 +202,92 @@ una corrección retroactiva de esta requirement.
   política exige revisar
 - WHEN se lista qué tablas gobierna
 - THEN `shop_staff` no aparece, porque no tiene columna `updated_at`
+
+### Requirement: Los tests de integración de `become_seller` restauran el reloj en el `afterEach` de cada `describe` de escritura, con el tripwire de reposo al final
+
+`db/seed.sql:33-35` hace `INSERT INTO become_seller (id, page_options,
+commissions, language) ... ON CONFLICT (id) DO UPDATE SET page_options =
+EXCLUDED.page_options, commissions = EXCLUDED.commissions, language =
+EXCLUDED.language` — sin incluir `updated_at` (ni `created_at`) en su
+`SET`. Por lo tanto `just db-up` MUST NOT considerarse suficiente para
+reponer `updated_at` después de que un test llame a `updateBecomeSeller`.
+
+Todo `describe` de escritura que ejerza `updateBecomeSeller`
+(`packages/db/src/repositories/become-seller.integration.test.ts`) MUST
+restaurar explícitamente `pageOptions`, `commissions` y `updatedAt` (al
+valor previo de la fila, capturado en un `beforeAll`) en su propio
+`afterEach`, mediante una función de restauración compartida.
+
+La restauración MUST NOT depender únicamente de un hook `afterAll`. Un
+`afterAll` dispara una sola vez, al terminar el archivo entero — es decir,
+DESPUÉS del tripwire de reposo, que vive a media altura. Ninguna
+ordenación de `describe` corrige eso: un hook de fin de archivo no puede
+dejar en reposo un estado que una aserción anterior ya leyó. Verificado en
+la implementación de US-44: escrito así literalmente, el tripwire falla con
+`AssertionError: expected 1789707339789 to be 1789494060858`.
+
+El `afterAll` YA EXISTENTE (`:17-19`) MUST invocar además esa misma función
+de restauración en un bloque `try/finally`, como red para una corrida
+abortada a mitad de escritura. Esta requirement MUST NOT crear un segundo
+hook `afterAll`: con el comportamiento por defecto de `sequence.hooks` de
+vitest (`stack`), un `afterAll` agregado después correría sobre un cliente
+Prisma ya desconectado por el existente (`prisma.$disconnect()`, `:17-19`).
+
+CONSECUENCIA CONOCIDA Y ACEPTADA: restaurar `updatedAt` con un `Date` de
+JavaScript (resolución de milisegundo) le arranca los microsegundos que
+`created_at` conserva de Postgres. Toda comprobación en `psql` de que la
+fila está en reposo MUST comparar a resolución de milisegundo
+(`date_trunc('milliseconds', ...)`); la igualdad cruda `updated_at =
+created_at` lee `f` aunque todo esté correcto. El tripwire de vitest no se
+ve afectado: compara vía `.getTime()`.
+
+Los `describe` de escritura nuevos MUST declararse ANTES del `describe`
+"reloj en reposo: `updatedAt === createdAt` (data-layer-clock-policy, tripwire)", siguiendo
+la convención ya documentada en `shops.integration.test.ts:472-476` ("VA
+EL ÚLTIMO A PROPÓSITO ... al añadir un describe de escritura nuevo, va
+ANTES de este"): vitest ejecuta los `describe` de un archivo en orden de
+declaración, así que solo desde el final el tripwire cubre toda la
+batería.
+
+Ese `describe` (`:57-62` antes de US-44, desplazado hacia el final del
+archivo al insertarse los de escritura) MUST conservarse SIN cambiar su aserción
+`updatedAt === createdAt` — no se reescribe la aserción. Se reencuadra
+como **tripwire de estado de reposo**: si los `describe` de escritura
+restauran `updatedAt` correctamente en su `afterEach`, la fila vuelve a
+`updatedAt === createdAt` para cuando este `describe` corre (al final), y
+cualquier corrida abortada que dejara deriva sin restaurar lo haría
+fallar.
+
+#### Scenario: Restaurar la fila en el `afterEach` de cada `describe` de escritura
+
+- GIVEN un `describe` de escritura que llama `updateBecomeSeller` y muta
+  `pageOptions`/`commissions`/`updatedAt`
+- WHEN termina cada `it` de ese `describe`
+- THEN la restauración ocurre en el `afterEach` de ese `describe`, ANTES de
+  que corra el tripwire de reposo
+- AND el `afterAll` ya existente (`:17-19`) invoca la misma restauración en
+  un `try/finally` como red, sin crear un segundo hook `afterAll`
+
+#### Scenario: El `describe` de escritura se declara antes del tripwire de reposo
+
+- GIVEN el archivo `become-seller.integration.test.ts` con un `describe`
+  de escritura nuevo
+- WHEN se ordenan los `describe` del archivo
+- THEN el `describe` de escritura queda declarado antes del `describe`
+  "reloj en reposo: `updatedAt === createdAt` (data-layer-clock-policy, tripwire)"
+
+#### Scenario: El tripwire de reposo sigue en verde tras una restauración correcta
+
+- GIVEN que un `describe` de escritura restauró `updatedAt` en su
+  `afterEach`
+- WHEN corre el `describe` del tripwire, declarado después de él
+- THEN `updatedAt === createdAt` sigue siendo cierto, confirmando que no
+  quedó deriva sin restaurar
+
+#### Scenario: `just db-up` no repara `updated_at` por sí solo
+
+- GIVEN que el seed usa `ON CONFLICT DO UPDATE` sin incluir `updated_at` en
+  su `SET`
+- WHEN se corre `just db-up` tras una fila mutada por un test previo que no
+  restauró el reloj
+- THEN `updated_at` permanece con el valor mutado, no el original del seed
