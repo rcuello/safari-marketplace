@@ -122,16 +122,16 @@ preguntar al dueño qué `chain_strategy` usar (`stacked-to-main` |
 
 ## Phase 4: Servicio Nest (D-2, D-4, D-6)
 
-- [ ] 4.1 En `become-seller.service.ts`: quitar `plainToClass`, el import de
+- [x] 4.1 En `become-seller.service.ts`: quitar `plainToClass`, el import de
   `@db/become-seller.json` y el campo privado `becomeSeller`. `findAll()`
   llama `getBecomeSeller()`; si `null`, `InternalServerErrorException`
   (mensaje calco `settings.service.ts:28-30`, citando `just db-migrate`).
-- [ ] 4.2 `findAll()` recompone el envoltorio literal (D-2): `{ page_options:
+- [x] 4.2 `findAll()` recompone el envoltorio literal (D-2): `{ page_options:
   { id, page_options: row.pageOptions, language, created_at: row.createdAt,
   updated_at: row.updatedAt }, commissions: row.commissions }`, cerrado con
   `as unknown as BecomeSeller` (precedente `settings.service.ts:39`, NO
   `as any`).
-- [ ] 4.3 **Trampa D-4, no compilar en falso**: `CreateBecomeSellerDto` es
+- [x] 4.3 **Trampa D-4, no compilar en falso**: `CreateBecomeSellerDto` es
   `OmitType` de `BecomeSeller`, que declara `missions` (no `commissions`) y
   anida `page_options` un nivel más (`entities/become-seller.entity.ts:6-10`,
   `dto/create-become-seller.dto.ts:4-7`). Declarar un tipo local que
@@ -140,62 +140,62 @@ preguntar al dueño qué `chain_strategy` usar (`stacked-to-main` |
   parámetro con `as unknown as` (mismo recurso de 4.2), con comentario que
   cite ambas fuentes. **NO editar `become-seller.entity.ts`** — mención en
   el reporte final como mejora adyacente no accionada.
-- [ ] 4.4 `create(body)` delega en `updateBecomeSeller` con las 3 claves tal
+- [x] 4.4 `create(body)` delega en `updateBecomeSeller` con las 3 claves tal
   cual (spread condicional, sin `language` si el body no la trae) y
   devuelve el mismo envoltorio que `findAll()`. `update()` pasa a
   `return this.findAll()`; `findOne`/`remove` conservan sus literales
   actuales — calco exacto `settings.service.ts:49-59` (D-6).
-- [ ] 4.5 Confirmar que `become-seller.module.ts`,
+- [x] 4.5 Confirmar que `become-seller.module.ts`,
   `become-seller.controller.ts`, `dto/`, `entities/` y
   `domain-error.mapper.ts` quedan sin editar.
 
 ## Phase 5: Test unitario Nest (jest, nuevo)
 
-- [ ] 5.1 Crear `become-seller.service.spec.ts`: `jest.mock('@safari/db', ()
+- [x] 5.1 Crear `become-seller.service.spec.ts`: `jest.mock('@safari/db', ()
   => ({...jest.requireActual(...), getBecomeSeller: jest.fn(),
   updateBecomeSeller: jest.fn()}))` + `jest.mocked(fn)`, copia literal del
   patrón de `categories.service.spec.ts:66-82`.
-- [ ] 5.2 Caso: `findAll()` con un `BecomeSellerRecord` fijo →
+- [x] 5.2 Caso: `findAll()` con un `BecomeSellerRecord` fijo →
   `Object.keys` top-level `['page_options','commissions']`, `Object.keys`
   del envoltorio `['id','page_options','language','created_at','updated_at']`,
   `page_options.page_options` idéntico por referencia al `pageOptions` del
   record.
-- [ ] 5.3 Caso: `findAll()` con `getBecomeSeller` resolviendo `null` →
+- [x] 5.3 Caso: `findAll()` con `getBecomeSeller` resolviendo `null` →
   `InternalServerErrorException`.
-- [ ] 5.4 Caso: `create(body)` delega en `updateBecomeSeller` con las 3
+- [x] 5.4 Caso: `create(body)` delega en `updateBecomeSeller` con las 3
   claves tal cual y devuelve el mismo envoltorio que `findAll()`.
-- [ ] 5.5 Caso: `create(body)` con `updateBecomeSeller` resolviendo `null` →
+- [x] 5.5 Caso: `create(body)` con `updateBecomeSeller` resolviendo `null` →
   `InternalServerErrorException`.
-- [ ] 5.6 Caso: `create({page_options, commissions})` sin `language` → el
+- [x] 5.6 Caso: `create({page_options, commissions})` sin `language` → el
   input pasado a `updateBecomeSeller` NO lleva la clave `language`
   (verifica el spread condicional, no `undefined` explícito).
-- [ ] 5.7 `cd apps/api/rest && npx jest`, pegar el conteo real (debe subir
+- [x] 5.7 `cd apps/api/rest && npx jest`, pegar el conteo real (debe subir
   sobre la línea base de 1.3, suite nueva incluida). `just build-api` en
   verde (compila sin el JSON importado). Falla ⇒
   `git checkout -- apps/api/rest/src/become-seller/`.
 
 ## Phase 6: Evidencia de contrato y regresión (CA-1, CA-2, CA-4)
 
-- [ ] 6.1 `curl -s localhost:9001/api/became-seller > despues.json`.
-- [ ] 6.2 Script `node -e` (no `jq`, no está instalado) comparando `antes.json`
+- [x] 6.1 `curl -s localhost:9001/api/became-seller > despues.json`.
+- [x] 6.2 Script `node -e` (no `jq`, no está instalado) comparando `antes.json`
   vs `despues.json` por los 5 campos de D-3: claves top-level, claves del
   envoltorio, `page_options.page_options` (24 claves) y `commissions`
   deep-equal; `created_at`/`updated_at` del envoltorio EXCLUIDOS y
   declarados aparte. Imprimir ambos tamaños (esperado 11 458 → 11 452 B).
-- [ ] 6.3 `curl -X POST` cambiando el título del banner dentro de
+- [x] 6.3 `curl -X POST` cambiando el título del banner dentro de
   `page_options` + `GET` posterior confirmando el cambio y
   `updated_at` posterior al valor previo (CA-2).
-- [ ] 6.4 `just verify`: los 3 servicios responden con contenido real;
+- [x] 6.4 `just verify`: los 3 servicios responden con contenido real;
   `/api/settings` sigue en 5503 B.
-- [ ] 6.5 `git diff --stat`: confirmar que `domain-error.mapper.ts` y
+- [x] 6.5 `git diff --stat`: confirmar que `domain-error.mapper.ts` y
   `settings/` (servicio, repositorio) NO aparecen en el diff (CA-4/CA-7).
-- [ ] 6.6 `psql` (`just db-shell`): `SELECT count(*), updated_at = created_at
+- [x] 6.6 `psql` (`just db-shell`): `SELECT count(*), updated_at = created_at
   FROM become_seller;` tras correr toda la suite de vitest — confirma que la
   restauración de la Fase 3 dejó la fila en reposo.
 
 ## Phase 7: Correcciones de la US y del épico
 
-- [ ] 7.1 Aplicar en
+- [x] 7.1 Aplicar en
   `docs/product/40-identidad-extendida-postgres/44-become-seller-postgres.md`
   las 5 correcciones de `proposal.md:121-143`: (a) CA-1 reescrito con
   equivalencia estructural y bytes acotados; (b) Gherkin de CA-1 sin "cuerpo
@@ -203,8 +203,8 @@ preguntar al dueño qué `chain_strategy` usar (`stacked-to-main` |
   de archivos: `become-seller.integration.test.ts` marcado como
   **existente, se extiende**, no nuevo; (e) DoD: "deep-equal + línea de
   bytes que acota la divergencia a los 2 timestamps".
-- [ ] 7.2 Marcar la fila de US-44 en
+- [x] 7.2 Marcar la fila de US-44 en
   `docs/product/40-identidad-extendida-postgres/README.md` como completada,
   con referencia al commit.
-- [ ] 7.3 Pegar toda la evidencia de la Fase 6 en la sección "Definición de
+- [x] 7.3 Pegar toda la evidencia de la Fase 6 en la sección "Definición de
   Done" del archivo de la US.

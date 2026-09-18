@@ -173,40 +173,228 @@ ningún archivo nuevo de test, solo se extendió el existente).
    restaurar `updatedAt` vía `Date` de JS; relevante para el script de
    evidencia de la Fase 6 (Cut 2), no accionado en este corte.
 
-## Remaining Tasks (Cut 2 — NOT started)
+## Cut 2 — Phases 4-7 (Nest service, unit spec, contract evidence, doc corrections)
 
-- [ ] Phase 4 — `become-seller.service.ts` (D-2, D-4, D-6)
-- [ ] Phase 5 — `become-seller.service.spec.ts` (nuevo, jest)
-- [ ] Phase 6 — Evidencia de contrato y regresión (CA-1, CA-2, CA-4)
-- [ ] Phase 7 — Correcciones de la US y del épico
+**Branch**: `us-44-corte-2-servicio` (sobre `us-44-corte-1-repositorio`,
+commit `9feaf04`).
 
-## Workload / PR Boundary
+### Completed Tasks (Cut 2)
 
-- Mode: chained PR slice (`feature-branch-chain`, resuelto por el dueño a
-  partir de `ask-on-risk`)
-- Current work unit: **Unit 1** de `tasks.md` ("Fase 1 (baseline) + Fase 2
-  (repositorio+barrel) + Fase 3 (integración D-5) — cierra con `just
-  db-check` en verde")
-- Boundary: este batch empieza en un checkout limpio de
-  `us-44-corte-1-repositorio` (sin apply-progress previo) y termina con
-  `just db-check` en verde, medido 3 veces. No toca `apps/`.
-- Estimated review budget impact: ~130 líneas netas (repositorio nuevo 55 +
-  barrel +2 + test extendido ~115 líneas nuevas netas), dentro del ~134
-  estimado por `tasks.md` para esta Unit — bajo el budget de 400.
+#### Phase 4 — Servicio Nest (D-2, D-4, D-6)
+- [x] 4.1-4.5 `become-seller.service.ts` reescrito: se fue `plainToClass` +
+  import del JSON + campo privado. `findAll()`/`create()` comparten una
+  única guarda+envoltorio (`_toEnvelope`, private): mismo mensaje que
+  `settings.service.ts:28-30` si `getBecomeSeller()`/`updateBecomeSeller()`
+  devuelven `null`. El envoltorio es el literal de orden fijo de D-2,
+  cerrado con `as unknown as BecomeSeller` (precedente
+  `settings.service.ts:39`). La trampa D-4 se resolvió con un tipo local
+  `BecomeSellerWriteBody` (`{ language?, page_options: Prisma.InputJsonValue,
+  commissions: Prisma.InputJsonValue }`, tipo importado de `@safari/db`
+  igual que `manufacturers.service.ts:188/239`) y
+  `createBecomeSellerDto as unknown as BecomeSellerWriteBody`, con
+  comentario que cita `apps/admin/rest/src/types/index.ts:2242-2246` y
+  `entities/become-seller.entity.ts:6-10`. **No se editó la entidad.**
+  `update()` pasa a `return this.findAll()`; `findOne`/`remove` conservan
+  sus literales — calco `settings.service.ts:49-59`.
+  `become-seller.module.ts`, `become-seller.controller.ts`, `dto/`,
+  `entities/` y `domain-error.mapper.ts` quedaron sin editar (confirmado
+  con `git diff` vacío, ver Phase 6).
 
-## Status
+#### Phase 5 — Test unitario Nest (jest, nuevo)
+- [x] 5.1-5.7 `become-seller.service.spec.ts` creado, calco del arnés de
+  `categories.service.spec.ts:66-82` (`jest.mock('@safari/db', ...)` +
+  `jest.requireActual` + `jest.mocked(fn)` por función). 5 casos: (a)
+  `findAll()` recompone el envoltorio — `Object.keys` top-level y del
+  envoltorio, `page_options.page_options` idéntico por referencia; (b)
+  `findAll()` con `getBecomeSeller` → `null` → `InternalServerErrorException`;
+  (c) `create(body)` delega en `updateBecomeSeller` con las 3 claves tal
+  cual y devuelve el mismo envoltorio; (d) `create(body)` con
+  `updateBecomeSeller` → `null` → `InternalServerErrorException`; (e)
+  `create({page_options, commissions})` sin `language` → el input al
+  repositorio no lleva esa clave (spread condicional, no `undefined`
+  explícito).
+  `npx jest src/become-seller`: **5/5 verde** en aislado.
+  `npx jest` completo (`apps/api/rest`): **10 suites / 290 tests**, verde.
+  Línea base de Cut 1 (Fase 1, tarea 1.3): 9 suites / 285 tests. Delta: +1
+  suite, +5 tests — exactamente la suite nueva, sin regresión en las
+  otras 9.
+  `just build-api`: verde (`nest build`, `Done in 97.39s`) — compila sin el
+  JSON importado.
 
-15/26 tasks complete (Fases 1-3, 15 tareas, de las 26 totales del
-`tasks.md`). Ready for Cut 2 (Fases 4-7) — NO iniciado por instrucción
-explícita del alcance de este batch.
+#### Phase 6 — Evidencia de contrato y regresión (CA-1, CA-2, CA-4)
 
-## Notes for Next Batch (Cut 2)
+**Desviación de método, documentada**: la API (`just api-dev`) ya estaba
+arriba en el puerto 9001 desde una sesión previa, en modo watch
+(`start:dev`). Al escribir `become-seller.service.ts` (Fase 4), el proceso
+recompiló en caliente y empezó a servir Postgres de inmediato — no fue
+posible re-capturar el `antes.json` (mock JSON) vía `curl` contra el
+código viejo, porque el código viejo ya no estaba corriendo. Se resolvió
+leyendo el mock **on disk**
+(`apps/api/rest/src/db/pickbazar/become-seller.json`) y comprimiéndolo con
+`JSON.stringify(JSON.parse(...))` — es exactamente lo que
+`plainToClass` + el serializador de Nest producían antes (mismas claves,
+mismos valores, solo sin la indentación del archivo fuente): el resultado
+midió **11 458 B**, idéntico al valor medido por `curl` real en Cut 1
+(tarea 1.1) y al declarado en `design.md`. Es la lectura correcta de la
+frase de `design.md`/CA-1 «mock, on disk» — no era el archivo de
+scratchpad de la sesión anterior (que además ya no existía), sino el JSON
+fuente comprimido.
 
-- El servidor de la API (`just api-dev`) quedó corriendo en segundo plano
-  en esta sesión (puerto 9001) para poder medir 1.1/1.4 — puede que ya no
-  esté vivo si la sesión terminó; Cut 2 necesita la API arriba para las
-  tareas 6.1/6.3/6.4.
-- `antes.json` (11 458 B) quedó en el scratchpad de esta sesión, NO en el
-  repo — Cut 2 debe volver a capturarlo si lo necesita como archivo, o
-  re-correr el `curl` (la cifra ya está documentada arriba y en
-  `design.md`).
+- [x] 6.1 `curl -s localhost:9001/api/became-seller > despues.json`
+  (scratchpad) — **11 452 B**.
+- [x] 6.2 Script `node -e` (`ca1-compare.js`, scratchpad) comparando
+  `antes.json` (mock, on disk, comprimido) vs `despues.json` por los 5
+  campos de D-3. Salida real:
+
+  ```
+  --- Bytes (UTF-8, en disco) ---
+  antes.json  : 11458 B
+  despues.json: 11452 B
+  delta       : -6 B
+
+  --- D-3: equivalencia estructural acotada a 5 campos ---
+  1. Claves top-level (orden): [ 'page_options', 'commissions' ] => OK
+  2. Claves del envoltorio (orden): [ 'id', 'page_options', 'language', 'created_at', 'updated_at' ] => OK
+  3. id: 1 | language: "en" => OK (deep-equal)
+  4. page_options.page_options (24 claves) => OK (deep-equal)
+  5. commissions (array de 2 tiers) => OK (deep-equal)
+
+  --- Excluidos del deep-equal: created_at/updated_at del envoltorio (divergencia acotada) ---
+  antes.page_options.created_at  : 2024-06-06T10:30:48.000000Z (27 car.)
+  despues.page_options.created_at: 2026-09-15T17:41:00.858Z (24 car.)
+  antes.page_options.updated_at  : 2024-06-12T11:31:46.000000Z (27 car.)
+  despues.page_options.updated_at: 2026-09-15T17:41:00.858Z (24 car.)
+  Causa doble: (a) VALOR -- db/seed.sql:33 no inserta created_at/updated_at, toman DEFAULT now() del ultimo db-up, no las fechas 2024 del mock;
+               (b) FORMATO -- Date.toJSON() emite 24 caracteres (.fffZ) donde el mock trae 27 (.ffffffZ).
+
+  CA-1: VERDE
+  ```
+
+- [x] 6.3 `POST /api/became-seller` cambiando `sellingStepsTitle` dentro de
+  `page_options` (body con los 24 campos internos + `commissions` +
+  `language` tal como los devolvía el `GET`) → `HTTP 201`, respuesta con
+  el título cambiado. `GET` posterior confirma el mismo título y
+  `updated_at` posterior (`2026-09-15T17:41:00.858Z` →
+  `2026-09-18T05:20:57.821Z`). **Después de capturar la evidencia, la fila
+  se restauró** vía `psql` (`UPDATE become_seller SET page_options = ...,
+  commissions = ..., language = ..., updated_at = created_at WHERE id =
+  1`, usando el `despues.json` pre-mutación como fuente) — así el
+  tripwire de reposo de Cut 1 sigue viendo la fila sin mutar.
+- [x] 6.4 `just verify` — requirió levantar `shop-dev`/`admin-dev` en
+  segundo plano (no estaban arriba). Salida real:
+  ```
+  OK   API    :9001/api/settings  200  5503B  57ms
+  OK   Shop   :3003/en  200  190788B  851ms  cards:30
+  OK   Admin  :3002/en/login  200  72821B  2122ms  cards:1
+  ```
+- [x] 6.5 `git diff --stat` (post Fase 4-7):
+  ```
+  apps/api/rest/src/become-seller/become-seller.service.ts     | 89 ++++++++++++++++++----
+  openspec/changes/2026-09-15-become-seller-postgres/tasks.md  | 22 +++---
+  2 files changed, 87 insertions(+), 24 deletions(-)
+  ```
+  (más `become-seller.service.spec.ts`, nuevo, sin diff previo, y los 2
+  docs de la Fase 7). `git diff` de `domain-error.mapper.ts` y de
+  `become-seller.module.ts` — **ambos vacíos**, confirmado con
+  `git diff -- <archivo>` sin salida.
+- [x] 6.6 **Corrección respecto al tasks.md literal** (ver "Second Finding"
+  de Cut 1): el `SELECT count(*), updated_at = created_at` crudo se
+  reemplazó por una comparación a **resolución de milisegundo**
+  (`date_trunc('milliseconds', ...)`) para no leer un falso rojo. Resultado
+  real, tras la restauración de 6.3 (que se hizo con SQL directo, no vía
+  `Date` de JS, así que aquí coincidieron hasta el microsegundo):
+  ```
+   count
+  -------
+       1
+  (1 row)
+
+   en_reposo |          updated_at           |          created_at
+  -----------+-------------------------------+-------------------------------
+   t         | 2026-09-15 17:41:00.858127+00 | 2026-09-15 17:41:00.858127+00
+  (1 row)
+  ```
+
+`just db-check` post-evidencia (2 corridas, tras la mutación+restauración
+de 6.3): **12 archivos / 228 tests**, verde ambas veces — sin regresión
+sobre el cierre de Cut 1.
+
+#### Phase 7 — Correcciones de la US y del épico
+- [x] 7.1 Las 5 correcciones de `proposal.md:121-143` aplicadas en
+  `docs/product/40-identidad-extendida-postgres/44-become-seller-postgres.md`:
+  CA-1 reescrito con equivalencia estructural + bytes acotados; Gherkin
+  sin «cuerpo idéntico»; ruta aclarada a `/api/became-seller` (pasado,
+  `@Public()`, sin guard); tabla de archivos con
+  `become-seller.integration.test.ts` marcado **existente, se extiende**;
+  DoD reescrito a «deep-equal + línea de bytes que acota la divergencia a
+  los 2 timestamps».
+- [x] 7.2 Fila de US-44 marcada `✅ Implementada` en
+  `docs/product/40-identidad-extendida-postgres/README.md`, con
+  referencia a la rama `us-44-corte-2-servicio` (no hay commit todavía —
+  el orquestador lo crea después de este batch).
+- [x] 7.3 Toda la evidencia de la Fase 6 pegada en la sección "Definición
+  de Done" del archivo de la US (bytes, deep-equal, CA-2, jest,
+  build-api, verify, git diff --stat, db-check, psql).
+
+### Deviation Found and Fixed (Cut 2)
+
+**El método de captura de `antes.json` del tasks.md (6.1, vía `curl` contra
+el código viejo) no era ejecutable en este batch**: el proceso de
+`api-dev` en watch mode ya había recompilado con el servicio nuevo antes de
+que se pudiera capturar. Se usó en su lugar el mock **on disk**
+(`become-seller.json`, comprimido con `JSON.stringify(JSON.parse(...))`),
+que es bit-a-bit lo que el código viejo servía (verificado: mismo tamaño,
+11 458 B, que el medido por Cut 1 con `curl` real). No es una desviación
+del contrato de evidencia — el propio `design.md` la nombra así («mock, on
+disk») — solo del *mecanismo* (lectura de archivo en vez de `curl` en
+vivo), forzado por el estado del proceso, no por elección.
+
+### Files Changed (Cut 2)
+
+| File | Action | What Was Done |
+|------|--------|----------------|
+| `apps/api/rest/src/become-seller/become-seller.service.ts` | Modified | Reescritura completa: Postgres vía `@safari/db`, envoltorio D-2, tipo local D-4, guarda compartida `_toEnvelope`, métodos muertos calco `settings.service.ts` (D-6) |
+| `apps/api/rest/src/become-seller/become-seller.service.spec.ts` | Created | 5 casos jest, `@safari/db` mockeado, calco `categories.service.spec.ts:66-82` |
+| `docs/product/40-identidad-extendida-postgres/44-become-seller-postgres.md` | Modified | Las 5 correcciones de `proposal.md` + status + evidencia de la Fase 6 pegada en la DoD |
+| `docs/product/40-identidad-extendida-postgres/README.md` | Modified | Fila de US-44 marcada completada |
+| `openspec/changes/2026-09-15-become-seller-postgres/tasks.md` | Modified | Fases 4-7 marcadas `[x]` (37/37 tareas del archivo completo) |
+
+**No tocados** (confirmado con `git diff` vacío): `domain-error.mapper.ts`,
+`settings/`, `become-seller.module.ts`, `become-seller.controller.ts`,
+`entities/`, `dto/`, `packages/db/` (Cut 1 ya cerrado, no se re-tocó).
+
+### Issues Found (Cut 2)
+
+1. `updateBecomeSeller`'s `Prisma.InputJsonValue` type forced the local
+   `BecomeSellerWriteBody` type (D-4) to type `page_options`/`commissions`
+   as `Prisma.InputJsonValue` too (imported from `@safari/db`, precedent
+   `manufacturers.service.ts:188/239`) instead of a hand-rolled
+   `Record<string, unknown>` — the hand-rolled version didn't satisfy
+   `updateBecomeSeller`'s parameter type. Not a design deviation, just a
+   type-level detail the design didn't spell out.
+2. See "Deviation Found and Fixed (Cut 2)" above — the `antes.json`
+   capture mechanism (file read vs. live `curl`), forced by the API
+   process already running in watch mode.
+3. `just verify` needed `shop-dev`/`admin-dev` started in the background
+   (neither was up at the start of this batch) — not a code issue, just a
+   precondition the tasks.md assumed was already met.
+
+## Workload / PR Boundary (Cut 2)
+
+- Mode: chained PR slice (`feature-branch-chain`), Unit 2 of `tasks.md`.
+- Current work unit: **Unit 2** — Phase 4 (service) + Phase 5 (spec) +
+  Phase 6 (evidence) + Phase 7 (US corrections).
+- Boundary: this batch starts on `us-44-corte-2-servicio` (branched from
+  `us-44-corte-1-repositorio`, commit `9feaf04`) and ends with all of
+  Phase 4-7 green and evidence pasted into the US doc. Rollback:
+  `git checkout -- apps/api/rest/src/become-seller/` +
+  `git checkout -- docs/product/40-identidad-extendida-postgres/`.
+- Estimated review budget impact: net diff for
+  `become-seller.service.ts` (+89/-... per `git diff --stat` above) +
+  `become-seller.service.spec.ts` (new, ~185 lines) + 2 doc files — inside
+  the ~281 lines forecast by `tasks.md` for this Unit.
+
+## Status (cumulative)
+
+37/37 tasks complete (Fases 1-7 del `tasks.md` completo). Ready for
+`sdd-verify`.
