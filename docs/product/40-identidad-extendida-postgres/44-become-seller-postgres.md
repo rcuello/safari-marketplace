@@ -62,12 +62,19 @@ mockeado.
 `GET /api/became-seller` devuelve un cuerpo cuyo JSON **parseado** es
 profundamente igual (deep-equal) al que hoy sirve `become-seller.json`:
 mismas claves y valores en `page_options` y `commissions`. Se acepta una
-única divergencia, declarada y acotada: `created_at`/`updated_at` del
-envoltorio salen de columnas `timestamptz` y `Date.toJSON()` emite 3
-decimales donde el mock trae 6, de modo que el cuerpo mide 11 452 B frente a
-11 458 B (−6 B = 3 caracteres × 2 campos). Mismo precedente ya embarcado en
-`/api/settings`. El orden de claves dentro de los `jsonb` no forma parte del
-contrato. La comparación se hace con evidencia (`node -e`), no a ojo.
+única divergencia, declarada y acotada a `created_at`/`updated_at` del
+envoltorio, con **causa doble**:
+
+- **Valor**: `db/seed.sql:33` no inserta esas dos columnas, así que toman su
+  `DEFAULT now()` — la fecha del último `just db-up`, no las fechas de 2024
+  que trae el mock.
+- **Formato**: `Date.toJSON()` emite 24 caracteres donde el mock trae 27
+  (3 decimales de segundo contra 6).
+
+El cuerpo mide por eso 11 452 B frente a 11 458 B (−6 B = 3 caracteres × 2
+campos). Mismo precedente ya embarcado en `/api/settings`. El orden de claves
+dentro de los `jsonb` no forma parte del contrato. La comparación se hace con
+evidencia (`node -e`), no a ojo.
 
 ### CA-2 — Escritura real
 La ruta de escritura actualiza el singleton y el `GET` siguiente refleja el
@@ -205,11 +212,19 @@ resolución de milisegundo — la cruda `updated_at = created_at` puede leer
      1
 (1 row)
 
- en_reposo |          updated_at           |          created_at
------------+-------------------------------+-------------------------------
- t         | 2026-09-15 17:41:00.858127+00 | 2026-09-15 17:41:00.858127+00
+ reposo_crudo | reposo_ms |         updated_at         |          created_at
+--------------+-----------+----------------------------+-------------------------------
+ f            | t         | 2026-09-15 17:41:00.858+00 | 2026-09-15 17:41:00.858127+00
 (1 row)
 ```
+
+`reposo_crudo` lee `f` y eso **no** es una regresión: el `afterAll` de la suite
+de integración repone `updated_at` con un `Date` de JavaScript, que solo llega
+al milisegundo, mientras `created_at` conserva los microsegundos originales de
+Postgres. Por eso la comprobación válida es `reposo_ms` (`date_trunc('milliseconds', ...)`),
+que lee `t`. El tripwire de vitest no se ve afectado porque compara vía
+`.getTime()`. Cualquier revisión futura de esta fila debe comparar a resolución
+de milisegundo.
 
 ## Notas para el agente ejecutor
 

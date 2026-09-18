@@ -41,7 +41,7 @@ documenta el hecho ya verificable, no la promesa.)
 
 ## ADDED Requirements
 
-### Requirement: Los tests de integración de `become_seller` restauran el reloj en el `afterAll` existente, con el tripwire de reposo al final
+### Requirement: Los tests de integración de `become_seller` restauran el reloj en el `afterEach` de cada `describe` de escritura, con el tripwire de reposo al final
 
 `db/seed.sql:33-35` hace `INSERT INTO become_seller (id, page_options,
 commissions, language) ... ON CONFLICT (id) DO UPDATE SET page_options =
@@ -53,36 +53,58 @@ reponer `updated_at` después de que un test llame a `updateBecomeSeller`.
 Todo `describe` de escritura que ejerza `updateBecomeSeller`
 (`packages/db/src/repositories/become-seller.integration.test.ts`) MUST
 restaurar explícitamente `pageOptions`, `commissions` y `updatedAt` (al
-valor previo de la fila) dentro del `afterAll` YA EXISTENTE (`:17-19`), en
-un bloque `try/finally`. Esta requirement MUST NOT crear un segundo hook
-`afterAll`: con el comportamiento por defecto de `sequence.hooks` de
+valor previo de la fila, capturado en un `beforeAll`) en su propio
+`afterEach`, mediante una función de restauración compartida.
+
+La restauración MUST NOT depender únicamente de un hook `afterAll`. Un
+`afterAll` dispara una sola vez, al terminar el archivo entero — es decir,
+DESPUÉS del tripwire de reposo, que vive a media altura. Ninguna
+ordenación de `describe` corrige eso: un hook de fin de archivo no puede
+dejar en reposo un estado que una aserción anterior ya leyó. Verificado en
+la implementación de US-44: escrito así literalmente, el tripwire falla con
+`AssertionError: expected 1789707339789 to be 1789494060858`.
+
+El `afterAll` YA EXISTENTE (`:17-19`) MUST invocar además esa misma función
+de restauración en un bloque `try/finally`, como red para una corrida
+abortada a mitad de escritura. Esta requirement MUST NOT crear un segundo
+hook `afterAll`: con el comportamiento por defecto de `sequence.hooks` de
 vitest (`stack`), un `afterAll` agregado después correría sobre un cliente
-Prisma ya desconectado por el `afterAll` existente
-(`prisma.$disconnect()`, `:17-19`).
+Prisma ya desconectado por el existente (`prisma.$disconnect()`, `:17-19`).
+
+CONSECUENCIA CONOCIDA Y ACEPTADA: restaurar `updatedAt` con un `Date` de
+JavaScript (resolución de milisegundo) le arranca los microsegundos que
+`created_at` conserva de Postgres. Toda comprobación en `psql` de que la
+fila está en reposo MUST comparar a resolución de milisegundo
+(`date_trunc('milliseconds', ...)`); la igualdad cruda `updated_at =
+created_at` lee `f` aunque todo esté correcto. El tripwire de vitest no se
+ve afectado: compara vía `.getTime()`.
 
 Los `describe` de escritura nuevos MUST declararse ANTES del `describe`
-"reloj sin ruta de update: `updatedAt === createdAt`" (`:57-62`), siguiendo
+"reloj en reposo: `updatedAt === createdAt` (data-layer-clock-policy, tripwire)", siguiendo
 la convención ya documentada en `shops.integration.test.ts:472-476` ("VA
 EL ÚLTIMO A PROPÓSITO ... al añadir un describe de escritura nuevo, va
 ANTES de este"): vitest ejecuta los `describe` de un archivo en orden de
 declaración, así que solo desde el final el tripwire cubre toda la
 batería.
 
-El `describe` de `:57-62` MUST conservarse SIN cambiar su aserción
+Ese `describe` (`:57-62` antes de US-44, desplazado hacia el final del
+archivo al insertarse los de escritura) MUST conservarse SIN cambiar su aserción
 `updatedAt === createdAt` — no se reescribe la aserción. Se reencuadra
 como **tripwire de estado de reposo**: si los `describe` de escritura
-restauran `updatedAt` correctamente en su `try/finally`, la fila vuelve a
+restauran `updatedAt` correctamente en su `afterEach`, la fila vuelve a
 `updatedAt === createdAt` para cuando este `describe` corre (al final), y
 cualquier corrida abortada que dejara deriva sin restaurar lo haría
 fallar.
 
-#### Scenario: Restaurar la fila dentro del `afterAll` existente, no en un hook nuevo
+#### Scenario: Restaurar la fila en el `afterEach` de cada `describe` de escritura
 
 - GIVEN un `describe` de escritura que llama `updateBecomeSeller` y muta
   `pageOptions`/`commissions`/`updatedAt`
-- WHEN el archivo de test termina
-- THEN la restauración ocurre en un `try/finally` dentro del `afterAll` ya
-  existente (`:17-19`), no en un segundo hook `afterAll`
+- WHEN termina cada `it` de ese `describe`
+- THEN la restauración ocurre en el `afterEach` de ese `describe`, ANTES de
+  que corra el tripwire de reposo
+- AND el `afterAll` ya existente (`:17-19`) invoca la misma restauración en
+  un `try/finally` como red, sin crear un segundo hook `afterAll`
 
 #### Scenario: El `describe` de escritura se declara antes del tripwire de reposo
 
@@ -90,13 +112,13 @@ fallar.
   de escritura nuevo
 - WHEN se ordenan los `describe` del archivo
 - THEN el `describe` de escritura queda declarado antes del `describe`
-  "reloj sin ruta de update: `updatedAt === createdAt`" (`:57-62`)
+  "reloj en reposo: `updatedAt === createdAt` (data-layer-clock-policy, tripwire)"
 
 #### Scenario: El tripwire de reposo sigue en verde tras una restauración correcta
 
 - GIVEN que un `describe` de escritura restauró `updatedAt` en su
-  `try/finally`
-- WHEN corre el `describe` de `:57-62`
+  `afterEach`
+- WHEN corre el `describe` del tripwire, declarado después de él
 - THEN `updatedAt === createdAt` sigue siendo cierto, confirmando que no
   quedó deriva sin restaurar
 

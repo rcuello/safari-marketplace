@@ -193,16 +193,31 @@ destructivo y no autorizado).
 1. **Snapshot en `beforeAll`**: `prisma.becomeSeller.findUniqueOrThrow({ where: { id: 1 } })`
    guardado en un `let` de módulo (`pageOptions`, `commissions`, `language`,
    `updatedAt`). No muta nada.
-2. **Restauración exacta dentro del `afterAll` YA EXISTENTE** (`:17-19`), en
-   `try { restore } finally { $disconnect }` — **no** un segundo `afterAll`: el
-   default `sequence.hooks: 'stack'` de vitest los corre LIFO y el segundo tocaría
-   un cliente ya desconectado (la trampa está documentada en
-   `auth-tokens.integration.test.ts:9-11`). El `update` repone las 3 columnas **y
-   `updatedAt` explícito** (la columna es escribible: no lleva `@updatedAt`).
-3. **Orden de declaración**: los `describe` nuevos de escritura van **al final del
-   archivo**, después del tripwire de reposo. Regla citada literal en el repo:
-   «vitest ejecuta los `describe` de un archivo en orden de declaración»
+2. **Restauración exacta en el `afterEach` de cada `describe` de escritura**,
+   vía una función compartida `_restoreSeedRow()`. El `update` repone las 3
+   columnas **y `updatedAt` explícito** (la columna es escribible: no lleva
+   `@updatedAt`). El `afterAll` YA EXISTENTE (`:17-19`) llama además a esa misma
+   función en `try { restore } finally { $disconnect }`, como red para una
+   corrida abortada — pero **no** se crea un segundo `afterAll`: el default
+   `sequence.hooks: 'stack'` de vitest los corre LIFO y el segundo tocaría un
+   cliente ya desconectado (trampa documentada en
+   `auth-tokens.integration.test.ts:9-11`).
+
+   > CORREGIDO TRAS LA IMPLEMENTACIÓN. La redacción original de este punto
+   > mandaba restaurar **solo** dentro del `afterAll`. Eso es irrealizable: un
+   > `afterAll` dispara una única vez, al terminar el archivo entero, o sea
+   > DESPUÉS del tripwire de reposo que vive a media altura. Ninguna ordenación
+   > de `describe` lo arregla. Escrito así literalmente, el tripwire falla con
+   > `AssertionError: expected 1789707339789 to be 1789494060858`.
+3. **Orden de declaración**: los `describe` nuevos de escritura van **antes** del
+   tripwire de reposo, que se queda el último del archivo. Regla citada literal
+   en el repo: «vitest ejecuta los `describe` de un archivo en orden de
+   declaración ... al añadir un describe de escritura nuevo, va ANTES de este»
    (`shops.integration.test.ts:472-476`).
+
+   > CORREGIDO TRAS LA IMPLEMENTACIÓN. La redacción original decía «al final del
+   > archivo, después del tripwire», que es justo lo contrario de lo que dice el
+   > precedente que ella misma citaba.
 
 El `describe` de `:57-62` se **conserva con su aserción intacta** (`updatedAt ===
 createdAt`) y se **reencuadra en la prosa**: deja de significar «no existe ruta de
