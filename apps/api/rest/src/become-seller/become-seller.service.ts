@@ -5,26 +5,48 @@ import {
   type BecomeSellerRecord,
   type Prisma,
 } from '@safari/db';
-import { BecomeSeller } from './entities/become-seller.entity';
+import {
+  BecomeSeller,
+  BecomeSellerOptions,
+  CommissionItem,
+} from './entities/become-seller.entity';
 import { CreateBecomeSellerDto } from './dto/create-become-seller.dto';
 import { UpdateBecomeSellerDto } from './dto/update-become-seller.dto';
 
 /**
- * El body real que manda el admin (`BecomeSellerInput`,
- * `apps/admin/rest/src/types/index.ts:2242-2246`), armado como objeto plano
- * en `become-seller-form.tsx:81-96` y enviado por `POST` en
- * `data/client/become-seller.ts:19-23`. **No** es `BecomeSeller` (la
- * entidad de este módulo): esa declara `missions` (no `commissions`) y
- * anida `page_options` un nivel más
- * (`entities/become-seller.entity.ts:6-10`), así que `dto.commissions` no
- * compila (D-4, `design.md`). `CreateBecomeSellerDto` se reinterpreta con
- * `as unknown as` — mismo recurso que `settings.service.ts:39`
- * (`as unknown as Setting`).
+ * `@safari/db` guarda `pageOptions`/`commissions` como `Prisma.JsonValue` y
+ * acepta `Prisma.InputJsonValue` (`packages/db/src/records.ts:187-194`,
+ * `become-seller.repository.ts:19-24`): ninguna clase es asignable a esos
+ * tipos en ninguna dirección — a una clase le falta el índice de `string`
+ * que `InputJsonObject` exige, y un `{...spread}` falla un nivel más abajo
+ * (`banner` vuelve a ser clase). Este límite es lo que obligaba antes a un
+ * salto de tipos vía `unknown` para cruzarlo.
+ *
+ * Las dos guardas de abajo cruzan ese límite con una comprobación real de
+ * runtime (`typeof`/`Array.isArray`) y **una sola** condición por campo,
+ * compartida por lectura y escritura: el predicado estrecha a la
+ * intersección `<Clase> & Prisma.InputJson{Object,Array}`, así que el
+ * mismo valor narrowed sirve para construir el literal tipado de
+ * `_toEnvelope()` (lado clase) y para pasarse tal cual a
+ * `updateBecomeSeller()` (lado `Prisma.InputJsonValue`) sin ningún escape
+ * de tipos. Antes de esta corrección, `create()` usaba una guarda más laxa
+ * (cualquier objeto u array) que la de `_toEnvelope()` (objeto exacto /
+ * array exacto por campo): un `POST` con `commissions` como objeto (o
+ * `page_options` como array) pasaba la guarda de escritura, se persistía,
+ * y la siguiente lectura reventaba en la guarda de `_toEnvelope()` — 500
+ * permanente en una ruta `@Public()`. Con una única condición por campo,
+ * eso ya no puede ocurrir: solo se escribe lo que la lectura acepta.
  */
-interface BecomeSellerWriteBody {
-  language?: string;
-  page_options: Prisma.InputJsonValue;
-  commissions: Prisma.InputJsonValue;
+function _isBecomeSellerOptions(
+  value: unknown,
+): value is BecomeSellerOptions & Prisma.InputJsonObject {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function _isCommissionList(
+  value: unknown,
+): value is CommissionItem[] & Prisma.InputJsonArray {
+  return Array.isArray(value);
 }
 
 /**
@@ -47,11 +69,11 @@ export class BecomeSellerService {
   }
 
   async create(createBecomeSellerDto: CreateBecomeSellerDto): Promise<BecomeSeller> {
-    const body = createBecomeSellerDto as unknown as BecomeSellerWriteBody;
+    const { page_options, commissions, language } = createBecomeSellerDto;
     const row = await updateBecomeSeller({
-      ...(body.page_options !== undefined && { pageOptions: body.page_options }),
-      ...(body.commissions !== undefined && { commissions: body.commissions }),
-      ...(body.language !== undefined && { language: body.language }),
+      ...(_isBecomeSellerOptions(page_options) && { pageOptions: page_options }),
+      ...(_isCommissionList(commissions) && { commissions: commissions }),
+      ...(language !== undefined && { language }),
     });
     return this._toEnvelope(row);
   }
@@ -81,6 +103,11 @@ export class BecomeSellerService {
         'No hay fila en `become_seller`. Siembra la base con `just db-migrate`.',
       );
     }
+    if (!_isBecomeSellerOptions(row.pageOptions) || !_isCommissionList(row.commissions)) {
+      throw new InternalServerErrorException(
+        'La fila de `become_seller` tiene `page_options`/`commissions` con forma inesperada.',
+      );
+    }
 
     return {
       page_options: {
@@ -91,6 +118,6 @@ export class BecomeSellerService {
         updated_at: row.updatedAt,
       },
       commissions: row.commissions,
-    } as unknown as BecomeSeller;
+    };
   }
 }

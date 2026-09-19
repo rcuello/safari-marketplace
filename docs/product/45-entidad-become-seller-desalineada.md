@@ -9,9 +9,16 @@
 
 **Épico:** ninguno (US standalone)
 **Fecha:** 2026-09-18
-**Status:** Listo para ejecución
+**Status:** Implementada
 **Depende de:** US-44 (implementada; esta deuda nace de su «NO incluye»)
 **LOC est.:** ~220
+**LOC real:** 423 (322 inserciones + 101 borrados, `git diff --stat`
+acotado a `apps/api/rest/src/become-seller/`: entidad 143, spec 193,
+servicio 67, DTO 20). Incluye un lote correctivo post-review (defecto de
+asimetría de guardas de escritura/lectura, ver `apply-progress.md`) que
+subió la cifra desde los 367 del primer lote — 23 líneas por encima del
+presupuesto de 400, reportado con honestidad y no comprimido
+(`size:exception` del owner).
 
 ## Historia
 **Como** mantenedor de la API y como consumidor de `/docs`, **quiero** que la
@@ -363,34 +370,37 @@ Sin cambios en: `become-seller.controller.ts`, `become-seller.module.ts`,
 
 ## Definición de Done
 
-- [ ] Salida de `node -e` sobre `/docs-json` **antes** del cambio pegada
+- [x] Salida de `node -e` sobre `/docs-json` **antes** del cambio pegada
       (debe mostrar `missions`, 12 propiedades en el objeto interno,
       `banner → Attachment`, `required` con `id`), y la misma salida
       **después** cumpliendo CA-2 punto por punto.
-- [ ] `grep -rn missions apps/api/rest/src/become-seller/` vacío y
+- [x] `grep -rn missions apps/api/rest/src/become-seller/` vacío y
       `grep -n "as unknown as\|as any\|ts-ignore\|ts-expect-error"
       apps/api/rest/src/become-seller/become-seller.service.ts` vacío,
-      pegados (CA-1, CA-3).
-- [ ] Red de regresión de CA-3 demostrada: salida de `npx jest` en **rojo**
+      pegados (CA-1, CA-3). Matiz pegado en `apply-progress.md`: el grep
+      de `missions` sin límite de palabra nunca puede dar vacío porque
+      `missions` es subcadena de `commissions`; verificado sin falso
+      positivo con `-w`.
+- [x] Red de regresión de CA-3 demostrada: salida de `npx jest` en **rojo**
       con el tipo roto a propósito (renombre de `commissions`) y en **verde**
       restaurado, ambas pegadas con el mensaje de error de TypeScript.
-- [ ] `curl` del `GET /api/became-seller` antes y después, con
+- [x] `curl` del `GET /api/became-seller` antes y después, con
       `size_download` = 11 452 B en ambos y el `deepStrictEqual` acotado
       (mismo script de US-44 CA-1) en `OK`; `POST` con el body real del
       admin → 201 + `GET` posterior reflejándolo, y `psql` de restauración
       de la fila (patrón de US-44 CA-2, comparación a resolución de
       milisegundo).
-- [ ] `cd apps/api/rest && npx jest` verde con recuento (≥ 10 suites / ≥ 291
+- [x] `cd apps/api/rest && npx jest` verde con recuento (≥ 10 suites / ≥ 291
       tests: la línea base más la red nueva); `just build-api` verde;
       `just verify` con los tres `OK` y `/api/settings` en 5503 B;
       `just db-check` en 12 archivos / 228 tests, idéntico a la base.
-- [ ] `git diff --stat` pegado, limitado a `apps/api/rest/src/become-seller/`.
-- [ ] Reporte final con las mejoras adyacentes **mencionadas y no
+- [x] `git diff --stat` pegado, limitado a `apps/api/rest/src/become-seller/`.
+- [x] Reporte final con las mejoras adyacentes **mencionadas y no
       accionadas**: `settings.service.ts:39`, `attachment.entity.ts` sin
       `file_name`, tipos del shop (`commission`) y del admin
       (`max_balance: number`, `thumbnail: string`), y si el agente cree que
       hacen falta validadores en el DTO.
-- [ ] Status de esta US actualizado a `Implementada` con la LOC real.
+- [x] Status de esta US actualizado a `Implementada` con la LOC real.
 
 ## Notas para el agente ejecutor
 
