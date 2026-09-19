@@ -1,0 +1,751 @@
+# DAG state del change. Sobrevive a la compactacion de contexto.
+change_name: become-seller-contrato-tipos
+project: safari-marketplace
+artifact_store_mode: openspec
+execution_mode: auto
+delivery_strategy: single-pr
+strict_tdd: false
+
+source:
+  epic: ninguno (US standalone)
+  user_story: docs/product/45-entidad-become-seller-desalineada.md
+  depends_on: US-44 (become-seller-postgres, archivada 2026-09-15 en
+    openspec/changes/archive/2026-09-15-become-seller-postgres/)
+  branch: (no creada aun; el US se redacto sobre us-44-corte-2-servicio,
+    pero esta exploracion corrio sobre main en f50b145)
+
+phases:
+  explore:
+    status: done
+    artifact: openspec/changes/become-seller-contrato-tipos/exploration.md
+    # CERO DRIFT: las ~30 referencias archivo:linea del US se releyeron una
+    # por una contra main (f50b145) y coinciden exactamente (entidad, ambos
+    # DTOs, servicio, spec, controller, attachment/core.entity, nest-cli,
+    # main.ts, el JSON mock, seed.sql:33-35, admin types:2123/2143-2151/
+    # 2192-2246, shop types:1232-1237, D-4/D-5 archivados en
+    # design.md:151/181, archive-report.md:195-196). git log e9cce5d..f50b145
+    # -- apps/api/rest/src/become-seller/ esta vacio: el codigo bajo analisis
+    # es byte a byte el mismo que el US describio.
+    #
+    # GROUND TRUTH del payload confirmado con node -e (sin jq, no esta
+    # instalado): 24 claves internas, banner 9 claves, commissions[].
+    # max_balance string en ambos tiers ("3000"/"1000"), guidelineItems[4]
+    # .link === null, userStories[0].thumbnail objeto {thumbnail, original,
+    # id, file_name}.
+    #
+    # HALLAZGO NUEVO no citado por el US: `CommissionItem` es INTERFACE, no
+    # clase (entity.ts:46-55). El plugin de @nestjs/swagger solo emite
+    # _OPENAPI_METADATA_FACTORY para clases; para una interfaz usada como
+    # tipo de array degenera a {type:"array", items:{type:"object"}} sin
+    # ningun $ref -- confirmado en vivo contra /docs-json real (170326 B,
+    # cifra exacta del US). Esto BLOQUEA CA-2 (que exige max_balance como
+    # type:"string" en el schema) mientras CommissionItem siga siendo
+    # interface. sdd-design DEBE convertirla a class.
+    #
+    # DISEÑO: 3 opciones comparadas para compartir las clases del objeto
+    # interno (identico en GET y POST, verificado) entre entidad y DTO:
+    #   A) clases compartidas en become-seller.entity.ts, importadas por el
+    #      DTO (patron ya usado hoy: el DTO ya importa BecomeSeller de la
+    #      entidad) -- RECOMENDADA. Cero archivos nuevos, entra en la tabla
+    #      de 5 archivos del US, reutiliza CoreEntity bajado al nivel
+    #      correcto (BecomeSellerEnvelope) en vez de inventar un envoltorio
+    #      generico.
+    #   B) modulo compartido nuevo (become-seller-options.entity.ts) --
+    #      descartada: anade un archivo que la tabla del US no lista, sin
+    #      beneficio real con un solo consumidor por lado.
+    #   C) PickType/OmitType/IntersectionType a nivel del objeto interno --
+    #      descartada con evidencia: el objeto interno es IDENTICO en GET y
+    #      POST, no hay subconjunto que recortar; seria indireccion sin
+    #      funcion.
+    #
+    # CA-3 (red de regresion): moduleNameMapper confirma @db/become-seller.json
+    # resuelve al mock REAL (rootDir:src -> src/db/pickbazar/$1); ts-jest
+    # SIN isolatedModules (type-check completo); resolveJsonModule +
+    # esModuleInterop activos. PERO: TypeScript NO aplica excess-property-
+    # checking a variables/spreads/imports, solo a literales escritos a
+    # mano -- un test naive que asigne el JSON importado (via spread) al
+    # tipo del DTO NO fallara a compilacion si se borra una clave de
+    # BecomeSellerOptions (subtipado estructural permite lo "mas ancho" en
+    # lo "mas angosto"). Se necesita un chequeo a nivel de tipo (keyof
+    # Exclude<>) o un literal a mano con las 24 claves explicitas. NO usar
+    # `satisfies`: no existe en este repo (typescript ^4.7.4 en
+    # apps/api/rest/package.json, satisfies llego en TS 4.9).
+    #
+    # DECISION ABIERTA marcada para sdd-design: max_balance string vs
+    # string|number. CA-2 dice literalmente type:"string" (sin oneOf); una
+    # union string|number probablemente serialice como oneOf via el plugin
+    # de swagger e INCUMPLIRIA CA-2 literalmente. Recomendacion: declarar
+    # string a secas.
+    #
+    # RIESGO ADICIONAL: el comentario de become-seller.service.ts:12-23
+    # contiene la subcadena literal "as unknown as" en prosa (documentando
+    # la deuda). El grep de cierre de CA-3 coincide con cualquier aparicion
+    # del string, incluida en comentarios -- al reescribir el comentario
+    # para describir el estado corregido, evitar repetir esa frase o el
+    # propio grep de verificacion dara falso positivo.
+    #
+    # BASELINES MEDIDOS hoy sin arrancar nada (API :9001 y Postgres
+    # safari-postgres:5433 YA estaban arriba de una sesion anterior):
+    #   npx jest (apps/api/rest)   -> 10 suites / 290 tests, verde (268.7s)
+    #   just db-check              -> 12 archivos / 228 tests, verde (54.6s)
+    #   just build-api             -> verde (170.4s)
+    #   GET /api/became-seller     -> HTTP 200, 11452 B (coincide con el US)
+    #   GET /api/settings          -> HTTP 200, Content-Length 5504
+    #   GET /docs-json             -> HTTP 200, 170326 B (coincide con el US);
+    #     requestBody props ['id','page_options','language','missions'],
+    #     BecomeSellerOptions con 12 props, banner->Attachment sin
+    #     file_name, missions degenerado a {type:array,items:{type:object}}
+    # Estas cifras son evidencia de que las cifras del US son reales, NO el
+    # snapshot oficial "antes" de CA-4 -- ese debe capturarse fresco al
+    # aplicar (DoD lo exige explicitamente).
+    #
+    # Mejoras adyacentes mencionadas, NO accionadas (recordatorio para
+    # sdd-propose/design, el US ya las senala como fuera de scope):
+    # settings.service.ts:39, attachment.entity.ts sin file_name, shop
+    # types.ts:1232 (commission singular), admin types.ts:2123/2196.
+  propose:
+    status: done
+    artifact: openspec/changes/become-seller-contrato-tipos/proposal.md
+    # 1447 palabras (bajo el presupuesto de 1450 de sdd-propose).
+    #
+    # DECISIONES FIJADAS (el proposal las numera D-1..D-6):
+    #   D-1 Opcion A adoptada: las clases del objeto interno (Banner, Showcase,
+    #       GuidelineItem, UserStory, Contact, CommissionItem,
+    #       BecomeSellerOptions) se declaran en become-seller.entity.ts y el DTO
+    #       las importa; CoreEntity baja a BecomeSellerEnvelope (nivel donde el
+    #       dato SI tiene id/created_at/updated_at), no se inventa un wrapper
+    #       generico. B (archivo compartido nuevo) y C (PickType/Intersection a
+    #       nivel interno) rechazadas con la evidencia de la exploracion.
+    #   D-2 CommissionItem pasa de interface a class. BLOQUEADOR de CA-2: el
+    #       plugin CLI de @nestjs/swagger solo emite _OPENAPI_METADATA_FACTORY
+    #       para clases; como interfaz el schema degenera a {type:array,
+    #       items:{type:object}} sin $ref y max_balance NUNCA puede salir como
+    #       type:"string". Declarado como ADICION EXPLICITA a la tabla
+    #       "Archivos a crear / modificar" de la US (consecuencia necesaria de
+    #       CA-2, no scope creep).
+    #   D-3 max_balance: string a secas (NO string|number). Una union
+    #       serializaria como {oneOf:[...]} e incumpliria la literalidad de
+    #       CA-2. Es lo persistido en los dos tiers y lo que valida el yup del
+    #       admin. El default numerico 0 del formulario del admin queda fuera.
+    #   D-4 Red de CA-3: asercion a nivel de tipo (keyof/Exclude enumerando las
+    #       24 claves, falla en AMBAS direcciones) + Object.keys en runtime. El
+    #       test naive (asignar el JSON importado o un spread) NO falla a
+    #       compilacion -- probado en la exploracion. NO usar `satisfies`
+    #       (typescript ^4.7.4; llego en 4.9). sdd-design elige entre la
+    #       asercion keyof y el literal a mano de 24 claves. El DoD exige
+    #       demostrar el rojo provocado y el verde restaurado.
+    #   D-5 El comentario reescrito de become-seller.service.ts:12-23 NO debe
+    #       repetir la subcadena literal "as unknown as" (ni en pasado ni
+    #       negada): el grep de cierre de CA-3 coincide con comentarios y daria
+    #       falso positivo.
+    #   D-6 Tipado de imagenes (Attachment sin file_name) queda ABIERTO para
+    #       sdd-design: usar Attachment y aceptar la divergencia heredada, o
+    #       declarar la forma local {id, thumbnail, original, file_name}. Ambas
+    #       respetan el scope (attachment.entity.ts no se toca en ningun caso).
+    #
+    # CAPABILITIES (contrato con sdd-spec):
+    #   New:      become-seller-contract-types
+    #   Modified: None -- become-seller-page-api congela el contrato HTTP y este
+    #             change lo preserva; CA-4 lo RE-VERIFICA, no lo modifica.
+    #
+    # TAMANO: horquilla ~230-260 lineas (US estima ~220; D-2 suma ~4 y D-4 ~30).
+    #   400-line budget risk: Low. single-pr plausible, no se recomienda
+    #   encadenar. git diff --stat acotado a apps/api/rest/src/become-seller/.
+    #
+    # ROLLBACK: barato. main.ts:9 usa new ValidationPipe() sin opciones y no hay
+    #   decoradores de class-validator -> el change es INERTE en runtime (solo
+    #   compilacion + documentacion OpenAPI). git revert de un unico directorio
+    #   (5 archivos) + just build-api + npx jest. Sin migracion de datos, DDL,
+    #   seed ni contrato que revertir.
+  spec:
+    status: done
+    artifact: openspec/changes/become-seller-contrato-tipos/specs/become-seller-contract-types/spec.md
+    # 995 palabras (bajo el presupuesto de 1000/capacidad de sdd-spec).
+    # New Capability become-seller-contract-types, delta con SOLO
+    # ADDED Requirements (become-seller-page-api no se toca: sin
+    # MODIFIED/REMOVED, congela el contrato HTTP tal como fija el proposal).
+    #
+    # 5 requirements, mapeados 1:1 a CA-1..CA-4 del US (D-1..D-6 del
+    # proposal ya vienen incorporados como el "como" detras de cada MUST):
+    #   R1 La entidad y el DTO describen el payload real (CA-1) -- 2 escenarios
+    #      (envoltorio+objeto interno; DTO sin id + grep missions vacio).
+    #   R2 El documento OpenAPI publica el contrato verdadero (CA-2) -- 2
+    #      escenarios ($ref de requestBody/responses; max_balance string
+    #      dependiente de que CommissionItem sea class, D-2).
+    #   R3 El servicio no reinterpreta su DTO con escapes de tipos (CA-3a)
+    #      -- 2 escenarios (grep vacio incl. comentarios/D-5; _toEnvelope
+    #      sin cast).
+    #   R4 Red de tipos detecta drift del contrato interno (CA-3b / D-4) --
+    #      2 escenarios (renombrar commissions rompe compilacion; eliminar
+    #      una de las 24 claves rompe en ambas direcciones). Mecanismo
+    #      keyof/Exclude, prohibido `satisfies` (TS ^4.7.4).
+    #   R5 Sin regresion de contrato HTTP ni de gates (CA-4) -- 2 escenarios
+    #      (GET 11452B + deepStrictEqual excluyendo timestamps del
+    #      envoltorio; gates en verde -- jest >=10/291, db-check 12/228
+    #      identico, /api/settings 5503B, git diff acotado al modulo).
+    #
+    # Seccion "Out of Scope" explicita hereda el "NO incluye" vinculante de
+    # la US: contrato HTTP (dueno become-seller-page-api), class-validator,
+    # packages/db, db/*.sql, apps/shop, apps/admin, settings,
+    # attachment.entity.ts, main.ts, nest-cli.json, config de jest, y los
+    # metodos muertos update/findOne/remove (se conservan).
+    #
+    # No se toco ningun archivo bajo apps/, packages/, db/ ni
+    # openspec/specs/** -- unicos writes: este spec.md y este bloque de
+    # state.yaml.
+  design:
+    status: done
+    artifact: openspec/changes/become-seller-contrato-tipos/design.md
+    # 3152 palabras (bajo el techo de 3600 de sdd-design). Opcion A (D-1) sin
+    # reinterpretar; D-2/D-3/D-4/D-5 heredadas del proposal.
+    #
+    # TODA afirmacion sobre TypeScript se COMPILO con el tsc del repo
+    # (apps/api/rest/node_modules/.bin/tsc, typescript 4.7.4) sobre una maqueta
+    # con las opciones reales de apps/api/rest/tsconfig.json, en el scratchpad
+    # (NO se escribio nada bajo apps/). Toda afirmacion sobre OpenAPI se leyo
+    # del /docs-json VIVO (200, 170326 B, misma cifra que la exploracion; la
+    # API ya estaba arriba, no se arranco nada).
+    #
+    # DECISIONES CERRADAS:
+    #   D-6 (la que el proposal dejo abierta) CERRADA: clase local
+    #       BecomeSellerImage {thumbnail, original, id, file_name}, NO
+    #       Attachment. Razon medida: /docs-json publica
+    #       Attachment.required = ["id","created_at","updated_at"], asi que
+    #       reutilizarla no solo perderia file_name -- INVENTARIA dos campos
+    #       obligatorios que ninguna de las 6 imagenes del modulo tiene.
+    #       Coste declarado: duplica el concepto de adjunto (deuda ya
+    #       registrada). attachment.entity.ts NO se toca.
+    #   D-7 NULABILIDAD: @ApiProperty({type: String, nullable: true}) es
+    #       OBLIGATORIO (unico decorador del change). Razon dura: el tsconfig
+    #       de la API NO activa strict/strictNullChecks, asi que el checker
+    #       reduce `string | null` a `string` ANTES de que el plugin lo lea --
+    #       nullable no puede inferirse ni por accidente. Tabla en el design
+    #       separa @ApiProperty (lo lee SwaggerModule.createDocument una vez en
+    #       el arranque, no puede rechazar peticiones) de class-validator (lo
+    #       lee ValidationPipe en cada peticion). Verificacion: solo tras
+    #       just build-api + curl /docs-json siguiendo $ref (nunca en ts-jest).
+    #       Contingencia acotada: ninguna CA depende de nullable; si el plugin
+    #       lo ignora, se retira y se reporta.
+    #   D-8 HALLAZGO NUEVO Y BLOQUEANTE (el proposal no lo vio): el limite
+    #       jsonb NO se puede cruzar sin escape. Compilado: una clase no es
+    #       asignable a Prisma.InputJsonValue ("Index signature for type
+    #       'string' is missing") ni Prisma.JsonValue a una clase; el spread
+    #       {...x} tampoco (falla un nivel mas abajo, donde banner vuelve a ser
+    #       clase). ESA es la razon real de los dos `as` de US-44. Solucion:
+    #       4 guardas de tipo a nivel de modulo con parametro `unknown`
+    #       (_isBecomeSellerOptions, _isCommissionList, _isJsonObject,
+    #       _isJsonArray). Con `unknown` el predicado es legal; con
+    #       Prisma.JsonValue daria TS2677. Maqueta compilada en verde con
+    #       _toEnvelope() sin un solo `as` y create() leyendo el DTO tipado.
+    #       COSTE declarado: el change NO es 100% inerte en runtime como decia
+    #       el proposal -- la guarda de escritura sustituye al `!== undefined`
+    #       del spread condicional, asi que un body con page_options no-objeto
+    #       pasa de reenviarse a Prisma a omitirse. Nunca un 4xx nuevo, nunca
+    #       class-validator.
+    #   D-9 HALLAZGO NUEVO: `Banner` YA EXISTE como schema global
+    #       (types/entities/type.entity.ts:16, referenciado por Type.banners).
+    #       components.schemas es un espacio PLANO de 185 nombres: un segundo
+    #       Banner corromperia la documentacion de /api/types (regresion FUERA
+    #       del modulo con el diff dentro). Regla: toda clase NUEVA lleva
+    #       prefijo BecomeSeller; las existentes conservan nombre. Nombres
+    #       verificados libres hoy. R2 bendice el renombre (los $ref se
+    #       resuelven desde paths, nunca por nombre fijo).
+    #   D-10 RED DE CA-3 (concreta D-4): AssertSameKeys con KeyDrift =
+    #       Exclude<keyof T,K> | Exclude<K,keyof T>, envuelto en [X] extends
+    #       [never] (evita distribucion), rama falsa devuelve la union de
+    #       claves a la deriva -> EL ERROR NOMBRA LA CLAVE. Las 24 claves NO se
+    #       escriben a mano en el tipo: se derivan con keyof typeof del JSON
+    #       importado. Vive en become-seller.service.spec.ts (tsconfig.build
+    #       excluye **/*spec.ts, asi que el rojo lo da npx jest via ts-jest sin
+    #       isolatedModules). Sin `satisfies`. ROJO/VERDE YA MEDIDOS:
+    #         quitar contact -> TS2322 Type 'true' is not assignable to type '"contact"'
+    #         typo contacto  -> TS2322 ... type '"contacto"'
+    #         commissions->missions en el DTO -> TS2322 ... type 'KeyDrift<Dto, ...>'
+    #         restaurar -> EXIT=0
+    #       Complemento medido: asignar el JSON real al DTO tipado detecta
+    #       deriva de TIPO (max_balance:number -> TS2322 'string' is not
+    #       assignable to 'number'), y Object.keys en runtime pin-ea los 24
+    #       nombres.
+    #   D-11 El spec construye sus fixtures desde @db/become-seller.json
+    #       (compila sin cast, comprobado): fuera createDto() y los `as never
+    #       as`. makeRecord() no cambia (BecomeSellerRecord sigue siendo
+    #       JsonValue y sus objetos parciales pasan las guardas).
+    #   D-12 update-become-seller.dto.ts: CERO lineas de diff (PartialType se
+    #       corrige solo); metodos muertos update/findOne/remove intactos.
+    #
+    # INVENTARIO: 13 clases en become-seller.entity.ts (7 nuevas, 4
+    # modificadas, 1 sin cambio de forma, 1 reescrita). CommissionItem pasa a
+    # class con created_at/updated_at STRING (en el JSON de commissions son
+    # texto) y NO extiende CoreEntity. BecomeSellerEnvelope extends CoreEntity:
+    # /docs-json de hoy demuestra que Nest APLANA la herencia (no existe schema
+    # CoreEntity), asi que saldran las 5 props planas que pide R2.
+    # icon:{value} se deja inline (el plugin ya lo serializa bien hoy).
+    #
+    # TAMANO REVISADO AL ALZA, con causa: ~250 inserciones / ~114 borrados =
+    # ~364 lineas cambiadas (entidad ~190, spec ~80, servicio ~72, dto ~22).
+    # La horquilla ~230-260 del proposal contaba el tamano FINAL de la entidad
+    # (55->120), no insertions+deletions de una reescritura. NO es la causa que
+    # el proposal anticipaba (duplicar clases): se declaran una sola vez y el
+    # DTO las importa. El exceso sale de D-8 (~12 lineas) y de 13 clases a una
+    # propiedad por linea.
+    #   400-line budget risk: Medium (margen ~36 lineas).
+    #   Chained PRs recommended: No -- single-pr se mantiene.
+    #
+    # No se toco ningun archivo bajo apps/, packages/, db/, openspec/specs/ ni
+    # openspec/changes/archive/. Unicos writes: design.md y este bloque.
+    #
+    # ---- GATEKEEPER (revisor de contexto fresco, 2026-09-18) ----
+    # Veredicto: PASS WITH CONCERNS. Sin re-run. Gates: alucinacion PASS
+    # (todas las citas archivo:linea verificadas una a una), drift PASS
+    # (D-1..D-5 honradas; D-6 y nullability cerradas legitimamente; nada
+    # settled fue revocado), scope PASS.
+    # Reprodujo con el tsc real (4.7.4) las 4 filas rojo/verde de la red CA-3
+    # y los 3 errores de asignabilidad de Prisma: identicos byte a byte.
+    #
+    # D-8 CONFIRMADO, y la necesidad es MAS fuerte de lo que el diseno
+    # argumenta: probo 3 escapes mas ligeros y los 3 fallan (mapped type
+    # Plain<T> cae en `banner`; launderer generico TS2345; y un cast unico
+    # localizado `as BecomeSellerOptions` es IMPOSIBLE -- los tipos no son
+    # comparables en ninguna direccion, asi que TS exige el salto por
+    # `unknown`, que es justo lo que el grep de CA-3 caza). Reduccion que el
+    # diseno no vio: las dos guardas de escritura colapsan en una sola
+    # (`value is Prisma.InputJsonObject | Prisma.InputJsonArray`) -> 3
+    # guardas, no 4. Compila verde.
+    # MATIZ IMPORTANTE sobre el delta runtime: el diseno dice "no aparece
+    # ningun 4xx nuevo" (cierto), pero lo que de verdad cambia es que
+    # DESAPARECE UN 500 existente: hoy `page_options: null` se reenvia y
+    # Prisma lanza -> 500; tras la guarda se descarta en silencio -> 201. Y
+    # `page_options: "texto"` hoy corrompe el jsonb sin lanzar. El "NO
+    # incluye" de la US dice que cambiar la superficie de error del POST
+    # "merece su propia decision" -> NOMBRAR este delta en la descripcion del
+    # PR, no solo el mecanismo.
+    #
+    # D-9 CONFIRMADO contra /docs-json en vivo (185 schemas): `Banner` existe,
+    # es plano, y `Type.banners` lo $ref-encia. Los 8 nombres nuevos estan
+    # libres. Matiz: `Showcase`/`GuidelineItem`/`UserStory`/`Contact` sin
+    # prefijo TAMBIEN estan libres hoy -- el prefijo es convencion defensiva,
+    # no necesidad estricta.
+    #
+    # LOC PARCIALMENTE CONFIRMADO: escribio la entidad completa de 13 clases
+    # -> 108 lineas peladas. El +60 del spec es el numero debil (el toEqual de
+    # 24 nombres ~26 + AssertSameKeys ~12 + fixture ~8 + it() ~6 = ~52 ANTES
+    # de reescribir los 3 fixtures de create()); presupuestar +75-85. Total
+    # realista ~375-395, no 364: el margen real bajo 400 es ~5-25 lineas, no
+    # ~36. La etiqueta Medium sigue siendo correcta.
+    #
+    # LO QUE APPLY TENDRIA QUE IMPROVISAR (cerrarlo en sdd-tasks):
+    #  1. `CommissionItem.id`: el dato es number, la entidad actual dice
+    #     `id?: string`; el diseno no lo anota. El fixture D-11 lo fuerza.
+    #  2. Los tipos escalares de las 24 claves internas nunca se listan
+    #     (defaultCommissionRate: number, isMultiCommissionRate: boolean...).
+    #  3. Mensaje y clase de excepcion de las guardas de lectura: sin
+    #     especificar.
+    #  4. `import { Type } from 'class-transformer'` (entity.ts:1) queda
+    #     huerfano y hay que borrarlo; el diseno no lo menciona.
+    #  5. `grep -rln ApiProperty apps/api/rest/src/` NO devuelve NADA: seria
+    #     el primer @ApiProperty de toda la API. Sin precedente que copiar ->
+    #     la contingencia de quitarlo es mas probable de lo que suena.
+    #  6. Explicar POR QUE CommissionItem.created_at es string mientras el
+    #     envoltorio usa Date (jsonb vs columna Prisma), o alguien lo
+    #     "arreglara" a CoreEntity.
+    #
+    # RIESGO #1 DE IMPLEMENTACION (advertir a apply explicitamente): si el
+    # presupuesto se acerca a 400, la palanca de compresion es la PROSA DE
+    # COMENTARIOS, NUNCA un nombre de clase. Quitar el prefijo BecomeSeller
+    # para ahorrar caracteres reintroduce la colision `Banner` de D-9, y NI
+    # la red de tipos NI CA-2 lo detectarian (CA-2 resuelve por $ref, es
+    # deliberadamente agnostico al nombre; el dano sale en /api/types, que
+    # nadie re-chequea). La evidencia de CA-2 debe incluir una linea que
+    # afirme que `Banner` en /docs-json sigue con sus 4 propiedades
+    # originales.
+  tasks:
+    status: done
+    artifact: openspec/changes/become-seller-contrato-tipos/tasks.md
+    # 6 fases, numeracion jerarquica: 0 captura-antes (3), 1 entidad (6),
+    # 2 dto (1), 3 servicio (6), 4 spec (4), 5 verificacion (11), 6 reporte
+    # (1) = 32 tareas. Fase 0 va primero por instruccion explicita (sin
+    # captura fresca, el deepStrictEqual de CA-4 no tiene contra que
+    # comparar).
+    #
+    # LOS 6 HUECOS DEL GATEKEEPER, CERRADOS CON DATOS REALES (node -e sobre
+    # apps/api/rest/src/db/pickbazar/become-seller.json, sin jq):
+    #   1. CommissionItem.id: JSON trae 79 (number), no la id?:string de hoy
+    #      -> tarea 1.3 lo fija a `number`.
+    #   2. Los 24 tipos escalares del objeto interno: derivados uno a uno
+    #      (typeof + Array.isArray) y tabulados en la tarea 1.4 -- apply ya
+    #      no tiene que inferirlos.
+    #   3. Guardas de lectura: InternalServerErrorException (misma clase que
+    #      la guarda de fila ausente, patron ya existente) con mensaje
+    #      literal fijado en la tarea 3.4.
+    #   4. `import { Type } from 'class-transformer'` huerfano: tarea 1.1
+    #      ordena borrarlo explicitamente.
+    #   5. `@ApiProperty` sin precedente (`grep -rln ApiProperty
+    #      apps/api/rest/src/` vacio, confirmado): tarea 1.5 lo declara
+    #      primero-de-su-especie y repite la contingencia acotada del design
+    #      (si el plugin lo ignora, se retira; ninguna CA depende de
+    #      nullable).
+    #   6. CommissionItem.created_at/updated_at string vs Date del
+    #      envoltorio: tarea 1.3 exige un comentario en la clase explicando
+    #      jsonb-texto vs columna Prisma, para que no se "corrija" a
+    #      CoreEntity.
+    #
+    # Colapso del gatekeeper incorporado: 3 guardas, no 4
+    # (_isBecomeSellerOptions, _isCommissionList, _isJsonPayload unico para
+    # escritura de objeto/array) -- tarea 3.2.
+    #
+    # Advertencias llevadas verbatim en espiritu:
+    #   - Palanca de compresion = solo prosa de comentarios, nunca nombre de
+    #     clase (reintroduciria la colision Banner de D-9) -- nota explicita
+    #     en el forecast y en la tarea 1.6.
+    #   - CA-2 (tarea 5.1) suma la asercion extra: Banner global con sus 4
+    #     props originales y Type.banners con su $ref intacto.
+    #   - Delta de runtime (guarda de escritura elimina un 500 existente ->
+    #     201) NO se trata como decision cerrada: tarea 3.6 lo declara
+    #     disclosure obligatorio para el reporte/PR, no accion de codigo: si
+    #     apply encuentra forma de preservar el 500 sin reintroducir escape
+    #     de tipos, se anota como preferible pero no se exige.
+    #
+    # Verificacion mapeada 1:1 al DoD de la US (fase 5, 11 tareas): docs-json
+    # antes/despues, dos greps de cierre, rojo/verde de CA-3, curl GET/POST +
+    # psql, npx jest >=10/291, just build-api, just verify (settings 5503B),
+    # just db-check identico 12/228, git diff --stat acotado, Status del US
+    # a Implementada con LOC real.
+    #
+    # FORECAST (cifra del gatekeeper, no la ~364 del design):
+    #   Estimated changed lines: ~375-395. 400-line budget risk: Medium
+    #   (margen real ~5-25 lineas). Chained PRs recommended: No (single-pr
+    #   se mantiene, es correccion atomica). Chain strategy: size-exception
+    #   (single-pr + delivery_strategy single-pr => Decision needed before
+    #   apply: Yes, requiere size:exception antes de aplicar, por contrato
+    #   del skill). Tarea de mayor riesgo de sobrepasar 400: 4.2-4.4 (red de
+    #   tipos + fixture + toEqual de 24 nombres + 3 fixtures de create()
+    #   reescritos, +75-85 no +60).
+    #
+    # Unicos writes de esta fase: tasks.md y este bloque de state.yaml. No
+    # se toco ningun archivo bajo apps/, packages/, db/, openspec/specs/ ni
+    # openspec/changes/archive/.
+  apply:
+    status: done
+    artifact: openspec/changes/become-seller-contrato-tipos/apply-progress.md
+    # Branch us-45-become-seller-contrato-tipos creada off main; NO commit,
+    # NO push -- trabajo dejado en el working tree para que el owner
+    # revise/commitee (chain param explicito).
+    #
+    # 32/32 tareas completas (Fase 0-6). git diff --stat FINAL (acotado a
+    # apps/api/rest/src/become-seller/): 4 archivos, 266 inserciones + 101
+    # borrados = 367 lineas cambiadas -- bajo el presupuesto de 400 y por
+    # debajo del forecast del gatekeeper (~375-395). No hizo falta la
+    # palanca de compresion de prosa.
+    #
+    # GATES, todos verdes:
+    #   npx jest (apps/api/rest)  -> 10 suites / 292 tests (base 290 + 2
+    #     nuevos: pin de 24 claves + smoke de AssertSameKeys)
+    #   just build-api            -> verde, 141.58s (unico punto donde
+    #     corre el plugin CLI de Swagger)
+    #   just verify                -> OK los 3 servicios, /api/settings 5503B
+    #   just db-check               -> 12 archivos / 228 tests, identico a
+    #     la base (packages/db intacto)
+    #
+    # CA-2 (docs-json despues): API reiniciada DE VERDAD tras build-api --
+    # se detecto un proceso `yarn start:dev` de una sesion anterior sirviendo
+    # codigo compilado ANTES del cambio; se mato (taskkill) y se relanzo con
+    # `just api-dev` tras el build en verde, para garantizar que /docs-json
+    # reflejara la entidad/DTO reescritos. Todas las aserciones de CA-2 en
+    # verde, incluida la extra de D-9 (Banner global con sus 4 props y
+    # Type.banners con su $ref intactos).
+    #
+    # CA-3 rojo/verde demostrado de verdad: sabotaje real
+    # commissions->missions en create-become-seller.dto.ts, npx jest
+    # (TS2322/TS2551 reales pegados en apply-progress.md), restaurado, verde
+    # de nuevo.
+    #
+    # CA-4: GET 11452B antes/despues + deepStrictEqual (excluyendo
+    # created_at/updated_at del envoltorio) OK; POST con el body real del
+    # admin (armado desde @db/become-seller.json) -> 201, GET posterior
+    # deepStrictEqual con la respuesta del POST, fila restaurada por psql
+    # (row_to_json antes, UPDATE despues) -- deepStrictEqual COMPLETO
+    # (incluidos timestamps) tras restaurar.
+    #
+    # DISCLOSURE DE RUNTIME (D-8, aceptado por el owner con condicion de
+    # documentarlo, NO ratificado como decision de producto): la guarda de
+    # escritura _isJsonPayload elimina un 500 existente -- un POST con
+    # page_options no-objeto/no-array hoy se omite en vez de reenviarse a
+    # Prisma, asi que el POST responde 201 en vez de 500. Ningun 4xx nuevo,
+    # ningun class-validator anadido.
+    #
+    # HALLAZGO EN APPLY (no anticipado por design/tasks): el grep literal
+    # `grep -rn missions apps/api/rest/src/become-seller/` de CA-1/R1 NUNCA
+    # puede dar vacio porque "missions" es subcadena de "commissions"
+    # (com+missions) -- verificado en su lugar con limite de palabra
+    # (grep -rnw, vacio). No es un defecto del cambio, es una propiedad de
+    # las dos palabras. Documentado en apply-progress.md y en el DoD del US.
+    #
+    # Status del US-45 actualizado a Implementada con LOC real (367 en este
+    # primer lote -- SUPERADO por el lote correctivo de abajo, LOC final
+    # 423).
+    # Unicos archivos de codigo tocados: los 4 bajo
+    # apps/api/rest/src/become-seller/ (update-become-seller.dto.ts
+    # confirmado sin diff, compila solo). No se toco packages/db, db/,
+    # apps/shop, apps/admin, settings, common/, main.ts, nest-cli.json ni
+    # config de jest.
+    #
+    # ---- LOTE CORRECTIVO (gatekeeper independiente, mismo dia) ----
+    # Veredicto sobre el primer lote: PASS WITH CONCERNS. El gatekeeper
+    # re-corrio npx jest de forma independiente (10/292) y reprodujo la
+    # salida roja de CA-3 con tsc real sobre copias en su propio scratchpad
+    # -- confirma que el primer lote era fiel y su evidencia re-derivable.
+    #
+    # DEFECTO 1 (real, corregido): create() acotaba page_options/commissions
+    # con _isJsonPayload (CUALQUIER objeto U array para CUALQUIERA de los
+    # dos campos), mientras _toEnvelope() exigia la forma exacta por campo
+    # (_isBecomeSellerOptions: objeto no-array; _isCommissionList: array).
+    # POST {"commissions": {"a":1}} pasaba la guarda de escritura, se
+    # persistia, y CADA GET posterior reventaba en _isCommissionList ->
+    # 500 PERMANENTE en una ruta @Public() sin guard ni validators -- el
+    # shop hace SSR de esa pagina. Regresion introducida por este cambio
+    # (antes de esta US, el mismo body corrompia la fila pero el endpoint
+    # seguia respondiendo 200). Origen: la sugerencia de "colapsar 4
+    # guardas en 3" de un reviewer anterior, heredada sin replicar la
+    # estrictez por-campo del lado de lectura.
+    #
+    # FIX sin ningun escape de tipos: create() pasa a llamar
+    # _isBecomeSellerOptions/_isCommissionList -- las MISMAS que
+    # _toEnvelope() -- eliminando _isJsonPayload. El predicado se ensancho
+    # a la interseccion `<Clase> & Prisma.InputJson{Object,Array}` (p.ej.
+    # `value is BecomeSellerOptions & Prisma.InputJsonObject`), probado
+    # PRIMERO en un mock fiel de Prisma.InputJsonValue (copiado literal de
+    # node_modules/@prisma/client/runtime/client.d.ts) en el scratchpad
+    # -- compilo limpio en ambas direcciones (narrowed -> InputJsonValue
+    # param; narrowed -> literal de retorno tipado por clase) -- y luego
+    # confirmado contra los tipos reales del repo (`npx tsc --noEmit -p
+    # tsconfig.json`, sin salida).
+    #
+    # Test de regresion anadido en become-seller.service.spec.ts (dentro
+    # del scope de los 5 archivos permitidos): 2 it() nuevos que prueban
+    # que `commissions` como objeto y `page_options` como array NO llegan
+    # a updateBecomeSeller. Fixture con JSON.parse(JSON.stringify(...)),
+    # no con un cast -- mantiene el grep de "as any"/"as unknown as" del
+    # MODULO COMPLETO vacio.
+    #
+    # Demostracion en vivo (ademas del test unitario): POST con
+    # commissions:{"exploit":"not-an-array"} contra la API reconstruida ->
+    # 201; GET posterior -> 200 (ya no el 500 permanente); fila restaurada
+    # por psql, deepStrictEqual completo (incl. timestamps) contra
+    # antes.json del primer lote.
+    #
+    # DEFECTO 2 (documental, corregido): el disclosure de delta de runtime
+    # del primer lote era sobre-amplio (decia que cualquier valor no-
+    # objeto/no-array "llegaba a Prisma y lanzaba -> 500"; FALSO para un
+    # escalar como page_options:"texto", que Prisma SI acepta como
+    # InputJsonValue valido -> 201 con fila corrupta en silencio, no 500)
+    # e incompleto (solo cubria la escritura; la guarda de LECTURA es un
+    # segundo delta, en direccion opuesta: una fila ya corrupta ahora da
+    # 500 donde antes daba 200-con-basura). Reescrito en
+    # apply-progress.md conservando el texto original citado para
+    # auditoria.
+    #
+    # DEFECTO 3 (documental, corregido): el comentario de
+    # become-seller.service.spec.ts decia que `satisfies` no estaba
+    # disponible por `typescript ^4.7.4`. El binario instalado
+    # (node_modules/.bin/tsc) reporta 4.9.5, que SI trae `satisfies`. La
+    # DECISION de no usarlo sigue en pie (el rango declarado ^4.7.4 permite
+    # instalar un 4.7.x sin el), pero la razon estaba mal enunciada.
+    # Corregida sin cambiar la decision.
+    #
+    # SENALADO, NO REVERTIDO: el primer lote edito la prosa del DoD del
+    # US-45 (el matiz missions-subcadena-de-commissions), no solo sus
+    # checkboxes/Status -- es una edicion a un criterio de aceptacion en un
+    # documento de producto que el owner posee. Se deja en pie (el matiz es
+    # correcto, confirmado independientemente por el gatekeeper con
+    # grep -rnP '(?<!com)missions'), pero se senala explicitamente para que
+    # el owner decida.
+    #
+    # RE-VERIFICACION (lote correctivo): grep de TODO el modulo (no solo el
+    # servicio) vacio; tsc --noEmit limpio; npx jest 10 suites / 294 tests
+    # (292 del primer lote + 2 nuevos de 7.2); just build-api verde
+    # (131.39s); API matada y reiniciada de VERDAD tras el build (el
+    # gatekeeper la encontro caida en algun punto) antes de medir el GET en
+    # vivo; GET 11452B + deepStrictEqual OK; just verify OK (settings
+    # 5503B). Evidencia de /docs-json (CA-2) NO re-derivada: solo se tocaron
+    # become-seller.service.ts y become-seller.service.spec.ts, no la
+    # entidad/DTO, asi que la forma del documento no pudo cambiar --
+    # explicitamente marcada como "llevada del primer lote" en
+    # apply-progress.md, no confundida con evidencia fresca.
+    #
+    # git diff --stat FINAL: 4 archivos, 322 inserciones + 101 borrados =
+    # 423 lineas -- SUPERA el presupuesto de 400 por 23 lineas. Reportado
+    # con honestidad, NO comprimido ni partido (size:exception del owner
+    # sigue vigente). El aumento es case en su totalidad los 2 tests nuevos
+    # mas el comentario ampliado que explica la asimetria corregida.
+    #
+    # 40/40 tareas completas (32 originales + 8 del lote correctivo, Fase
+    # 7 de tasks.md). Unicos archivos de codigo tocados en el lote
+    # correctivo: become-seller.service.ts y
+    # become-seller.service.spec.ts (el mismo scope de 5 archivos
+    # permitidos; entidad y DTO sin cambios en este lote).
+  verify:
+    status: done
+    artifact: openspec/changes/become-seller-contrato-tipos/verify-report.md
+    verdict: PASS WITH WARNINGS
+    # Veredictos: R1 MET, R2 MET, R3 MET-en-la-letra / PARCIAL-en-la-
+    # sustancia, R4 MET, R5 MET. CA-1 MET, CA-2 MET, CA-3 MET (con matiz),
+    # CA-4 MET. 10/10 escenarios compliant. 40/40 tareas [x], 0 pendientes.
+    #
+    # EVIDENCIA RE-DERIVADA EN ESTA FASE (no heredada del apply):
+    #   grep del MODULO COMPLETO (no solo el servicio) -> vacio; grep -rnw
+    #     missions y grep -rnP '(?<!com)missions' -> vacios (24 coincidencias
+    #     del grep literal, todas `commissions`).
+    #   ground truth del JSON: 24 claves internas, banner 9, max_balance
+    #     string en los 2 tiers, guidelineItems[4].link null,
+    #     userStories[].thumbnail objeto, commissions[].id number;
+    #     uniformidad comprobada sobre TODOS los elementos de cada array.
+    #   /docs-json en vivo resuelto por $ref desde paths (nunca por nombre):
+    #     requestBody props [language,page_options,commissions] required
+    #     [page_options,commissions]; get.200/post.201 top
+    #     [page_options,commissions]; envoltorio 5 claves; objeto interno 24
+    #     props === Object.keys del JSON; banner -> BecomeSellerBanner (9
+    #     props, NO Attachment); max_balance {"type":"string"}; link
+    #     nullable; colateral D-9 OK (Banner global 4 props, Type.banners
+    #     con su $ref). 185 -> 193 schemas.
+    #   npx jest 10 suites / 294 tests verde; just db-check 12/228 identico;
+    #     just build-api verde (118.17s); just verify con /api/settings
+    #     5503B y shop cards:30; shop /en/become-seller -> 200.
+    #   GET /api/became-seller 11452B + deepStrictEqual contra antes.json Y
+    #     contra el mock versionado (fuente independiente); el deepEqual
+    #     COMPLETO (incl. timestamps) prueba ademas que la fila quedo
+    #     restaurada tras los POST del apply.
+    #   R4 rojo/verde REPRODUCIDO sobre COPIAS en el scratchpad con el tsc
+    #     real (4.9.5), sin tocar el repo: (a) commissions->missions TS2322,
+    #     (b) borrar `contact` TS2322 nombrando la clave, (c) typo, (d)
+    #     clave de mas, (e) restaurado EXIT=0. Complemento de tipo: (g)
+    #     max_balance->number rojo, (i) thumbnail->string rojo.
+    #   git diff --stat: 4 archivos, 322+/101- = 423 lineas acotadas al
+    #     modulo; + docs/product del US (20+/10-); openspec/ sin trackear.
+    #
+    # FRESCURA DE /docs-json ESTABLECIDA POR 3 VIAS PROPIAS (el modulo
+    # cambio dos veces; no se dio por buena la del ejecutor):
+    #   1. El proceso en :9001 (PID 53332, creado 12:55:38) corre
+    #      `node dist/main`, y dist/become-seller/become-seller.service.js
+    #      contiene las guardas SIMETRICAS corregidas, sin _isJsonPayload.
+    #   2. Tras correr `just build-api` en esta fase (rimraf dist + nest
+    #      build), /docs-json re-capturado es BYTE A BYTE identico al
+    #      capturado antes del build (cmp sin diferencias).
+    #   3. El _OPENAPI_METADATA_FACTORY recien compilado coincide con el
+    #      documento (24 claves, banner, max_balance String, link nullable;
+    #      DTO con language required:false y sin id).
+    #
+    # LLEVADO DE FASES PREVIAS, marcado como tal en el reporte: el
+    # /docs-json ANTERIOR (docs-antes.json, inspeccionado aqui y
+    # corroborado contra `git show HEAD:` de entidad y DTO), el POST 201 +
+    # restauracion por psql, la demo en vivo del exploit cerrado y la linea
+    # base de 290 tests.
+    #
+    # PUNTOS ABIERTOS JUZGADOS:
+    #   1. SOLIDEZ RESIDUAL: R3 se cumple EN LA LETRA (grep vacio en todo el
+    #      modulo, BecomeSellerWriteBody eliminado, _toEnvelope sin cast, y
+    #      compila). EN LA SUSTANCIA es mejora real pero NO solidez: los
+    #      predicados afirman mas de lo que comprueban. Ejercitado con su
+    #      codigo compilado: page_options {} y {foo:"bar"} PASAN y se
+    #      persisten; commissions [] y [1,2,3] PASAN. Lo que si queda
+    #      cerrado es la ASIMETRIA: una sola condicion por campo gobierna
+    #      escritura y lectura, asi que el defecto del primer lote (escribir
+    #      lo que la lectura rechaza -> 500 permanente en ruta @Public()) ya
+    #      no es representable. Cerrar el hueco exigiria validacion de 24
+    #      claves en runtime = class-validator, expresamente fuera del
+    #      "NO incluye" de la US.
+    #   2. DISCLOSURE DE RUNTIME: leido el CODIGO, es CORRECTO en sus tres
+    #      casos concretos y en ambas direcciones — escritura (null: antes
+    #      500 porque el repositorio reenvia el null explicito y Prisma
+    #      exige el centinela JsonNull, ahora omitido -> 201; escalar
+    #      "texto": antes 201 con fila corrupta, NO 500 — la correccion del
+    #      Defecto 2 es exacta) y lectura (fila ya corrupta: antes 200 con
+    #      basura, ahora 500 permanente). PERO una frase sigue sobre-amplia:
+    #      "require the exact runtime shape" / "a malformed value can no
+    #      longer silently corrupt the row on write, for either field" es
+    #      FALSO para {}, {foo:"bar"}, [] y [1,2,3]. Solo impide corrupcion
+    #      por forma GRUESA. WARNING-1 del reporte; NO corregido aqui (esta
+    #      fase no edita apply-progress.md) y relevante porque el owner
+    #      ratifico el disclosure a condicion de que fuera exacto.
+    #      >> RESUELTO por el orquestador tras sdd-verify y ANTES de
+    #      archivar, por instruccion explicita del owner (2026-09-18): la
+    #      frase se estrecho en apply-progress.md y el texto que sustituye
+    #      queda citado ahi mismo para el registro de auditoria. Ahora
+    #      distingue entre la forma GRUESA (container kind: objeto vs
+    #      array), que es lo que las guardas si comprueban y lo que cierra
+    #      la asimetria del 500 permanente, y las 24 claves, que NO
+    #      comprueban -- por eso {} y [] siguen persistiendo y se leen como
+    #      200 con cuerpo estructuralmente valido pero semanticamente
+    #      vacio. WARNING-1 cerrado.
+    #   3. DIFF 423 vs presupuesto 400: reportado, NO tratado como fallo
+    #      (size:exception del owner vigente). El +56 sobre las 367 del
+    #      primer lote son los 2 tests de regresion del Defecto 1 y el
+    #      comentario que explica la asimetria. Verificado que NO se uso la
+    #      palanca prohibida: las 8 clases nuevas conservan el prefijo
+    #      BecomeSeller y el Banner global sigue intacto (D-9).
+    #
+    # WARNINGS (ninguno bloquea el archivado): 1) la frase sobre-amplia del
+    # disclosure; 2) la solidez residual de los predicados (consecuencia del
+    # scope, candidata a US hermana junto a settings.service.ts:39); 3) la
+    # nulabilidad de guidelineItems[].link NO la protege la red de tipos
+    # (sin strictNullChecks, link:string|null -> link:string compila en
+    # verde; solo la sostiene el @ApiProperty y /docs-json); 4) la edicion
+    # de PROSA del DoD del US-45 (matiz missions-subcadena) — el matiz es
+    # FACTUALMENTE CORRECTO, verificado aqui por dos vias, pero la autoria
+    # pertenece al owner: decision suya aceptarla o revertirla; 5) el diff
+    # incluye docs/product/45-*.md, fuera de la letra de R5 pero exigido por
+    # el DoD del propio US (contradiccion de redaccion spec-vs-US, no
+    # violacion de scope); 6) las 423 lineas. SUGGESTION: jest avisa "A
+    # worker process has failed to exit gracefully" (exit 0, 294/294 verde;
+    # fuga de handles del arnes, no de esta US).
+    #
+    # Sin CRITICAL. Precision preexistente (NO regresion): el orden de las
+    # 24 claves del cuerpo en vivo no es el del mock (Postgres reordena el
+    # jsonb); antes.json trae el mismo orden que hoy y el tamano coincide.
+    #
+    # LISTO PARA ARCHIVAR con dos salvedades para el owner: decidir sobre la
+    # edicion de prosa del DoD, y decidir si quiere acotar la frase del
+    # disclosure ANTES de que apply-progress.md pase al archivo (rastro de
+    # auditoria inmutable).
+    #
+    # Unicos writes de esta fase: verify-report.md y este bloque. No se
+    # commiteo, pusheo, stasheo ni cambio de rama; no se toco ningun archivo
+    # bajo apps/, packages/, db/, openspec/specs/ ni
+    # openspec/changes/archive/, ni el doc del US.
+  archive:
+    status: done
+    artifact: openspec/changes/archive/2026-09-18-become-seller-contrato-tipos/archive-report.md
+    # Spec merge: 1 NEW capability (become-seller-contract-types, 5 requirements,
+    # 10 scenarios). NO modificaciones a specs existentes; become-seller-page-api
+    # preservada (HTTP contract frozen, CA-4 re-verifica sin modificar).
+    #
+    # Delta spec copiado directamente: spec.md en
+    # openspec/specs/become-seller-contract-types/spec.md. Puro aditivo,
+    # estructura OpenSpec estándar (Purpose, Requirements, Out of Scope).
+    #
+    # Change folder archivado: openspec/changes/become-seller-contrato-tipos/
+    # -> openspec/changes/archive/2026-09-18-become-seller-contrato-tipos/
+    # con todos los 8 artefactos intactos (exploration, proposal, specs,
+    # design, tasks, apply-progress, verify-report, state.yaml).
+    #
+    # Archive-report.md creado: suma 40/40 tareas completas, PASS WITH
+    # WARNINGS (6 warnings, 0 CRITICAL), dos batches de apply (original +
+    # corrective para Defecto 1 asimetría de guardas, Defecto 2 disclosure
+    # frase sobre-amplia, Defecto 3 TS version claim). Disclosure
+    # accuracy ratificada por owner y acotada por orchestrator pre-archive.
+    # Size:exception vigente (423 líneas vs 400 presupuesto).
+    #
+    # Task Completion Gate: 40/40 [x], 0 pendientes. No fase bloqueante.
+    #
+    # Spec merge: additive-only, no destructive. Non-spec files remain as-is
+    # (code uncommitted on branch, git status as expected). Next: owner may
+    # commit if satisfied, or circulate for review.
+    date: 2026-09-18
+    archived_to: openspec/changes/archive/2026-09-18-become-seller-contrato-tipos/
+    spec_actions:
+      - spec: become-seller-contract-types
+        action: CREATED
+        requirements: 5
+        scenarios: 10
+      - spec: become-seller-page-api
+        action: UNCHANGED
+        note: HTTP contract preserved, re-verified by CA-4 not modified
