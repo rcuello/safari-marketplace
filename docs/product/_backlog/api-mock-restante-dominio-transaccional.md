@@ -4,6 +4,14 @@
 > dejó fuera a propósito, con la evidencia de qué frontend llama a cada módulo,
 > para que el siguiente corte se decida con datos y no por número de rutas.
 
+> **PROMOVIDO ENTERO (2026-10-20) al
+> [Épico 46 — API sin mocks JSON](../46-api-sin-mocks-json/README.md).** El
+> dueño revocó el congelamiento de la Fase 3 y pidió un solo épico con todo
+> lo que aún sirve JSON. Ese épico absorbe el Épico 33, la Fase 3 y lo que la
+> Fase 2 aplazó (`withdraws` y `ownership-transfer`), y levanta la exclusión
+> de `db/schema.sql:13-16`. Siguen fuera carritos, direcciones y balances.
+> Los 4 mocks permanentes se mantienen. Lo de abajo es el registro histórico.
+>
 > **DECIDIDO PARCIALMENTE (2026-09-14).** El dueño resolvió las dos preguntas
 > que cerraban este documento:
 >

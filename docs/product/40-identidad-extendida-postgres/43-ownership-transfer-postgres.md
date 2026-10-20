@@ -6,8 +6,13 @@
 
 **Épico:** [Épico 40](./README.md) — **ya no forma parte de su alcance**
 **Fecha:** 2026-09-15
-**Status:** **APLAZADA a la Fase 3** (opción C, decidida por el dueño el
-2026-09-15). No se ejecuta en el Épico 40; se ejecutará dentro del épico que
+**Status:** **Reemplazada (2026-10-20) por
+[US-63](../46-api-sin-mocks-json/63-ownership-transfer-postgres.md) del
+[Épico 46](../46-api-sin-mocks-json/README.md).** El análisis de abajo se
+conserva como evidencia; US-63 corrige lo que la auditoría de 2026-10-20
+encontró (los owners no existen en el seed y `transfer-shop-ownership` sí
+tiene consumidor). Antes: **APLAZADA a la Fase 3** (opción C, decidida por el
+dueño el 2026-09-15). No se ejecuta en el Épico 40; se ejecutará dentro del épico que
 promueva la Fase 3 del inventario de mocks, donde `balance` se decide junto a
 órdenes y reembolsos. El archivo se conserva aquí por la evidencia y el
 análisis de opciones; su número global (43) no cambia.

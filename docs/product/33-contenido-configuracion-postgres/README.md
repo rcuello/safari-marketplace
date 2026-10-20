@@ -8,7 +8,13 @@
 > `db/schema.sql:13-16`.
 
 **Fecha:** 2026-09-14
-**Status:** Refinado
+**Status:** **Reemplazado (2026-10-20) por el
+[Épico 46](../46-api-sin-mocks-json/README.md).** El dueño decidió migrar en
+un solo épico todo lo que aún sirve JSON, y que cada US traiga su propio DDL.
+Los 8 módulos de este épico son ahí US-47..51, y US-34 (la habilitadora con
+todo el DDL) ya no se ejecuta. El análisis de este README y de US-34 sigue
+siendo válido como fuente: las US nuevas lo citan y lo corrigen donde hizo
+falta.
 
 ## Por qué este corte y no otro
 

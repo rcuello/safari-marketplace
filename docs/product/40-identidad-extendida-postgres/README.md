@@ -26,7 +26,7 @@ sus tres dominios cuelgan de `users` y `shops`, ya migradas en el Épico 19.
 |----|--------|-----------------|------------|----------|--------|
 | [US-41](./41-esquema-identidad-extendida.md) | Esquema y capa de datos de identidad extendida | No (habilitadora) | ninguna | ~700 | ✅ Implementada |
 | [US-42](./42-staffs-postgres.md) | `staffs` desde Postgres (`/staffs`, `/my-staffs`, `/all-staffs`) | Sí | US-41 | ~1200 | |
-| [US-43](./43-ownership-transfer-postgres.md) | `ownership-transfer` desde Postgres | — | — | ~1300 | ⏭️ **Aplazada a la Fase 3** (2026-09-15) |
+| [US-43](./43-ownership-transfer-postgres.md) | `ownership-transfer` desde Postgres | — | — | ~1300 | ⏭️ **Reemplazada por [US-63](../46-api-sin-mocks-json/63-ownership-transfer-postgres.md)** (Épico 46, 2026-10-20) |
 | [US-44](./44-become-seller-postgres.md) | `become-seller` desde Postgres | Sí | US-41 | ~500 | ✅ Implementada (corte 2/2, `us-44-corte-2-servicio`, 2026-09-18) |
 
 **El épico son tres US, no cuatro.** US-43 salió del alcance el 2026-09-15

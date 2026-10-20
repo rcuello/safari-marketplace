@@ -200,11 +200,29 @@ Feature: …
 Épico 16 Despliegue y observabilidad          → US-17, US-18   ← Terraform: el README lo promete, hoy no existe
 Épico 19 Autenticación y autorización         → US-20 … US-25  (completado)
 Épico 26 Escrituras del catálogo desde Postgres → US-27a … US-30  (completado 2026-09-11)
-Épico 33 Contenido y configuración desde Postgres → US-34 … US-39   ← Fase 1 del inventario de mocks; NO levanta la exclusión de db/schema.sql:13-16
-Épico 40 Identidad extendida desde Postgres      → US-41 ✅, US-42, US-44   ← Fase 2; `balance`/`withdraws` Y `ownership-transfer` (US-43) van a la Fase 3: cuelgan de wallets, excluido
+Épico 33 Contenido y configuración desde Postgres → REEMPLAZADO por el Épico 46 (2026-10-20)
+Épico 40 Identidad extendida desde Postgres      → US-41 ✅, US-42, US-44 ✅   ← US-43 reemplazada por US-63 del Épico 46
+Épico 46 API sin mocks JSON (19 controladores)   → US-47 … US-63   ← SECUENCIAL; cada US trae su DDL + seed + db-reset; levanta la exclusión de db/schema.sql:13-16
 US-31    Guardas de id fuera del rango bigint   → standalone   ← implementada: cubrió `types`/`tags`/`manufacturers`, `users` y las 2 FK de `packages/db`
 US-32    Deriva de reloj `updated_at`/`created_at` → standalone ← PRERREQUISITO de US-34: su elección de reloj es insumo del DDL del Épico 33 (R-3, resuelto 2026-09-14)
 ```
+
+**Actualización 2026-10-20 — lo que queda con JSON es el
+[Épico 46](./46-api-sin-mocks-json/README.md).** El dueño decidió migrar en
+un solo épico los 19 controladores que aún leen JSON (120 rutas). Las
+consecuencias:
+
+- se absorben el Épico 33 y la Fase 3;
+- se levanta la exclusión de `db/schema.sql:13-16`;
+- cada US trae su propio DDL, su seed y su `db-reset`, autorizado para las 17
+  US;
+- los 4 mocks permanentes se mantienen.
+
+**US recomendada para arrancar: US-47.** Las US del Épico 46 van **en orden
+estricto** (comparten `schema.sql`, el generador, `schema.prisma`,
+`records.ts` y el barrel). US-42 (Épico 40) puede ir antes o después, pero
+nunca en paralelo con una del 46. Los párrafos de abajo, sobre el Épico 33,
+la Fase 3 y US-34, son el **registro histórico** de antes de esa decisión.
 
 Lo que sigue mock está inventariado con evidencia en
 [`_backlog/api-mock-restante-dominio-transaccional.md`](./_backlog/api-mock-restante-dominio-transaccional.md).

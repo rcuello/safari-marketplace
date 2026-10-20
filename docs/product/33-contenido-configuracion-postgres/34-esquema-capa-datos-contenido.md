@@ -9,7 +9,11 @@
 
 **Épico:** [Épico 33](./README.md)
 **Fecha:** 2026-09-14
-**Status:** Listo para ejecución
+**Status:** **Reemplazada (2026-10-20)**: no se ejecuta. El
+[Épico 46](../46-api-sin-mocks-json/README.md) reparte su DDL entre US-47..51
+(decisión 3: cada US trae su DDL). Su análisis de los JSON se conserva como
+fuente, con dos erratas: los slugs de atributo con mayúsculas son **3**, no 4,
+y el admin envía `values[].{language, value, meta}`, **sin `id`**.
 **Depende de:** US-32 — **satisfecha**: cerrada el 2026-09-15 (Opción B, sin
 triggers). Dependencia dura levantada; ver P-1
 **LOC est.:** ~1450
