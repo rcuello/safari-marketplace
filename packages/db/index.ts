@@ -30,6 +30,7 @@ export { buildPaginator } from './src/pagination';
 export type {
   BecomeSellerRecord,
   CategoryRecord,
+  FaqRecord,
   ManufacturerRecord,
   PermissionRecord,
   ProfileRecord,
@@ -37,6 +38,7 @@ export type {
   ShopRecord,
   ShopStaffRecord,
   TagRecord,
+  TermsAndConditionsRecord,
   TypeRecord,
   UserRecord,
 } from './src/records';
@@ -58,6 +60,32 @@ export {
 } from './src/repositories/auth-tokens.repository';
 export type { UpdateBecomeSellerInput } from './src/repositories/become-seller.repository';
 export { getBecomeSeller, updateBecomeSeller } from './src/repositories/become-seller.repository';
+export type {
+  CreateFaqInput,
+  ListFaqsInput,
+  UpdateFaqInput,
+} from './src/repositories/faqs.repository';
+export {
+  GLOBAL_CONTENT_ISSUER,
+  createFaq,
+  deleteFaq,
+  findFaqById,
+  listFaqs,
+  updateFaq,
+} from './src/repositories/faqs.repository';
+export type {
+  CreateTermsAndConditionsInput,
+  ListTermsAndConditionsInput,
+  UpdateTermsAndConditionsInput,
+} from './src/repositories/terms-and-conditions.repository';
+export {
+  createTermsAndConditions,
+  deleteTermsAndConditions,
+  findTermsAndConditionsBySlug,
+  listTermsAndConditions,
+  setTermsApproval,
+  updateTermsAndConditions,
+} from './src/repositories/terms-and-conditions.repository';
 export type {
   CategoryAncestor,
   CategoryDescendant,

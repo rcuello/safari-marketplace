@@ -8,7 +8,7 @@
 
 **Épico:** [Épico 46](./README.md)
 **Fecha:** 2026-10-20
-**Status:** Listo para ejecución
+**Status:** Implementada (2026-10-20, rama `us-47-faqs-terms`)
 **Depende de:** ninguna
 **LOC est.:** ~1600
 
@@ -343,27 +343,129 @@ Feature: FAQ y terminos desde Postgres
 Seguir el [Protocolo del épico](./README.md#protocolo-de-ejecución-de-una-us-de-este-épico)
 y pegar:
 
-- [ ] Los 7 cuerpos de la línea base, con su tamaño en bytes.
-- [ ] `node db/generate-seed.mjs`, con los conteos nuevos, y la corrida
+- [x] Los 7 cuerpos de la línea base, con su tamaño en bytes.
+- [x] `node db/generate-seed.mjs`, con los conteos nuevos, y la corrida
       fallida con un `issued_by` alterado (restaurado después).
-- [ ] `just db-reset` sin errores.
-- [ ] `psql` con:
+- [x] `just db-reset` sin errores.
+- [x] `psql` con:
   - los conteos de «Reglas del seed»;
   - 0 huérfanas en `faqs.shop_id`, `faqs.user_id`,
     `terms_and_conditions.shop_id` y `terms_and_conditions.user_id`;
   - `SELECT id FROM terms_and_conditions WHERE slug='privacy-policy'` → 10;
   - los conteos previos intactos.
-- [ ] `npx prisma validate` y `npx prisma migrate diff … --exit-code` con
+- [x] `npx prisma validate` y `npx prisma migrate diff … --exit-code` con
       `EXIT=0`; `just db-build` limpio.
-- [ ] `just db-check` con el recuento (sube respecto a la línea base de esta
+- [x] `just db-check` con el recuento (sube respecto a la línea base de esta
       US).
-- [ ] `cd apps/api/rest && npx jest` con el recuento.
-- [ ] `just build-api` y `just verify` en verde, `/api/settings` en 5503 B.
-- [ ] Comparación `node -e` de CA-3 y la evidencia de cada divergencia
+- [x] `cd apps/api/rest && npx jest` con el recuento.
+- [x] `just build-api` y `just verify` en verde, `/api/settings` en 5503 B.
+- [x] Comparación `node -e` de CA-3 y la evidencia de cada divergencia
       V-1..V-7.
-- [ ] Los `curl` de CA-5, con Bearer y status exacto.
-- [ ] El `grep` de CA-6 vacío.
-- [ ] Status de la US y fila del épico actualizados.
+- [x] Los `curl` de CA-5, con Bearer y status exacto.
+- [x] El `grep` de CA-6 vacío.
+- [x] Status de la US y fila del épico actualizados.
+
+### Evidencia (2026-10-20)
+
+**Línea base** (API mock recién arrancada, antes de tocar los servicios):
+
+```
+faq-7.json                566 B  id=7 keys=id,faq_title,slug,faq_description,faq_type,issued_by,language,translated_languages
+faqs-default.json        6279 B  data:10 ids=1,2,3,4,5,6,7,8,9,10 total=19 per_page=10
+faqs-help.json          17026 B  data:19 ids=1..19 total=0 per_page="100"
+faqs-shop1.json         17028 B  data:19 ids=1..19 total=0 per_page="100"
+terms-default.json       4454 B  data:10 ids=8,9,10,11,12,1,2,3,4,5 total=10 per_page=10
+terms-global.json        4525 B  data:10 ids=8,9,10,11,12,1,2,3,4,5 total=0 per_page="100"
+terms-privacy.json        371 B  id=10 keys=id,title,slug,description,type,issued_by,is_approved,language,translated_languages
+```
+
+**Generador** (corrida buena, y corrida con `issued_by` de la FAQ 6 alterado;
+el JSON se restauró con `git checkout` y `seed.sql` no se tocó):
+
+```
+db/seed.sql generado (619 KB)
+  10 types · 12 shops (3 recuperados) · 198 categorías · 14 manufacturers · 10 tags · 1200 productos · 3 usuarios · 4 permisos · 1 become_seller · 3 shop_staff · 19 faqs · 5 terms_and_conditions (5 duplicados descartados)
+
+El mock viola 1 restriccion(es) del esquema:
+  - faqs 6: issued_by 'Tienda Fantasma' no casa con ninguna tienda sembrada
+EXIT=1
+seed.sql intacto
+```
+
+**`psql` tras `just db-reset`:** faqs 19 (5 con `shop_id` NULL y 14 de
+tienda, 2 por cada tienda 1..7); terms 5 (ids 8-12, los 5 aprobados,
+`privacy-policy` → 10); 0 huérfanas en las 4 FK. Conteos previos intactos:
+10 types, 12 shops, 198 categories, 14 manufacturers, 10 tags, 1200 products,
+3 users, 4 permissions y 6 permission_user.
+
+**Prisma:** `prisma validate`: *The schema … is valid*; `prisma migrate diff
+--exit-code`: *No difference detected*, `EXIT=0`. Los modelos se tomaron de
+`prisma db pull --print`, que introspecciona sin sobrescribir los renombres
+de los 17 modelos previos, y se renombraron a `Faq` y `TermsAndConditions`.
+
+**Suites:**
+
+| Comando | Línea base | Después |
+|---|---|---|
+| `just db-check` | 12 archivos / 228 tests | **14 / 257** (+2 archivos, +29 tests) |
+| `npx jest` | 10 suites / 294 tests (medido excluyendo los specs nuevos) | **12 / 316** (+2 suites, +22 tests) |
+
+`just build-api`: `Done in 114.38s`.
+
+`just verify`:
+
+```
+OK   API    :9001/api/settings  200  5503B  569ms
+OK   Shop   :3003/en  200  190788B  1516ms  cards:30
+OK   Admin  :3002/en/login  200  72821B  150ms  cards:1
+```
+
+**CA-3** (`node -e`, comparación con orden de claves):
+
+```
+faq-7.json           IDENTICO 566B -> 566B
+terms-privacy.json   IDENTICO 371B -> 371B
+faqs-default.json  | elementos de data deep-equal con la base: true (10 de 10) | claves del paginador iguales y en orden: true
+   paginador que difiere: ninguno
+terms-default.json | elementos de data deep-equal con la base: true (5 de 10) | claves del paginador iguales y en orden: true
+   paginador que difiere: total: 10 -> 5 ; count: 10 -> 5 ; lastItem: 9 -> 4      (V-3)
+```
+
+**V-1, V-2 y CA-4:**
+
+```
+faqs-help.json     antes ids=[1..19] total=0 | despues ids=[1,2,3,4,5] total=5 per_page="100"
+faqs-shop1.json    antes ids=[1..19] total=0 | despues ids=[6,7] total=2 per_page="100"
+terms-global.json  antes ids=[8,9,10,11,12,1,2,3,4,5] total=0 | despues ids=[8,9,10,11,12] total=5 per_page="100"
+```
+
+Prueba de humo en la tienda real (SSR contra la API): `/en/help` muestra las
+5 FAQ globales y 0 de las 14 de tienda; `/en/terms` muestra los 5 títulos.
+
+**CA-5** (Bearer de `admin@demo.com`):
+
+| Petición | Status | Resultado |
+|---|---|---|
+| `POST /faqs` con `shop_id:"2"` | 201 | `faq_type:"shop"`, `issued_by:"Clothing Shop"`; en `psql`: `shop_id=2`, `user_id=3` |
+| `GET /faqs/27` | 200 | la fila creada |
+| `PUT /faqs/27` | 200 | título nuevo, slug intacto, `updated_at > created_at` |
+| `DELETE /faqs/27` | 200 | la fila borrada (V-6) |
+| `GET /faqs/27` tras borrar | 404 | |
+| `GET /faqs/999999` y `PUT /faqs/999999` | 404 | (V-4) |
+| `POST /faqs` sin token | 401 | guard intacto |
+| `POST /faqs` con `shop_id:"999999"` | 400 | `faqs.shop_id referencia un registro inexistente` |
+| `POST /terms-and-conditions` con slug y `shop_id:"3"` | 201 | `type:"shop"`, `issued_by:"Bags Shop"`, `is_approved:1` |
+| `PUT` y `DELETE` del término | 200 y 200 | luego `GET` → 404 |
+| `POST /disapprove-terms-and-conditions {id:10}` | 201 | `is_approved:0` (V-7) |
+| `POST /approve-terms-and-conditions {id:999999}` | 404 | antes 500 |
+| `GET ?is_approved=false` tras reiniciar la API | 200 | `ids=[10] total=1`: sobrevive al reinicio |
+
+Después se re-aprobó el id 10 para devolver el seed a su estado de reposo.
+
+**CA-6:** el `grep` no devuelve nada (`exit=1`). `git diff db/schema.sql`:
+66 inserciones y 4 eliminaciones. Las 4 eliminaciones son las líneas de la
+cabecera `:13-16`, que se reescriben con el mismo número de líneas; ninguna
+sentencia previa cambia.
 
 ## Notas para el agente ejecutor
 

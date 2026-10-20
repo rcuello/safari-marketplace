@@ -12,8 +12,9 @@
 //     products_simple_con_precio (simple ⇒ price NOT NULL),
 //     products_procedencia_completa (source_store y source_product_id
 //     van juntos o ninguno), products_status_check, categories_no_
-//     autoreferencia, settings_fila_unica, become_seller_fila_unica. Los
-//     repositorios los validan
+//     autoreferencia, settings_fila_unica, become_seller_fila_unica,
+//     faqs_faq_type_check (∈ global|shop), terms_and_conditions_type_check
+//     (∈ global|shop). Los repositorios los validan
 //     antes de escribir y traducen la violación a errores de dominio.
 //   · El índice de expresión products_nombre_trgm_idx
 //     (gin (lower(name) gin_trgm_ops)) que acelera la búsqueda por
@@ -82,9 +83,11 @@ model Shop {
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt   DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
 
-  owner    User        @relation(fields: [ownerId], references: [id], onDelete: Restrict, onUpdate: NoAction)
-  products Product[]
-  staff    ShopStaff[]
+  owner              User                 @relation(fields: [ownerId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  products           Product[]
+  staff              ShopStaff[]
+  faqs               Faq[]
+  termsAndConditions TermsAndConditions[]
 
   @@map("shops")
 }
@@ -247,6 +250,8 @@ model User {
   passwordResetTokens PasswordResetToken[]
   shops               Shop[]
   staffShops          ShopStaff[]
+  faqs                Faq[]
+  termsAndConditions  TermsAndConditions[]
 
   @@map("users")
 }
@@ -347,4 +352,51 @@ model BecomeSeller {
   updatedAt   DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
 
   @@map("become_seller")
+}
+
+// =====================================================================
+// Contenido (US-47, Épico 46)
+// =====================================================================
+
+model Faq {
+  id             BigInt   @id @default(autoincrement())
+  faqTitle       String   @map("faq_title")
+  slug           String   @unique
+  faqDescription String   @map("faq_description")
+  faqType        String   @map("faq_type")
+  issuedBy       String   @map("issued_by")
+  shopId         BigInt?  @map("shop_id")
+  userId         BigInt?  @map("user_id")
+  language       String   @default("es")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  shop Shop? @relation(fields: [shopId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user User? @relation(fields: [userId], references: [id], onUpdate: NoAction)
+
+  @@index([shopId], map: "faqs_shop_idx")
+  @@index([userId], map: "faqs_user_idx")
+  @@map("faqs")
+}
+
+model TermsAndConditions {
+  id          BigInt   @id @default(autoincrement())
+  title       String
+  slug        String   @unique
+  description String
+  type        String
+  issuedBy    String   @map("issued_by")
+  isApproved  Boolean  @default(false) @map("is_approved")
+  shopId      BigInt?  @map("shop_id")
+  userId      BigInt?  @map("user_id")
+  language    String   @default("es")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  shop Shop? @relation(fields: [shopId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user User? @relation(fields: [userId], references: [id], onUpdate: NoAction)
+
+  @@index([shopId], map: "terms_and_conditions_shop_idx")
+  @@index([userId], map: "terms_and_conditions_user_idx")
+  @@map("terms_and_conditions")
 }

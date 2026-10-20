@@ -14,6 +14,10 @@ import { CreateTermsAndConditionsDto } from './dto/create-terms-and-conditions.d
 import { UpdateTermsAndConditionsDto } from './dto/update-terms-and-conditions.dto';
 import { Public } from 'src/auth/decorators/public.decorator';
 import { ADMIN_ONLY, Permissions } from 'src/auth/decorators/permissions.decorator';
+import {
+  CurrentUser,
+  CurrentUserPayload,
+} from 'src/auth/decorators/current-user.decorator';
 
 @Controller('terms-and-conditions')
 export class TermsAndConditionsController {
@@ -23,8 +27,12 @@ export class TermsAndConditionsController {
   @Post()
   createTermsAndConditions(
     @Body() createTermsAndConditionsDto: CreateTermsAndConditionsDto,
+    @CurrentUser() user: CurrentUserPayload,
   ) {
-    return this.termsAndConditionsService.create(createTermsAndConditionsDto);
+    return this.termsAndConditionsService.create(
+      createTermsAndConditionsDto,
+      user.sub,
+    );
   }
 
   @Public()

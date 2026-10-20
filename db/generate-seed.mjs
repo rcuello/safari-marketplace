@@ -33,6 +33,8 @@ const popularProducts = leer('popular-products');
 const bestSellingProducts = leer('best-selling-products');
 const users = leer('users');
 const becomeSeller = leer('become-seller');
+const faqs = leer('faqs');
+const termsAndConditions = leer('terms-and-conditions');
 
 // ── Literales SQL ────────────────────────────────────────────────────────
 const txt = (v) =>
@@ -165,6 +167,48 @@ if (!becomeSeller.page_options?.page_options)
 if (!Array.isArray(becomeSeller.commissions) || becomeSeller.commissions.length !== 2)
   problemas.push('become-seller: commissions no es un array de 2 tiers');
 
+// ── Contenido: FAQ y términos (US-47) ────────────────────────────────────
+// faqs.json no trae shop_id: las FAQ de tienda solo dicen `issued_by` con el
+// NOMBRE de la tienda. Se deriva contra las tiendas sembradas; un nombre que
+// no casa es error, no NULL silencioso (la tienda dejaría de ver su FAQ).
+const shopIdPorNombre = new Map(shopsTodos.map((s) => [s.name, s.id]));
+const faqsFilas = faqs.map((f) => ({
+  ...f,
+  _shop_id: f.faq_type === 'shop' ? shopIdPorNombre.get(f.issued_by) : null,
+}));
+for (const f of faqsFilas) {
+  if (!['global', 'shop'].includes(f.faq_type))
+    problemas.push(`faqs ${f.id}: faq_type '${f.faq_type}' fuera del CHECK`);
+  if (f.faq_type === 'shop' && f._shop_id === undefined)
+    problemas.push(`faqs ${f.id}: issued_by '${f.issued_by}' no casa con ninguna tienda sembrada`);
+}
+if (new Set(faqs.map((f) => f.slug)).size !== faqs.length) problemas.push('faqs: slug duplicado');
+
+// terms-and-conditions.json repite 5 slugs (ids 8-12 son copias exactas de
+// 1-5). Se conserva la PRIMERA aparición en el orden del archivo -- la que
+// devolvía GET /:slug con Array.find -- y no el id más bajo. Una repetición
+// con contenido distinto ya no es ruido: detiene la generación.
+const termsPorSlug = new Map();
+const termsDescartados = [];
+for (const t of termsAndConditions) {
+  const previo = termsPorSlug.get(t.slug);
+  if (!previo) {
+    termsPorSlug.set(t.slug, t);
+    continue;
+  }
+  const mismoContenido = ['title', 'description', 'type', 'issued_by', 'is_approved'].every(
+    (k) => previo[k] === t[k]
+  );
+  if (!mismoContenido)
+    problemas.push(`terms ${t.id}: slug '${t.slug}' repetido con contenido distinto al id ${previo.id}`);
+  termsDescartados.push(t.id);
+}
+const termsFilas = [...termsPorSlug.values()];
+for (const t of termsFilas) {
+  if (!['global', 'shop'].includes(t.type))
+    problemas.push(`terms ${t.id}: type '${t.type}' fuera del CHECK`);
+}
+
 if (problemas.length) {
   console.error(`\nEl mock viola ${problemas.length} restriccion(es) del esquema:`);
   problemas.slice(0, 20).forEach((p) => console.error('  - ' + p));
@@ -191,7 +235,8 @@ L.push(
   `-- ${types.length} types · ${shopsTodos.length} shops · ${categories.length} categorías · ` +
     `${manufacturers.length} manufacturers · ${tags.length} tags · ${products.length} productos · ` +
     `${users.length} usuarios · ${permissionsCatalogo.length} permisos · ` +
-    `1 become_seller · ${staffAsignaciones.length} shop_staff`,
+    `1 become_seller · ${staffAsignaciones.length} shop_staff · ` +
+    `${faqsFilas.length} faqs · ${termsFilas.length} terms_and_conditions`,
   '-- =====================================================================',
   '',
   'BEGIN;'
@@ -325,6 +370,46 @@ L.push(
   'INSERT INTO shop_staff (user_id, shop_id) VALUES',
   staffAsignaciones.map((s) => `  (${s.user_id}, ${s.shop_id})`).join(',\n') +
     '\nON CONFLICT (user_id, shop_id) DO NOTHING;'
+);
+
+// faqs (US-47; tras shops y users: las dos FK lo exigen) -------------------
+const faqsDeTienda = faqsFilas.filter((f) => f._shop_id != null).length;
+bloque(`faqs — ${faqsFilas.length} (${faqsFilas.length - faqsDeTienda} globales, ${faqsDeTienda} de tienda)`);
+L.push(
+  '-- shop_id derivado de issued_by contra el nombre de la tienda (el mock no',
+  '-- trae la clave). user_id queda NULL: el mock no dice quién las escribió.',
+  '-- Slugs tal cual, incluidos los que terminan en `?`.',
+  'INSERT INTO faqs (id, faq_title, slug, faq_description, faq_type, issued_by, shop_id, language) VALUES'
+);
+L.push(
+  faqsFilas
+    .map(
+      (f) =>
+        `  (${f.id}, ${txt(f.faq_title)}, ${txt(f.slug)}, ${txt(f.faq_description)}, ` +
+        `${txt(f.faq_type)}, ${txt(f.issued_by)}, ${num(f._shop_id)}, ${txt(f.language ?? 'en')})`
+    )
+    .join(',\n') + '\nON CONFLICT (id) DO NOTHING;'
+);
+
+// terms_and_conditions (US-47) -----------------------------------------------
+bloque(
+  `terms_and_conditions — ${termsFilas.length} de ${termsAndConditions.length} ` +
+    `(${termsDescartados.length} copias exactas descartadas por slug)`
+);
+L.push(
+  `-- Descartados los ids ${termsDescartados.join(', ')}: repiten el slug de una fila`,
+  '-- anterior en el archivo con el mismo contenido. is_approved llega como',
+  '-- entero 1 en el mock -> bool().',
+  'INSERT INTO terms_and_conditions (id, title, slug, description, type, issued_by, is_approved, language) VALUES'
+);
+L.push(
+  termsFilas
+    .map(
+      (t) =>
+        `  (${t.id}, ${txt(t.title)}, ${txt(t.slug)}, ${txt(t.description)}, ` +
+        `${txt(t.type)}, ${txt(t.issued_by)}, ${bool(t.is_approved)}, ${txt(t.language ?? 'en')})`
+    )
+    .join(',\n') + '\nON CONFLICT (id) DO NOTHING;'
 );
 
 // categories -------------------------------------------------------------
@@ -463,7 +548,7 @@ L.push(
   '-- mock, así que hay que adelantar las secuencias o el primer INSERT nuevo',
   '-- chocaría con una clave existente.'
 );
-for (const t of ['types', 'users', 'permissions', 'shops', 'categories', 'manufacturers', 'tags', 'products']) {
+for (const t of ['types', 'users', 'permissions', 'shops', 'categories', 'manufacturers', 'tags', 'products', 'faqs', 'terms_and_conditions']) {
   L.push(`SELECT setval('${t}_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM ${t}), 1));`);
 }
 
@@ -477,5 +562,7 @@ console.log(
     `${categories.length} categorías · ${manufacturers.length} manufacturers · ` +
     `${tags.length} tags · ${products.length} productos · ` +
     `${users.length} usuarios · ${permissionsCatalogo.length} permisos · ` +
-    `1 become_seller · ${staffAsignaciones.length} shop_staff`
+    `1 become_seller · ${staffAsignaciones.length} shop_staff · ` +
+    `${faqsFilas.length} faqs · ${termsFilas.length} terms_and_conditions ` +
+    `(${termsDescartados.length} duplicados descartados)`
 );

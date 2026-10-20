@@ -112,7 +112,8 @@ No usar `prisma migrate dev` ni `prisma db push` contra esta base.
   Prisma trataría el unique como total. `upsertScrapedProduct` opera sobre
   esa clave y está cubierto por el test de integración.
 - **Los CHECK constraints** (`products_rebaja_valida`,
-  `products_simple_con_precio`, `products_procedencia_completa`) no existen
+  `products_simple_con_precio`, `products_procedencia_completa`, y desde
+  US-47 `faqs_faq_type_check` y `terms_and_conditions_type_check`) no existen
   para Prisma. Los repositorios los validan antes de escribir (tipos +
   guard de `salePrice < price`) y traducen la violación que llegue de
   Postgres a errores de dominio: `InvalidSalePriceError`,
@@ -120,6 +121,35 @@ No usar `prisma migrate dev` ni `prisma db push` contra esta base.
 - **El índice trgm** `products_nombre_trgm_idx` (expresión) tampoco: la
   búsqueda por nombre usa `contains` + `mode: 'insensitive'`, que Postgres
   resuelve con ese índice.
+
+### Contenido (US-47, Épico 46) — `faqs` y `terms-and-conditions`
+
+`FaqRecord` y `TermsAndConditionsRecord` (`records.ts`), con dos
+repositorios de funciones planas calcados de `tags.repository.ts`:
+
+- `faqs.repository.ts`: `listFaqs`, `findFaqById`, `createFaq`, `updateFaq`
+  y `deleteFaq`.
+- `terms-and-conditions.repository.ts`: `listTermsAndConditions`,
+  `findTermsAndConditionsBySlug`, `createTermsAndConditions`,
+  `updateTermsAndConditions`, `deleteTermsAndConditions` y
+  `setTermsApproval` (la moderación que el mock mutaba en memoria).
+
+Los listados ordenan por `id ASC` (el orden del mock) y filtran con AND:
+`shopId`, tipo e `issuedBy` por igualdad exacta, título con `contains`
+insensible a mayúsculas, y `isApproved` en los términos.
+
+**Regla propia: tipo y emisor derivados de la tienda.**
+`resolveContentIssuer` resuelve el emisor de lo que se crea:
+
+- sin `shopId`, el contenido es `global` y lo emite `GLOBAL_CONTENT_ISSUER`
+  (`'Super Admin'`);
+- con `shopId`, es `shop` y el emisor es el nombre de esa tienda;
+- una tienda inexistente o un id que no sea entero seguro da
+  `InvalidReferenceError` (400) antes de escribir.
+
+Así los CHECK `faqs_faq_type_check` y `terms_and_conditions_type_check` no
+pueden violarse desde el paquete. El `slug` es inmutable en las
+actualizaciones, y `updatedAt` se fija con `now()` de `clock.ts` (US-32).
 
 ### Identidad (US-21, Épico 19) — `users.repository.ts`
 

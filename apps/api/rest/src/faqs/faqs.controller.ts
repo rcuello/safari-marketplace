@@ -14,6 +14,10 @@ import { CreateFaqDto } from './dto/create-faq.dto';
 import { UpdateFaqDto } from './dto/update-faq.dto';
 import { Public } from 'src/auth/decorators/public.decorator';
 import { ADMIN_ONLY, Permissions } from 'src/auth/decorators/permissions.decorator';
+import {
+  CurrentUser,
+  CurrentUserPayload,
+} from 'src/auth/decorators/current-user.decorator';
 
 @Controller('faqs')
 export class FaqsController {
@@ -21,8 +25,11 @@ export class FaqsController {
 
   @Permissions(...ADMIN_ONLY)
   @Post()
-  createFaq(@Body() createFaqDto: CreateFaqDto) {
-    return this.faqService.create(createFaqDto);
+  createFaq(
+    @Body() createFaqDto: CreateFaqDto,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
+    return this.faqService.create(createFaqDto, user.sub);
   }
 
   @Public()

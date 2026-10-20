@@ -20,6 +20,7 @@
 import type {
   BecomeSeller,
   Category,
+  Faq,
   Manufacturer,
   Permission,
   Prisma,
@@ -28,6 +29,7 @@ import type {
   Shop,
   ShopStaff,
   Tag,
+  TermsAndConditions,
   Type,
   User,
 } from '../generated/prisma/client/client';
@@ -193,6 +195,40 @@ export interface BecomeSellerRecord {
   updatedAt: Date;
 }
 
+/**
+ * FAQ global (`shopId` null, emitida por el super admin) o de una tienda.
+ * `issuedBy` es el nombre del emisor tal cual lo filtra el shop.
+ */
+export interface FaqRecord {
+  id: number;
+  faqTitle: string;
+  slug: string;
+  faqDescription: string;
+  faqType: string;
+  issuedBy: string;
+  shopId: number | null;
+  userId: number | null;
+  language: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/** Misma forma que `FaqRecord` más la cola de moderación (`isApproved`). */
+export interface TermsAndConditionsRecord {
+  id: number;
+  title: string;
+  slug: string;
+  description: string;
+  type: string;
+  issuedBy: string;
+  isApproved: boolean;
+  shopId: number | null;
+  userId: number | null;
+  language: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 // ---------------------------------------------------------------------------
 // Mappers (internos del paquete)
 // ---------------------------------------------------------------------------
@@ -337,6 +373,41 @@ export function _toBecomeSellerRecord(row: BecomeSeller): BecomeSellerRecord {
     id: row.id, // smallint -> Int: sin _id(), como _toSettingRecord (:180)
     pageOptions: row.pageOptions,
     commissions: row.commissions,
+    language: row.language,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+export function _toFaqRecord(row: Faq): FaqRecord {
+  return {
+    id: _id(row.id),
+    faqTitle: row.faqTitle,
+    slug: row.slug,
+    faqDescription: row.faqDescription,
+    faqType: row.faqType,
+    issuedBy: row.issuedBy,
+    shopId: _id(row.shopId),
+    userId: _id(row.userId),
+    language: row.language,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+export function _toTermsAndConditionsRecord(
+  row: TermsAndConditions
+): TermsAndConditionsRecord {
+  return {
+    id: _id(row.id),
+    title: row.title,
+    slug: row.slug,
+    description: row.description,
+    type: row.type,
+    issuedBy: row.issuedBy,
+    isApproved: row.isApproved,
+    shopId: _id(row.shopId),
+    userId: _id(row.userId),
     language: row.language,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,

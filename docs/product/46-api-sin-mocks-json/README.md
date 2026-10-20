@@ -40,7 +40,7 @@ barrel.
 
 | US | Título | Rutas | Tablas nuevas | Depende de | LOC est. | Status |
 |----|--------|-------|---------------|------------|----------|--------|
-| [US-47](./47-faqs-terms-postgres.md) | `faqs` y `terms-and-conditions` | 12 | `faqs`, `terms_and_conditions` | ninguna | ~1600 | |
+| [US-47](./47-faqs-terms-postgres.md) | `faqs` y `terms-and-conditions` | 12 | `faqs`, `terms_and_conditions` | ninguna | ~1600 | ✅ Implementada (2026-10-20) |
 | [US-48](./48-refund-policies-reasons-postgres.md) | `refund-policies` y `refund-reasons` | 10 | `refund_policies`, `refund_reasons` | US-47 | ~1300 | |
 | [US-49](./49-taxes-shippings-postgres.md) | `taxes` y `shippings` | 10 | `taxes`, `shippings` | US-48 | ~1100 | |
 | [US-50](./50-attributes-postgres.md) | `attributes` y sus valores | 5 | `attributes`, `attribute_values` | US-49 | ~1300 | |

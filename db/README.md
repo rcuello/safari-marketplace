@@ -24,6 +24,7 @@ SQL inaplicable.
 
 ```
 10 types · 12 shops · 198 categorías · 14 manufacturers · 10 tags · 1200 productos · 3 usuarios · 4 permisos
+· 1 become_seller · 3 shop_staff · 19 faqs · 5 terms_and_conditions
 ```
 
 **Los ids del mock se preservan** para no romper las relaciones, y al final se
@@ -104,6 +105,35 @@ política que el resto del archivo desde US-32):
   `updated_at` son estas mismas columnas) y `commissions` (el array
   completo de 2 tiers). Fundirlas en una sola columna perdería
   `commissions` en silencio.
+
+## Contenido: FAQ y términos y condiciones
+
+Desde US-47 (primera US del
+[Épico 46](../docs/product/46-api-sin-mocks-json/README.md), que levanta la
+exclusión transaccional de la cabecera de `schema.sql`), dos tablas con la
+misma forma: contenido **global** (emitido por el super admin, `shop_id`
+NULL) o **de una tienda**.
+
+- **`faqs`** — 19 filas de `faqs.json`. `faq_type ∈ {global, shop}` (CHECK).
+  `issued_by` es **texto**, no FK: es el nombre del emisor («Super Admin» o
+  el de la tienda), que es lo que la tienda filtra por igualdad exacta.
+  **`shop_id` se deriva en el generador**: el mock no trae la clave, solo
+  `issued_by`; las 14 FAQ de tienda casan exactamente con las tiendas 1-7 por
+  nombre (dos cada una). Un nombre que no case detiene la generación.
+  Varios slugs terminan en `?` y se siembran tal cual (la FAQ se edita por id).
+- **`terms_and_conditions`** — **5 filas de 10**. El mock trae los ids
+  `8,9,10,11,12,1,2,3,4,5` y los 1-5 son copias exactas de 8-12; con `slug`
+  UNIQUE se conserva la **primera aparición en el orden del archivo** (8-12),
+  que es la que `GET /:slug` devolvía. Una repetición con contenido distinto
+  detiene la generación. `is_approved` es boolean (el mock trae `1`); la
+  proyección a entero `1/0` del contrato vive en el servicio de Nest.
+
+En las dos, `shop_id → shops ON DELETE CASCADE` (el contenido de una tienda
+borrada no tiene a quién pertenecer) y `user_id → users ON DELETE SET NULL`
+(el autor se puede borrar sin perder el contenido). Al **crear**, el tipo y
+el emisor no los elige quien escribe: los deriva el repositorio de `shop_id`
+(`resolveContentIssuer`), para que una FAQ de tienda no quede invisible en
+su propia página.
 
 ## Cómo se adapta el scraper
 

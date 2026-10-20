@@ -10,10 +10,10 @@
 -- filtros que el frontend envía de verdad
 -- (apps/shop/src/framework/rest/client/index.ts).
 --
--- Fuera de alcance deliberado: wallets, direcciones, órdenes, carritos
--- y reviews. Identidad SÍ entra (US-20): usuarios, perfiles, permisos y
--- recuperación de contraseña/OTP, lo mínimo para autenticación real. El
--- resto del dominio transaccional sigue fuera.
+-- Identidad entra desde US-20. El resto del dominio entra por el Épico 46
+-- (2026-10-20), una US por bloque de tablas, sembradas desde los mismos JSON.
+-- Siguen fuera de alcance deliberado: carritos, direcciones y wallets/
+-- balances, porque ningún mock JSON los respalda.
 --
 -- Idempotente: todo va con IF NOT EXISTS, así que aplicarlo dos veces no
 -- rompe nada. OJO: por eso mismo NO aplica cambios a tablas que ya existan.
@@ -494,6 +494,61 @@ CREATE TABLE IF NOT EXISTS become_seller (
 
 
 -- =====================================================================
+-- Contenido (US-47, Épico 46) — FAQ y términos y condiciones.
+--
+-- Sembradas desde faqs.json y terms-and-conditions.json. Las dos tienen
+-- la misma forma: contenido global (emitido por el super admin) o de una
+-- tienda. `issued_by` es TEXTO, no FK: es lo que la tienda filtra (el nombre
+-- del emisor, "Super Admin" o el de la tienda), y el mock no trae otra cosa.
+-- `shop_id` sí es FK: el seed lo deriva de `issued_by` en las FAQ de tienda.
+--
+-- ON DELETE: el contenido de una tienda borrada no tiene a quién pertenecer
+-- (CASCADE); el autor se puede borrar sin perder la FAQ (SET NULL).
+-- Sin trigger de updated_at: reloj único, ver el final del archivo.
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS faqs (
+    id               bigserial    PRIMARY KEY,
+    faq_title        text         NOT NULL,
+    slug             text         NOT NULL UNIQUE,
+    faq_description  text         NOT NULL,
+    faq_type         text         NOT NULL
+                                  CHECK (faq_type IN ('global', 'shop')),
+    issued_by        text         NOT NULL,
+    shop_id          bigint       REFERENCES shops(id) ON DELETE CASCADE,
+    user_id          bigint       REFERENCES users(id) ON DELETE SET NULL,
+    language         text         NOT NULL DEFAULT 'es',
+    created_at       timestamptz  NOT NULL DEFAULT now(),
+    updated_at       timestamptz  NOT NULL DEFAULT now()
+);
+
+
+-- ---------------------------------------------------------------------
+-- terms_and_conditions — misma forma que faqs, más la cola de moderación.
+--
+-- El mock trae 10 filas con 5 slugs repetidos (los ids 8-12 son copias
+-- exactas de 1-5); con `slug` UNIQUE el seed conserva la primera aparición
+-- en el orden del archivo, que es la que GET /:slug devolvía.
+-- `is_approved` es boolean aunque el mock emita 1/0: la proyección a entero
+-- vive en el servicio de Nest.
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS terms_and_conditions (
+    id           bigserial    PRIMARY KEY,
+    title        text         NOT NULL,
+    slug         text         NOT NULL UNIQUE,
+    description  text         NOT NULL,
+    type         text         NOT NULL
+                              CHECK (type IN ('global', 'shop')),
+    issued_by    text         NOT NULL,
+    is_approved  boolean      NOT NULL DEFAULT false,
+    shop_id      bigint       REFERENCES shops(id) ON DELETE CASCADE,
+    user_id      bigint       REFERENCES users(id) ON DELETE SET NULL,
+    language     text         NOT NULL DEFAULT 'es',
+    created_at   timestamptz  NOT NULL DEFAULT now(),
+    updated_at   timestamptz  NOT NULL DEFAULT now()
+);
+
+
+-- =====================================================================
 -- Índices.
 --
 -- No son decorativos: cada uno responde a un filtro que el frontend
@@ -535,6 +590,13 @@ CREATE INDEX IF NOT EXISTS otp_codes_phone_idx            ON otp_codes (phone);
 -- (user_id, shop_id) no cubre por la izquierda. Gemelo de
 -- permission_user_permiso_idx.
 CREATE INDEX IF NOT EXISTS shop_staff_tienda_idx ON shop_staff (shop_id);
+
+-- Contenido (US-47): cada FK saliente con su índice. El shop filtra FAQ y
+-- términos por shop_id en las páginas de cada tienda.
+CREATE INDEX IF NOT EXISTS faqs_shop_idx                  ON faqs (shop_id);
+CREATE INDEX IF NOT EXISTS faqs_user_idx                  ON faqs (user_id);
+CREATE INDEX IF NOT EXISTS terms_and_conditions_shop_idx  ON terms_and_conditions (shop_id);
+CREATE INDEX IF NOT EXISTS terms_and_conditions_user_idx  ON terms_and_conditions (user_id);
 
 
 -- ---------------------------------------------------------------------
