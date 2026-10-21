@@ -7,7 +7,7 @@
 
 **Épico:** [Épico 46](./README.md)
 **Fecha:** 2026-10-20
-**Status:** Listo para ejecución
+**Status:** Implementada (2026-10-21, rama `us-49-taxes-shippings`)
 **Depende de:** [US-48](./48-refund-policies-reasons-postgres.md) (orden
 secuencial del épico, R-2)
 **LOC est.:** ~1100
@@ -232,16 +232,110 @@ Feature: Impuestos y envios desde Postgres
 Seguir el [Protocolo del épico](./README.md#protocolo-de-ejecución-de-una-us-de-este-épico)
 y pegar:
 
-- [ ] Línea base (6 `curl`) con sus bytes.
-- [ ] Salida de `node db/generate-seed.mjs` y de `just db-reset`.
-- [ ] `psql` con las 2 filas, sus timestamps y los conteos previos.
-- [ ] `prisma validate` y `migrate diff` con `EXIT=0`; `just db-build`.
-- [ ] `just db-check` y `npx jest` con sus recuentos.
-- [ ] `just build-api` y `just verify`.
-- [ ] La comparación byte a byte de CA-3 y la de CA-4.
-- [ ] Los `curl` de CA-5.
-- [ ] `grep` sin imports de JSON.
-- [ ] Status de la US y fila del épico.
+- [x] Línea base (6 `curl`) con sus bytes.
+- [x] Salida de `node db/generate-seed.mjs` y de `just db-reset`.
+- [x] `psql` con las 2 filas, sus timestamps y los conteos previos.
+- [x] `prisma validate` y `migrate diff` con `EXIT=0`; `just db-build`.
+- [x] `just db-check` y `npx jest` con sus recuentos.
+- [x] `just build-api` y `just verify`.
+- [x] La comparación byte a byte de CA-3 y la de CA-4.
+- [x] Los `curl` de CA-5.
+- [x] `grep` sin imports de JSON.
+- [x] Status de la US y fila del épico.
+
+### Evidencia (2026-10-21)
+
+**Línea base** (API recién arrancada). Se añadió un séptimo `curl`,
+`taxes?search=name:Zzz`, como evidencia del «antes» de V-1:
+
+```
+settings.json          5504 B  (Content-Length: 5504)
+shipping-1.json         148 B
+shippings.json          150 B
+tax-1.json              216 B
+taxes.json              218 B
+taxes-search.json       218 B  (search=name:Zzz: hoy devuelve la fila igual)
+taxes-settings.json     218 B
+```
+
+**Generador y `just db-reset`:** `… · 1 taxes · 1 shippings`, y *esquema y
+datos de referencia aplicados*.
+
+**`psql`:**
+
+- `taxes`: `1 | Global | 2 | t | … | t | 2021-03-25 13:26:57+00 |
+  2021-03-25 16:07:18+00`.
+- `shippings`: `1 | Global | 50 | t | fixed | 2021-03-25 13:27:49+00 |
+  2021-03-25 13:27:49+00`.
+- `nextval` de las dos secuencias da `2 | 2`. Se devolvieron a `1` con
+  `setval` tras comprobarlo.
+- Conteos previos intactos: 19 faqs, 5 terms, 5 refund_policies, 8
+  refund_reasons, 10 types, 12 shops, 198 categories, 14 manufacturers, 10
+  tags, 1200 products, 3 users, 4 permissions y 6 permission_user.
+
+**Prisma:** `prisma validate` dice *valid*. `migrate diff --exit-code` da
+`EXIT=0`. Los CHECK `taxes_rate_check`, `shippings_amount_check` y
+`shippings_type_check` quedan en la cabecera de `schema.prisma`.
+
+**Suites:**
+
+| Comando | Antes (US-48) | Después |
+|---|---|---|
+| `just db-check` | 16 / 273 | **18 / 283** (+10) |
+| `npx jest` | 14 / 330 | **16 / 340** (+10) |
+
+`just build-api`: `Done in 54.79s`.
+
+`just verify`: `API 5503B · Shop 190788B cards:30 · Admin 72821B` OK.
+
+**CA-3** (byte a byte):
+
+```
+taxes.json           IDENTICO 218B -> 218B
+taxes-settings.json  IDENTICO 218B -> 218B
+tax-1.json           IDENTICO 216B -> 216B
+shippings.json       IDENTICO 150B -> 150B
+shipping-1.json      IDENTICO 148B -> 148B
+```
+
+**CA-4:** `/api/settings` sigue en `Content-Length: 5504`. Su cuerpo es
+deep-equal a la línea base salvo `created_at`/`updated_at` del propio
+`settings`, que pasan de `2026-10-21T14:04:41.728Z` a
+`2026-10-21T14:37:00.892Z`. No lo causa esta US: es la divergencia conocida
+del `CLAUDE.md`, porque el seed no inserta timestamps de `settings` y toman
+el `now()` de cada `just db-reset`. La línea base se capturó con la base del
+reset de US-48 y la medición final, con la de este. Mismo tamaño, porque las
+dos fechas tienen 24 caracteres.
+
+**V-1:** `search=name:Zzz` antes devolvía 1 fila (filtro ignorado) y ahora
+devuelve 0.
+
+**CA-5** (Bearer de `admin@demo.com`):
+
+| Petición | Status | Resultado |
+|---|---|---|
+| `POST /taxes {name:"IVA", rate:19, is_global:true, on_shipping:false}` | 201 | `id:3` (*) |
+| `GET /taxes` | 200 | array de 2, ids `1,3` |
+| `PUT /taxes/3 {rate:16}` | 200 | `rate:16`; `updated_at` avanza |
+| `POST /taxes {rate:"abc"}` | 400 | `CHECK taxes_rate_check` |
+| `DELETE /taxes/3` | 200 | devuelve la fila; `GET /taxes/3` da 404 |
+| `POST /shippings {type:"gratis"}` | 400 | `CHECK shippings_type_check` |
+| `POST /shippings` Express | 201 | `amount:12.5` |
+| `PUT /shippings/3 {type:"free"}` | 200 | |
+| `PUT /shippings/3 {type:"gratis"}` | 400 | |
+| `DELETE /shippings/3` | 200 | |
+| `GET /shippings/999999` | 404 | (V-2) |
+| `POST /taxes` sin token | 401 | el guard sigue intacto |
+
+(*) El id es 3 y no el 2 que anticipaba CA-5: el `just db-check` que corrió
+después del reset consumió el id 2 en sus tests de escritura. Que el `setval`
+deja la secuencia en 2 está probado en `psql`, arriba.
+
+Después se borraron las filas de prueba. `GET /taxes` y `GET /shippings`
+volvieron a ser idénticos byte a byte a la línea base (1 fila cada uno).
+
+**CA-6:** el `grep` no devuelve nada (`exit=1`). `git diff db/schema.sql`
+tiene 40 inserciones y 0 eliminaciones.
 
 ## Notas para el agente ejecutor
 

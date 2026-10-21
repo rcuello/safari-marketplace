@@ -28,9 +28,11 @@ import type {
   RefundPolicy,
   RefundReason,
   Setting,
+  Shipping,
   Shop,
   ShopStaff,
   Tag,
+  Tax,
   TermsAndConditions,
   Type,
   User,
@@ -241,6 +243,36 @@ export interface RefundPolicyRecord {
   status: string;
   shopId: number | null;
   language: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/**
+ * Clase de impuesto. `rate` es `numeric` sin escala → number (`_dec`): el
+ * contrato emite `2`, no `2.00`.
+ */
+export interface TaxRecord {
+  id: number;
+  name: string;
+  rate: number;
+  isGlobal: boolean;
+  country: string | null;
+  state: string | null;
+  zip: string | null;
+  city: string | null;
+  priority: number | null;
+  onShipping: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/** Clase de envío. `type` ∈ fixed | percentage | free. */
+export interface ShippingRecord {
+  id: number;
+  name: string;
+  amount: number;
+  isGlobal: boolean;
+  type: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -461,6 +493,35 @@ export function _toRefundReasonRecord(row: RefundReason): RefundReasonRecord {
     name: row.name,
     slug: row.slug,
     language: row.language,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+export function _toTaxRecord(row: Tax): TaxRecord {
+  return {
+    id: _id(row.id),
+    name: row.name,
+    rate: _dec(row.rate),
+    isGlobal: row.isGlobal,
+    country: row.country,
+    state: row.state,
+    zip: row.zip,
+    city: row.city,
+    priority: row.priority,
+    onShipping: row.onShipping,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+export function _toShippingRecord(row: Shipping): ShippingRecord {
+  return {
+    id: _id(row.id),
+    name: row.name,
+    amount: _dec(row.amount),
+    isGlobal: row.isGlobal,
+    type: row.type,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };

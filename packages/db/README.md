@@ -114,7 +114,9 @@ No usar `prisma migrate dev` ni `prisma db push` contra esta base.
 - **Los CHECK constraints** (`products_rebaja_valida`,
   `products_simple_con_precio`, `products_procedencia_completa`, y desde
   US-47 `faqs_faq_type_check` y `terms_and_conditions_type_check`, y desde
-  US-48 `refund_policies_target_check` y `refund_policies_status_check`) no existen
+  US-48 `refund_policies_target_check` y `refund_policies_status_check`, y
+  desde US-49 `taxes_rate_check`, `shippings_amount_check` y
+  `shippings_type_check`) no existen
   para Prisma. Los repositorios los validan antes de escribir (tipos +
   guard de `salePrice < price`) y traducen la violación que llegue de
   Postgres a errores de dominio: `InvalidSalePriceError`,
@@ -171,6 +173,19 @@ actualizaciones.
   `findRefundReasonBySlug`, `createRefundReason`, `updateRefundReason` y
   `deleteRefundReason`. Los timestamps son contrato, por eso `update` fija
   `updatedAt` con `now()`.
+
+### Configuración fiscal y de envío (US-49, Épico 46) — `taxes` y `shippings`
+
+`TaxRecord` y `ShippingRecord` (con `rate`/`amount` vía `_dec`), y dos
+repositorios gemelos. A diferencia del resto, **los listados no paginan**:
+`listTaxes`/`listShippings` devuelven un array (`id ASC`, filtro opcional por
+nombre), porque eso es lo que el admin espera. Los demás son
+`findTaxById`/`findShippingById`, `create*`, `update*` (fija `updatedAt` con
+`now()`) y `delete*`. Los CHECK se validan antes de escribir:
+`InvalidTaxValueError` (`rate` no finito o negativo) e
+`InvalidShippingValueError` (`amount` o `type` fuera de su CHECK; los tipos
+válidos se exportan como `SHIPPING_TYPES`). Las dos tienen `code =
+InvalidReference`, y la API las convierte en 400.
 
 ### Identidad (US-21, Épico 19) — `users.repository.ts`
 

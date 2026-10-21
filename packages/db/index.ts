@@ -37,9 +37,11 @@ export type {
   RefundPolicyRecord,
   RefundReasonRecord,
   SettingRecord,
+  ShippingRecord,
   ShopRecord,
   ShopStaffRecord,
   TagRecord,
+  TaxRecord,
   TermsAndConditionsRecord,
   TypeRecord,
   UserRecord,
@@ -115,6 +117,33 @@ export {
   listRefundReasons,
   updateRefundReason,
 } from './src/repositories/refund-reasons.repository';
+export type {
+  CreateTaxInput,
+  ListTaxesInput,
+  UpdateTaxInput,
+} from './src/repositories/taxes.repository';
+export {
+  InvalidTaxValueError,
+  createTax,
+  deleteTax,
+  findTaxById,
+  listTaxes,
+  updateTax,
+} from './src/repositories/taxes.repository';
+export type {
+  CreateShippingInput,
+  ListShippingsInput,
+  UpdateShippingInput,
+} from './src/repositories/shippings.repository';
+export {
+  InvalidShippingValueError,
+  SHIPPING_TYPES,
+  createShipping,
+  deleteShipping,
+  findShippingById,
+  listShippings,
+  updateShipping,
+} from './src/repositories/shippings.repository';
 export type {
   CategoryAncestor,
   CategoryDescendant,

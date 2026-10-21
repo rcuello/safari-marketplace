@@ -37,6 +37,8 @@ const faqs = leer('faqs');
 const termsAndConditions = leer('terms-and-conditions');
 const refundPolicies = leer('refund-policies');
 const refundReasons = leer('refund-reasons');
+const taxes = leer('taxes');
+const shippings = leer('shippings');
 
 // ── Literales SQL ────────────────────────────────────────────────────────
 const txt = (v) =>
@@ -227,6 +229,21 @@ for (const r of refundReasons) {
     problemas.push(`refund_reasons ${r.id}: sin created_at/updated_at (el contrato los emite)`);
 }
 
+// ── Configuración fiscal y de envío (US-49) ──────────────────────────────
+// settings.options.taxClass/shippingClass apuntan al id 1 como texto: si el
+// mock dejara de traerlo, los selectores del admin quedarían sin resolver.
+for (const [nombre, filas, campo] of [['taxes', taxes, 'rate'], ['shippings', shippings, 'amount']]) {
+  if (!filas.some((f) => f.id === 1)) problemas.push(`${nombre}: falta el id 1 que referencia settings.options`);
+  for (const f of filas) {
+    if (typeof f[campo] !== 'number' || f[campo] < 0)
+      problemas.push(`${nombre} ${f.id}: ${campo} '${f[campo]}' no es un número >= 0`);
+  }
+}
+for (const s of shippings) {
+  if (!['fixed', 'percentage', 'free'].includes(s.type))
+    problemas.push(`shippings ${s.id}: type '${s.type}' fuera del CHECK`);
+}
+
 if (problemas.length) {
   console.error(`\nEl mock viola ${problemas.length} restriccion(es) del esquema:`);
   problemas.slice(0, 20).forEach((p) => console.error('  - ' + p));
@@ -255,7 +272,8 @@ L.push(
     `${users.length} usuarios · ${permissionsCatalogo.length} permisos · ` +
     `1 become_seller · ${staffAsignaciones.length} shop_staff · ` +
     `${faqsFilas.length} faqs · ${termsFilas.length} terms_and_conditions · ` +
-    `${refundPolicies.length} refund_policies · ${refundReasons.length} refund_reasons`,
+    `${refundPolicies.length} refund_policies · ${refundReasons.length} refund_reasons · ` +
+    `${taxes.length} taxes · ${shippings.length} shippings`,
   '-- =====================================================================',
   '',
   'BEGIN;'
@@ -465,6 +483,35 @@ L.push(
     .join(',\n') + '\nON CONFLICT (id) DO NOTHING;'
 );
 
+// taxes / shippings (US-49) ---------------------------------------------------
+bloque(`taxes — ${taxes.length} · shippings — ${shippings.length} (ids y fechas del mock)`);
+L.push(
+  '-- El id 1 lo referencian settings.options.taxClass/shippingClass (texto, sin',
+  '-- FK). Fechas del mock: el contrato las emite y taxes trae created_at y',
+  '-- updated_at distintos.',
+  'INSERT INTO taxes (id, name, rate, is_global, country, state, zip, city, priority, on_shipping, created_at, updated_at) VALUES'
+);
+L.push(
+  taxes
+    .map(
+      (t) =>
+        `  (${t.id}, ${txt(t.name)}, ${num(t.rate)}, ${bool(t.is_global)}, ${txt(t.country)}, ` +
+        `${txt(t.state)}, ${txt(t.zip)}, ${txt(t.city)}, ${num(t.priority)}, ${bool(t.on_shipping)}, ` +
+        `${ts(t.created_at)}, ${ts(t.updated_at)})`
+    )
+    .join(',\n') + '\nON CONFLICT (id) DO NOTHING;'
+);
+L.push('INSERT INTO shippings (id, name, amount, is_global, type, created_at, updated_at) VALUES');
+L.push(
+  shippings
+    .map(
+      (s) =>
+        `  (${s.id}, ${txt(s.name)}, ${num(s.amount)}, ${bool(s.is_global)}, ${txt(s.type)}, ` +
+        `${ts(s.created_at)}, ${ts(s.updated_at)})`
+    )
+    .join(',\n') + '\nON CONFLICT (id) DO NOTHING;'
+);
+
 // categories -------------------------------------------------------------
 const raices = categories.filter((c) => !c.parent_id).length;
 bloque(`categories — ${categories.length} (${raices} raíces, ${categories.length - raices} hijas)`);
@@ -601,7 +648,7 @@ L.push(
   '-- mock, así que hay que adelantar las secuencias o el primer INSERT nuevo',
   '-- chocaría con una clave existente.'
 );
-for (const t of ['types', 'users', 'permissions', 'shops', 'categories', 'manufacturers', 'tags', 'products', 'faqs', 'terms_and_conditions', 'refund_policies', 'refund_reasons']) {
+for (const t of ['types', 'users', 'permissions', 'shops', 'categories', 'manufacturers', 'tags', 'products', 'faqs', 'terms_and_conditions', 'refund_policies', 'refund_reasons', 'taxes', 'shippings']) {
   L.push(`SELECT setval('${t}_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM ${t}), 1));`);
 }
 
@@ -618,5 +665,6 @@ console.log(
     `1 become_seller · ${staffAsignaciones.length} shop_staff · ` +
     `${faqsFilas.length} faqs · ${termsFilas.length} terms_and_conditions ` +
     `(${termsDescartados.length} duplicados descartados) · ` +
-    `${refundPolicies.length} refund_policies · ${refundReasons.length} refund_reasons`
+    `${refundPolicies.length} refund_policies · ${refundReasons.length} refund_reasons · ` +
+    `${taxes.length} taxes · ${shippings.length} shippings`
 );

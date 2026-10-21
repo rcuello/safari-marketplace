@@ -25,7 +25,7 @@ SQL inaplicable.
 ```
 10 types · 12 shops · 198 categorías · 14 manufacturers · 10 tags · 1200 productos · 3 usuarios · 4 permisos
 · 1 become_seller · 3 shop_staff · 19 faqs · 5 terms_and_conditions
-· 5 refund_policies · 8 refund_reasons
+· 5 refund_policies · 8 refund_reasons · 1 taxes · 1 shippings
 ```
 
 **Los ids del mock se preservan** para no romper las relaciones, y al final se
@@ -152,6 +152,24 @@ reembolso en sí: el módulo `refunds` de la API es un stub sin JSON.
   mock (`2023-11-12T10:58:58Z`) con el helper `ts()` y no usa el `DEFAULT
   now()`. Sin eso, cada `db-reset` cambiaría la respuesta de `GET
   /refund-reasons`.
+
+## Configuración fiscal y de envío: `taxes` y `shippings`
+
+Desde US-49, una fila cada una, la clase «Global» con **id 1**, sembrada con
+las fechas del mock (en `taxes`, `created_at` y `updated_at` son distintos).
+
+- **La relación con `settings` es blanda.** `settings.options.taxClass` y
+  `shippingClass` guardan `"1"` como texto dentro del `jsonb`, sin FK. Por eso
+  los ids 1 se preservan, y por eso estas tablas no tocan el contrato
+  congelado de `/api/settings` (5504 B).
+- **`numeric` sin escala** en `rate` y `amount`: vuelven como `2` y `50`, no
+  como `2.00`, que es lo que el contrato emite. CHECK `rate >= 0`, `amount >=
+  0` y `type ∈ {fixed, percentage, free}`.
+- **No se paginan**: el admin de `/settings` pide `limit=999` y espera un
+  array para poblar el selector de clase.
+
+Son la configuración que el checkout real (US-59) leerá para calcular
+impuesto y envío.
 
 ## Cómo se adapta el scraper
 

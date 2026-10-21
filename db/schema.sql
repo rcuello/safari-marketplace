@@ -594,6 +594,46 @@ CREATE TABLE IF NOT EXISTS refund_reasons (
 
 
 -- =====================================================================
+-- Configuración fiscal y de envío (US-49, Épico 46) — taxes y shippings.
+--
+-- Una fila cada una en el mock ("Global", id 1). La relación con settings
+-- es BLANDA: settings.options.taxClass/shippingClass guardan el id "1" como
+-- texto dentro del jsonb, sin FK. Por eso los ids 1 se preservan, y por eso
+-- estas tablas no tocan el contrato congelado de /api/settings.
+--
+-- `numeric` SIN escala a propósito: `rate 2` y `amount 50` vuelven como 2 y
+-- 50, no como 2.00 (el contrato los emite como número JSON). Sin `language`:
+-- ninguno de los dos mocks lo trae. Sin trigger (reloj único, ver abajo).
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS taxes (
+    id           bigserial    PRIMARY KEY,
+    name         text         NOT NULL,
+    rate         numeric      NOT NULL CHECK (rate >= 0),
+    is_global    boolean      NOT NULL DEFAULT true,
+    country      text,
+    state        text,
+    zip          text,
+    city         text,
+    priority     integer,
+    on_shipping  boolean      NOT NULL DEFAULT true,
+    created_at   timestamptz  NOT NULL DEFAULT now(),
+    updated_at   timestamptz  NOT NULL DEFAULT now()
+);
+
+
+CREATE TABLE IF NOT EXISTS shippings (
+    id          bigserial    PRIMARY KEY,
+    name        text         NOT NULL,
+    amount      numeric      NOT NULL CHECK (amount >= 0),
+    is_global   boolean      NOT NULL DEFAULT true,
+    type        text         NOT NULL
+                             CHECK (type IN ('fixed', 'percentage', 'free')),
+    created_at  timestamptz  NOT NULL DEFAULT now(),
+    updated_at  timestamptz  NOT NULL DEFAULT now()
+);
+
+
+-- =====================================================================
 -- Índices.
 --
 -- No son decorativos: cada uno responde a un filtro que el frontend

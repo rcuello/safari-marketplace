@@ -9,7 +9,7 @@
 -- ya existen, y creando en tiempo de ejecución únicamente lo que es suyo
 -- (los retailers como shops, las marcas como manufacturers).
 --
--- 10 types · 12 shops · 198 categorías · 14 manufacturers · 10 tags · 1200 productos · 3 usuarios · 4 permisos · 1 become_seller · 3 shop_staff · 19 faqs · 5 terms_and_conditions · 5 refund_policies · 8 refund_reasons
+-- 10 types · 12 shops · 198 categorías · 14 manufacturers · 10 tags · 1200 productos · 3 usuarios · 4 permisos · 1 become_seller · 3 shop_staff · 19 faqs · 5 terms_and_conditions · 5 refund_policies · 8 refund_reasons · 1 taxes · 1 shippings
 -- =====================================================================
 
 BEGIN;
@@ -198,6 +198,19 @@ INSERT INTO refund_reasons (id, name, slug, language, created_at, updated_at) VA
   (6, 'Item Not Needed', 'item-not-needed', 'en', '2023-11-12T10:58:58.000000Z', '2023-11-12T10:58:58.000000Z'),
   (7, 'Changed Mind', 'changed-mind', 'en', '2023-11-12T10:58:58.000000Z', '2023-11-12T10:58:58.000000Z'),
   (8, 'Others', 'others', 'en', '2023-11-12T10:58:58.000000Z', '2023-11-12T10:58:58.000000Z')
+ON CONFLICT (id) DO NOTHING;
+
+-- ────────────────────────────────────────────────────────────────────
+-- taxes — 1 · shippings — 1 (ids y fechas del mock)
+-- ────────────────────────────────────────────────────────────────────
+-- El id 1 lo referencian settings.options.taxClass/shippingClass (texto, sin
+-- FK). Fechas del mock: el contrato las emite y taxes trae created_at y
+-- updated_at distintos.
+INSERT INTO taxes (id, name, rate, is_global, country, state, zip, city, priority, on_shipping, created_at, updated_at) VALUES
+  (1, 'Global', 2, true, NULL, NULL, NULL, NULL, NULL, true, '2021-03-25T13:26:57.000000Z', '2021-03-25T16:07:18.000000Z')
+ON CONFLICT (id) DO NOTHING;
+INSERT INTO shippings (id, name, amount, is_global, type, created_at, updated_at) VALUES
+  (1, 'Global', 50, true, 'fixed', '2021-03-25T13:27:49.000000Z', '2021-03-25T13:27:49.000000Z')
 ON CONFLICT (id) DO NOTHING;
 
 -- ────────────────────────────────────────────────────────────────────
@@ -1818,5 +1831,7 @@ SELECT setval('faqs_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM faqs), 1
 SELECT setval('terms_and_conditions_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM terms_and_conditions), 1));
 SELECT setval('refund_policies_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM refund_policies), 1));
 SELECT setval('refund_reasons_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM refund_reasons), 1));
+SELECT setval('taxes_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM taxes), 1));
+SELECT setval('shippings_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM shippings), 1));
 
 COMMIT;

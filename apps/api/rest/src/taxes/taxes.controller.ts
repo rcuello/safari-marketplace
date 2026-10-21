@@ -29,7 +29,7 @@ export class TaxesController {
   @Public()
   @Get()
   findAll(@Query() getTaxesDto: GetTaxesDto) {
-    return this.taxesService.findAll();
+    return this.taxesService.findAll(getTaxesDto);
   }
 
   @Public()

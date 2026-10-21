@@ -2,6 +2,8 @@ import { SortOrder } from 'src/common/dto/generic-conditions.dto';
 
 export class GetShippingsDto {
   text?: string;
+  /** `name:<término>` desde el admin (`shippingClient.all`). */
+  search?: string;
   orderBy?: QueryShippingClassesOrderByColumn;
   sortedBy?: SortOrder;
 }

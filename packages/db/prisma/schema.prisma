@@ -15,8 +15,9 @@
 //     autoreferencia, settings_fila_unica, become_seller_fila_unica,
 //     faqs_faq_type_check (∈ global|shop), terms_and_conditions_type_check
 //     (∈ global|shop), refund_policies_target_check (∈ vendor|customer),
-//     refund_policies_status_check (∈ approved|pending). Los repositorios
-//     los validan
+//     refund_policies_status_check (∈ approved|pending), taxes_rate_check
+//     (rate ≥ 0), shippings_amount_check (amount ≥ 0), shippings_type_check
+//     (∈ fixed|percentage|free). Los repositorios los validan
 //     antes de escribir y traducen la violación a errores de dominio.
 //   · El índice de expresión products_nombre_trgm_idx
 //     (gin (lower(name) gin_trgm_ops)) que acelera la búsqueda por
@@ -435,4 +436,37 @@ model RefundReason {
   updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
 
   @@map("refund_reasons")
+}
+
+// =====================================================================
+// Configuración fiscal y de envío (US-49, Épico 46)
+// =====================================================================
+
+model Tax {
+  id         BigInt   @id @default(autoincrement())
+  name       String
+  rate       Decimal  @db.Decimal
+  isGlobal   Boolean  @default(true) @map("is_global")
+  country    String?
+  state      String?
+  zip        String?
+  city       String?
+  priority   Int?
+  onShipping Boolean  @default(true) @map("on_shipping")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  @@map("taxes")
+}
+
+model Shipping {
+  id        BigInt   @id @default(autoincrement())
+  name      String
+  amount    Decimal  @db.Decimal
+  isGlobal  Boolean  @default(true) @map("is_global")
+  type      String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  @@map("shippings")
 }
