@@ -9,9 +9,8 @@ import 'dotenv/config';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { _setNowProvider } from '../clock';
 import { prisma } from '../client';
-import { RecordNotFoundError } from '../domain-errors';
+import { InvalidFieldValueError, RecordNotFoundError } from '../domain-errors';
 import {
-  InvalidShippingValueError,
   createShipping,
   deleteShipping,
   findShippingById,
@@ -83,15 +82,15 @@ describe('createShipping / updateShipping / deleteShipping', () => {
     }
   });
 
-  it('type fuera del CHECK o amount negativo ⇒ InvalidShippingValueError, sin escribir', async () => {
+  it('type fuera del CHECK o amount negativo ⇒ InvalidFieldValueError, sin escribir', async () => {
     await expect(
       createShipping({ name: `${SENTINEL_PREFIX}Malo`, amount: 1, type: 'gratis' })
-    ).rejects.toBeInstanceOf(InvalidShippingValueError);
+    ).rejects.toBeInstanceOf(InvalidFieldValueError);
     await expect(
       createShipping({ name: `${SENTINEL_PREFIX}Malo`, amount: -1, type: 'fixed' })
-    ).rejects.toBeInstanceOf(InvalidShippingValueError);
+    ).rejects.toBeInstanceOf(InvalidFieldValueError);
     await expect(updateShipping(1, { type: 'x' })).rejects.toBeInstanceOf(
-      InvalidShippingValueError
+      InvalidFieldValueError
     );
     expect(await prisma.shipping.count({ where: { name: `${SENTINEL_PREFIX}Malo` } })).toBe(0);
   });

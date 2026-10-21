@@ -88,7 +88,7 @@ function assertId(id: number): void {
 export class TaxesService {
   /**
    * `rate` ausente o no numérico llega como `NaN` y el repositorio lo rechaza
-   * con 400 (`InvalidTaxValueError`) antes de tocar Postgres.
+   * con 400 (`InvalidFieldValueError`) antes de tocar Postgres.
    */
   async create(createTaxDto: CreateTaxDto): Promise<Tax> {
     try {

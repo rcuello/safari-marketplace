@@ -9,9 +9,12 @@ import 'dotenv/config';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { _setNowProvider } from '../clock';
 import { prisma } from '../client';
-import { InvalidReferenceError, RecordNotFoundError } from '../domain-errors';
 import {
-  InvalidRefundPolicyValueError,
+  InvalidFieldValueError,
+  InvalidReferenceError,
+  RecordNotFoundError,
+} from '../domain-errors';
+import {
   createRefundPolicy,
   deleteRefundPolicy,
   findRefundPolicyBySlug,
@@ -78,13 +81,13 @@ describe('createRefundPolicy', () => {
     expect((await findRefundPolicyBySlug(created.slug))?.id).toBe(created.id);
   });
 
-  it('target o status fuera del CHECK ⇒ InvalidRefundPolicyValueError, sin escribir', async () => {
+  it('target o status fuera del CHECK ⇒ InvalidFieldValueError, sin escribir', async () => {
     await expect(
       createRefundPolicy({ title: `${SENTINEL_PREFIX}Mala`, target: 'admin' })
-    ).rejects.toBeInstanceOf(InvalidRefundPolicyValueError);
+    ).rejects.toBeInstanceOf(InvalidFieldValueError);
     await expect(
       createRefundPolicy({ title: `${SENTINEL_PREFIX}Mala`, target: 'vendor', status: 'rejected' })
-    ).rejects.toBeInstanceOf(InvalidRefundPolicyValueError);
+    ).rejects.toBeInstanceOf(InvalidFieldValueError);
     expect(await findRefundPolicyBySlug(`${SENTINEL_PREFIX}mala`)).toBeNull();
   });
 
@@ -130,7 +133,7 @@ describe('updateRefundPolicy / deleteRefundPolicy', () => {
 
   it('status inválido en update ⇒ 400 de dominio; ids inexistentes ⇒ RecordNotFoundError', async () => {
     await expect(updateRefundPolicy(1, { status: 'x' })).rejects.toBeInstanceOf(
-      InvalidRefundPolicyValueError
+      InvalidFieldValueError
     );
     await expect(updateRefundPolicy(999_999, { title: 'x' })).rejects.toBeInstanceOf(
       RecordNotFoundError

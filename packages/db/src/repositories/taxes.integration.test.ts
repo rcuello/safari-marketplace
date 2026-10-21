@@ -10,9 +10,8 @@ import 'dotenv/config';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { _setNowProvider } from '../clock';
 import { prisma } from '../client';
-import { RecordNotFoundError } from '../domain-errors';
+import { InvalidFieldValueError, RecordNotFoundError } from '../domain-errors';
 import {
-  InvalidTaxValueError,
   createTax,
   deleteTax,
   findTaxById,
@@ -90,13 +89,13 @@ describe('createTax / updateTax / deleteTax', () => {
     }
   });
 
-  it('rate negativo, NaN o infinito ⇒ InvalidTaxValueError, sin escribir', async () => {
+  it('rate negativo, NaN o infinito ⇒ InvalidFieldValueError, sin escribir', async () => {
     for (const rate of [-1, Number.NaN, Number.POSITIVE_INFINITY]) {
       await expect(createTax({ name: `${SENTINEL_PREFIX}Malo`, rate })).rejects.toBeInstanceOf(
-        InvalidTaxValueError
+        InvalidFieldValueError
       );
     }
-    await expect(updateTax(1, { rate: -3 })).rejects.toBeInstanceOf(InvalidTaxValueError);
+    await expect(updateTax(1, { rate: -3 })).rejects.toBeInstanceOf(InvalidFieldValueError);
     expect(await prisma.tax.count({ where: { name: `${SENTINEL_PREFIX}Malo` } })).toBe(0);
   });
 

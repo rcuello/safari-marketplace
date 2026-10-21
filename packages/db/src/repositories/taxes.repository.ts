@@ -6,31 +6,19 @@
  * entero. `settings.options.taxClass` referencia el id como texto, sin FK.
  *
  * `taxes_rate_check` (rate ≥ 0) no existe para Prisma: se valida aquí con
- * `InvalidTaxValueError` (400), patrón de `InvalidSalePriceError`.
+ * `InvalidFieldValueError` (400). `NaN` e infinito también se rechazan: el
+ * CHECK no los vería, pero `rate` llega coercionado con `Number(...)`.
  */
 
 import type { Prisma } from '../../generated/prisma/client/client';
 import { prisma } from '../client';
 import { now } from '../clock';
 import {
-  CATALOG_ERROR_CODES,
-  CatalogWriteError,
+  InvalidFieldValueError,
   RecordNotFoundError,
   translateCatalogWriteError,
 } from '../domain-errors';
 import { _toTaxRecord, type TaxRecord } from '../records';
-
-/** `rate` que no es un número finito ≥ 0 (CHECK `taxes_rate_check`). */
-export class InvalidTaxValueError extends CatalogWriteError {
-  readonly code = CATALOG_ERROR_CODES.InvalidReference;
-  constructor(value: unknown) {
-    super(
-      `\`taxes.rate\` debe ser un número >= 0 (recibido \`${String(value)}\`) — CHECK taxes_rate_check.`,
-      'taxes'
-    );
-    this.name = 'InvalidTaxValueError';
-  }
-}
 
 export interface ListTaxesInput {
   /** Búsqueda parcial por nombre, case-insensitive. */
@@ -68,7 +56,7 @@ export type UpdateTaxInput = Partial<CreateTaxInput>;
 
 function _assertRate(rate: number | undefined): void {
   if (rate !== undefined && !(Number.isFinite(rate) && rate >= 0)) {
-    throw new InvalidTaxValueError(rate);
+    throw new InvalidFieldValueError('taxes', 'rate', rate, 'taxes_rate_check');
   }
 }
 

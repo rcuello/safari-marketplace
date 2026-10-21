@@ -14,7 +14,7 @@ import {
   createRefundPolicy,
   deleteRefundPolicy,
   findRefundPolicyBySlug,
-  InvalidRefundPolicyValueError,
+  InvalidFieldValueError,
   listRefundPolicies,
   RecordNotFoundError,
   updateRefundPolicy,
@@ -153,7 +153,14 @@ describe('RefundPoliciesService', () => {
     });
 
     it('target fuera del CHECK ⇒ 400', async () => {
-      createMock.mockRejectedValue(new InvalidRefundPolicyValueError('target', 'admin'));
+      createMock.mockRejectedValue(
+        new InvalidFieldValueError(
+          'refund_policies',
+          'target',
+          'admin',
+          'refund_policies_target_check',
+        ),
+      );
       await expect(
         service.create({ title: 'x', target: 'admin' } as CreateRefundPolicyDto),
       ).rejects.toBeInstanceOf(BadRequestException);

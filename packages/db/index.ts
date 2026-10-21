@@ -7,6 +7,7 @@ export {
   CatalogWriteError,
   DependentRowsError,
   EmptySlugError,
+  InvalidFieldValueError,
   InvalidReferenceError,
   isCatalogWriteError,
   RecordNotFoundError,
@@ -96,7 +97,6 @@ export type {
   UpdateRefundPolicyInput,
 } from './src/repositories/refund-policies.repository';
 export {
-  InvalidRefundPolicyValueError,
   REFUND_POLICY_STATUSES,
   REFUND_POLICY_TARGETS,
   createRefundPolicy,
@@ -123,7 +123,6 @@ export type {
   UpdateTaxInput,
 } from './src/repositories/taxes.repository';
 export {
-  InvalidTaxValueError,
   createTax,
   deleteTax,
   findTaxById,
@@ -136,7 +135,6 @@ export type {
   UpdateShippingInput,
 } from './src/repositories/shippings.repository';
 export {
-  InvalidShippingValueError,
   SHIPPING_TYPES,
   createShipping,
   deleteShipping,

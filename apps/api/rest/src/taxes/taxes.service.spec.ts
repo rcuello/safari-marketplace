@@ -13,7 +13,7 @@ import {
   createTax,
   deleteTax,
   findTaxById,
-  InvalidTaxValueError,
+  InvalidFieldValueError,
   listTaxes,
   updateTax,
   type TaxRecord,
@@ -103,7 +103,9 @@ describe('TaxesService', () => {
   });
 
   it('rate no numérico ⇒ 400 (el repositorio rechaza NaN)', async () => {
-    createMock.mockRejectedValue(new InvalidTaxValueError(Number.NaN));
+    createMock.mockRejectedValue(
+      new InvalidFieldValueError('taxes', 'rate', Number.NaN, 'taxes_rate_check'),
+    );
     await expect(
       service.create({ name: 'x', rate: 'abc' } as unknown as CreateTaxDto),
     ).rejects.toBeInstanceOf(BadRequestException);

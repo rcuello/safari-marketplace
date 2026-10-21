@@ -13,7 +13,7 @@ import {
   createShipping,
   deleteShipping,
   findShippingById,
-  InvalidShippingValueError,
+  InvalidFieldValueError,
   listShippings,
   RecordNotFoundError,
   updateShipping,
@@ -77,7 +77,9 @@ describe('ShippingsService', () => {
     await service.create({ name: 'E', amount: '10', type: 'fixed' } as unknown as CreateShippingDto);
     expect(createMock).toHaveBeenCalledWith({ name: 'E', amount: 10, type: 'fixed' });
 
-    createMock.mockRejectedValueOnce(new InvalidShippingValueError('type', 'gratis'));
+    createMock.mockRejectedValueOnce(
+      new InvalidFieldValueError('shippings', 'type', 'gratis', 'shippings_type_check'),
+    );
     await expect(
       service.create({ name: 'E', amount: 1, type: 'gratis' } as unknown as CreateShippingDto),
     ).rejects.toBeInstanceOf(BadRequestException);

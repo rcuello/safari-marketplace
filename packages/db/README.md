@@ -120,7 +120,12 @@ No usar `prisma migrate dev` ni `prisma db push` contra esta base.
   para Prisma. Los repositorios los validan antes de escribir (tipos +
   guard de `salePrice < price`) y traducen la violación que llegue de
   Postgres a errores de dominio: `InvalidSalePriceError`,
-  `MissingPriceError`, `IncompleteProvenanceError`.
+  `MissingPriceError`, `IncompleteProvenanceError`. Los CHECK de valor
+  simple, que solo restringen un campo a una lista o a un rango, usan la
+  clase genérica `InvalidFieldValueError(aggregate, field, value,
+  constraint)` de `domain-errors.ts`, con `code = InvalidReference` (400).
+  Un agregado nuevo no necesita su propia clase. Las tres de `products` se
+  quedan aparte porque sus reglas cruzan varios campos.
 - **El índice trgm** `products_nombre_trgm_idx` (expresión) tampoco: la
   búsqueda por nombre usa `contains` + `mode: 'insensitive'`, que Postgres
   resuelve con ese índice.
@@ -165,10 +170,9 @@ actualizaciones.
   `status` por igualdad y el título con `contains`), `findRefundPolicyBySlug`,
   `createRefundPolicy`, `updateRefundPolicy` y `deleteRefundPolicy`. Los dos
   CHECK de la tabla se validan antes de escribir con
-  `InvalidRefundPolicyValueError`, que tiene `code = InvalidReference` y
-  `toWriteHttpException` convierte en 400. Es el mismo patrón que
-  `InvalidSalePriceError` en `products`. Los valores admitidos se exportan
-  como `REFUND_POLICY_TARGETS` y `REFUND_POLICY_STATUSES`.
+  `InvalidFieldValueError` (ver «Lo que Prisma no modela»). Los valores
+  admitidos se exportan como `REFUND_POLICY_TARGETS` y
+  `REFUND_POLICY_STATUSES`.
 - `refund-reasons.repository.ts`: `listRefundReasons` (filtra por nombre),
   `findRefundReasonBySlug`, `createRefundReason`, `updateRefundReason` y
   `deleteRefundReason`. Los timestamps son contrato, por eso `update` fija
@@ -181,11 +185,9 @@ repositorios gemelos. A diferencia del resto, **los listados no paginan**:
 `listTaxes`/`listShippings` devuelven un array (`id ASC`, filtro opcional por
 nombre), porque eso es lo que el admin espera. Los demás son
 `findTaxById`/`findShippingById`, `create*`, `update*` (fija `updatedAt` con
-`now()`) y `delete*`. Los CHECK se validan antes de escribir:
-`InvalidTaxValueError` (`rate` no finito o negativo) e
-`InvalidShippingValueError` (`amount` o `type` fuera de su CHECK; los tipos
-válidos se exportan como `SHIPPING_TYPES`). Las dos tienen `code =
-InvalidReference`, y la API las convierte en 400.
+`now()`) y `delete*`. Los CHECK se validan antes de escribir con
+`InvalidFieldValueError`: `rate` no finito o negativo, y `amount` o `type`
+fuera de su CHECK. Los tipos válidos se exportan como `SHIPPING_TYPES`.
 
 ### Identidad (US-21, Épico 19) — `users.repository.ts`
 

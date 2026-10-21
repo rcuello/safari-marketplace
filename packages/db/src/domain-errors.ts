@@ -67,6 +67,32 @@ export class InvalidReferenceError extends CatalogWriteError {
   }
 }
 
+/**
+ * Un valor viola un CHECK de la tabla que Prisma no modela (`target ∈ …`,
+ * `rate >= 0`). Lo lanza el repositorio ANTES de escribir, así que nunca
+ * llega a Postgres. Comparte código con `InvalidReferenceError`: para el
+ * cliente las dos son «el dato enviado no es válido» (400), y así el
+ * conjunto de códigos sigue cerrado en 5.
+ *
+ * `constraint` es el nombre real del CHECK en `db/schema.sql`, para que el
+ * mensaje lleve directo a la regla.
+ */
+export class InvalidFieldValueError extends CatalogWriteError {
+  readonly code = CATALOG_ERROR_CODES.InvalidReference;
+  constructor(
+    aggregate: string,
+    field: string,
+    value: unknown,
+    constraint: string
+  ) {
+    super(
+      `\`${aggregate}.${field}\` no admite \`${String(value)}\` — CHECK ${constraint}.`,
+      aggregate
+    );
+    this.name = 'InvalidFieldValueError';
+  }
+}
+
 /** El registro que se quiere actualizar/borrar no existe (P2025). */
 export class RecordNotFoundError extends CatalogWriteError {
   readonly code = CATALOG_ERROR_CODES.RecordNotFound;

@@ -3,17 +3,15 @@
  *
  * Calco de `tags.repository.ts`. Los dos CHECK de la tabla
  * (`refund_policies_target_check`, `refund_policies_status_check`) no existen
- * para Prisma: se validan aquí antes de escribir, con el mismo patrón que
- * `products.repository.ts` (`InvalidSalePriceError`): error de dominio con
- * `code = InvalidReference`, que `toWriteHttpException` traduce a 400.
+ * para Prisma: se validan aquí antes de escribir con `InvalidFieldValueError`
+ * (`domain-errors.ts`), que `toWriteHttpException` traduce a 400.
  */
 
 import type { Prisma } from '../../generated/prisma/client/client';
 import { prisma } from '../client';
 import { now } from '../clock';
 import {
-  CATALOG_ERROR_CODES,
-  CatalogWriteError,
+  InvalidFieldValueError,
   InvalidReferenceError,
   RecordNotFoundError,
   translateCatalogWriteError,
@@ -23,18 +21,6 @@ import { _toRefundPolicyRecord, type RefundPolicyRecord } from '../records';
 
 export const REFUND_POLICY_TARGETS = ['vendor', 'customer'] as const;
 export const REFUND_POLICY_STATUSES = ['approved', 'pending'] as const;
-
-/** Un `target`/`status` fuera de su CHECK. 400, sin tocar Postgres. */
-export class InvalidRefundPolicyValueError extends CatalogWriteError {
-  readonly code = CATALOG_ERROR_CODES.InvalidReference;
-  constructor(field: 'target' | 'status', value: unknown) {
-    super(
-      `\`refund_policies.${field}\` no admite \`${String(value)}\` — CHECK refund_policies_${field}_check.`,
-      'refund_policies'
-    );
-    this.name = 'InvalidRefundPolicyValueError';
-  }
-}
 
 export interface ListRefundPoliciesInput {
   /** `vendor` | `customer`, igualdad exacta. */
@@ -118,13 +104,23 @@ function _assertValues(input: { target?: string; status?: string; shopId?: numbe
     input.target !== undefined &&
     !(REFUND_POLICY_TARGETS as readonly string[]).includes(input.target)
   ) {
-    throw new InvalidRefundPolicyValueError('target', input.target);
+    throw new InvalidFieldValueError(
+      'refund_policies',
+      'target',
+      input.target,
+      'refund_policies_target_check'
+    );
   }
   if (
     input.status !== undefined &&
     !(REFUND_POLICY_STATUSES as readonly string[]).includes(input.status)
   ) {
-    throw new InvalidRefundPolicyValueError('status', input.status);
+    throw new InvalidFieldValueError(
+      'refund_policies',
+      'status',
+      input.status,
+      'refund_policies_status_check'
+    );
   }
   if (input.shopId != null && (!Number.isSafeInteger(input.shopId) || input.shopId <= 0)) {
     throw new InvalidReferenceError('refund_policies', 'shop_id', input.shopId);

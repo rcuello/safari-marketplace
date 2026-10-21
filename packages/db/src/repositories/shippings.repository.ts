@@ -4,15 +4,14 @@
  * Gemelo de `taxes.repository.ts`: sin paginar (el admin espera un array) y
  * con el id 1 referenciado como texto desde `settings.options.shippingClass`.
  * Los dos CHECK (`shippings_amount_check`, `shippings_type_check`) se validan
- * aquí con `InvalidShippingValueError` (400).
+ * aquí con `InvalidFieldValueError` (400).
  */
 
 import type { Prisma } from '../../generated/prisma/client/client';
 import { prisma } from '../client';
 import { now } from '../clock';
 import {
-  CATALOG_ERROR_CODES,
-  CatalogWriteError,
+  InvalidFieldValueError,
   RecordNotFoundError,
   translateCatalogWriteError,
 } from '../domain-errors';
@@ -20,18 +19,6 @@ import { _toShippingRecord, type ShippingRecord } from '../records';
 
 /** Valores de `ShippingType` (`shippings/entities/shipping.entity.ts`). */
 export const SHIPPING_TYPES = ['fixed', 'percentage', 'free'] as const;
-
-/** `amount` o `type` fuera de su CHECK. */
-export class InvalidShippingValueError extends CatalogWriteError {
-  readonly code = CATALOG_ERROR_CODES.InvalidReference;
-  constructor(field: 'amount' | 'type', value: unknown) {
-    super(
-      `\`shippings.${field}\` no admite \`${String(value)}\` — CHECK shippings_${field}_check.`,
-      'shippings'
-    );
-    this.name = 'InvalidShippingValueError';
-  }
-}
 
 export interface ListShippingsInput {
   /** Búsqueda parcial por nombre, case-insensitive. */
@@ -66,13 +53,18 @@ export type UpdateShippingInput = Partial<CreateShippingInput>;
 
 function _assertValues(input: UpdateShippingInput): void {
   if (input.amount !== undefined && !(Number.isFinite(input.amount) && input.amount >= 0)) {
-    throw new InvalidShippingValueError('amount', input.amount);
+    throw new InvalidFieldValueError(
+      'shippings',
+      'amount',
+      input.amount,
+      'shippings_amount_check'
+    );
   }
   if (
     input.type !== undefined &&
     !(SHIPPING_TYPES as readonly string[]).includes(input.type)
   ) {
-    throw new InvalidShippingValueError('type', input.type);
+    throw new InvalidFieldValueError('shippings', 'type', input.type, 'shippings_type_check');
   }
 }
 
