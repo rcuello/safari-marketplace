@@ -28,7 +28,7 @@ export class RefundReasonsController {
   @Public()
   @Get()
   findAll(@Query() query: GetRefundReasonDto) {
-    return this.refundReasonsService.findAllRefundPolicies(query);
+    return this.refundReasonsService.findAll(query);
   }
 
   @Public()
@@ -37,7 +37,7 @@ export class RefundReasonsController {
     @Param('param') param: string,
     @Query('language') language: string,
   ) {
-    return this.refundReasonsService.getRefundPolicy(param, language);
+    return this.refundReasonsService.getRefundReason(param, language);
   }
 
   @Permissions(...ADMIN_ONLY)

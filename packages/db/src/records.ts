@@ -25,6 +25,8 @@ import type {
   Permission,
   Prisma,
   Profile,
+  RefundPolicy,
+  RefundReason,
   Setting,
   Shop,
   ShopStaff,
@@ -229,6 +231,30 @@ export interface TermsAndConditionsRecord {
   updatedAt: Date;
 }
 
+/** Política de reembolso: `target` vendor|customer, `status` approved|pending. */
+export interface RefundPolicyRecord {
+  id: number;
+  title: string;
+  slug: string;
+  description: string | null;
+  target: string;
+  status: string;
+  shopId: number | null;
+  language: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/** Motivo de reembolso. Sus timestamps son contrato: salen del mock. */
+export interface RefundReasonRecord {
+  id: number;
+  name: string;
+  slug: string;
+  language: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 // ---------------------------------------------------------------------------
 // Mappers (internos del paquete)
 // ---------------------------------------------------------------------------
@@ -408,6 +434,32 @@ export function _toTermsAndConditionsRecord(
     isApproved: row.isApproved,
     shopId: _id(row.shopId),
     userId: _id(row.userId),
+    language: row.language,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+export function _toRefundPolicyRecord(row: RefundPolicy): RefundPolicyRecord {
+  return {
+    id: _id(row.id),
+    title: row.title,
+    slug: row.slug,
+    description: row.description,
+    target: row.target,
+    status: row.status,
+    shopId: _id(row.shopId),
+    language: row.language,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+export function _toRefundReasonRecord(row: RefundReason): RefundReasonRecord {
+  return {
+    id: _id(row.id),
+    name: row.name,
+    slug: row.slug,
     language: row.language,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,

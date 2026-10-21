@@ -8,7 +8,7 @@
 
 **Épico:** [Épico 46](./README.md)
 **Fecha:** 2026-10-20
-**Status:** Listo para ejecución
+**Status:** Implementada (2026-10-21, rama `us-48-refund-policies-reasons`)
 **Depende de:** [US-47](./47-faqs-terms-postgres.md) (orden secuencial del
 épico, R-2: comparten `schema.sql`, el generador, `schema.prisma`,
 `records.ts` y el barrel)
@@ -252,20 +252,123 @@ Feature: Politicas y motivos de reembolso desde Postgres
 Seguir el [Protocolo del épico](./README.md#protocolo-de-ejecución-de-una-us-de-este-épico)
 y pegar:
 
-- [ ] Los 7 cuerpos de la línea base con sus bytes.
-- [ ] La salida de `node db/generate-seed.mjs` y la de `just db-reset`.
-- [ ] `psql` con:
+- [x] Los 7 cuerpos de la línea base con sus bytes.
+- [x] La salida de `node db/generate-seed.mjs` y la de `just db-reset`.
+- [x] `psql` con:
   - los conteos;
   - `SELECT min(created_at), max(created_at) FROM refund_reasons`;
   - 0 huérfanas;
   - los conteos previos intactos.
-- [ ] `prisma validate` y `migrate diff` con `EXIT=0`; `just db-build`.
-- [ ] `just db-check` y `npx jest` con sus recuentos.
-- [ ] `just build-api` y `just verify` (5503 B).
-- [ ] Deep-equal de CA-3 y el antes/después de V-1..V-5.
-- [ ] Los `curl` de escritura con Bearer.
-- [ ] `grep` sin imports de JSON.
-- [ ] Status de la US y fila del épico.
+- [x] `prisma validate` y `migrate diff` con `EXIT=0`; `just db-build`.
+- [x] `just db-check` y `npx jest` con sus recuentos.
+- [x] `just build-api` y `just verify` (5503 B).
+- [x] Deep-equal de CA-3 y el antes/después de V-1..V-5.
+- [x] Los `curl` de escritura con Bearer.
+- [x] `grep` sin imports de JSON.
+- [x] Status de la US y fila del épico.
+
+### Evidencia (2026-10-21)
+
+**Línea base** (API recién arrancada, antes de tocar los servicios):
+
+```
+rp-customer.json     1889 B  ids=[1,2,3,4,5] total=0 per_page="10"
+rp-default.json      1837 B  ids=[1,2,3,4,5] total=5 per_page=10
+rp-slug.json          298 B  id=2
+rp-vendor.json       1885 B  ids=[1,2,3,4,5] total=0 per_page="10"
+rr-default.json      1943 B  ids=[1..8] total=8 per_page=10
+rr-shop.json         1943 B  ids=[1..8] total=8 per_page=10
+rr-slug.json          196 B  id=3 (created_at "2023-11-12T10:58:58.000Z")
+```
+
+**Generador y `just db-reset`:**
+
+```
+db/seed.sql generado (622 KB)
+  … · 19 faqs · 5 terms_and_conditions (5 duplicados descartados) · 5 refund_policies · 8 refund_reasons
+  * esquema y datos de referencia aplicados
+```
+
+**`psql`:**
+
+- `refund_policies`: 5 filas (1 vendor, 4 customer, 5 approved) y 0
+  huérfanas en `shop_id`.
+- `refund_reasons`: 8 filas; `min/max(created_at)` y `min/max(updated_at)`
+  valen `2023-11-12 10:58:58+00` en las cuatro.
+- Conteos previos intactos: 19 faqs, 5 terms, 10 types, 12 shops, 198
+  categories, 14 manufacturers, 10 tags, 1200 products, 3 users, 4
+  permissions y 6 permission_user.
+
+**Prisma:** `prisma validate` dice *valid*. `migrate diff --exit-code` da
+`EXIT=0`, con los modelos tomados de `db pull --print`. Los CHECK que Prisma
+no modela (`refund_policies_target_check` y `refund_policies_status_check`)
+quedan listados en la cabecera de `schema.prisma`.
+
+**Suites:**
+
+| Comando | Antes (US-47) | Después |
+|---|---|---|
+| `just db-check` | 14 archivos / 257 | **16 / 273** (+16) |
+| `npx jest` | 12 suites / 316 | **14 / 330** (+14) |
+
+`just build-api`: `Done in 243.09s`.
+
+`just verify`:
+
+```
+OK   API    :9001/api/settings  200  5503B
+OK   Shop   :3003/en  200  190788B  cards:30
+OK   Admin  :3002/en/login  200  72821B  cards:1
+```
+
+**CA-3:** comparación byte a byte, que cubre el orden de claves, la
+posición de `deleted_at` y los timestamps:
+
+```
+rp-default.json    IDENTICO 1837B -> 1837B
+rp-slug.json       IDENTICO 298B -> 298B
+rr-default.json    IDENTICO 1943B -> 1943B
+rr-shop.json       IDENTICO 1943B -> 1943B
+rr-slug.json       IDENTICO 196B -> 196B
+```
+
+**V-1 / V-2:**
+
+```
+rp-customer.json  antes ids=[1,2,3,4,5] total=0 | despues ids=[2,3,4,5] total=4 per_page="10"
+rp-vendor.json    antes ids=[1,2,3,4,5] total=0 | despues ids=[1] total=1 per_page="10"
+```
+
+Prueba de humo en la tienda real: `/en/customer-refund-policies` muestra las
+políticas 2, 3, 4 y 5, y `/en/vendor-refund-policies` solo la 1. Antes de
+esta US mostraban las 5 mezcladas.
+
+**CA-5** (Bearer de `admin@demo.com`):
+
+| Petición | Status | Resultado |
+|---|---|---|
+| `POST /refund-reasons {name:"Producto defectuoso"}` | 201 | `slug:"producto-defectuoso"` |
+| `GET /refund-reasons/producto-defectuoso` | 200 | |
+| `PUT /refund-reasons/3` | 200 | `updated_at` pasa de `2023-11-12T10:58:58.000Z` a `2026-10-21T14:26:43.741Z` y `created_at` no cambia (V-5) |
+| `DELETE /refund-reasons/12` | 200 | devuelve la fila; el `GET` siguiente da 404 |
+| `POST /refund-policies` sin `status` | 201 | `status:"pending"` |
+| `GET ?search=target:vendor;status:pending` | 200 | `total=1` |
+| `PUT /refund-policies/9 {status:"approved"}` | 200 | |
+| `PUT /refund-policies/9 {target:"admin"}` | 400 | `CHECK refund_policies_target_check` |
+| `DELETE /refund-policies/9` | 200 | |
+| `GET /refund-policies/no-existe` | 404 | (V-3) |
+| `POST /refund-reasons` sin token | 401 | el guard sigue intacto |
+
+Después se restauró el motivo 3 por `psql` (nombre y `updated_at` del mock).
+`GET /refund-reasons` volvió a ser idéntico a la línea base.
+
+**CA-6:** el `grep` no devuelve nada (`exit=1`). `git diff db/schema.sql`
+tiene 48 inserciones y 0 eliminaciones.
+
+**Decisión de implementación:** al crear, el slug sale del `slug` del cuerpo
+si llega no vacío, y si no, del título o el nombre. El admin envía `slug` en
+los dos formularios (`refund-policy-form.tsx:124-140` y
+`refund-reason-form.tsx`), y es el mismo criterio que en términos (US-47).
 
 ## Notas para el agente ejecutor
 

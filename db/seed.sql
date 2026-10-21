@@ -9,7 +9,7 @@
 -- ya existen, y creando en tiempo de ejecución únicamente lo que es suyo
 -- (los retailers como shops, las marcas como manufacturers).
 --
--- 10 types · 12 shops · 198 categorías · 14 manufacturers · 10 tags · 1200 productos · 3 usuarios · 4 permisos · 1 become_seller · 3 shop_staff · 19 faqs · 5 terms_and_conditions
+-- 10 types · 12 shops · 198 categorías · 14 manufacturers · 10 tags · 1200 productos · 3 usuarios · 4 permisos · 1 become_seller · 3 shop_staff · 19 faqs · 5 terms_and_conditions · 5 refund_policies · 8 refund_reasons
 -- =====================================================================
 
 BEGIN;
@@ -169,6 +169,35 @@ INSERT INTO terms_and_conditions (id, title, slug, description, type, issued_by,
   (10, 'Privacy Policy', 'privacy-policy', 'Your use of the Website is also governed by our Privacy Policy, which can be found [link to Privacy Policy]. By using the Website, you consent to the practices described in the Privacy Policy.', 'global', 'Super Admin', true, 'en'),
   (11, 'Use of the Website', 'use-of-the-website', 'You must be at least [Age] years old to use this Website. By using the Website, you represent and warrant that you are at least [Age] years old. You agree to use the Website for lawful purposes only and in a manner that does not infringe upon the rights of others.', 'global', 'Super Admin', true, 'en'),
   (12, 'Acceptance of Terms', 'acceptance-of-terms', 'By using this Website, you agree to comply with and be bound by these terms and conditions. If you do not agree to these terms, please do not use the Website.', 'global', 'Super Admin', true, 'en')
+ON CONFLICT (id) DO NOTHING;
+
+-- ────────────────────────────────────────────────────────────────────
+-- refund_policies — 5
+-- ────────────────────────────────────────────────────────────────────
+-- shop_id queda NULL: el mock no lo trae. Sin timestamps del mock (el
+-- contrato no los emite): toman el DEFAULT now().
+INSERT INTO refund_policies (id, title, slug, description, target, status, language) VALUES
+  (1, 'Vendor Return Policy', 'vendor-return-policy', 'Our vendor return policy ensures that you can return products within 30 days of purchase if they are damaged or not as described.', 'vendor', 'approved', 'en'),
+  (2, 'Customer Return Policy', 'customer-return-policy', 'Our customer return policy allows you to return products within 14 days of purchase for a full refund, no questions asked.', 'customer', 'approved', 'en'),
+  (3, 'Electronics Return Policy', 'electronics-return-policy', 'For electronics, our return policy extends to 60 days. We stand by the quality of our electronic products.', 'customer', 'approved', 'en'),
+  (4, 'Furniture Return Policy', 'furniture-return-policy', 'Our furniture return policy allows you to return furniture within 7 days if it doesn''t meet your expectations. Customer satisfaction is our priority.', 'customer', 'approved', 'en'),
+  (5, 'Custom Orders Policy', 'custom-orders-policy', 'Please note that custom orders are not eligible for returns or refunds. We craft custom items to your specifications.', 'customer', 'approved', 'en')
+ON CONFLICT (id) DO NOTHING;
+
+-- ────────────────────────────────────────────────────────────────────
+-- refund_reasons — 8 (con las fechas del mock)
+-- ────────────────────────────────────────────────────────────────────
+-- Primer bloque que inserta created_at/updated_at del mock (D-3 del Épico
+-- 46): el contrato los emite y el DEFAULT now() los cambiaría en cada reset.
+INSERT INTO refund_reasons (id, name, slug, language, created_at, updated_at) VALUES
+  (1, 'Product Not as Described', 'product-not-as-described', 'en', '2023-11-12T10:58:58.000000Z', '2023-11-12T10:58:58.000000Z'),
+  (2, 'Wrong Item Shipped', 'wrong-item-shipped', 'en', '2023-11-12T10:58:58.000000Z', '2023-11-12T10:58:58.000000Z'),
+  (3, 'Damaged Item', 'damaged-item', 'en', '2023-11-12T10:58:58.000000Z', '2023-11-12T10:58:58.000000Z'),
+  (4, 'Cancelled Order', 'cancelled-order', 'en', '2023-11-12T10:58:58.000000Z', '2023-11-12T10:58:58.000000Z'),
+  (5, 'Late Delivery', 'late-delivery', 'en', '2023-11-12T10:58:58.000000Z', '2023-11-12T10:58:58.000000Z'),
+  (6, 'Item Not Needed', 'item-not-needed', 'en', '2023-11-12T10:58:58.000000Z', '2023-11-12T10:58:58.000000Z'),
+  (7, 'Changed Mind', 'changed-mind', 'en', '2023-11-12T10:58:58.000000Z', '2023-11-12T10:58:58.000000Z'),
+  (8, 'Others', 'others', 'en', '2023-11-12T10:58:58.000000Z', '2023-11-12T10:58:58.000000Z')
 ON CONFLICT (id) DO NOTHING;
 
 -- ────────────────────────────────────────────────────────────────────
@@ -1787,5 +1816,7 @@ SELECT setval('tags_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM tags), 1
 SELECT setval('products_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM products), 1));
 SELECT setval('faqs_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM faqs), 1));
 SELECT setval('terms_and_conditions_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM terms_and_conditions), 1));
+SELECT setval('refund_policies_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM refund_policies), 1));
+SELECT setval('refund_reasons_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM refund_reasons), 1));
 
 COMMIT;

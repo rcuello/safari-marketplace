@@ -25,6 +25,7 @@ SQL inaplicable.
 ```
 10 types · 12 shops · 198 categorías · 14 manufacturers · 10 tags · 1200 productos · 3 usuarios · 4 permisos
 · 1 become_seller · 3 shop_staff · 19 faqs · 5 terms_and_conditions
+· 5 refund_policies · 8 refund_reasons
 ```
 
 **Los ids del mock se preservan** para no romper las relaciones, y al final se
@@ -134,6 +135,23 @@ borrada no tiene a quién pertenecer) y `user_id → users ON DELETE SET NULL`
 el emisor no los elige quien escribe: los deriva el repositorio de `shop_id`
 (`resolveContentIssuer`), para que una FAQ de tienda no quede invisible en
 su propia página.
+
+## Reembolsos: políticas y motivos
+
+Desde US-48, las dos listas de contenido que rodean el reembolso. No son el
+reembolso en sí: el módulo `refunds` de la API es un stub sin JSON.
+
+- **`refund_policies`** — 5 filas de `refund-policies.json`: 1 de vendedor y
+  4 de cliente, las 5 `approved`. Tiene dos CHECK: `target ∈ {vendor,
+  customer}`, que es lo que filtran `/customer-refund-policies` y
+  `/vendor-refund-policies`, y `status ∈ {approved, pending}`, la cola de
+  moderación que conoce el admin. `status` vale por defecto `pending`.
+  `shop_id` es opcional (CASCADE) y el seed lo deja NULL.
+- **`refund_reasons`** — 8 filas, plana. Es **la primera tabla cuyo contrato
+  emite `created_at`/`updated_at`**, así que el seed inserta las fechas del
+  mock (`2023-11-12T10:58:58Z`) con el helper `ts()` y no usa el `DEFAULT
+  now()`. Sin eso, cada `db-reset` cambiaría la respuesta de `GET
+  /refund-reasons`.
 
 ## Cómo se adapta el scraper
 

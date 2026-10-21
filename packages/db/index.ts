@@ -34,6 +34,8 @@ export type {
   ManufacturerRecord,
   PermissionRecord,
   ProfileRecord,
+  RefundPolicyRecord,
+  RefundReasonRecord,
   SettingRecord,
   ShopRecord,
   ShopStaffRecord,
@@ -86,6 +88,33 @@ export {
   setTermsApproval,
   updateTermsAndConditions,
 } from './src/repositories/terms-and-conditions.repository';
+export type {
+  CreateRefundPolicyInput,
+  ListRefundPoliciesInput,
+  UpdateRefundPolicyInput,
+} from './src/repositories/refund-policies.repository';
+export {
+  InvalidRefundPolicyValueError,
+  REFUND_POLICY_STATUSES,
+  REFUND_POLICY_TARGETS,
+  createRefundPolicy,
+  deleteRefundPolicy,
+  findRefundPolicyBySlug,
+  listRefundPolicies,
+  updateRefundPolicy,
+} from './src/repositories/refund-policies.repository';
+export type {
+  CreateRefundReasonInput,
+  ListRefundReasonsInput,
+  UpdateRefundReasonInput,
+} from './src/repositories/refund-reasons.repository';
+export {
+  createRefundReason,
+  deleteRefundReason,
+  findRefundReasonBySlug,
+  listRefundReasons,
+  updateRefundReason,
+} from './src/repositories/refund-reasons.repository';
 export type {
   CategoryAncestor,
   CategoryDescendant,

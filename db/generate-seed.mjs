@@ -35,6 +35,8 @@ const users = leer('users');
 const becomeSeller = leer('become-seller');
 const faqs = leer('faqs');
 const termsAndConditions = leer('terms-and-conditions');
+const refundPolicies = leer('refund-policies');
+const refundReasons = leer('refund-reasons');
 
 // ── Literales SQL ────────────────────────────────────────────────────────
 const txt = (v) =>
@@ -209,6 +211,22 @@ for (const t of termsFilas) {
     problemas.push(`terms ${t.id}: type '${t.type}' fuera del CHECK`);
 }
 
+// ── Reembolsos: políticas y motivos (US-48) ──────────────────────────────
+for (const p of refundPolicies) {
+  if (!['vendor', 'customer'].includes(p.target))
+    problemas.push(`refund_policies ${p.id}: target '${p.target}' fuera del CHECK`);
+  if (!['approved', 'pending'].includes(p.status))
+    problemas.push(`refund_policies ${p.id}: status '${p.status}' fuera del CHECK`);
+}
+if (new Set(refundPolicies.map((p) => p.slug)).size !== refundPolicies.length)
+  problemas.push('refund_policies: slug duplicado');
+if (new Set(refundReasons.map((r) => r.slug)).size !== refundReasons.length)
+  problemas.push('refund_reasons: slug duplicado');
+for (const r of refundReasons) {
+  if (!r.created_at || !r.updated_at)
+    problemas.push(`refund_reasons ${r.id}: sin created_at/updated_at (el contrato los emite)`);
+}
+
 if (problemas.length) {
   console.error(`\nEl mock viola ${problemas.length} restriccion(es) del esquema:`);
   problemas.slice(0, 20).forEach((p) => console.error('  - ' + p));
@@ -236,7 +254,8 @@ L.push(
     `${manufacturers.length} manufacturers · ${tags.length} tags · ${products.length} productos · ` +
     `${users.length} usuarios · ${permissionsCatalogo.length} permisos · ` +
     `1 become_seller · ${staffAsignaciones.length} shop_staff · ` +
-    `${faqsFilas.length} faqs · ${termsFilas.length} terms_and_conditions`,
+    `${faqsFilas.length} faqs · ${termsFilas.length} terms_and_conditions · ` +
+    `${refundPolicies.length} refund_policies · ${refundReasons.length} refund_reasons`,
   '-- =====================================================================',
   '',
   'BEGIN;'
@@ -412,6 +431,40 @@ L.push(
     .join(',\n') + '\nON CONFLICT (id) DO NOTHING;'
 );
 
+// refund_policies (US-48) -----------------------------------------------------
+bloque(`refund_policies — ${refundPolicies.length}`);
+L.push(
+  '-- shop_id queda NULL: el mock no lo trae. Sin timestamps del mock (el',
+  '-- contrato no los emite): toman el DEFAULT now().',
+  'INSERT INTO refund_policies (id, title, slug, description, target, status, language) VALUES'
+);
+L.push(
+  refundPolicies
+    .map(
+      (p) =>
+        `  (${p.id}, ${txt(p.title)}, ${txt(p.slug)}, ${txt(p.description)}, ` +
+        `${txt(p.target)}, ${txt(p.status)}, ${txt(p.language ?? 'en')})`
+    )
+    .join(',\n') + '\nON CONFLICT (id) DO NOTHING;'
+);
+
+// refund_reasons (US-48) ------------------------------------------------------
+bloque(`refund_reasons — ${refundReasons.length} (con las fechas del mock)`);
+L.push(
+  '-- Primer bloque que inserta created_at/updated_at del mock (D-3 del Épico',
+  '-- 46): el contrato los emite y el DEFAULT now() los cambiaría en cada reset.',
+  'INSERT INTO refund_reasons (id, name, slug, language, created_at, updated_at) VALUES'
+);
+L.push(
+  refundReasons
+    .map(
+      (r) =>
+        `  (${r.id}, ${txt(r.name)}, ${txt(r.slug)}, ${txt(r.language ?? 'en')}, ` +
+        `${ts(r.created_at)}, ${ts(r.updated_at)})`
+    )
+    .join(',\n') + '\nON CONFLICT (id) DO NOTHING;'
+);
+
 // categories -------------------------------------------------------------
 const raices = categories.filter((c) => !c.parent_id).length;
 bloque(`categories — ${categories.length} (${raices} raíces, ${categories.length - raices} hijas)`);
@@ -548,7 +601,7 @@ L.push(
   '-- mock, así que hay que adelantar las secuencias o el primer INSERT nuevo',
   '-- chocaría con una clave existente.'
 );
-for (const t of ['types', 'users', 'permissions', 'shops', 'categories', 'manufacturers', 'tags', 'products', 'faqs', 'terms_and_conditions']) {
+for (const t of ['types', 'users', 'permissions', 'shops', 'categories', 'manufacturers', 'tags', 'products', 'faqs', 'terms_and_conditions', 'refund_policies', 'refund_reasons']) {
   L.push(`SELECT setval('${t}_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM ${t}), 1));`);
 }
 
@@ -564,5 +617,6 @@ console.log(
     `${users.length} usuarios · ${permissionsCatalogo.length} permisos · ` +
     `1 become_seller · ${staffAsignaciones.length} shop_staff · ` +
     `${faqsFilas.length} faqs · ${termsFilas.length} terms_and_conditions ` +
-    `(${termsDescartados.length} duplicados descartados)`
+    `(${termsDescartados.length} duplicados descartados) · ` +
+    `${refundPolicies.length} refund_policies · ${refundReasons.length} refund_reasons`
 );

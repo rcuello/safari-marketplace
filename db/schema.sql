@@ -549,6 +549,51 @@ CREATE TABLE IF NOT EXISTS terms_and_conditions (
 
 
 -- =====================================================================
+-- Reembolsos (US-48, Épico 46) — políticas y motivos.
+--
+-- Sembradas desde refund-policies.json y refund-reasons.json. NO es el
+-- dominio de reembolsos (el módulo `refunds` es un stub sin JSON): son las
+-- dos listas de contenido que lo rodean.
+--
+-- refund_policies — `target` dice a quién aplica (la tienda filtra por él en
+-- /customer-refund-policies y /vendor-refund-policies) y `status` es la cola
+-- de moderación que el admin conoce (approved | pending). `shop_id` es
+-- opcional, como en el resto del contenido: CASCADE, sin tienda no hay a
+-- quién aplicarla.
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS refund_policies (
+    id           bigserial    PRIMARY KEY,
+    title        text         NOT NULL,
+    slug         text         NOT NULL UNIQUE,
+    description  text,
+    target       text         NOT NULL
+                              CHECK (target IN ('vendor', 'customer')),
+    status       text         NOT NULL DEFAULT 'pending'
+                              CHECK (status IN ('approved', 'pending')),
+    shop_id      bigint       REFERENCES shops(id) ON DELETE CASCADE,
+    language     text         NOT NULL DEFAULT 'es',
+    created_at   timestamptz  NOT NULL DEFAULT now(),
+    updated_at   timestamptz  NOT NULL DEFAULT now()
+);
+
+
+-- ---------------------------------------------------------------------
+-- refund_reasons — catálogo plano de motivos que el cliente elige al pedir
+-- un reembolso. Es la primera tabla del épico cuyo contrato EMITE
+-- created_at/updated_at, así que el seed inserta las fechas del mock en vez
+-- de dejar el DEFAULT now().
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS refund_reasons (
+    id          bigserial    PRIMARY KEY,
+    name        text         NOT NULL,
+    slug        text         NOT NULL UNIQUE,
+    language    text         NOT NULL DEFAULT 'es',
+    created_at  timestamptz  NOT NULL DEFAULT now(),
+    updated_at  timestamptz  NOT NULL DEFAULT now()
+);
+
+
+-- =====================================================================
 -- Índices.
 --
 -- No son decorativos: cada uno responde a un filtro que el frontend
@@ -597,6 +642,9 @@ CREATE INDEX IF NOT EXISTS faqs_shop_idx                  ON faqs (shop_id);
 CREATE INDEX IF NOT EXISTS faqs_user_idx                  ON faqs (user_id);
 CREATE INDEX IF NOT EXISTS terms_and_conditions_shop_idx  ON terms_and_conditions (shop_id);
 CREATE INDEX IF NOT EXISTS terms_and_conditions_user_idx  ON terms_and_conditions (user_id);
+
+-- Reembolsos (US-48).
+CREATE INDEX IF NOT EXISTS refund_policies_shop_idx       ON refund_policies (shop_id);
 
 
 -- ---------------------------------------------------------------------

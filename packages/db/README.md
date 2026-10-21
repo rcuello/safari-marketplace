@@ -113,7 +113,8 @@ No usar `prisma migrate dev` ni `prisma db push` contra esta base.
   esa clave y está cubierto por el test de integración.
 - **Los CHECK constraints** (`products_rebaja_valida`,
   `products_simple_con_precio`, `products_procedencia_completa`, y desde
-  US-47 `faqs_faq_type_check` y `terms_and_conditions_type_check`) no existen
+  US-47 `faqs_faq_type_check` y `terms_and_conditions_type_check`, y desde
+  US-48 `refund_policies_target_check` y `refund_policies_status_check`) no existen
   para Prisma. Los repositorios los validan antes de escribir (tipos +
   guard de `salePrice < price`) y traducen la violación que llegue de
   Postgres a errores de dominio: `InvalidSalePriceError`,
@@ -150,6 +151,26 @@ insensible a mayúsculas, y `isApproved` en los términos.
 Así los CHECK `faqs_faq_type_check` y `terms_and_conditions_type_check` no
 pueden violarse desde el paquete. El `slug` es inmutable en las
 actualizaciones, y `updatedAt` se fija con `now()` de `clock.ts` (US-32).
+
+### Reembolsos (US-48, Épico 46) — `refund-policies` y `refund-reasons`
+
+`RefundPolicyRecord` y `RefundReasonRecord`, con dos repositorios calcados
+de `tags.repository.ts`. Los dos ordenan por `id ASC`, toman el slug del
+cuerpo si llega no vacío (el admin lo envía) y lo mantienen inmutable en las
+actualizaciones.
+
+- `refund-policies.repository.ts`: `listRefundPolicies` (filtra `target` y
+  `status` por igualdad y el título con `contains`), `findRefundPolicyBySlug`,
+  `createRefundPolicy`, `updateRefundPolicy` y `deleteRefundPolicy`. Los dos
+  CHECK de la tabla se validan antes de escribir con
+  `InvalidRefundPolicyValueError`, que tiene `code = InvalidReference` y
+  `toWriteHttpException` convierte en 400. Es el mismo patrón que
+  `InvalidSalePriceError` en `products`. Los valores admitidos se exportan
+  como `REFUND_POLICY_TARGETS` y `REFUND_POLICY_STATUSES`.
+- `refund-reasons.repository.ts`: `listRefundReasons` (filtra por nombre),
+  `findRefundReasonBySlug`, `createRefundReason`, `updateRefundReason` y
+  `deleteRefundReason`. Los timestamps son contrato, por eso `update` fija
+  `updatedAt` con `now()`.
 
 ### Identidad (US-21, Épico 19) — `users.repository.ts`
 
