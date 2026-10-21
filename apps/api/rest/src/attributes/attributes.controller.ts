@@ -6,9 +6,11 @@ import {
   Put,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { AttributesService } from './attributes.service';
 import { CreateAttributeDto } from './dto/create-attribute.dto';
+import { GetAttributesArgs } from './dto/get-attributes.dto';
 import { UpdateAttributeDto } from './dto/update-attribute.dto';
 import { ADMIN_ONLY, Permissions } from 'src/auth/decorators/permissions.decorator';
 
@@ -25,8 +27,8 @@ export class AttributesController {
   }
 
   @Get()
-  findAll() {
-    return this.attributesService.findAll();
+  findAll(@Query() query: GetAttributesArgs) {
+    return this.attributesService.findAll(query);
   }
 
   @Get(':param')

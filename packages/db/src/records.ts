@@ -18,6 +18,8 @@
  */
 
 import type {
+  Attribute,
+  AttributeValue,
   BecomeSeller,
   Category,
   Faq,
@@ -277,6 +279,30 @@ export interface ShippingRecord {
   updatedAt: Date;
 }
 
+/** Valor de un atributo (`Red`, `XL`…). El slug es único dentro del atributo. */
+export interface AttributeValueRecord {
+  id: number;
+  attributeId: number;
+  value: string;
+  slug: string;
+  meta: string | null;
+  language: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/** Atributo de producto de una tienda, con sus valores en `id ASC`. */
+export interface AttributeRecord {
+  id: number;
+  name: string;
+  slug: string;
+  shopId: number;
+  language: string;
+  createdAt: Date;
+  updatedAt: Date;
+  values: AttributeValueRecord[];
+}
+
 /** Motivo de reembolso. Sus timestamps son contrato: salen del mock. */
 export interface RefundReasonRecord {
   id: number;
@@ -524,5 +550,34 @@ export function _toShippingRecord(row: Shipping): ShippingRecord {
     type: row.type,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
+  };
+}
+
+export function _toAttributeValueRecord(row: AttributeValue): AttributeValueRecord {
+  return {
+    id: _id(row.id),
+    attributeId: _id(row.attributeId),
+    value: row.value,
+    slug: row.slug,
+    meta: row.meta,
+    language: row.language,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+/** `row.values` debe llegar ya ordenado (`id ASC`): el mapper no reordena. */
+export function _toAttributeRecord(
+  row: Attribute & { values: AttributeValue[] }
+): AttributeRecord {
+  return {
+    id: _id(row.id),
+    name: row.name,
+    slug: row.slug,
+    shopId: _id(row.shopId),
+    language: row.language,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+    values: row.values.map(_toAttributeValueRecord),
   };
 }

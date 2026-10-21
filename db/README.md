@@ -26,6 +26,7 @@ SQL inaplicable.
 10 types · 12 shops · 198 categorías · 14 manufacturers · 10 tags · 1200 productos · 3 usuarios · 4 permisos
 · 1 become_seller · 3 shop_staff · 19 faqs · 5 terms_and_conditions
 · 5 refund_policies · 8 refund_reasons · 1 taxes · 1 shippings
+· 8 attributes · 27 attribute_values
 ```
 
 **Los ids del mock se preservan** para no romper las relaciones, y al final se
@@ -170,6 +171,25 @@ las fechas del mock (en `taxes`, `created_at` y `updated_at` son distintos).
 
 Son la configuración que el checkout real (US-59) leerá para calcular
 impuesto y envío.
+
+## Atributos de producto: `attributes` y `attribute_values`
+
+Desde US-50, el primer agregado padre-hijo del Épico 46: 8 atributos y 27
+valores de `attributes.json`. Son el catálogo sobre el que se construirán
+las variaciones de producto, que todavía no se persisten (épico aparte).
+
+- **`attributes`**: `shop_id NOT NULL → shops ON DELETE CASCADE`, porque un
+  atributo es de su tienda, igual que `products.shop_id`. `slug` es UNIQUE
+  global. Tres slugs del mock llevan mayúsculas (`color-OMG`, `size-zLh`,
+  `color-A6u`) y se siembran tal cual. Los que se crean desde el admin salen
+  normalizados. No tiene `type_id`: el mock trae `type` todo `null`.
+- **`attribute_values`**: `attribute_id → attributes ON DELETE CASCADE`.
+  `slug` es único **dentro** del atributo (`UNIQUE (attribute_id, slug)`),
+  no globalmente. No lleva `shop_id`: lo hereda del padre. El generador toma
+  el `attribute_id` del padre que recorre y se detiene si el campo del hijo
+  no coincide.
+- **Dos órdenes que son contrato**: los atributos van en `id DESC` y los
+  valores en `id ASC` dentro de cada padre.
 
 ## Cómo se adapta el scraper
 

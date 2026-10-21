@@ -92,6 +92,7 @@ model Shop {
   faqs               Faq[]
   termsAndConditions TermsAndConditions[]
   refundPolicies     RefundPolicy[]
+  attributes         Attribute[]
 
   @@map("shops")
 }
@@ -469,4 +470,40 @@ model Shipping {
   updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
 
   @@map("shippings")
+}
+
+// =====================================================================
+// Atributos de producto (US-50, Épico 46)
+// =====================================================================
+
+model Attribute {
+  id        BigInt   @id @default(autoincrement())
+  name      String
+  slug      String   @unique
+  shopId    BigInt   @map("shop_id")
+  language  String   @default("es")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  values AttributeValue[]
+  shop   Shop             @relation(fields: [shopId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([shopId], map: "attributes_shop_idx")
+  @@map("attributes")
+}
+
+model AttributeValue {
+  id          BigInt   @id @default(autoincrement())
+  attributeId BigInt   @map("attribute_id")
+  value       String
+  slug        String
+  meta        String?
+  language    String   @default("es")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  attribute Attribute @relation(fields: [attributeId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([attributeId, slug])
+  @@map("attribute_values")
 }

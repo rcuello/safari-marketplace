@@ -7,7 +7,7 @@
 
 **Épico:** [Épico 46](./README.md)
 **Fecha:** 2026-10-20
-**Status:** Listo para ejecución
+**Status:** Implementada (2026-10-21, rama `us-50-attributes`)
 **Depende de:** [US-49](./49-taxes-shippings-postgres.md) (orden
 secuencial del épico, R-2)
 **LOC est.:** ~1300
@@ -239,16 +239,108 @@ Feature: Atributos desde Postgres
 Seguir el [Protocolo del épico](./README.md#protocolo-de-ejecución-de-una-us-de-este-épico)
 y pegar:
 
-- [ ] Línea base (4 `curl` con Bearer) con sus bytes.
-- [ ] Generador (corrida buena y corrida que falla), y `just db-reset`.
-- [ ] `psql` con los conteos, 0 huérfanas y los conteos previos.
-- [ ] `prisma validate` y `migrate diff` con `EXIT=0`; `just db-build`.
-- [ ] `just db-check` y `npx jest` con sus recuentos.
-- [ ] `just build-api` y `just verify`.
-- [ ] Byte a byte de CA-3; antes y después de V-1.
-- [ ] `curl` y `psql` de CA-5.
-- [ ] `grep` sin imports de JSON.
-- [ ] Status de la US y fila del épico.
+- [x] Línea base (4 `curl` con Bearer) con sus bytes.
+- [x] Generador (corrida buena y corrida que falla), y `just db-reset`.
+- [x] `psql` con los conteos, 0 huérfanas y los conteos previos.
+- [x] `prisma validate` y `migrate diff` con `EXIT=0`; `just db-build`.
+- [x] `just db-check` y `npx jest` con sus recuentos.
+- [x] `just build-api` y `just verify`.
+- [x] Byte a byte de CA-3; antes y después de V-1.
+- [x] `curl` y `psql` de CA-5.
+- [x] `grep` sin imports de JSON.
+- [x] Status de la US y fila del épico.
+
+### Evidencia (2026-10-21)
+
+**Línea base** (API mock recién arrancada, Bearer de `admin@demo.com`; sin
+token da 401):
+
+```
+attr-5.json           878 B  id=5 slug=language valores=[15,16,17,18,19,20]
+attr-all.json        4662 B  ids=[11,10,9,8,6,5,4,3] valores=27
+attr-shop11.json     4662 B  ids=[11,10,9,8,6,5,4,3] valores=27   (filtro ignorado)
+attr-slug.json        528 B  id=10 slug=color-OMG valores=[32,33,34]
+```
+
+**Generador:** la corrida buena da `… · 8 attributes · 27 attribute_values`.
+La corrida con `values[0].attribute_id = 999` en el atributo 11 se detiene
+con *attribute_values 35: attribute_id 999 no coincide con su padre 11*,
+`EXIT=1`, y deja `seed.sql` intacto. El JSON se restauró con `git checkout`.
+
+**`psql` tras `just db-reset`:**
+
+- `attributes` 8 y `attribute_values` 27, repartidos `11:2 · 10:3 · 9:3 ·
+  8:2 · 6:4 · 5:6 · 4:4 · 3:3`.
+- 0 huérfanas en `attributes.shop_id` y en `attribute_values.attribute_id`.
+- Conteos previos intactos: 19 faqs, 5 terms, 5 refund_policies, 8
+  refund_reasons, 1 taxes, 1 shippings, 10 types, 12 shops, 198 categories,
+  14 manufacturers, 10 tags, 1200 products, 3 users, 4 permissions y 6
+  permission_user.
+
+**Prisma:** `prisma validate` dice *valid* y `migrate diff --exit-code` da
+`EXIT=0`. La relación `Attribute.values` y su inversa `Shop.attributes`
+salen de `db pull --print`.
+
+**Suites:**
+
+| Comando | Antes (US-49) | Después |
+|---|---|---|
+| `just db-check` | 18 / 283 | **19 / 296** (+13) |
+| `npx jest` | 16 / 340 | **17 / 348** (+8) |
+
+Nota: en una de las corridas, `become-seller.integration.test.ts` (US-44,
+no tocado) falló por tiempo: tardó 6,5 s con la máquina cargada, frente al
+límite de 5 s de vitest. Aislado pasa 9/9, y la corrida completa siguiente
+dio 19/296 en verde. No es una regresión de esta US.
+
+`just build-api` y `just verify` en verde: `API 5503B · Shop 190788B
+cards:30 · Admin 72821B`.
+
+**CA-3** (byte a byte):
+
+```
+attr-all.json    IDENTICO 4662B -> 4662B
+attr-5.json      IDENTICO 878B -> 878B
+attr-slug.json   IDENTICO 528B -> 528B
+```
+
+**V-1** (`search=shop_id:11`): antes devolvía `ids=[11,10,9,8,6,5,4,3]`;
+después devuelve `ids=[10,9]`, que es exactamente el subconjunto byte a byte
+del mock con `shop_id === 11`.
+
+**CA-5** (Bearer de `admin@demo.com`, payloads con la forma del admin):
+
+| Petición | Status | Resultado |
+|---|---|---|
+| `POST /attributes` con 2 valores sin `id` | 201 | atributo 28; valores 61 (`madera`) y 62 (`metal`, `meta:"#999"`) |
+| `PUT /attributes/28`: edita 61, omite 62, añade `{id:null, value:"Vidrio"}` | 200 | `psql`: quedan `61 Madera clara madera` y `63 Vidrio vidrio`. El 62 ya no existe |
+| `PUT /attributes/28` con `values:[{id:8}]` (del atributo 3) | 400 | `psql`: la fila 8 sigue en el atributo 3 con valor `Red` |
+| `POST /attributes` con `shop_id:999` y 2 valores | 400 | `` `attributes.shop_id` referencia un registro inexistente ``; filas 9/29 antes y después |
+| `DELETE /attributes/28` | 200 | 0 valores restantes del 28 (cascada) |
+| `GET /attributes/999999` | 404 | (V-2) |
+
+Al terminar, la base volvió a 8/27 y `GET /attributes` es idéntico a la línea
+base.
+
+**Corrección de implementación durante la verificación.** El primer 400 de
+`shop_id:999` decía `` `attributes.desconocida` ``. En un nested write, el
+adaptador de Postgres no informa del campo (`meta.field_name`) en el P2003.
+Como la única FK que puede fallar al crear es `shop_id`, `createAttribute` la
+nombra solo para ese código, y un P2002 sigue diciendo `slug`. El test de
+integración ahora asevera el texto.
+
+**Incidencia de entorno (sin cambio de código).** Al reiniciar la API, el
+`dist/` de `apps/api/rest` quedó incompleto: faltaba `dist/messages`, porque
+un `taskkill` lo cortó a mitad de compilación, y el `tsbuildinfo`
+incremental lo daba por actualizado. Además, el proceso viejo siguió
+respondiendo en el 9001 con el código anterior. Se resolvió matando ese PID,
+borrando `dist/` (artefacto ignorado por git) y recompilando.
+
+**CA-6:** el `grep` no devuelve nada (`exit=1`). `git diff db/schema.sql`
+tiene 42 inserciones y 0 eliminaciones.
+
+**R-6 sin cambio:** `attributes` sigue siendo `ADMIN_ONLY` a nivel de clase,
+así que `pages/[shop]/attributes` (dueño de tienda) sigue recibiendo 403.
 
 ## Notas para el agente ejecutor
 

@@ -9,7 +9,7 @@
 -- ya existen, y creando en tiempo de ejecución únicamente lo que es suyo
 -- (los retailers como shops, las marcas como manufacturers).
 --
--- 10 types · 12 shops · 198 categorías · 14 manufacturers · 10 tags · 1200 productos · 3 usuarios · 4 permisos · 1 become_seller · 3 shop_staff · 19 faqs · 5 terms_and_conditions · 5 refund_policies · 8 refund_reasons · 1 taxes · 1 shippings
+-- 10 types · 12 shops · 198 categorías · 14 manufacturers · 10 tags · 1200 productos · 3 usuarios · 4 permisos · 1 become_seller · 3 shop_staff · 19 faqs · 5 terms_and_conditions · 5 refund_policies · 8 refund_reasons · 1 taxes · 1 shippings · 8 attributes · 27 attribute_values
 -- =====================================================================
 
 BEGIN;
@@ -211,6 +211,52 @@ INSERT INTO taxes (id, name, rate, is_global, country, state, zip, city, priorit
 ON CONFLICT (id) DO NOTHING;
 INSERT INTO shippings (id, name, amount, is_global, type, created_at, updated_at) VALUES
   (1, 'Global', 50, true, 'fixed', '2021-03-25T13:27:49.000000Z', '2021-03-25T13:27:49.000000Z')
+ON CONFLICT (id) DO NOTHING;
+
+-- ────────────────────────────────────────────────────────────────────
+-- attributes — 8 · attribute_values — 27
+-- ────────────────────────────────────────────────────────────────────
+-- Slugs tal cual, incluidas las mayúsculas del mock (color-OMG, size-zLh,
+-- color-A6u): el DDL no impone formato. Sin timestamps del mock (no los trae).
+INSERT INTO attributes (id, name, slug, shop_id, language) VALUES
+  (11, 'Filetype', 'filetype', 1, 'en'),
+  (10, 'Color', 'color-OMG', 11, 'en'),
+  (9, 'Size', 'size-zLh', 11, 'en'),
+  (8, 'Color', 'color-A6u', 9, 'en'),
+  (6, 'Aurora Pope', 'book-type', 7, 'en'),
+  (5, 'Language', 'language', 7, 'en'),
+  (4, 'Size', 'size', 2, 'en'),
+  (3, 'Color', 'color', 2, 'en')
+ON CONFLICT (id) DO NOTHING;
+-- attribute_id = id del padre iterado (validado arriba contra el del hijo).
+INSERT INTO attribute_values (id, attribute_id, value, slug, meta, language) VALUES
+  (35, 11, 'PSD', 'psd', 'file-psd', 'en'),
+  (36, 11, 'SENSORPANEL', 'sensorpanel', 'file-sensor', 'en'),
+  (32, 10, 'Black', 'black-3', 'Black', 'en'),
+  (33, 10, 'Red', 'red-2', 'Red', 'en'),
+  (34, 10, 'White', 'white-4', 'White', 'en'),
+  (29, 9, 'Small', 'small', 'S', 'en'),
+  (30, 9, 'Medium', 'medium', 'M', 'en'),
+  (31, 9, 'Large', 'large', 'L', 'en'),
+  (27, 8, 'Black', 'black-2', 'black', 'en'),
+  (28, 8, 'White', 'white-3', 'white', 'en'),
+  (21, 6, 'Magni voluptas eum e', 'hardcover-book', 'Cupiditate similique', 'en'),
+  (22, 6, 'Sint voluptatem ul', 'picture-book', 'Exercitationem fugia', 'en'),
+  (23, 6, 'Impedit sint molest', 'paperback-book', 'Consequat Eius debi', 'en'),
+  (24, 6, 'Sunt voluptas animi', 'pdf-book', 'Qui tempore quis od', 'en'),
+  (15, 5, 'English', 'english', NULL, 'en'),
+  (16, 5, 'Arabic', 'arabic', NULL, 'en'),
+  (17, 5, 'Spanish', 'spanish', NULL, 'en'),
+  (18, 5, 'French', 'french', NULL, 'en'),
+  (19, 5, 'Hindi', 'hindi', NULL, 'en'),
+  (20, 5, 'Hebrew', 'hebrew', NULL, 'en'),
+  (11, 4, 'S', 's', NULL, 'en'),
+  (12, 4, 'M', 'm', NULL, 'en'),
+  (13, 4, 'L', 'l', NULL, 'en'),
+  (14, 4, 'XL', 'xl', NULL, 'en'),
+  (8, 3, 'Red', 'red', '#ce1f6a', 'en'),
+  (9, 3, 'Blue', 'blue', '#344fa1', 'en'),
+  (10, 3, 'White', 'white', '#e1e5ea', 'en')
 ON CONFLICT (id) DO NOTHING;
 
 -- ────────────────────────────────────────────────────────────────────
@@ -1833,5 +1879,7 @@ SELECT setval('refund_policies_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FR
 SELECT setval('refund_reasons_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM refund_reasons), 1));
 SELECT setval('taxes_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM taxes), 1));
 SELECT setval('shippings_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM shippings), 1));
+SELECT setval('attributes_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM attributes), 1));
+SELECT setval('attribute_values_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM attribute_values), 1));
 
 COMMIT;

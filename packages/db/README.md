@@ -189,6 +189,34 @@ nombre), porque eso es lo que el admin espera. Los demás son
 `InvalidFieldValueError`: `rate` no finito o negativo, y `amount` o `type`
 fuera de su CHECK. Los tipos válidos se exportan como `SHIPPING_TYPES`.
 
+### Atributos (US-50, Épico 46) — `attributes.repository.ts`
+
+`AttributeRecord` (con `values: AttributeValueRecord[]`, en `id ASC`) y
+cinco funciones:
+
+- **`listAttributes`** devuelve un array sin paginar en `id DESC`, con filtro
+  por `shopId` y por nombre.
+- **`findAttributeByIdOrSlug`** busca por id si el parámetro es un entero
+  seguro y por slug si no, como hacía el mock.
+- **`createAttribute`** es un único nested write (padre y valores), que
+  Prisma ejecuta en una sola transacción: una tienda inexistente da
+  `InvalidReferenceError` sin dejar valores sueltos. En ese caso el campo se
+  nombra `shop_id` a mano, porque en un nested write el adaptador no informa
+  del campo de la FK.
+- **`updateAttribute`** reconcilia los valores con el body en un
+  `$transaction` de array (precedente `auth-tokens.repository.ts`). Un id del
+  atributo se actualiza, un id nulo, ausente o no entero se inserta, y un
+  valor existente que no aparece en el body se borra. Un id que pertenece a
+  **otro** atributo da `InvalidReferenceError` y no se reasigna. El slug del
+  atributo y el de cada valor existente son inmutables.
+- **`deleteAttribute`** devuelve el atributo con sus valores; Postgres los
+  borra en cascada.
+
+Los slugs de los valores nuevos salen de `generateSlug` con un lookup en
+memoria (los existentes del atributo más los ya asignados en el lote), así
+que el esquema de sufijos (`-2`, `-3`…) es el mismo del resto del paquete y
+se calcula antes de la transacción.
+
 ### Identidad (US-21, Épico 19) — `users.repository.ts`
 
 Mismo agregado por introspección que el catálogo: `users`, `profiles`,

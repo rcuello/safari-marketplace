@@ -39,6 +39,7 @@ const refundPolicies = leer('refund-policies');
 const refundReasons = leer('refund-reasons');
 const taxes = leer('taxes');
 const shippings = leer('shippings');
+const attributes = leer('attributes');
 
 // ── Literales SQL ────────────────────────────────────────────────────────
 const txt = (v) =>
@@ -244,6 +245,23 @@ for (const s of shippings) {
     problemas.push(`shippings ${s.id}: type '${s.type}' fuera del CHECK`);
 }
 
+// ── Atributos de producto (US-50) ────────────────────────────────────────
+// El attribute_id de cada valor sale del PADRE iterado, no del campo del
+// hijo: si los dos no coinciden, el JSON es incoherente y se para.
+const valoresAtributo = attributes.flatMap((a) => (a.values ?? []).map((v) => ({ ...v, _padre: a.id })));
+if (new Set(attributes.map((a) => a.slug)).size !== attributes.length)
+  problemas.push('attributes: slug duplicado');
+for (const a of attributes) {
+  if (!idsFinalesShops.has(a.shop_id))
+    problemas.push(`attributes ${a.id}: shop_id ${a.shop_id} inexistente`);
+}
+for (const v of valoresAtributo) {
+  if (v.attribute_id !== v._padre)
+    problemas.push(`attribute_values ${v.id}: attribute_id ${v.attribute_id} no coincide con su padre ${v._padre}`);
+}
+if (new Set(valoresAtributo.map((v) => `${v._padre}:${v.slug}`)).size !== valoresAtributo.length)
+  problemas.push('attribute_values: slug duplicado dentro de un atributo');
+
 if (problemas.length) {
   console.error(`\nEl mock viola ${problemas.length} restriccion(es) del esquema:`);
   problemas.slice(0, 20).forEach((p) => console.error('  - ' + p));
@@ -273,7 +291,8 @@ L.push(
     `1 become_seller · ${staffAsignaciones.length} shop_staff · ` +
     `${faqsFilas.length} faqs · ${termsFilas.length} terms_and_conditions · ` +
     `${refundPolicies.length} refund_policies · ${refundReasons.length} refund_reasons · ` +
-    `${taxes.length} taxes · ${shippings.length} shippings`,
+    `${taxes.length} taxes · ${shippings.length} shippings · ` +
+    `${attributes.length} attributes · ${valoresAtributo.length} attribute_values`,
   '-- =====================================================================',
   '',
   'BEGIN;'
@@ -512,6 +531,31 @@ L.push(
     .join(',\n') + '\nON CONFLICT (id) DO NOTHING;'
 );
 
+// attributes / attribute_values (US-50; tras shops: la FK lo exige) ---------
+bloque(`attributes — ${attributes.length} · attribute_values — ${valoresAtributo.length}`);
+L.push(
+  '-- Slugs tal cual, incluidas las mayúsculas del mock (color-OMG, size-zLh,',
+  '-- color-A6u): el DDL no impone formato. Sin timestamps del mock (no los trae).',
+  'INSERT INTO attributes (id, name, slug, shop_id, language) VALUES'
+);
+L.push(
+  attributes
+    .map((a) => `  (${a.id}, ${txt(a.name)}, ${txt(a.slug)}, ${a.shop_id}, ${txt(a.language ?? 'en')})`)
+    .join(',\n') + '\nON CONFLICT (id) DO NOTHING;'
+);
+L.push(
+  '-- attribute_id = id del padre iterado (validado arriba contra el del hijo).',
+  'INSERT INTO attribute_values (id, attribute_id, value, slug, meta, language) VALUES'
+);
+L.push(
+  valoresAtributo
+    .map(
+      (v) =>
+        `  (${v.id}, ${v._padre}, ${txt(v.value)}, ${txt(v.slug)}, ${txt(v.meta)}, ${txt(v.language ?? 'en')})`
+    )
+    .join(',\n') + '\nON CONFLICT (id) DO NOTHING;'
+);
+
 // categories -------------------------------------------------------------
 const raices = categories.filter((c) => !c.parent_id).length;
 bloque(`categories — ${categories.length} (${raices} raíces, ${categories.length - raices} hijas)`);
@@ -648,7 +692,7 @@ L.push(
   '-- mock, así que hay que adelantar las secuencias o el primer INSERT nuevo',
   '-- chocaría con una clave existente.'
 );
-for (const t of ['types', 'users', 'permissions', 'shops', 'categories', 'manufacturers', 'tags', 'products', 'faqs', 'terms_and_conditions', 'refund_policies', 'refund_reasons', 'taxes', 'shippings']) {
+for (const t of ['types', 'users', 'permissions', 'shops', 'categories', 'manufacturers', 'tags', 'products', 'faqs', 'terms_and_conditions', 'refund_policies', 'refund_reasons', 'taxes', 'shippings', 'attributes', 'attribute_values']) {
   L.push(`SELECT setval('${t}_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM ${t}), 1));`);
 }
 
@@ -666,5 +710,6 @@ console.log(
     `${faqsFilas.length} faqs · ${termsFilas.length} terms_and_conditions ` +
     `(${termsDescartados.length} duplicados descartados) · ` +
     `${refundPolicies.length} refund_policies · ${refundReasons.length} refund_reasons · ` +
-    `${taxes.length} taxes · ${shippings.length} shippings`
+    `${taxes.length} taxes · ${shippings.length} shippings · ` +
+    `${attributes.length} attributes · ${valoresAtributo.length} attribute_values`
 );

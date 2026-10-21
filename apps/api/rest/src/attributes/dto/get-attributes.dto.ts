@@ -4,6 +4,8 @@ export class GetAttributesArgs {
   orderBy?: QueryAttributesOrderByOrderByClause[];
   shop_id?: number;
   language?: string;
+  /** `type:…;name:…;shop_id:…` desde `attributeClient.all`/`paginated`. */
+  search?: string;
 }
 
 export class QueryAttributesOrderByOrderByClause {

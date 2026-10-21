@@ -29,6 +29,8 @@ export { pingDatabase } from './src/health';
 export type { BuildPaginatorInput, Paginator } from './src/pagination';
 export { buildPaginator } from './src/pagination';
 export type {
+  AttributeRecord,
+  AttributeValueRecord,
   BecomeSellerRecord,
   CategoryRecord,
   FaqRecord,
@@ -142,6 +144,19 @@ export {
   listShippings,
   updateShipping,
 } from './src/repositories/shippings.repository';
+export type {
+  AttributeValueInput,
+  CreateAttributeInput,
+  ListAttributesInput,
+  UpdateAttributeInput,
+} from './src/repositories/attributes.repository';
+export {
+  createAttribute,
+  deleteAttribute,
+  findAttributeByIdOrSlug,
+  listAttributes,
+  updateAttribute,
+} from './src/repositories/attributes.repository';
 export type {
   CategoryAncestor,
   CategoryDescendant,

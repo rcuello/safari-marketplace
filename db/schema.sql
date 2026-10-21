@@ -634,6 +634,43 @@ CREATE TABLE IF NOT EXISTS shippings (
 
 
 -- =====================================================================
+-- Atributos de producto (US-50, Épico 46) — attributes + attribute_values.
+--
+-- Agregado padre-hijo sembrado desde attributes.json (8 atributos, 27
+-- valores). Es la base de las variaciones de producto que todavía no se
+-- persisten (épico aparte): aquí solo vive el catálogo de atributos.
+--
+-- Un atributo es de SU tienda (shop_id NOT NULL, CASCADE, igual que
+-- products.shop_id). Sin type_id: el mock trae `type` todo null. Los valores
+-- no llevan shop_id: lo heredan del padre. El slug del valor es único DENTRO
+-- de su atributo, no globalmente ("Color" existe en tres tiendas).
+-- Sin trigger de updated_at (reloj único, ver abajo).
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS attributes (
+    id          bigserial    PRIMARY KEY,
+    name        text         NOT NULL,
+    slug        text         NOT NULL UNIQUE,
+    shop_id     bigint       NOT NULL REFERENCES shops(id) ON DELETE CASCADE,
+    language    text         NOT NULL DEFAULT 'es',
+    created_at  timestamptz  NOT NULL DEFAULT now(),
+    updated_at  timestamptz  NOT NULL DEFAULT now()
+);
+
+
+CREATE TABLE IF NOT EXISTS attribute_values (
+    id            bigserial    PRIMARY KEY,
+    attribute_id  bigint       NOT NULL REFERENCES attributes(id) ON DELETE CASCADE,
+    value         text         NOT NULL,
+    slug          text         NOT NULL,
+    meta          text,
+    language      text         NOT NULL DEFAULT 'es',
+    created_at    timestamptz  NOT NULL DEFAULT now(),
+    updated_at    timestamptz  NOT NULL DEFAULT now(),
+    UNIQUE (attribute_id, slug)
+);
+
+
+-- =====================================================================
 -- Índices.
 --
 -- No son decorativos: cada uno responde a un filtro que el frontend
@@ -685,6 +722,11 @@ CREATE INDEX IF NOT EXISTS terms_and_conditions_user_idx  ON terms_and_condition
 
 -- Reembolsos (US-48).
 CREATE INDEX IF NOT EXISTS refund_policies_shop_idx       ON refund_policies (shop_id);
+
+-- Atributos (US-50): el admin filtra por shop_id (pantalla de tienda y
+-- formulario de producto variable). attribute_values.attribute_id ya queda
+-- cubierto por la izquierda del UNIQUE (attribute_id, slug).
+CREATE INDEX IF NOT EXISTS attributes_shop_idx            ON attributes (shop_id);
 
 
 -- ---------------------------------------------------------------------
