@@ -27,7 +27,7 @@ SQL inaplicable.
 · 1 become_seller · 3 shop_staff · 19 faqs · 5 terms_and_conditions
 · 5 refund_policies · 8 refund_reasons · 1 taxes · 1 shippings
 · 8 attributes · 27 attribute_values · 3 store_notices (6 destinatarios,
-6 lecturas) · 10 coupons · 10 wishlists · 85 reviews · 3 abusive_reports · 68 questions
+6 lecturas) · 10 coupons · 10 wishlists · 85 reviews · 3 abusive_reports · 68 questions · 2 conversations · 5 messages
 ```
 
 **Los ids del mock se preservan** para no romper las relaciones, y al final se
@@ -332,6 +332,31 @@ producto 1 tiene 6 y la tienda 6, 39.
   68 filas no importa; es el mismo caso que el índice de productos.
 - **Reportable**: `abusive_reports` admite `model_type = 'Question'` y borrar
   una pregunta borra sus reportes en la misma transacción.
+
+## Mensajería cliente ↔ tienda: `conversations` y `messages`
+
+Desde US-56. Un solo agregado: la conversación de un usuario con una tienda
+y sus mensajes.
+
+- **`conversations`**: 2 filas, las dos del admin (el 6 del mock es
+  `admin@demo.com`, aquí el 3): la 1 con la tienda 7 y la 6 con la tienda 2.
+  `UNIQUE (user_id, shop_id)`: una conversación por par, y el `POST` la
+  reutiliza.
+- **`messages`**: 5 filas, todas de la conversación 1. El autor 6 del mock
+  se resuelve por el `user` de la conversación embebida (→ 3); el 1 ya
+  existía. `CHECK (length(btrim(body)) > 0)`.
+- **CASCADE en todas las FK** (usuario, tienda, conversación).
+- **`latest_message` y `unseen` no son columnas.** El mock los traía
+  incoherentes: el `latest_message` de la 1 decía el mensaje 2 con el texto
+  del 5, y el de la 6 apuntaba a un mensaje que no existe. La API los
+  calcula. `unseen` es provisional hasta que exista `messages/seen`: vale
+  1 si el último mensaje es de otro usuario.
+- **Fechas sin zona.** La conversación 6 trae `"2023-03-21 15:00:08"`. El
+  generador la fija en **UTC** (le añade la `Z`). El mock, en cambio, la
+  interpretaba con la zona del proceso Node: en un equipo en UTC−5 salía
+  `20:00:08Z`. La diferencia son esas 5 horas.
+- **Escribir un mensaje** sube `conversations.updated_at` en la misma
+  transacción, para que la conversación suba al ordenar por `updated_at`.
 
 ## Cómo se adapta el scraper
 

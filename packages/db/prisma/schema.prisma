@@ -28,8 +28,8 @@
 //     negative_feedbacks_count_check (≥ 0), abusive_reports_model_type_
 //     check (∈ Review|Question), abusive_reports_message_check
 //     (length > 0), questions_question_check (length > 0),
-//     questions_positive_/negative_feedbacks_count_check (≥ 0). Los
-//     repositorios los validan
+//     questions_positive_/negative_feedbacks_count_check (≥ 0),
+//     messages_body_check (length(btrim(body)) > 0). Los repositorios los validan
 //     antes de escribir y traducen la violación a errores de dominio.
 //   · El índice de expresión products_nombre_trgm_idx
 //     (gin (lower(name) gin_trgm_ops)) que acelera la búsqueda por
@@ -116,6 +116,7 @@ model Shop {
   coupons            Coupon[]
   reviews            Review[]
   questions          Question[]
+  conversations      Conversation[]
 
   @@map("shops")
 }
@@ -292,6 +293,8 @@ model User {
   reviews             Review[]
   abusiveReports      AbusiveReport[]
   questions           Question[]
+  conversations       Conversation[]
+  messages            Message[]
 
   @@map("users")
 }
@@ -728,4 +731,40 @@ model Question {
   @@index([shopId], map: "questions_shop_idx")
   @@index([userId], map: "questions_user_idx")
   @@map("questions")
+}
+
+// =====================================================================
+// Mensajería cliente ↔ tienda (US-56, Épico 46)
+// =====================================================================
+
+model Conversation {
+  id        BigInt   @id @default(autoincrement())
+  userId    BigInt   @map("user_id")
+  shopId    BigInt   @map("shop_id")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  shop     Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  messages Message[]
+
+  @@unique([userId, shopId])
+  @@index([shopId], map: "conversations_shop_idx")
+  @@map("conversations")
+}
+
+model Message {
+  id             BigInt   @id @default(autoincrement())
+  conversationId BigInt   @map("conversation_id")
+  userId         BigInt   @map("user_id")
+  body           String
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([conversationId, createdAt(sort: Desc), id(sort: Desc)], map: "messages_conversacion_idx")
+  @@index([userId], map: "messages_user_idx")
+  @@map("messages")
 }

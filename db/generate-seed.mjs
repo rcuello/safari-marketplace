@@ -46,6 +46,8 @@ const wishlists = leer('wishlists');
 const reviews = leer('reviews');
 const abusiveReports = leer('reports');
 const questions = leer('questions');
+const conversations = leer('conversations');
+const messages = leer('messages');
 
 // ── Literales SQL ────────────────────────────────────────────────────────
 const txt = (v) =>
@@ -444,6 +446,48 @@ for (const q of preguntas) {
   if (!q.question) problemas.push(`questions ${q.id}: question vacía`);
 }
 
+// ── Mensajería cliente ↔ tienda (US-56) ──────────────────────────────────
+// conversations.json es sabor GraphQL: ids como string y fechas mezcladas.
+// Las "YYYY-MM-DD HH:mm:ss" sin zona se fijan en UTC explícito (se añade la
+// Z) para no depender de la zona del servidor que aplique el seed.
+// El usuario 6 del mock (admin@demo.com) se resuelve por email al 3. En
+// messages.json el autor 6 es el `user` de la conversación embebida; el
+// autor 1 ya existe en el seed. Esta US no siembra usuarios.
+const fechaUtc = (v) => (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(v ?? '') ? `${v.replace(' ', 'T')}Z` : v);
+const sembradosAntesDeMensajeria = usuariosSembrados.length;
+const conversaciones = conversations.map((c) => ({
+  ...c,
+  _id: Number(c.id),
+  _shop_id: Number(c.shop_id),
+  _user_id: resolverUsuarioPorEmail(c.user, `conversations ${c.id}.user`),
+}));
+const idsConversaciones = new Set(conversaciones.map((c) => c._id));
+const mensajes = messages.map((m) => {
+  const autorEsDeLaConversacion = m.conversation?.user && m.user_id === m.conversation.user.id;
+  let userId = null;
+  if (autorEsDeLaConversacion) {
+    userId = resolverUsuarioPorEmail(m.conversation.user, `messages ${m.id}.conversation.user`);
+  } else if (emailPorId.has(m.user_id)) {
+    userId = m.user_id;
+  } else {
+    problemas.push(`messages ${m.id}: user_id ${m.user_id} inexistente y sin snapshot con email`);
+  }
+  return { ...m, _user_id: userId };
+});
+for (const s of usuariosSembrados.slice(sembradosAntesDeMensajeria))
+  problemas.push(`conversations/messages: '${s.email}' no existía; esta US no siembra usuarios`);
+for (const c of conversaciones) {
+  if (!Number.isSafeInteger(c._id)) problemas.push(`conversations: id '${c.id}' no es numérico`);
+  if (!idsFinalesShops.has(c._shop_id)) problemas.push(`conversations ${c.id}: shop_id ${c.shop_id} inexistente`);
+}
+if (new Set(conversaciones.map((c) => `${c._user_id}:${c._shop_id}`)).size !== conversaciones.length)
+  problemas.push('conversations: par (usuario, tienda) repetido');
+for (const m of mensajes) {
+  if (!idsConversaciones.has(m.conversation_id))
+    problemas.push(`messages ${m.id}: conversation_id ${m.conversation_id} inexistente`);
+  if (!String(m.body ?? '').trim()) problemas.push(`messages ${m.id}: body vacío`);
+}
+
 if (problemas.length) {
   console.error(`\nEl mock viola ${problemas.length} restriccion(es) del esquema:`);
   problemas.slice(0, 20).forEach((p) => console.error('  - ' + p));
@@ -476,7 +520,8 @@ L.push(
     `${taxes.length} taxes · ${shippings.length} shippings · ` +
     `${attributes.length} attributes · ${valoresAtributo.length} attribute_values · ` +
     `${avisos.length} store_notices · ${coupons.length} coupons · ${wishlists.length} wishlists · ` +
-    `${resenas.length} reviews · ${reportes.length} abusive_reports · ${preguntas.length} questions`,
+    `${resenas.length} reviews · ${reportes.length} abusive_reports · ${preguntas.length} questions · ` +
+    `${conversaciones.length} conversations · ${mensajes.length} messages`,
   '-- =====================================================================',
   '',
   'BEGIN;'
@@ -1010,6 +1055,33 @@ L.push(
     .join(',\n') + '\nON CONFLICT (id) DO NOTHING;'
 );
 
+// conversations / messages (US-56; tras users y shops) -----------------------
+bloque(`conversations — ${conversaciones.length} · messages — ${mensajes.length}`);
+L.push(
+  '-- Ids del mock convertidos a número. shop_id sale de conversations.json, no',
+  '-- del `conversation` embebido en messages.json (que dice otra tienda).',
+  '-- Fechas sin zona del mock fijadas en UTC (ver fechaUtc).',
+  'INSERT INTO conversations (id, user_id, shop_id, created_at, updated_at) VALUES'
+);
+L.push(
+  conversaciones
+    .map(
+      (c) =>
+        `  (${c._id}, ${c._user_id}, ${c._shop_id}, ${ts(fechaUtc(c.created_at))}, ${ts(fechaUtc(c.updated_at))})`
+    )
+    .join(',\n') + '\nON CONFLICT (id) DO NOTHING;'
+);
+L.push('INSERT INTO messages (id, conversation_id, user_id, body, created_at, updated_at) VALUES');
+L.push(
+  mensajes
+    .map(
+      (m) =>
+        `  (${m.id}, ${m.conversation_id}, ${m._user_id}, ${txt(m.body)}, ` +
+        `${ts(fechaUtc(m.created_at))}, ${ts(fechaUtc(m.updated_at))})`
+    )
+    .join(',\n') + '\nON CONFLICT (id) DO NOTHING;'
+);
+
 // category_product -------------------------------------------------------
 bloque('category_product — deliberadamente VACÍA');
 L.push(
@@ -1029,7 +1101,7 @@ L.push(
   '-- mock, así que hay que adelantar las secuencias o el primer INSERT nuevo',
   '-- chocaría con una clave existente.'
 );
-for (const t of ['types', 'users', 'permissions', 'shops', 'categories', 'manufacturers', 'tags', 'products', 'faqs', 'terms_and_conditions', 'refund_policies', 'refund_reasons', 'taxes', 'shippings', 'attributes', 'attribute_values', 'store_notices', 'coupons', 'reviews', 'abusive_reports', 'questions']) {
+for (const t of ['types', 'users', 'permissions', 'shops', 'categories', 'manufacturers', 'tags', 'products', 'faqs', 'terms_and_conditions', 'refund_policies', 'refund_reasons', 'taxes', 'shippings', 'attributes', 'attribute_values', 'store_notices', 'coupons', 'reviews', 'abusive_reports', 'questions', 'conversations', 'messages']) {
   L.push(`SELECT setval('${t}_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM ${t}), 1));`);
 }
 
@@ -1050,5 +1122,6 @@ console.log(
     `${taxes.length} taxes · ${shippings.length} shippings · ` +
     `${attributes.length} attributes · ${valoresAtributo.length} attribute_values · ` +
     `${avisos.length} store_notices · ${coupons.length} coupons · ${wishlists.length} wishlists · ` +
-    `${resenas.length} reviews · ${reportes.length} abusive_reports · ${preguntas.length} questions`
+    `${resenas.length} reviews · ${reportes.length} abusive_reports · ${preguntas.length} questions · ` +
+    `${conversaciones.length} conversations · ${mensajes.length} messages`
 );

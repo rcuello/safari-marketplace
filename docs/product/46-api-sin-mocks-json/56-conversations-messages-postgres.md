@@ -8,7 +8,7 @@
 
 **Épico:** [Épico 46](./README.md)
 **Fecha:** 2026-10-20
-**Status:** Listo para ejecución
+**Status:** Implementada (2026-10-22, rama `us-56-conversations-messages`)
 **Depende de:** US-55. No hay dependencia de datos con ella. El orden lo
 impone R-2 del épico: archivos compartidos y ejecución secuencial.
 **LOC est.:** ~1500
@@ -391,26 +391,155 @@ Feature: Mensajeria cliente-tienda desde Postgres
 Se sigue el Protocolo del [README del épico](./README.md#protocolo-de-ejecución-de-una-us-de-este-épico),
 pegando la salida de cada paso.
 
-- [ ] Línea base capturada **antes** del cambio, con los `curl` pegados.
-- [ ] `node db/generate-seed.mjs` con los conteos nuevos en consola.
-- [ ] `just db-reset` limpio.
-- [ ] `psql` con:
+- [x] Línea base capturada **antes** del cambio, con los `curl` pegados.
+- [x] `node db/generate-seed.mjs` con los conteos nuevos en consola.
+- [x] `just db-reset` limpio.
+- [x] `psql` con:
   - los conteos 2 y 5;
   - 0 huérfanas en `conversations.user_id`/`shop_id` y
     `messages.conversation_id`/`user_id`;
   - el intento de duplicar `(3, 7)` rechazado por el unique.
-- [ ] `npx prisma validate` + `npx prisma migrate diff
+- [x] `npx prisma validate` + `npx prisma migrate diff
   --from-config-datasource --to-schema ./prisma/schema.prisma --exit-code`
   → `EXIT=0`.
-- [ ] `just db-build` limpio.
-- [ ] `just db-check` y `cd apps/api/rest && npx jest` en verde, con los
+- [x] `just db-build` limpio.
+- [x] `just db-check` y `cd apps/api/rest && npx jest` en verde, con los
   recuentos nuevos pegados.
-- [ ] `just build-api` y `just verify` en verde (`/api/settings` 5503 B).
-- [ ] Comparación `node -e` entre línea base y después (CA-2), con la lista
+- [x] `just build-api` y `just verify` en verde (`/api/settings` 5503 B).
+- [x] Comparación `node -e` entre línea base y después (CA-2), con la lista
   de claves excluidas y el resultado `OK`.
-- [ ] `curl` de CA-3, CA-4 y CA-5 con status exacto, y la restauración del
+- [x] `curl` de CA-3, CA-4 y CA-5 con status exacto, y la restauración del
   reposo tras CA-4.
-- [ ] Status de esta US actualizado y su fila marcada en el épico.
+- [x] Status de esta US actualizado y su fila marcada en el épico.
+
+## Evidencia (2026-10-22)
+
+**Precondición:** `resolverUsuarioPorEmail` existe en
+`db/generate-seed.mjs:295` (US-51).
+
+**Línea base**, con la API recién arrancada sobre `main` (`a4ac611`) y el
+token del admin:
+
+```
+ 1826 conv-1.json
+ 2616 conv-6.json
+ 4751 conv-sin-query.json
+ 4736 conv-topbar.json   (ids "1","6"; per_page "5")
+ 9979 msg-1.json         ({data:[5,4,3,2,1]}, sin paginador)
+POST /messages/seen/1: 404
+```
+
+**Corrección a V-8.** Sin `?limit`, el mock **no** emite `per_page`
+`undefined` ni `last_page` `NaN`, como decía la US. `paginate()` aplica su
+propio default de 10, así que sale `per_page: 10` y `last_page: 1`. La url
+sí lleva `limit=undefined`. Después: `per_page: 15`, `last_page: 1` y url
+`/conversations?limit=15`.
+
+**Seed.** `node db/generate-seed.mjs` termina con `… · 68 questions · 2
+conversations · 5 messages`, y `users` sigue en 5 (no se siembra ninguno).
+
+**CA-1** (`just db-reset` + `psql`):
+
+| Medida | Valor |
+|---|---|
+| `conversations` / `messages` | 2 / 5 |
+| Conversaciones | 1 → `user 3, shop 7`; 6 → `user 3, shop 2` |
+| Mensajes (id:user) | `1:3, 2:3, 3:3, 4:1, 5:3`, todos de la conversación 1 |
+| Huérfanas (conv.user, conv.shop, msg.conversation, msg.user) | 0 / 0 / 0 / 0 |
+| Conteos previos | users 5 · questions 68 · reviews 85 · products 1200 |
+
+```
+insert into conversations (user_id, shop_id) values (3, 7)
+ERROR:  duplicate key value violates unique constraint "conversations_user_id_shop_id_key"
+DETAIL:  Key (user_id, shop_id)=(3, 7) already exists.
+```
+
+**Prisma.** `validate` correcto y `migrate diff --exit-code` con `EXIT=0`.
+`just db-build` limpio.
+
+**CA-2** (`node`, deep-equal con orden de claves y tipos):
+
+```
+despues/conv-topbar.json: OK   (paginador idéntico: per_page "5", total 2)
+  excluido: orden de filas 1,6 → 6,1 (V-9), __typename (V-3), latest_message (V-1/V-2),
+            shop (V-6), user_id/user.id (V-4), user.name (V-5), created_at/updated_at de la 6 (V-13)
+despues/conv-1.json: OK
+  excluido: __typename (V-3), latest_message (V-1), shop (V-6), user_id/user.id (V-4), user.name (V-5)
+despues/conv-6.json: OK
+  excluido: lo mismo más created_at/updated_at (V-13)
+```
+
+Además, el script comprueba que `id`, `user_id` y `shop_id` salen como
+string y `unseen` como número en todas las filas. Los valores excluidos:
+
+- V-1: `latest_message` de la 1 = `{body:"New test", conversation_id:"1",
+  …, user_id:"3", id:"5"}`.
+- V-2: el de la 6 es `null`.
+- V-4/V-5: `user` = `{id:"3", name:"Jhon Doe", email:"admin@demo.com",
+  profile:null, address:[], wallet:null, is_active:true}`.
+- **V-13, medido:** la 6 pasa de `2023-03-21T20:00:08.000Z` a
+  `2023-03-21T15:00:08.000Z` y de `2023-03-30T07:59:20.000Z` a
+  `2023-03-30T02:59:20.000Z`. Son 5 horas exactas: el mock interpretaba la
+  fecha con la zona de Node (UTC−5) y el seed la fija en UTC.
+
+**CA-3:**
+
+| Llamada | Status | Resultado |
+|---|---|---|
+| `GET /messages/conversations/1` | 200 | `5,4,3,2,1`; `total 5`, `current_page 1`, `last_page 1`, `per_page 15` |
+| `…/1?limit=2&page=2` | 200 | `3,2`; `last_page 3` |
+| `…/6` | 200 | `data: []`, `total 0` |
+| `…/999` | 404 | |
+
+**CA-4** (token del admin):
+
+| Llamada | Status | Resultado |
+|---|---|---|
+| `POST /messages/conversations/1 {"body":"CA-4 evidencia"}` | 201 | id 7, `conversation_id 1`, `user_id 3` |
+| `GET /messages/conversations/1` | 200 | primero `7:CA-4 evidencia`, `total 6` |
+| `GET /conversations/1` | 200 | `latest_message` `"CA-4 evidencia"` (id `"7"`); `updated_at` de `2023-03-11 03:17:23` a `2026-10-23T03:26:15.662Z` |
+| `GET /conversations?…orderBy=updated_at&sortedBy=desc` | 200 | la 1 pasa delante: `1, 6` |
+| `GET /conversations/1` con el dueño | 200 | `unseen: 1` (el último mensaje es del admin) |
+| cuerpo en blanco / cliente ajeno / conversación 999 | 400 / 404 / 404 | |
+| `POST /conversations {"shop_id":7,"via":"admin"}` | 201 | devuelve la 1; en `psql` sigue habiendo 1 fila (3, 7) |
+| `POST /conversations {"shop_id":1}` del cliente / tienda 999999 | 201 / 400 | crea la suya con `latest_message: null` / `InvalidReferenceError` |
+
+Después se restauró el reposo: se borraron el mensaje 7 y la conversación
+del cliente, y el `updated_at` de la 1 volvió a `2023-03-11 03:17:23+00`.
+Quedan 2 conversaciones y 5 mensajes.
+
+**CA-5** (sobre el seed en reposo): con el token del cliente, `GET
+/conversations` da `total: 0` y `GET /conversations/1` da 404. Con
+`store_owner@demo.com` (dueño de las 12 tiendas) da `total: 2` (`1, 6`). Sin
+token, 401.
+
+**CA-6:**
+
+- `grep -rn "@db/"` en `conversations/` y `messages/` no devuelve nada
+  (`exit=1`).
+- `just db-check`: 26 archivos y 354 tests (antes 25/346; +8).
+- `npx jest`: 28 suites y 462 tests (antes 26/450; +12).
+- `just build-api`: `Done in 19.45s`, y `tsc --noEmit` en 0.
+- `just verify`: API `5503B`, Shop `cards:30`, Admin `cards:1`.
+
+**Decisiones que no estaban escritas en la US:**
+
+- **`latest_message`** sale de una consulta `DISTINCT ON` por página
+  (`$queryRaw`). El `include` con `take: 1` lo descarté porque Prisma trae
+  todos los mensajes y recorta en memoria.
+- **Visibilidad fuera de `super_admin`**: `user_id = yo OR shop.owner_id =
+  yo`. Para quien no posee tiendas equivale a "solo las mías".
+- **`search` con clave** (`shop.name:x`) usa el valor, por si algún día llega
+  así. El admin hoy manda el texto solo.
+- **Tienda inexistente en `POST /conversations` da 400**, por
+  `InvalidReferenceError`, el precedente del mapper. La US hablaba de 422/404.
+- **El método `getStoreNotice` del controlador** pasó a llamarse
+  `getConversation`, porque se reescribió el archivo.
+
+**Fuera de alcance, para el reporte:** `POST /messages/seen/:id` sigue
+dando 404. La barra superior del admin lo llama. Queda refinado como
+[US-64](../64-mensajes-seen-estado-lectura.md), que además reemplaza la regla
+provisional de `unseen`.
 
 ## Notas para el agente ejecutor
 

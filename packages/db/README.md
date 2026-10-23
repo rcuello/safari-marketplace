@@ -123,7 +123,8 @@ No usar `prisma migrate dev` ni `prisma db push` contra esta base.
   US-54 `reviews_rating_check`, `reviews_photos_check`, los dos
   `reviews_*_feedbacks_count_check`, `abusive_reports_model_type_check` y
   `abusive_reports_message_check`, y desde US-55 `questions_question_check` y
-  los dos `questions_*_feedbacks_count_check`) no existen
+  los dos `questions_*_feedbacks_count_check`, y desde US-56
+  `messages_body_check`) no existen
   para Prisma. Los repositorios los validan antes de escribir (tipos +
   guard de `salePrice < price`) y traducen la violación que llegue de
   Postgres a errores de dominio: `InvalidSalePriceError`,
@@ -358,6 +359,36 @@ hidratado y `abusiveReportsCount`, igual que las reseñas.
 
 `question` vacía se rechaza con `InvalidFieldValueError`. No hay UNIQUE: un
 usuario puede preguntar varias veces sobre el mismo producto.
+
+### Mensajería (US-56, Épico 46) — `conversations.repository.ts`
+
+Un solo repositorio para el agregado. `ConversationRecord` y `MessageRecord`
+son las filas planas. Las lecturas devuelven `ConversationDetailRecord`, con
+el usuario, la tienda (`ShopRecord`) y `latestMessage` (o `null`), y
+`MessageDetailRecord`, que es el mensaje con su conversación embebida.
+
+- **`latestMessage`** sale de **una** consulta `DISTINCT ON
+  (conversation_id) … ORDER BY conversation_id, created_at DESC, id DESC`
+  (`$queryRaw`) sobre los ids de la página, servida por
+  `messages_conversacion_idx`. Se descartó el `include` con `take: 1`
+  porque Prisma trae todos los mensajes de la página y recorta en memoria.
+- **Visibilidad** (`ConversationViewer = {userId, seeAll}`): con `seeAll`
+  se ve todo; si no, las conversaciones propias y las de las tiendas que el
+  usuario posee (`shops.owner_id`).
+- **`listConversations`**: paginado (`limit` 15), búsqueda por nombre de
+  tienda (`shopName`, case-insensitive) y `orderBy` en
+  `CONVERSATION_SORTABLE` (`id`, `created_at`, `updated_at`); sin
+  `orderBy`, `id ASC`.
+- **`findConversationById(id, viewer?)`**: `null` si no existe o no es
+  visible.
+- **`findOrCreateConversation(userId, shopId)`**: upsert por el par. Una
+  tienda inexistente da `InvalidReferenceError`.
+- **`listMessages(conversationId)`**: `id DESC`, paginado; una
+  conversación inexistente da `RecordNotFoundError`.
+- **`createMessage`**: inserta y fija `conversations.updated_at = now()` en
+  un `$transaction`. Un cuerpo vacío da `InvalidFieldValueError`.
+
+`unseen` no vive aquí: depende de quién consulta y lo calcula la API.
 
 ### Identidad (US-21, Épico 19) — `users.repository.ts`
 

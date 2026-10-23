@@ -874,6 +874,43 @@ CREATE TABLE IF NOT EXISTS questions (
 
 
 -- =====================================================================
+-- Mensajería cliente ↔ tienda (US-56, Épico 46) — conversations + messages.
+--
+-- Un solo agregado: la conversación de un usuario con una tienda y sus
+-- mensajes. Sembradas desde conversations.json (2) y messages.json (5).
+-- El usuario 6 del mock es admin@demo.com, que aquí es el 3 (D-4).
+--
+-- Una conversación por par (user, shop), que es lo que hace Pickbazar: el
+-- POST la reutiliza. CASCADE en todas las FK: sin usuario, tienda o
+-- conversación, un mensaje no tiene a quién pertenecer.
+--
+-- latest_message y unseen NO son columnas: la API los calcula desde los
+-- mensajes (el mock los traía incoherentes). Escribir un mensaje fija
+-- conversations.updated_at con el reloj de Node, para que la conversación
+-- suba al ordenar por updated_at. Sin estado de lectura todavía
+-- (messages/seen no existe). Sin triggers (reloj único, ver abajo).
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS conversations (
+    id          bigserial    PRIMARY KEY,
+    user_id     bigint       NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    shop_id     bigint       NOT NULL REFERENCES shops(id) ON DELETE CASCADE,
+    created_at  timestamptz  NOT NULL DEFAULT now(),
+    updated_at  timestamptz  NOT NULL DEFAULT now(),
+    UNIQUE (user_id, shop_id)
+);
+
+
+CREATE TABLE IF NOT EXISTS messages (
+    id               bigserial    PRIMARY KEY,
+    conversation_id  bigint       NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+    user_id          bigint       NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    body             text         NOT NULL CHECK (length(btrim(body)) > 0),
+    created_at       timestamptz  NOT NULL DEFAULT now(),
+    updated_at       timestamptz  NOT NULL DEFAULT now()
+);
+
+
+-- =====================================================================
 -- Índices.
 --
 -- No son decorativos: cada uno responde a un filtro que el frontend
@@ -962,6 +999,14 @@ CREATE INDEX IF NOT EXISTS questions_shop_idx             ON questions (shop_id)
 CREATE INDEX IF NOT EXISTS questions_producto_idx         ON questions (product_id);
 CREATE INDEX IF NOT EXISTS questions_question_trgm_idx
     ON questions USING gin (lower(question) gin_trgm_ops);
+
+-- Mensajería (US-56): conversations.user_id ya queda cubierto por la
+-- izquierda del UNIQUE (user_id, shop_id). El índice de messages sirve al
+-- último mensaje por conversación y al listado paginado.
+CREATE INDEX IF NOT EXISTS conversations_shop_idx         ON conversations (shop_id);
+CREATE INDEX IF NOT EXISTS messages_conversacion_idx
+    ON messages (conversation_id, created_at DESC, id DESC);
+CREATE INDEX IF NOT EXISTS messages_user_idx              ON messages (user_id);
 
 
 -- ---------------------------------------------------------------------

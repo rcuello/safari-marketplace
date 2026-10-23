@@ -9,7 +9,7 @@
 -- ya existen, y creando en tiempo de ejecución únicamente lo que es suyo
 -- (los retailers como shops, las marcas como manufacturers).
 --
--- 10 types · 12 shops · 198 categorías · 14 manufacturers · 10 tags · 1200 productos · 5 usuarios · 4 permisos · 1 become_seller · 3 shop_staff · 19 faqs · 5 terms_and_conditions · 5 refund_policies · 8 refund_reasons · 1 taxes · 1 shippings · 8 attributes · 27 attribute_values · 3 store_notices · 10 coupons · 10 wishlists · 85 reviews · 3 abusive_reports · 68 questions
+-- 10 types · 12 shops · 198 categorías · 14 manufacturers · 10 tags · 1200 productos · 5 usuarios · 4 permisos · 1 become_seller · 3 shop_staff · 19 faqs · 5 terms_and_conditions · 5 refund_policies · 8 refund_reasons · 1 taxes · 1 shippings · 8 attributes · 27 attribute_values · 3 store_notices · 10 coupons · 10 wishlists · 85 reviews · 3 abusive_reports · 68 questions · 2 conversations · 5 messages
 -- =====================================================================
 
 BEGIN;
@@ -2142,6 +2142,24 @@ Is this a Fresh product?', 'yes these are fresh products.', 0, 0, '2022-03-17T13
 ON CONFLICT (id) DO NOTHING;
 
 -- ────────────────────────────────────────────────────────────────────
+-- conversations — 2 · messages — 5
+-- ────────────────────────────────────────────────────────────────────
+-- Ids del mock convertidos a número. shop_id sale de conversations.json, no
+-- del `conversation` embebido en messages.json (que dice otra tienda).
+-- Fechas sin zona del mock fijadas en UTC (ver fechaUtc).
+INSERT INTO conversations (id, user_id, shop_id, created_at, updated_at) VALUES
+  (1, 3, 7, '2021-03-08T10:26:13.000000Z', '2023-03-11T03:17:23.000Z'),
+  (6, 3, 2, '2023-03-21T15:00:08Z', '2023-03-30T02:59:20Z')
+ON CONFLICT (id) DO NOTHING;
+INSERT INTO messages (id, conversation_id, user_id, body, created_at, updated_at) VALUES
+  (5, 1, 3, 'New test', '2023-03-21T03:18:35.000000Z', '2023-03-21T03:18:35.000000Z'),
+  (4, 1, 1, 'Hi', '2023-03-21T03:16:41.000000Z', '2023-03-21T03:16:41.000000Z'),
+  (3, 1, 3, 'Hi', '2023-03-21T03:15:31.000000Z', '2023-03-21T03:15:31.000000Z'),
+  (2, 1, 3, 'hello', '2023-03-20T07:08:52.000000Z', '2023-03-20T07:08:52.000000Z'),
+  (1, 1, 3, 'hi', '2023-03-20T07:08:47.000000Z', '2023-03-20T07:08:47.000000Z')
+ON CONFLICT (id) DO NOTHING;
+
+-- ────────────────────────────────────────────────────────────────────
 -- category_product — deliberadamente VACÍA
 -- ────────────────────────────────────────────────────────────────────
 -- Ninguno de los 1200 productos del mock trae la relación con
@@ -2179,5 +2197,7 @@ SELECT setval('coupons_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM coupo
 SELECT setval('reviews_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM reviews), 1));
 SELECT setval('abusive_reports_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM abusive_reports), 1));
 SELECT setval('questions_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM questions), 1));
+SELECT setval('conversations_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM conversations), 1));
+SELECT setval('messages_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM messages), 1));
 
 COMMIT;

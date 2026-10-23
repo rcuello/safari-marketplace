@@ -34,9 +34,11 @@ export type {
   AttributeValueRecord,
   BecomeSellerRecord,
   CategoryRecord,
+  ConversationRecord,
   CouponRecord,
   FaqRecord,
   ManufacturerRecord,
+  MessageRecord,
   PermissionRecord,
   ProfileRecord,
   QuestionRecord,
@@ -210,6 +212,21 @@ export {
   listReviews,
   updateReview,
 } from './src/repositories/reviews.repository';
+export type {
+  ConversationDetailRecord,
+  ConversationSortField,
+  ConversationViewer,
+  ListConversationsInput,
+  MessageDetailRecord,
+} from './src/repositories/conversations.repository';
+export {
+  CONVERSATION_SORTABLE,
+  createMessage,
+  findConversationById,
+  findOrCreateConversation,
+  listConversations,
+  listMessages,
+} from './src/repositories/conversations.repository';
 export type {
   CreateQuestionInput,
   ListQuestionsInput,

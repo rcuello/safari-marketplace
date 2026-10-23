@@ -23,9 +23,11 @@ import type {
   AttributeValue,
   BecomeSeller,
   Category,
+  Conversation,
   Coupon,
   Faq,
   Manufacturer,
+  Message,
   Permission,
   Prisma,
   Profile,
@@ -340,6 +342,25 @@ export interface QuestionRecord {
   answer: string | null;
   positiveFeedbacksCount: number;
   negativeFeedbacksCount: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/** Conversación usuario ↔ tienda (US-56). Una por par (userId, shopId). */
+export interface ConversationRecord {
+  id: number;
+  userId: number;
+  shopId: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/** Mensaje de una conversación (US-56). */
+export interface MessageRecord {
+  id: number;
+  conversationId: number;
+  userId: number;
+  body: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -774,6 +795,27 @@ export function _toQuestionRecord(row: Question): QuestionRecord {
     answer: row.answer,
     positiveFeedbacksCount: row.positiveFeedbacksCount,
     negativeFeedbacksCount: row.negativeFeedbacksCount,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+export function _toConversationRecord(row: Conversation): ConversationRecord {
+  return {
+    id: _id(row.id),
+    userId: _id(row.userId),
+    shopId: _id(row.shopId),
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+export function _toMessageRecord(row: Message): MessageRecord {
+  return {
+    id: _id(row.id),
+    conversationId: _id(row.conversationId),
+    userId: _id(row.userId),
+    body: row.body,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
