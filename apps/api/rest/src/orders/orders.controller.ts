@@ -10,7 +10,10 @@ import {
   Put,
   Query,
 } from '@nestjs/common';
-import { CreateOrderStatusDto } from './dto/create-order-status.dto';
+import {
+  CreateOrderStatusDto,
+  UpdateOrderStatusDto,
+} from './dto/create-order-status.dto';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { GetOrderFilesDto, OrderFilesPaginator } from './dto/get-downloads.dto';
 import { GetOrderStatusesDto } from './dto/get-order-statuses.dto';
@@ -19,6 +22,7 @@ import { OrderPaymentDto } from './dto/order-payment.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { CheckoutVerificationDto } from './dto/verify-checkout.dto';
 import { Order } from './entities/order.entity';
+import { OrderStatusesService } from './order-statuses.service';
 import { OrdersService } from './orders.service';
 import { Public } from 'src/auth/decorators/public.decorator';
 import {
@@ -111,36 +115,39 @@ export class OrdersController {
 
 @Controller('order-status')
 export class OrderStatusController {
-  constructor(private readonly ordersService: OrdersService) {}
+  constructor(private readonly orderStatusesService: OrderStatusesService) {}
 
   @Permissions(...ADMIN_ONLY)
   @Post()
   create(@Body() createOrderStatusDto: CreateOrderStatusDto) {
-    return this.ordersService.createOrderStatus(createOrderStatusDto);
+    return this.orderStatusesService.create(createOrderStatusDto);
   }
 
   @Public()
   @Get()
   findAll(@Query() query: GetOrderStatusesDto) {
-    return this.ordersService.getOrderStatuses(query);
+    return this.orderStatusesService.findAll(query);
   }
 
   @Public()
   @Get(':param')
-  findOne(@Param('param') param: string, @Query('language') language: string) {
-    return this.ordersService.getOrderStatus(param, language);
+  findOne(@Param('param') param: string) {
+    return this.orderStatusesService.findOne(param);
   }
 
   @Permissions(...ADMIN_ONLY)
   @Put(':id')
-  update(@Param('id') id: string, @Body() updateOrderDto: UpdateOrderDto) {
-    return this.ordersService.update(+id, updateOrderDto);
+  update(
+    @Param('id') id: string,
+    @Body() updateOrderStatusDto: UpdateOrderStatusDto,
+  ) {
+    return this.orderStatusesService.update(+id, updateOrderStatusDto);
   }
 
   @Permissions(...ADMIN_ONLY)
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.ordersService.remove(+id);
+    return this.orderStatusesService.remove(+id);
   }
 }
 

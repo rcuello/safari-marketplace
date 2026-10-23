@@ -29,8 +29,10 @@
 //     check (∈ Review|Question), abusive_reports_message_check
 //     (length > 0), questions_question_check (length > 0),
 //     questions_positive_/negative_feedbacks_count_check (≥ 0),
-//     messages_body_check (length(btrim(body)) > 0). Los repositorios los validan
-//     antes de escribir y traducen la violación a errores de dominio.
+//     messages_body_check (length(btrim(body)) > 0), order_statuses_serial_
+//     check (serial > 0), order_statuses_color_check (#rrggbb). Los
+//     repositorios los validan antes de escribir y traducen la violación a
+//     errores de dominio.
 //   · El índice de expresión products_nombre_trgm_idx
 //     (gin (lower(name) gin_trgm_ops)) que acelera la búsqueda por
 //     nombre con `contains/insensitive`. Igual questions_question_trgm_idx
@@ -767,4 +769,21 @@ model Message {
   @@index([conversationId, createdAt(sort: Desc), id(sort: Desc)], map: "messages_conversacion_idx")
   @@index([userId], map: "messages_user_idx")
   @@map("messages")
+}
+
+// =====================================================================
+// Catálogo de estados de pedido (US-57, Épico 46)
+// =====================================================================
+
+model OrderStatus {
+  id        BigInt   @id @default(autoincrement())
+  name      String
+  slug      String   @unique
+  serial    Int      @unique
+  color     String
+  language  String   @default("es")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  @@map("order_statuses")
 }

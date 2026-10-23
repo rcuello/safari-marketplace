@@ -1,14 +1,12 @@
 import exportOrderJson from '@db/order-export.json';
 import orderFilesJson from '@db/order-files.json';
 import orderInvoiceJson from '@db/order-invoice.json';
-import orderStatusJson from '@db/order-statuses.json';
 import ordersJson from '@db/orders.json';
 import paymentGatewayJson from '@db/payment-gateway.json';
 import paymentIntentJson from '@db/payment-intent.json';
 import setting from '@db/settings.json';
 import { Injectable } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
-import Fuse from 'fuse.js';
 import { AuthService } from 'src/auth/auth.service';
 import { paginate } from 'src/common/pagination/paginate';
 import { PaymentIntent } from 'src/payment-intent/entries/payment-intent.entity';
@@ -16,23 +14,14 @@ import { PaymentGateWay } from 'src/payment-method/entities/payment-gateway.enti
 import { PaypalPaymentService } from 'src/payment/paypal-payment.service';
 import { StripePaymentService } from 'src/payment/stripe-payment.service';
 import { Setting } from 'src/settings/entities/setting.entity';
-import {
-  CreateOrderStatusDto,
-  UpdateOrderStatusDto,
-} from './dto/create-order-status.dto';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { GetOrderFilesDto } from './dto/get-downloads.dto';
-import {
-  GetOrderStatusesDto,
-  OrderStatusPaginator,
-} from './dto/get-order-statuses.dto';
 import { GetOrdersDto, OrderPaginator } from './dto/get-orders.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import {
   CheckoutVerificationDto,
   VerifiedCheckoutData,
 } from './dto/verify-checkout.dto';
-import { OrderStatus } from './entities/order-status.entity';
 import {
   Order,
   OrderFiles,
@@ -44,21 +33,12 @@ import {
 const orders = plainToClass(Order, ordersJson);
 const paymentIntents = plainToClass(PaymentIntent, paymentIntentJson);
 const paymentGateways = plainToClass(PaymentGateWay, paymentGatewayJson);
-const orderStatus = plainToClass(OrderStatus, orderStatusJson);
-
-const options = {
-  keys: ['name'],
-  threshold: 0.3,
-};
-const fuse = new Fuse(orderStatus, options);
-
 const orderFiles = plainToClass(OrderFiles, orderFilesJson);
 const settings = plainToClass(Setting, setting);
 
 @Injectable()
 export class OrdersService {
   private orders: Order[] = orders;
-  private orderStatus: OrderStatus[] = orderStatus;
   private orderFiles: OrderFiles[] = orderFiles;
   private setting: Setting = { ...settings };
 
@@ -154,55 +134,6 @@ export class OrdersService {
     }
   }
 
-  getOrderStatuses({
-    limit,
-    page,
-    search,
-    orderBy,
-  }: GetOrderStatusesDto): OrderStatusPaginator {
-    if (!page) page = 1;
-    if (!limit) limit = 30;
-    const startIndex = (page - 1) * limit;
-    const endIndex = page * limit;
-    let data: OrderStatus[] = this.orderStatus;
-
-    // if (shop_id) {
-    //   data = this.orders?.filter((p) => p?.shop?.id === shop_id);
-    // }
-
-    if (search) {
-      const parseSearchParams = search.split(';');
-      const searchText: any = [];
-      for (const searchParam of parseSearchParams) {
-        const [key, value] = searchParam.split(':');
-        // TODO: Temp Solution
-        if (key !== 'slug') {
-          searchText.push({
-            [key]: value,
-          });
-        }
-      }
-
-      data = fuse
-        .search({
-          $and: searchText,
-        })
-        ?.map(({ item }) => item);
-    }
-
-    const results = data.slice(startIndex, endIndex);
-    const url = `/order-status?search=${search}&limit=${limit}`;
-
-    return {
-      data: results,
-      ...paginate(data.length, page, limit, results.length, url),
-    };
-  }
-
-  getOrderStatus(param: string, language: string) {
-    return this.orderStatus.find((p) => p.slug === param);
-  }
-
   update(id: number, updateOrderInput: UpdateOrderDto) {
     return this.orders[0];
   }
@@ -219,14 +150,6 @@ export class OrdersService {
       wallet_currency: 0,
       wallet_amount: 0,
     };
-  }
-
-  createOrderStatus(createOrderStatusInput: CreateOrderStatusDto) {
-    return this.orderStatus[0];
-  }
-
-  updateOrderStatus(updateOrderStatusInput: UpdateOrderStatusDto) {
-    return this.orderStatus[0];
   }
 
   async getOrderFileItems({ page, limit }: GetOrderFilesDto) {

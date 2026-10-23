@@ -39,6 +39,7 @@ export type {
   FaqRecord,
   ManufacturerRecord,
   MessageRecord,
+  OrderStatusRecord,
   PermissionRecord,
   ProfileRecord,
   QuestionRecord,
@@ -255,6 +256,20 @@ export {
   listAbusiveReportsByUser,
   updateAbusiveReport,
 } from './src/repositories/abusive-reports.repository';
+export type {
+  CreateOrderStatusInput,
+  ListOrderStatusesInput,
+  OrderStatusSortField,
+  UpdateOrderStatusInput,
+} from './src/repositories/order-statuses.repository';
+export {
+  ORDER_STATUS_SORTABLE,
+  createOrderStatus,
+  deleteOrderStatus,
+  findOrderStatusBySlug,
+  listOrderStatuses,
+  updateOrderStatus,
+} from './src/repositories/order-statuses.repository';
 export type { ListWishlistProductsInput } from './src/repositories/wishlists.repository';
 export {
   addToWishlist,

@@ -8,6 +8,7 @@ import {
   OrdersController,
   OrderStatusController,
 } from './orders.controller';
+import { OrderStatusesService } from './order-statuses.service';
 import { OrdersService } from './orders.service';
 
 @Module({
@@ -19,7 +20,7 @@ import { OrdersService } from './orders.service';
     OrderExportController,
     DownloadInvoiceController,
   ],
-  providers: [OrdersService],
+  providers: [OrdersService, OrderStatusesService],
   exports: [OrdersService],
 })
 export class OrdersModule {}

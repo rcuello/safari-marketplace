@@ -7,7 +7,7 @@
 
 **Épico:** [Épico 46](./README.md)
 **Fecha:** 2026-10-20
-**Status:** Listo para ejecución
+**Status:** Implementada (2026-10-23, rama `us-57-order-statuses`)
 **Depende de:** US-56. Sin dependencia de datos; el orden lo impone R-2 del
 épico (archivos compartidos).
 **LOC est.:** ~900
@@ -260,18 +260,18 @@ Feature: Catalogo de estados de pedido desde Postgres
 
 Se sigue el Protocolo del [README del épico](./README.md#protocolo-de-ejecución-de-una-us-de-este-épico).
 
-- [ ] Línea base pegada, incluida la prueba del bug de cableado (el `PUT`
+- [x] Línea base pegada, incluida la prueba del bug de cableado (el `PUT`
   devuelve claves de orden).
-- [ ] Generador con el conteo nuevo; `just db-reset` limpio; `psql` de CA-1.
-- [ ] `prisma validate` + `migrate diff --exit-code` → `EXIT=0`;
+- [x] Generador con el conteo nuevo; `just db-reset` limpio; `psql` de CA-1.
+- [x] `prisma validate` + `migrate diff --exit-code` → `EXIT=0`;
   `just db-build` limpio.
-- [ ] `just db-check` y `npx jest` en verde con los recuentos nuevos.
-- [ ] `just build-api` y `just verify` en verde (`/api/settings` 5503 B).
-- [ ] Deep-equal de CA-2 **sin exclusiones**, más los bytes antes y
+- [x] `just db-check` y `npx jest` en verde con los recuentos nuevos.
+- [x] `just build-api` y `just verify` en verde (`/api/settings` 5503 B).
+- [x] Deep-equal de CA-2 **sin exclusiones**, más los bytes antes y
   después.
-- [ ] `curl` de CA-3 con el status exacto; la fila de prueba queda borrada.
-- [ ] `grep` de CA-4.
-- [ ] Status actualizado y fila marcada en el épico.
+- [x] `curl` de CA-3 con el status exacto; la fila de prueba queda borrada.
+- [x] `grep` de CA-4.
+- [x] Status actualizado y fila marcada en el épico.
 
 ## Notas para el agente ejecutor
 
@@ -286,3 +286,119 @@ Se sigue el Protocolo del [README del épico](./README.md#protocolo-de-ejecució
 - Si el deep-equal de CA-2 falla por los timestamps, hay que comprobar que el
   generador insertó los del mock (D-3) antes de declarar una divergencia:
   esta US no debería tener ninguna en la lectura.
+
+## Evidencia (2026-10-23)
+
+**Línea base**, con la API recién arrancada sobre `main` (`87d5b1e`):
+
+```
+ 2542 lista.json         (10 filas; ids por serial 1..6, 8, 9, 10, 7:11; per_page 30 numérico)
+ 1460 lista-p2.json      (ids 6, 8, 9, 10, 7; per_page "5" string)
+  202 delivered.json
+  971 search-order.json  (search=name:Order → Order Received | Order Processing | Order Dispatched)
+GET /order-status/no-existe: 200, 0 B
+PUT /order-status/1 → [ 'id', 'tracking_number', 'customer_id' ]   ← es una ORDEN
+DELETE /order-status/1 → "This action removes a #1 order" 200
+GET /orders (admin): 200, total 20, data 15
+```
+
+**Seed.** `node db/generate-seed.mjs` termina con `… · 2 conversations · 5
+messages · 10 order_statuses`. El generador valida slugs y seriales únicos,
+el serial positivo y el color `#rrggbb` antes de emitir.
+
+**CA-1** (`just db-reset` + `psql`):
+
+```
+ order_statuses = 10
+ string_agg (id:serial ORDER BY serial) = 1:1 2:2 3:3 4:4 5:5 6:6 8:8 9:9 10:10 7:11
+ id 1 | created 2021-03-08 21:33:52 | updated 2021-03-08 21:34:04   (UTC)
+ id 7 | created 2021-03-13 15:04:26 | updated 2021-03-13 15:09:03
+ conversations 2 · messages 5 · coupons 10 · reviews 85 · questions 68 · products 1200 · users 5
+
+INSERT ... color 'rojo'
+ERROR:  new row for relation "order_statuses" violates check constraint "order_statuses_color_check"
+INSERT ... serial 0
+ERROR:  new row for relation "order_statuses" violates check constraint "order_statuses_serial_check"
+INSERT ... serial 1
+ERROR:  duplicate key value violates unique constraint "order_statuses_serial_key"
+```
+
+```
+$ npx prisma validate
+The schema at prisma\schema.prisma is valid 🚀
+$ npx prisma migrate diff --from-config-datasource --to-schema ./prisma/schema.prisma --exit-code
+No difference detected.
+EXIT=0
+```
+
+**CA-2**: deep-equal **sin exclusiones**, medido tras el `db-reset` final.
+
+| Respuesta | Deep-equal | Bytes antes → después |
+|---|---|---|
+| `GET /order-status` | IGUAL | 2542 → 2542 (idénticos) |
+| `GET /order-status?limit=5&page=2` | IGUAL | 1460 → 1460 (idénticos) |
+| `GET /order-status/delivered` | IGUAL | 202 → 202 (idénticos) |
+| `GET /order-status?search=name:Order` (V-4) | IGUAL | 971 → 971 (idénticos) |
+
+V-4 queda declarada, pero con el seed no se nota: Fuse e `ILIKE` devuelven
+los mismos tres estados para `name:Order`.
+
+**CA-3** (token de admin):
+
+| Llamada | Status | Resultado |
+|---|---|---|
+| `GET /order-status/no-existe` (V-3) | 404 | `No existe un estado de pedido con slug \`no-existe\`.` |
+| `POST {"name":"CA-3 Estado","color":"#112233","serial":12,"language":"en"}` | 201 | id 15, `slug: "ca-3-estado"`, 9 claves |
+| `PUT /order-status/15 {"name":"CA-3 Editado"}` (V-1) | 200 | `slug: "ca-3-editado"`, `updated_at` 13:46:36.818Z > `created_at` 13:46:34.712Z |
+| `GET /order-status/ca-3-editado` · `/ca-3-estado` | 200 · 404 | el slug viejo deja de resolver |
+| `DELETE /order-status/15` (V-2) | 200 | snapshot del estado borrado |
+| `GET /order-status/ca-3-editado` tras borrar | 404 | |
+| `POST` con `serial: 1` | 409 | ver nota sobre el mensaje |
+| `POST` con `color: "rojo"` | 400 | `` `order_statuses.color` no admite `rojo` — CHECK order_statuses_color_check. `` |
+| `POST` sin token | 401 | `Token de autenticación ausente o inválido.` |
+| `PUT`/`DELETE` `999`, `abc`, `1e21` | 404 / 404 | ver nota sobre el id fuera de rango |
+| `PUT /order-status/1 {"color":"#23b848"}` | 200 | claves de estado, `tracking_number` ausente |
+
+El id 15 sale de la secuencia, que habían avanzado los inserts rechazados de
+CA-1 y el integration test. La fila de prueba quedó borrada, y el `db-reset`
+final devolvió la secuencia y el `updated_at` de la fila 1 al sembrado:
+`count 10`, `max(updated_at) 2021-03-13 15:09:03+00`.
+
+**CA-4:**
+
+```
+$ grep -rn "order-statuses.json" apps/api/rest/src
+(sin salida, exit 1)
+GET /orders (admin): status 200, total 20, data 15   ← igual que la línea base
+
+$ just db-check
+ Test Files  27 passed (27)
+      Tests  361 passed (361)
+$ cd apps/api/rest && npx jest
+Test Suites: 29 passed, 29 total
+Tests:       473 passed, 473 total
+$ npx tsc --noEmit -p tsconfig.json   → exit 0
+$ just build-api                      → Done in 69.05s
+$ just verify
+OK   API    :9001/api/settings  200  5503B  816ms
+OK   Shop   :3003/en  200  190788B  1417ms  cards:30
+OK   Admin  :3002/en/login  200  72821B  164ms  cards:1
+```
+
+Antes de esta US eran 26 archivos / 354 tests en `db-check` y 28 suites / 462
+tests en jest: +1 integration test (7 casos) y +1 spec (11 casos).
+
+**Notas frente al texto de la US:**
+
+- **Slug al renombrar.** La US pedía regenerarlo «como en `tags`», pero
+  `updateTag` (y cualquier otro `update*` del paquete) lo trata como
+  inmutable. El dueño eligió lo que dice CA-3: el slug se recalcula sin
+  contar la propia fila, así que renombrar al mismo nombre lo conserva.
+- **Id fuera de rango: 404, no 400.** La tabla de rutas pedía 400 «por la
+  guarda de US-31». Esa guarda da **404** para un id de ruta inválido (el
+  400 es para FK del cuerpo), y así responden `tags` y `store-notices`. Se
+  siguió el precedente.
+- **Mensaje del 409 por serial repetido.** Dice «con el slug \`slug\`»:
+  Prisma con `adapter-pg` no informa `meta.target`, y
+  `translateCatalogWriteError` cae a `slug` por defecto. El status es el
+  correcto; el texto es el caso que recoge US-67.

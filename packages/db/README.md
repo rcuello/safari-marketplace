@@ -124,7 +124,8 @@ No usar `prisma migrate dev` ni `prisma db push` contra esta base.
   `reviews_*_feedbacks_count_check`, `abusive_reports_model_type_check` y
   `abusive_reports_message_check`, y desde US-55 `questions_question_check` y
   los dos `questions_*_feedbacks_count_check`, y desde US-56
-  `messages_body_check`) no existen
+  `messages_body_check`, y desde US-57 `order_statuses_serial_check` y
+  `order_statuses_color_check`) no existen
   para Prisma. Los repositorios los validan antes de escribir (tipos +
   guard de `salePrice < price`) y traducen la violación que llegue de
   Postgres a errores de dominio: `InvalidSalePriceError`,
@@ -389,6 +390,25 @@ el usuario, la tienda (`ShopRecord`) y `latestMessage` (o `null`), y
   un `$transaction`. Un cuerpo vacío da `InvalidFieldValueError`.
 
 `unseen` no vive aquí: depende de quién consulta y lo calcula la API.
+
+### Estados de pedido (US-57, Épico 46) — `order-statuses.repository.ts`
+
+`OrderStatusRecord` es la fila plana (sin `translated_languages`, que emite
+la API).
+
+- **`listOrderStatuses`**: paginado (`limit` 30), búsqueda parcial por
+  `name` (case-insensitive) y `orderBy` en `ORDER_STATUS_SORTABLE`
+  (`name`, `serial`, `createdAt`, `updatedAt`); sin `orderBy`, `serial
+  ASC`. Desempate por `id ASC`.
+- **`findOrderStatusBySlug`**: `null` si no existe.
+- **`createOrderStatus`**: slug por `generateSlug(name)`. Serial o slug
+  repetido dan `SlugConflictError`; un serial no entero positivo o un
+  color que no sea `#rrggbb` dan `InvalidFieldValueError`.
+- **`updateOrderStatus`**: si llega `name`, **recalcula el slug** sin contar
+  la propia fila (renombrar al mismo nombre lo conserva). Fija `updatedAt:
+  now()`. Inexistente: `RecordNotFoundError`.
+- **`deleteOrderStatus`**: devuelve el snapshot previo. Sin dependientes que
+  contar: `orders` no tiene FK hacia esta tabla.
 
 ### Identidad (US-21, Épico 19) — `users.repository.ts`
 

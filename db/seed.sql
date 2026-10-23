@@ -9,7 +9,7 @@
 -- ya existen, y creando en tiempo de ejecución únicamente lo que es suyo
 -- (los retailers como shops, las marcas como manufacturers).
 --
--- 10 types · 12 shops · 198 categorías · 14 manufacturers · 10 tags · 1200 productos · 5 usuarios · 4 permisos · 1 become_seller · 3 shop_staff · 19 faqs · 5 terms_and_conditions · 5 refund_policies · 8 refund_reasons · 1 taxes · 1 shippings · 8 attributes · 27 attribute_values · 3 store_notices · 10 coupons · 10 wishlists · 85 reviews · 3 abusive_reports · 68 questions · 2 conversations · 5 messages
+-- 10 types · 12 shops · 198 categorías · 14 manufacturers · 10 tags · 1200 productos · 5 usuarios · 4 permisos · 1 become_seller · 3 shop_staff · 19 faqs · 5 terms_and_conditions · 5 refund_policies · 8 refund_reasons · 1 taxes · 1 shippings · 8 attributes · 27 attribute_values · 3 store_notices · 10 coupons · 10 wishlists · 85 reviews · 3 abusive_reports · 68 questions · 2 conversations · 5 messages · 10 order_statuses
 -- =====================================================================
 
 BEGIN;
@@ -2160,6 +2160,23 @@ INSERT INTO messages (id, conversation_id, user_id, body, created_at, updated_at
 ON CONFLICT (id) DO NOTHING;
 
 -- ────────────────────────────────────────────────────────────────────
+-- order_statuses — 10
+-- ────────────────────────────────────────────────────────────────────
+-- Ids, seriales y fechas del mock. translated_languages no es columna.
+INSERT INTO order_statuses (id, name, slug, serial, color, language, created_at, updated_at) VALUES
+  (1, 'Order Received', 'order-received', 1, '#23b848', 'en', '2021-03-08T21:33:52.000000Z', '2021-03-08T21:34:04.000000Z'),
+  (2, 'Order Processing', 'order-processing', 2, '#d87b64', 'en', '2021-03-13T15:01:42.000000Z', '2021-03-13T15:01:42.000000Z'),
+  (3, 'Ready To Dispatch', 'ready-to-dispatch', 3, '#d87b64', 'en', '2021-03-13T15:02:15.000000Z', '2021-03-13T15:02:15.000000Z'),
+  (4, 'Order Dispatched', 'order-dispatched', 4, '#d87b64', 'en', '2021-03-13T15:02:49.000000Z', '2021-03-13T15:02:49.000000Z'),
+  (5, 'At Local Facility', 'at-local-facility', 5, '#d87b64', 'en', '2021-03-13T15:03:15.000000Z', '2021-03-13T15:03:15.000000Z'),
+  (6, 'Out For Delivery', 'out-for-delivery', 6, '#d87b64', 'en', '2021-03-13T15:04:13.000000Z', '2021-03-13T15:04:13.000000Z'),
+  (8, 'Failed to collect payment', 'failed-to-collect-payment', 8, '#d87b64', 'en', '2021-03-13T15:04:57.000000Z', '2021-03-13T15:04:57.000000Z'),
+  (9, 'Failed to contact Consignee', 'failed-to-contact-consignee', 9, '#d87b64', 'en', '2021-03-13T15:05:18.000000Z', '2021-03-13T15:05:18.000000Z'),
+  (10, 'Shipment Refused by Consignee', 'shipment-refused-by-consignee', 10, '#d87b64', 'en', '2021-03-13T15:05:35.000000Z', '2021-03-13T15:05:35.000000Z'),
+  (7, 'Delivered', 'delivered', 11, '#d87b64', 'en', '2021-03-13T15:04:26.000000Z', '2021-03-13T15:09:03.000000Z')
+ON CONFLICT (id) DO NOTHING;
+
+-- ────────────────────────────────────────────────────────────────────
 -- category_product — deliberadamente VACÍA
 -- ────────────────────────────────────────────────────────────────────
 -- Ninguno de los 1200 productos del mock trae la relación con
@@ -2199,5 +2216,6 @@ SELECT setval('abusive_reports_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FR
 SELECT setval('questions_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM questions), 1));
 SELECT setval('conversations_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM conversations), 1));
 SELECT setval('messages_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM messages), 1));
+SELECT setval('order_statuses_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM order_statuses), 1));
 
 COMMIT;

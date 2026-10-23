@@ -28,6 +28,7 @@ import type {
   Faq,
   Manufacturer,
   Message,
+  OrderStatus,
   Permission,
   Prisma,
   Profile,
@@ -361,6 +362,21 @@ export interface MessageRecord {
   conversationId: number;
   userId: number;
   body: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/**
+ * Estado de pedido (US-57). `serial` es la posición en el flujo (UNIQUE).
+ * `translated_languages` no es columna: lo emite la API.
+ */
+export interface OrderStatusRecord {
+  id: number;
+  name: string;
+  slug: string;
+  serial: number;
+  color: string;
+  language: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -816,6 +832,19 @@ export function _toMessageRecord(row: Message): MessageRecord {
     conversationId: _id(row.conversationId),
     userId: _id(row.userId),
     body: row.body,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+export function _toOrderStatusRecord(row: OrderStatus): OrderStatusRecord {
+  return {
+    id: _id(row.id),
+    name: row.name,
+    slug: row.slug,
+    serial: row.serial,
+    color: row.color,
+    language: row.language,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };

@@ -48,6 +48,7 @@ const abusiveReports = leer('reports');
 const questions = leer('questions');
 const conversations = leer('conversations');
 const messages = leer('messages');
+const orderStatuses = leer('order-statuses');
 
 // ── Literales SQL ────────────────────────────────────────────────────────
 const txt = (v) =>
@@ -488,6 +489,21 @@ for (const m of mensajes) {
   if (!String(m.body ?? '').trim()) problemas.push(`messages ${m.id}: body vacío`);
 }
 
+// ── Estados de pedido (US-57) ──────────────────────────────────────────
+// Ids y fechas del mock (D-3). Slug y serial son UNIQUE en el esquema y el
+// color tiene una CHECK: se validan aquí para fallar antes de emitir.
+const COLOR_HEX = /^#[0-9a-fA-F]{6}$/;
+if (new Set(orderStatuses.map((o) => o.slug)).size !== orderStatuses.length)
+  problemas.push('order_statuses: slug duplicado');
+if (new Set(orderStatuses.map((o) => o.serial)).size !== orderStatuses.length)
+  problemas.push('order_statuses: serial duplicado');
+for (const o of orderStatuses) {
+  if (!Number.isSafeInteger(o.serial) || o.serial <= 0)
+    problemas.push(`order_statuses ${o.id}: serial '${o.serial}' fuera del CHECK`);
+  if (!COLOR_HEX.test(o.color ?? '')) problemas.push(`order_statuses ${o.id}: color '${o.color}' fuera del CHECK`);
+  if (!o.created_at || !o.updated_at) problemas.push(`order_statuses ${o.id}: sin created_at/updated_at`);
+}
+
 if (problemas.length) {
   console.error(`\nEl mock viola ${problemas.length} restriccion(es) del esquema:`);
   problemas.slice(0, 20).forEach((p) => console.error('  - ' + p));
@@ -521,7 +537,8 @@ L.push(
     `${attributes.length} attributes · ${valoresAtributo.length} attribute_values · ` +
     `${avisos.length} store_notices · ${coupons.length} coupons · ${wishlists.length} wishlists · ` +
     `${resenas.length} reviews · ${reportes.length} abusive_reports · ${preguntas.length} questions · ` +
-    `${conversaciones.length} conversations · ${mensajes.length} messages`,
+    `${conversaciones.length} conversations · ${mensajes.length} messages · ` +
+    `${orderStatuses.length} order_statuses`,
   '-- =====================================================================',
   '',
   'BEGIN;'
@@ -1082,6 +1099,22 @@ L.push(
     .join(',\n') + '\nON CONFLICT (id) DO NOTHING;'
 );
 
+// order_statuses (US-57; sin FK) --------------------------------------------
+bloque(`order_statuses — ${orderStatuses.length}`);
+L.push(
+  '-- Ids, seriales y fechas del mock. translated_languages no es columna.',
+  'INSERT INTO order_statuses (id, name, slug, serial, color, language, created_at, updated_at) VALUES'
+);
+L.push(
+  orderStatuses
+    .map(
+      (o) =>
+        `  (${o.id}, ${txt(o.name)}, ${txt(o.slug)}, ${num(o.serial)}, ${txt(o.color)}, ${txt(o.language)}, ` +
+        `${ts(o.created_at)}, ${ts(o.updated_at)})`
+    )
+    .join(',\n') + '\nON CONFLICT (id) DO NOTHING;'
+);
+
 // category_product -------------------------------------------------------
 bloque('category_product — deliberadamente VACÍA');
 L.push(
@@ -1101,7 +1134,7 @@ L.push(
   '-- mock, así que hay que adelantar las secuencias o el primer INSERT nuevo',
   '-- chocaría con una clave existente.'
 );
-for (const t of ['types', 'users', 'permissions', 'shops', 'categories', 'manufacturers', 'tags', 'products', 'faqs', 'terms_and_conditions', 'refund_policies', 'refund_reasons', 'taxes', 'shippings', 'attributes', 'attribute_values', 'store_notices', 'coupons', 'reviews', 'abusive_reports', 'questions', 'conversations', 'messages']) {
+for (const t of ['types', 'users', 'permissions', 'shops', 'categories', 'manufacturers', 'tags', 'products', 'faqs', 'terms_and_conditions', 'refund_policies', 'refund_reasons', 'taxes', 'shippings', 'attributes', 'attribute_values', 'store_notices', 'coupons', 'reviews', 'abusive_reports', 'questions', 'conversations', 'messages', 'order_statuses']) {
   L.push(`SELECT setval('${t}_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM ${t}), 1));`);
 }
 
@@ -1123,5 +1156,6 @@ console.log(
     `${attributes.length} attributes · ${valoresAtributo.length} attribute_values · ` +
     `${avisos.length} store_notices · ${coupons.length} coupons · ${wishlists.length} wishlists · ` +
     `${resenas.length} reviews · ${reportes.length} abusive_reports · ${preguntas.length} questions · ` +
-    `${conversaciones.length} conversations · ${mensajes.length} messages`
+    `${conversaciones.length} conversations · ${mensajes.length} messages · ` +
+    `${orderStatuses.length} order_statuses`
 );

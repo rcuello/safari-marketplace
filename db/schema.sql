@@ -911,6 +911,31 @@ CREATE TABLE IF NOT EXISTS messages (
 
 
 -- =====================================================================
+-- Catálogo de estados de pedido (US-57, Épico 46) — order_statuses.
+--
+-- Sembrado desde order-statuses.json (10 filas) con sus ids y sus fechas.
+-- `serial` es la posición en el flujo: única y positiva, y es el orden de
+-- la lista (el 7 «Delivered» lleva el serial 11; el 7 no existe).
+--
+-- NO es el vocabulario de orders.order_status: las órdenes usan el enum
+-- OrderStatusType (order-pending, order-completed…) y este catálogo usa
+-- otros slugs. Por eso no hay FK desde orders, y borrar un estado no
+-- afecta a ninguna orden. translated_languages no es columna: la API lo
+-- emite como constante. Sin trigger (reloj único, ver abajo).
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS order_statuses (
+    id          bigserial    PRIMARY KEY,
+    name        text         NOT NULL,
+    slug        text         NOT NULL UNIQUE,
+    serial      integer      NOT NULL UNIQUE CHECK (serial > 0),
+    color       text         NOT NULL CHECK (color ~ '^#[0-9a-fA-F]{6}$'),
+    language    text         NOT NULL DEFAULT 'es',
+    created_at  timestamptz  NOT NULL DEFAULT now(),
+    updated_at  timestamptz  NOT NULL DEFAULT now()
+);
+
+
+-- =====================================================================
 -- Índices.
 --
 -- No son decorativos: cada uno responde a un filtro que el frontend

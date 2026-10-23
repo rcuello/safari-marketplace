@@ -28,6 +28,7 @@ SQL inaplicable.
 · 5 refund_policies · 8 refund_reasons · 1 taxes · 1 shippings
 · 8 attributes · 27 attribute_values · 3 store_notices (6 destinatarios,
 6 lecturas) · 10 coupons · 10 wishlists · 85 reviews · 3 abusive_reports · 68 questions · 2 conversations · 5 messages
+· 10 order_statuses
 ```
 
 **Los ids del mock se preservan** para no romper las relaciones, y al final se
@@ -357,6 +358,22 @@ y sus mensajes.
   `20:00:08Z`. La diferencia son esas 5 horas.
 - **Escribir un mensaje** sube `conversations.updated_at` en la misma
   transacción, para que la conversación suba al ordenar por `updated_at`.
+
+## Catálogo de estados de pedido: `order_statuses`
+
+Desde US-57. 10 filas con los ids, los seriales y las fechas del mock.
+
+- **`serial`** es la posición en el flujo: `UNIQUE` y `CHECK (serial >
+  0)`. La lista se ordena por él, no por `id`: el 7 «Delivered» lleva el
+  serial 11 y va al final (el serial 7 no existe).
+- **`slug`** es `UNIQUE` y se regenera al renombrar (a diferencia de
+  `tags`, donde es inmutable).
+- **`color`** con `CHECK (color ~ '^#[0-9a-fA-F]{6}$')`.
+- **No es el vocabulario de `orders.order_status`.** Las órdenes usan el
+  enum `OrderStatusType` de la API (`order-pending`, `order-completed`…);
+  este catálogo usa otros slugs (`order-received`, `delivered`…). No hay
+  FK entre las dos, y borrar un estado no afecta a ninguna orden.
+- `translated_languages` no es columna: la API lo emite como `['en']`.
 
 ## Cómo se adapta el scraper
 
