@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Headers,
   HttpCode,
   Param,
   ParseIntPipe,
@@ -10,6 +11,7 @@ import {
   Put,
   Query,
 } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import {
   CreateOrderStatusDto,
   UpdateOrderStatusDto,
@@ -38,14 +40,33 @@ import {
 
 @Controller('orders')
 export class OrdersController {
-  constructor(private readonly ordersService: OrdersService) {}
+  constructor(
+    private readonly ordersService: OrdersService,
+    private readonly jwtService: JwtService,
+  ) {}
 
   // D-10 (proposal.md): el checkout de invitado (`guestCheckout: true`) es un
   // flujo vivo del shop; crear tu propio pedido no expone datos de terceros.
+  // R-i (US-59): `@Public` no decodifica el token, así que se verifica aquí.
+  // Sin Bearer, o con uno inválido, la orden es de invitado: un token vencido
+  // no debe romper el checkout (mismo criterio que `JwtAuthGuard`).
   @Public()
   @Post()
-  async create(@Body() createOrderDto: CreateOrderDto): Promise<Order> {
-    return this.ordersService.create(createOrderDto);
+  async create(
+    @Body() createOrderDto: CreateOrderDto,
+    @Headers('authorization') authorization?: string,
+  ): Promise<Order> {
+    return this.ordersService.create(createOrderDto, this.optionalUserId(authorization));
+  }
+
+  private optionalUserId(authorization: string | undefined): number | null {
+    const [scheme, token] = (authorization ?? '').split(' ');
+    if (scheme !== 'Bearer' || !token) return null;
+    try {
+      return this.jwtService.verify<CurrentUserPayload>(token).sub;
+    } catch {
+      return null;
+    }
   }
 
   @Get()
@@ -95,27 +116,13 @@ export class OrdersController {
   // D-10 (proposal.md): mismo motivo que POST /orders.
   @Public()
   @Post('checkout/verify')
-  verifyCheckout(@Query() query: CheckoutVerificationDto) {
-    return this.ordersService.verifyCheckout(query);
+  verifyCheckout(@Body() input: CheckoutVerificationDto) {
+    return this.ordersService.verifyCheckout(input);
   }
   @Post('/payment')
   @HttpCode(200)
   async submitPayment(@Body() orderPaymentDto: OrderPaymentDto): Promise<void> {
-    const { tracking_number } = orderPaymentDto;
-    const order: Order = this.ordersService.getMockOrderForPayment(
-      tracking_number,
-    );
-    switch (order.payment_gateway.toString().toLowerCase()) {
-      case 'stripe':
-        this.ordersService.stripePay(order);
-        break;
-      case 'paypal':
-        this.ordersService.paypalPay(order);
-        break;
-      default:
-        break;
-    }
-    this.ordersService.processChildrenOrder(order);
+    await this.ordersService.pay(orderPaymentDto.tracking_number);
   }
 }
 

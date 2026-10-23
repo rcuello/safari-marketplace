@@ -409,8 +409,40 @@ Desde US-58. Es el núcleo transaccional.
   orders`, para no tocar el `CREATE TABLE reviews` y que el archivo siga
   siendo idempotente. Ojo: si el autor ya tiene una reseña **sin orden** del
   mismo producto, borrar la orden falla, porque el `SET NULL` choca con
-  `reviews_autor_producto_orden_key`. Ninguna ruta borra órdenes todavía
-  (US-59).
+  `reviews_autor_producto_orden_key`. Desde US-59, `DELETE /orders/:id`
+  responde **409** en ese caso y no borra nada (ni la orden ni la reseña).
+
+### Checkout y stock (US-59)
+
+Sin cambios de esquema: `POST /orders` y `checkout/verify` escriben y leen
+estas mismas tablas.
+
+- **El precio lo fija la base.** `simple`: `sale_price ?? price` de la fila
+  viva; con variación (no hay tabla de variaciones), el `unit_price` del
+  cliente solo si cae en `[min_price, max_price]`. Una línea es no
+  disponible si el producto no existe, no está en `publish`, tiene
+  `in_stock = false` o le falta stock.
+- **Impuesto**: la fila de `taxes` con `id = settings.taxClass` (texto en el
+  `jsonb`). `sales_tax = amount × rate / 100`, sin redondear y **sin**
+  aplicarlo al envío aunque `on_shipping` sea `true`: así está en las 20
+  órdenes del mock.
+- **Envío**: la fila de `shippings` con `id = settings.shippingClass`
+  (`fixed`, `percentage` o `free`), o 0 si no hay dirección (`[]`/`{}`,
+  pedido digital), si aplica `freeShipping` por umbral o si el cupón es
+  `free_shipping`.
+- **Cupón**: aprobado, vigente (`active_from <= now() < expire_at`), sobre
+  su `minimum_cart_amount` y, si es de una tienda, con alguna línea de ella.
+  `fixed` descuenta hasta el `amount`; `percentage`, el porcentaje.
+- **Hijas**: una por tienda (`products.shop_id`), con sus líneas, `amount`
+  = suma de sus líneas y `sales_tax`, `delivery_fee` y `discount` en 0.
+  Las líneas van en el padre **y** en su hija, como en el mock.
+- **Stock**: en la misma transacción que la orden, `UPDATE products SET
+  quantity = quantity − n, sold_quantity = sold_quantity + n WHERE quantity
+  >= n`. Si otra compra se adelantó, rollback y 409. El snapshot de la línea
+  guarda el producto **antes** del descuento. Borrar o cancelar una orden
+  **no** repone stock.
+- **Número de seguimiento**: `YYYYMMDD` (UTC) + 6 dígitos al azar, único;
+  hasta 5 intentos.
 
 ## Cómo se adapta el scraper
 

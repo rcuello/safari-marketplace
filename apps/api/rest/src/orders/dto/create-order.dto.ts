@@ -6,6 +6,8 @@ export class CreateOrderDto {
   coupon_id?: number;
   status: string;
   customer_contact: string;
+  customer_name?: string;
+  note?: string;
   products: ConnectProductOrderPivot[];
   amount: number;
   sales_tax: number;

@@ -1,16 +1,30 @@
 /**
  * Test de integración contra el Postgres real (sembrado por `just db-up`: 20
- * órdenes padre con 1 hija cada una, ids 5..49, y 76 líneas). US-58.
+ * órdenes padre con 1 hija cada una, ids 5..49, y 76 líneas). US-58 y US-59.
  *
- * Las escrituras son centinelas hechos con `prisma` directo (el repositorio
- * es solo lectura hasta US-59): órdenes con `note` 'zz-orders-', un cupón
- * 'ZZ-ORDERS' y una reseña 'zz-orders-review'. `afterAll` los borra.
+ * Las escrituras son centinelas: órdenes con `note` 'zz-orders-' (hechas con
+ * `prisma` directo o con `createOrderWithChildren`), un cupón 'ZZ-ORDERS' y
+ * una reseña 'zz-orders-review'. `afterAll` los borra y devuelve el stock de
+ * los productos comprados, y su `updated_at`, al valor previo al test.
  */
 
 import 'dotenv/config';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { _setNowProvider } from '../clock';
 import { prisma } from '../client';
-import { findOrderByIdOrTracking, listOrders } from './orders.repository';
+import { InvalidFieldValueError, RecordNotFoundError, SlugConflictError } from '../domain-errors';
+import {
+  createOrderWithChildren,
+  deleteOrder,
+  findOrderByIdOrTracking,
+  findProductsForOrder,
+  InsufficientStockError,
+  listOrders,
+  markOrderPaid,
+  setOrderStatus,
+  type CreateOrderInput,
+  type OrderLineInput,
+} from './orders.repository';
 
 const CUSTOMER = 2;
 const ADMIN = 3;
@@ -31,17 +45,40 @@ const CUSTOMER_KEYS = [
   'email_verified',
 ];
 
+/** Productos de tiendas distintas que compran las escrituras (1: tienda 6; 21: tienda 4). */
+const BOUGHT = [1, 21];
+/** `updated_at` como texto: un `Date` de JS perdería los microsegundos del seed. */
+let seededStock: { id: bigint; quantity: number; sold_quantity: number; updated_at: string }[] = [];
+
 const cleanup = async () => {
   await prisma.review.deleteMany({ where: { comment: 'zz-orders-review' } });
   await prisma.order.deleteMany({ where: { note: SENTINEL_NOTE } });
   await prisma.coupon.deleteMany({ where: { code: 'ZZ-ORDERS' } });
 };
 
-beforeAll(cleanup);
+beforeAll(async () => {
+  await cleanup();
+  seededStock = [];
+  for (const id of BOUGHT) {
+    seededStock.push(
+      ...(await prisma.$queryRaw<typeof seededStock>`
+        SELECT id, quantity, sold_quantity, updated_at::text AS updated_at FROM products WHERE id = ${id}
+      `)
+    );
+  }
+});
 
 afterAll(async () => {
   try {
     await cleanup();
+    for (const p of seededStock) {
+      await prisma.$executeRaw`
+        UPDATE products
+           SET quantity = ${p.quantity}, sold_quantity = ${p.sold_quantity},
+               updated_at = ${p.updated_at}::timestamptz
+         WHERE id = ${p.id}
+      `;
+    }
   } finally {
     await prisma.$disconnect();
   }
@@ -163,5 +200,187 @@ describe('FK — centinelas', () => {
         data: { orderId: 999_999, userId: CUSTOMER, productId: 2, shopId: product.shopId, rating: 4, comment: 'zz-orders-review' },
       })
     ).rejects.toMatchObject({ code: 'P2003' });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Escrituras del repositorio (US-59)
+// ---------------------------------------------------------------------------
+
+function line(productId: number, orderQuantity: number, unitPrice: string): OrderLineInput {
+  return {
+    productId,
+    variationOptionId: null,
+    orderQuantity,
+    unitPrice,
+    subtotal: String(Number(unitPrice) * orderQuantity),
+    productSnapshot: { id: productId, name: 'zz', variation_options: [] },
+  };
+}
+
+function orderInput(lines: OrderLineInput[], children: CreateOrderInput['children']): CreateOrderInput {
+  return {
+    customerId: CUSTOMER,
+    customerSnapshot: { id: CUSTOMER, email: 'customer@demo.com' },
+    customerContact: '+19999999999',
+    customerName: 'Customer',
+    amount: '19.2',
+    salesTax: '0.384',
+    deliveryFee: '50',
+    discount: '0',
+    total: '69.584',
+    note: SENTINEL_NOTE,
+    deliveryTime: 'Express Delivery',
+    couponId: null,
+    paymentGateway: 'CASH_ON_DELIVERY',
+    orderStatus: 'order-processing',
+    paymentStatus: 'payment-cash-on-delivery',
+    shippingAddress: { zip: '40391', city: 'Winchester' },
+    billingAddress: { zip: '40391', city: 'Winchester' },
+    lines,
+    children,
+  };
+}
+
+const stockOf = async (id: number) =>
+  prisma.product.findUniqueOrThrow({ where: { id }, select: { quantity: true, soldQuantity: true } });
+
+describe('createOrderWithChildren', () => {
+  it('crea padre + una hija por tienda + líneas, descuenta stock y numera con la fecha UTC', async () => {
+    const [before1, before21] = [await stockOf(1), await stockOf(21)];
+    const stamp = new Date('2026-10-23T15:00:00.000Z');
+    let order;
+    try {
+      _setNowProvider(() => stamp);
+      const l1 = line(1, 2, '1.6');
+      const l21 = line(21, 2, '8');
+      order = await createOrderWithChildren(
+        orderInput([l1, l21], [
+          { shopId: 6, amount: '3.2', lines: [l1] },
+          { shopId: 4, amount: '16', lines: [l21] },
+        ])
+      );
+    } finally {
+      _setNowProvider(() => new Date());
+    }
+    expect(order.trackingNumber).toMatch(/^20261023[0-9]{6}$/);
+    expect(order).toMatchObject({ parentId: null, customerId: CUSTOMER, salesTax: 0.384, total: 69.584, paidTotal: 69.584 });
+    expect(order.createdAt.getTime()).toBe(stamp.getTime());
+    expect(order.lines.map((l) => [l.lineNo, l.productId, l.orderQuantity])).toEqual([[1, 1, 2], [2, 21, 2]]);
+    expect(order.children.map((c) => [c.shopId, c.amount, c.total, c.salesTax, c.deliveryFee, c.orderStatus])).toEqual([
+      [6, 3.2, 3.2, 0, 0, 'order-processing'],
+      [4, 16, 16, 0, 0, 'order-processing'],
+    ]);
+    expect(new Set([order.trackingNumber, ...order.children.map((c) => c.trackingNumber)]).size).toBe(3);
+    expect(Object.keys(order.lines[0].productSnapshot as object)).toEqual(['id', 'name', 'variation_options']);
+    expect(await stockOf(1)).toEqual({ quantity: before1.quantity - 2, soldQuantity: before1.soldQuantity + 2 });
+    expect(await stockOf(21)).toEqual({ quantity: before21.quantity - 2, soldQuantity: before21.soldQuantity + 2 });
+  });
+
+  it('sin stock suficiente: InsufficientStockError y nada a medias (rollback)', async () => {
+    const before = await stockOf(1);
+    const orders = await prisma.order.count();
+    const huge = line(1, before.quantity + 1, '1.6');
+    await expect(
+      createOrderWithChildren(orderInput([huge], [{ shopId: 6, amount: '1', lines: [huge] }]))
+    ).rejects.toBeInstanceOf(InsufficientStockError);
+    expect(await prisma.order.count()).toBe(orders);
+    expect(await stockOf(1)).toEqual(before);
+  });
+
+  it('findProductsForOrder trae los vivos y omite los inexistentes', async () => {
+    const found = await findProductsForOrder([1, 21, 999_999]);
+    expect(found.map((p) => p.id).sort((a, b) => a - b)).toEqual([1, 21]);
+    expect(found[0].shop).toBeDefined();
+  });
+});
+
+describe('setOrderStatus / markOrderPaid / deleteOrder', () => {
+  async function newOrder() {
+    const l1 = line(1, 1, '1.6');
+    const l21 = line(21, 1, '8');
+    return createOrderWithChildren(
+      orderInput([l1, l21], [
+        { shopId: 6, amount: '1.6', lines: [l1] },
+        { shopId: 4, amount: '8', lines: [l21] },
+      ])
+    );
+  }
+
+  it('en un padre arrastra a las hijas; en una hija, solo a ella; fija updatedAt', async () => {
+    const order = await newOrder();
+    const stamp = new Date(Date.now() + 60_000);
+    try {
+      _setNowProvider(() => stamp);
+      const updated = await setOrderStatus(order.id, { orderStatus: 'order-completed' });
+      expect(updated.orderStatus).toBe('order-completed');
+      expect(updated.children.map((c) => c.orderStatus)).toEqual(['order-completed', 'order-completed']);
+      expect(updated.updatedAt.getTime()).toBe(stamp.getTime());
+    } finally {
+      _setNowProvider(() => new Date());
+    }
+    const child = await setOrderStatus(order.children[0].id, { orderStatus: 'order-cancelled' });
+    expect(child.orderStatus).toBe('order-cancelled');
+    const parent = await findOrderByIdOrTracking(order.id);
+    expect(parent?.orderStatus).toBe('order-completed');
+    expect(parent?.children.map((c) => c.orderStatus)).toEqual(['order-cancelled', 'order-completed']);
+  });
+
+  it('estado fuera del enum ⇒ InvalidFieldValueError; inexistente ⇒ RecordNotFoundError', async () => {
+    await expect(setOrderStatus(48, { orderStatus: 'order-zz' })).rejects.toBeInstanceOf(InvalidFieldValueError);
+    await expect(setOrderStatus(48, { paymentStatus: 'payment-zz' })).rejects.toBeInstanceOf(InvalidFieldValueError);
+    await expect(setOrderStatus(999_999, { orderStatus: 'order-completed' })).rejects.toBeInstanceOf(
+      RecordNotFoundError
+    );
+    await expect(markOrderPaid('00000000000000')).rejects.toBeInstanceOf(RecordNotFoundError);
+  });
+
+  it('markOrderPaid marca la orden pedida y sus hijas, no la 48', async () => {
+    const order48 = await findOrderByIdOrTracking(48);
+    const order = await newOrder();
+    const paid = await markOrderPaid(order.trackingNumber);
+    expect(paid).toMatchObject({ orderStatus: 'order-processing', paymentStatus: 'payment-success' });
+    expect(paid.children.every((c) => c.paymentStatus === 'payment-success')).toBe(true);
+    expect((await findOrderByIdOrTracking(48))?.paymentStatus).toBe(order48?.paymentStatus);
+  });
+
+  it('deleteOrder: snapshot previo; hijas y líneas por CASCADE; reviews.order_id a NULL', async () => {
+    const order = await newOrder();
+    const product = await prisma.product.findFirstOrThrow({
+      where: { reviews: { none: { userId: CUSTOMER } } },
+      select: { id: true, shopId: true },
+    });
+    const review = await prisma.review.create({
+      data: {
+        orderId: order.children[0].id,
+        userId: CUSTOMER,
+        productId: product.id,
+        shopId: product.shopId,
+        rating: 5,
+        comment: 'zz-orders-review',
+      },
+    });
+    const deleted = await deleteOrder(order.id);
+    expect(deleted).toMatchObject({ id: order.id, trackingNumber: order.trackingNumber });
+    expect(deleted.children).toHaveLength(2);
+    expect(await findOrderByIdOrTracking(order.id)).toBeNull();
+    expect(await prisma.order.count({ where: { parentId: order.id } })).toBe(0);
+    expect(await prisma.orderProduct.count({ where: { orderId: { in: [order.id, ...order.children.map((c) => c.id)] } } })).toBe(0);
+    expect((await prisma.review.findUniqueOrThrow({ where: { id: review.id } })).orderId).toBeNull();
+    await expect(deleteOrder(order.id)).rejects.toBeInstanceOf(RecordNotFoundError);
+  });
+
+  it('deleteOrder: si el SET NULL chocaría con otra reseña sin orden ⇒ SlugConflictError y no borra nada', async () => {
+    const order = await newOrder();
+    const product = await prisma.product.findFirstOrThrow({
+      where: { reviews: { none: { userId: CUSTOMER } } },
+      select: { id: true, shopId: true },
+    });
+    const base = { userId: CUSTOMER, productId: product.id, shopId: product.shopId, rating: 4, comment: 'zz-orders-review' };
+    await prisma.review.create({ data: base });
+    await prisma.review.create({ data: { ...base, orderId: order.id } });
+    await expect(deleteOrder(order.id)).rejects.toBeInstanceOf(SlugConflictError);
+    expect(await findOrderByIdOrTracking(order.id)).not.toBeNull();
+    expect(await prisma.review.count({ where: { comment: 'zz-orders-review', productId: product.id } })).toBe(2);
   });
 });

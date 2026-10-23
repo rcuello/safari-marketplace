@@ -10,7 +10,7 @@
 
 **Épico:** [Épico 46](./README.md)
 **Fecha:** 2026-10-20
-**Status:** Listo para ejecución
+**Status:** Implementada (2026-10-23, rama `us-59-orders-escritura`)
 **Depende de:** US-58 (tablas y lectura de órdenes). Por datos depende de
 US-49 (`taxes`, `shippings`) y US-52 (`coupons`), que van antes.
 **LOC est.:** ~1800. Si supera ~1500 líneas reales, se parte (R-1):
@@ -444,18 +444,18 @@ Se sigue el Protocolo del [README del épico](./README.md#protocolo-de-ejecució
 **sin** los pasos 3 a 6 (no hay DDL ni seed). Se dice explícitamente en el
 reporte.
 
-- [ ] Línea base pegada: los ceros de `verify`, la orden 48 devuelta por
+- [x] Línea base pegada: los ceros de `verify`, la orden 48 devuelta por
   `POST`/`PUT` y el string de `DELETE`.
-- [ ] `just db-build` limpio.
-- [ ] `just db-check` y `npx jest` en verde, con los recuentos nuevos, que
+- [x] `just db-build` limpio.
+- [x] `just db-check` y `npx jest` en verde, con los recuentos nuevos, que
   incluyen el spec de cálculo con un caso por regla.
-- [ ] `just build-api` y `just verify` en verde (`/api/settings` 5503 B).
-- [ ] `curl` de CA-1 a CA-4 con status exacto y `psql` de filas y stock
+- [x] `just build-api` y `just verify` en verde (`/api/settings` 5503 B).
+- [x] `curl` de CA-1 a CA-4 con status exacto y `psql` de filas y stock
   antes y después.
-- [ ] Limpieza de CA-5 pegada: las órdenes de prueba borradas y el stock
+- [x] Limpieza de CA-5 pegada: las órdenes de prueba borradas y el stock
   restaurado.
-- [ ] `grep` de CA-5.
-- [ ] Status actualizado y fila marcada en el épico.
+- [x] `grep` de CA-5.
+- [x] Status actualizado y fila marcada en el épico.
 
 ## Notas para el agente ejecutor
 
@@ -481,3 +481,210 @@ reporte.
 - `payment-intent.json` y `payment-gateway.json` siguen importados en
   `orders.service.ts`, por decisión 2 del épico. El `grep` de cierre de
   US-63 los tiene en su lista de permitidos.
+
+## Evidencia (2026-10-23)
+
+**Sin DDL ni seed.** Esta US no toca `db/schema.sql`, el generador ni el
+seed, así que no hay `just db-reset` ni re-introspección: se saltan los pasos
+3 a 6 del protocolo. Tampoco hizo falta ninguna columna nueva.
+
+**Línea base**, con la API recién arrancada sobre `main` (`619a38a`), en el
+orden de la US. Producto 1 (`apples`): `price 2`, `sale_price 1.6`, stock
+`16/2`.
+
+```
+POST /orders/checkout/verify (body)
+{"total_tax":0,"shipping_charge":0,"unavailable_products":[],"wallet_currency":0,"wallet_amount":0}  201
+POST /orders (cliente, COD)  201
+  [ 48, '20240207303639', 34 claves, [ 'shop', 'children', 'wallet_point', 'payment_intent' ],
+    payment_intent null, 'order-processing', 'payment-cash-on-delivery', amount 14.5 ]   ← la 48 mutada
+PUT /orders/5 {"order_status":"order-completed"} → 48 [200]
+DELETE /orders/5 → This action removes a #5 order [200]
+PUT sin token [401] · PUT cliente [403]
+POST /orders/payment {"tracking_number":20240207303639} [200] 0B
+psql: orders 40 · producto 1 16/2   ← nada se escribió
+```
+
+**CA-1** (`checkout/verify`, sin token):
+
+```
+{product_id:1, order_quantity:2} + dirección
+{"total_tax":0.064,"shipping_charge":50,"unavailable_products":[],"wallet_currency":0,"wallet_amount":0} [201]
+sin dirección
+{"total_tax":0.064,"shipping_charge":0,"unavailable_products":[],"wallet_currency":0,"wallet_amount":0} [201]
+order_quantity 17 (stock 16)
+{"total_tax":0,"shipping_charge":50,"unavailable_products":[1],"wallet_currency":0,"wallet_amount":0} [201]
+claves antes ["total_tax","shipping_charge","unavailable_products","wallet_currency","wallet_amount"]
+       después ["total_tax","shipping_charge","unavailable_products","wallet_currency","wallet_amount"] iguales: true
+```
+
+`total_tax = 2 × 1.6 × 0.02 = 0.064`. El status sigue en 201, el default de
+Nest para un `@Post`, como en la línea base.
+
+**CA-2** (token de `customer@demo.com`, productos 1 de la tienda 6 y 21 de la
+tienda 4, dos unidades de cada uno):
+
+```
+POST /orders [201]
+id 69 tracking 20261023414873 14 dígitos y fecha de hoy: true customer_id 2
+amount 19.2 sales_tax 0.384 delivery_fee 50 discount 0 total 69.584 paid_total 69.584 total cuadra: true
+hijas 2 70:shop 6 amount 3.2 total 3.2 tax 0 | 71:shop 4 amount 16 total 16 tax 0
+payment_intent null estados order-processing payment-cash-on-delivery
+claves padre = forma US-58 + payment_intent: true
+claves hija = forma US-58: true
+producto: claves 45 pivot {"order_id":69,"product_id":1,"order_quantity":"2","unit_price":1.6,"subtotal":3.2,…}
+snapshot quantity/sold antes de la compra: 16/2
+customer {"id":2,"name":"Customer","email":"customer@demo.com","email_verified_at":null,…,"is_active":1,"shop_id":null,"email_verified":false}
+
+psql antes   | orders 40 | order_products 76 | producto 1 16/2 | producto 21 49/0
+psql después | orders 43 | order_products 80 | producto 1 14/4 | producto 21 47/2
+ 69 |    |   | 2 | 19.2 | 0.384 | 50 | 69.584 | order-processing
+ 70 | 69 | 6 | 2 |  3.2 |     0 |  0 |    3.2 | order-processing
+ 71 | 69 | 4 | 2 |   16 |     0 |  0 |     16 | order-processing
+ líneas (orden, línea, producto, cantidad, precio, subtotal):
+ 69|1|1|2|1.6|3.2 · 69|2|21|2|8|16 · 70|1|1|2|1.6|3.2 · 71|1|21|2|8|16
+GET /orders cliente: total 20, primera 69
+```
+
+Los ids empiezan en 69 porque los integration tests ya habían avanzado la
+secuencia.
+
+**CA-3** (sin token salvo donde se indica):
+
+```
+antes de CA-3: 43 órdenes · stock 1: 14/4
+invitado: id 72 customer_id null customer null
+token inválido [201]: customer_id null
+cupón vigente 18 [201]: amount 1.6 discount 1.6 coupon_id 18 total 50.032
+tras las 3 creadas: 49 órdenes · stock 1: 11/7
+{"statusCode":422,"message":"error-invalid-coupon",…,"coupon_id":19} [422] cupón 19 (vencido)
+{"statusCode":422,"message":"error-invalid-coupon",…,"coupon_id":1} [422] cupón 1 (sembrado: vencido y de la tienda 1)
+{"statusCode":422,"message":"error-invalid-coupon",…,"coupon_id":99999} [422] cupón inexistente
+{"statusCode":422,"message":"Hay productos no disponibles.",…,"unavailable_products":[1]} [422] stock insuficiente
+{"statusCode":422,"message":"FULL_WALLET_PAYMENT no está disponible: no hay wallets.",…} [422]
+{"statusCode":400,"message":"La orden no trae productos.",…} [400] sin productos
+tras los 6 rechazos: 49 órdenes · stock 1: 11/7
+```
+
+Los cupones sembrados están todos vencidos (es el caso de US-68). Para CA-3
+se crearon en `psql` dos cupones globales centinela: `ZZ-US59-VIGENTE` (id
+18, `fixed 5`, vigente en 2026) y `ZZ-US59-VENCIDO` (id 19, vencido en 2025).
+El `fixed 5` sobre un `amount` de 1.6 descuenta 1.6: R-e pone el tope en el
+`amount`.
+
+**CA-4** (token de admin):
+
+```
+PUT /orders/69 {"order_status":"order-completed"} [200]: padre order-completed hijas 70:order-completed 71:order-completed
+ psql antes:   69|70|71 order-processing, updated_at 16:30:15.186
+ psql después: 69|70|71 order-completed,  updated_at 16:31:14.546
+PUT {"order_status":"order-zz"} [400] "order_status must be one of the following values: …"
+PUT /orders/999999 [404] · PUT /orders/abc [400]
+PUT sin token [401] "Token de autenticación ausente o inválido."
+PUT con token de cliente [403] "No tienes permisos suficientes para esta operación."
+
+POST /orders STRIPE (cliente) [201]: id 78 tracking 20261023955470 order-pending payment-pending payment_intent null
+orden 48 antes   | order-completed | payment-cash-on-delivery
+POST /orders/payment {"tracking_number":20261023955470} [200] 0B
+ 78 |    | order-processing | payment-success
+ 79 | 78 | order-processing | payment-success
+orden 48 después | order-completed | payment-cash-on-delivery   ← no cambia (V-8)
+POST /orders/payment de la 48 (COD) [200] → sin cambio
+POST /orders/payment {"tracking_number":11111111111111} [404]
+
+DELETE /orders/69 [200]: snapshot id 69 tracking 20261023414873 order_status order-completed hijas 70,71
+GET /orders/69 tras borrar [404]
+ psql antes del DELETE:   3 órdenes (69 y sus hijas) · 4 líneas · producto 1 11/7
+ psql después del DELETE: 0 órdenes · 0 líneas · producto 1 11/7   ← no repone stock (R-m)
+DELETE /orders/69 otra vez [404] · DELETE sin token [401] · DELETE con token de cliente [403]
+```
+
+El `order-completed` de la 48 viene del seed (`orders.json` y `db/seed.sql`
+la traen así), no de esta prueba. El `payment_intent` de la orden STRIPE es
+`null`: la pasarela real falló sin claves configuradas (`warn` en el log:
+`payment_intent de 20261023955470: TypeError: Cannot read properties of
+undefined (reading 'data')`), y la orden quedó creada, igual que en el mock.
+El `warn` de R-f quedó registrado en cada orden de CA-3 (`amount: el cliente
+mandó 3.2, el servidor calculó 1.6`).
+
+**CA-5 — limpieza.** Las órdenes de prueba llevan `note 'zz-us59'`:
+
+```
+BEGIN
+DELETE 8      ← orders con note 'zz-us59' (sus hijas y líneas caen por CASCADE)
+DELETE 2      ← coupons ZZ-US59-*
+UPDATE 1      ← producto 1: quantity 16, sold_quantity 2, updated_at = created_at
+UPDATE 1      ← producto 21: quantity 49, sold_quantity 0, updated_at = created_at
+COMMIT
+tras limpieza | orders 40 | order_products 76 | coupons 10 | 1:16/2 21:49/0 | productos con updated_at ≠ created_at 0 | padres 20
+```
+
+En el seed, `created_at = updated_at` en todos los productos. El integration
+test también descuenta stock: su `afterAll` restaura `quantity`,
+`sold_quantity` y `updated_at`, este último como texto, porque un `Date` de
+JS perdía los microsegundos (`.40723` quedaba en `.407`). Las secuencias de
+`orders` y `coupons` siguen avanzadas: esta US no hace `db-reset`.
+
+```
+$ grep -rn "orders.json\|settings.json" apps/api/rest/src/orders/
+(sin salida, exit 1)
+
+$ just db-check
+ Test Files  28 passed (28)
+      Tests  377 passed (377)
+psql tras db-check: productos con updated_at ≠ created_at 0 · orders 40 · order_products 76 · reviews 85 · coupons 10
+$ cd apps/api/rest && npx jest
+Test Suites: 31 passed, 31 total
+Tests:       505 passed, 505 total
+$ npx tsc --noEmit -p tsconfig.json   → exit 0
+$ just build-api                      → Done in 37.06s.
+$ just verify
+OK   API    :9001/api/settings  200  5503B  594ms
+OK   Shop   :3003/en  200  190788B  604ms  cards:30
+OK   Admin  :3002/en/login  200  72821B  53196ms  cards:1
+```
+
+Antes: 28 archivos / 369 tests en `db-check` y 30 suites / 482 en jest. Se
+suman 8 casos de escritura al integration test de órdenes, el spec nuevo de
+cálculo (9 casos, uno o más por regla R-a a R-f) y 14 casos de escritura en
+`orders.service.spec.ts`.
+
+**Tamaño (R-1).** 1734 líneas añadidas: unas 1100 de código, 730 de tests y
+60 de docs. Va en un solo corte; no hizo falta partir.
+
+**Notas frente al texto de la US:**
+
+- **`setOrderStatus`, no `updateOrderStatus`.** Ese nombre ya lo exporta el
+  barrel desde el catálogo de estados (US-57).
+- **El 409 por stock** sale de `InsufficientStockError`, propio de
+  `orders.repository.ts`. Reutiliza el código de conflicto del conjunto
+  cerrado de `domain-errors.ts`, que no se toca (como los errores propios
+  de `products.repository.ts`).
+- **`Decimal` se exporta desde `@safari/db`.** El cálculo usa la aritmética
+  de Prisma: `2.2 × 0.02` da `0.044` exacto. El dinero viaja al repositorio
+  como texto decimal.
+- **`DELETE` con reseñas.** El caso que encontró US-58 queda resuelto con
+  un 409 sin borrar nada: si borrar la orden dejaría una reseña chocando con
+  otra del mismo autor y producto sin orden, no se borra. Lo prueba el
+  integration test.
+- **PayPal en `payment`.** Como el `payment_intent` no se persiste (R-h), el
+  `payment_id` que hay que verificar solo existe en el mock permanente
+  `payment-intent.json`. Si no hay intento para ese tracking, la respuesta es
+  **422** y la orden no se marca pagada, en vez de marcarla sin verificar.
+  Solo hay un intento en el mock (`334983046149`, Stripe).
+- **Validaciones añadidas.** Una pasarela fuera del enum da 400 (sin esto
+  la CHECK de la base daba 500), igual que un body sin productos y un `PUT`
+  sin `order_status` ni `payment_status`. `PUT`/`DELETE` con un id mal
+  formado dan 400, como pide R-l.
+- **Snapshot de producto de las órdenes nuevas.** Las 43 claves de las
+  líneas sembradas más `variation_options`, tomadas de la fila viva antes de
+  descontar el stock. Las que no tienen columna (`height`, `video`,
+  `author_id`, `blocked_dates`…) van en `null`, y `variation_options` en
+  `[]`.
+- **Cifras del cliente**: se ignoran, y cada desfase deja un `warn` (R-f).
+  `use_wallet_points` se ignora sin aviso.
+- **Fuera de alcance:** no se restringe al `store_owner` a sus tiendas en
+  `PUT`/`DELETE` (R-6), no se repone stock al cancelar o borrar, y no hubo
+  prueba en el navegador del checkout del shop; los `curl` reproducen el
+  body que mandan `check-availability-action.tsx` y
+  `place-order-action.tsx`.

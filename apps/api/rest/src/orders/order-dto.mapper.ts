@@ -4,7 +4,7 @@ import { Order } from './entities/order.entity';
 
 /**
  * Línea → el producto del mock: el snapshot con `pivot` reinsertado justo
- * antes de `variation_options`, que es donde lo traía `orders.json`.
+ * antes de `variation_options`, que es donde lo traía el mock de órdenes.
  * `order_quantity` sale como string, igual que en el mock.
  */
 function toOrderProductDto(line: OrderProductRecord) {
@@ -26,7 +26,7 @@ function toOrderProductDto(line: OrderProductRecord) {
 }
 
 /**
- * `OrderDetailRecord` → las claves de `orders.json`, en su orden (US-58).
+ * `OrderDetailRecord` → las claves del mock de órdenes, en su orden (US-58).
  * Padre: termina en `children`, sin `shop` ni `wallet_point` (V-6). Hija:
  * termina en `shop`, proyectada con `toShopDto` (V-7/V-8), sin `children`.
  * `customer` es el snapshot de la compra, verbatim. `cancelled_*` salen como

@@ -4,34 +4,64 @@
  * `types: ["node","express","multer"]` y deja fuera los globals de jest.
  */
 /**
- * Tests unitarios de la lectura de `OrdersService` (US-58). Solo se mockea el
- * acceso a datos; las dependencias de pago no se usan en la lectura y se
- * proveen vacías.
+ * Tests unitarios de `OrdersService`: lectura (US-58) y escritura (US-59).
+ * Solo se mockea el acceso a datos; las dependencias de pago se proveen
+ * vacías salvo `verifyOrder` de PayPal, que es la pasarela. El cálculo de
+ * precios es el real (`orders-pricing.ts`, con su propio spec).
  */
 import 'reflect-metadata';
 import {
   BadRequestException,
+  ConflictException,
   NotFoundException,
   ServiceUnavailableException,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import {
+  createOrderWithChildren,
+  deleteOrder,
+  findCouponById,
   findOrderByIdOrTracking,
+  findProductsForOrder,
+  findShippingById,
+  findTaxById,
+  findUserById,
+  getSettings,
+  InsufficientStockError,
   listOrders,
+  markOrderPaid,
+  RecordNotFoundError,
+  setOrderStatus,
+  type CouponRecord,
   type OrderDetailRecord,
+  type ProductRecord,
   type ShopRecord,
 } from '@safari/db';
 import { AuthService } from 'src/auth/auth.service';
 import { CurrentUserPayload } from 'src/auth/decorators/current-user.decorator';
 import { PaypalPaymentService } from 'src/payment/paypal-payment.service';
 import { StripePaymentService } from 'src/payment/stripe-payment.service';
+import { CreateOrderDto } from './dto/create-order.dto';
 import { GetOrdersDto } from './dto/get-orders.dto';
+import { UpdateOrderDto } from './dto/update-order.dto';
+import { CheckoutVerificationDto } from './dto/verify-checkout.dto';
 import { OrdersService } from './orders.service';
 
 jest.mock('@safari/db', () => ({
   ...jest.requireActual<typeof import('@safari/db')>('@safari/db'),
   listOrders: jest.fn(),
   findOrderByIdOrTracking: jest.fn(),
+  findProductsForOrder: jest.fn(),
+  findTaxById: jest.fn(),
+  findShippingById: jest.fn(),
+  getSettings: jest.fn(),
+  findCouponById: jest.fn(),
+  findUserById: jest.fn(),
+  createOrderWithChildren: jest.fn(),
+  setOrderStatus: jest.fn(),
+  deleteOrder: jest.fn(),
+  markOrderPaid: jest.fn(),
 }));
 
 const listMock = jest.mocked(listOrders);
@@ -256,6 +286,296 @@ describe('OrdersService — lectura', () => {
       expect((await service.getOrder('41', ADMIN_USER)).id).toBe(41);
       findMock.mockResolvedValue(makeOrder());
       expect((await service.getOrder('48', CUSTOMER_USER)).id).toBe(48);
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Escritura (US-59)
+// ---------------------------------------------------------------------------
+
+const productsMock = jest.mocked(findProductsForOrder);
+const taxMock = jest.mocked(findTaxById);
+const shippingMock = jest.mocked(findShippingById);
+const settingsMock = jest.mocked(getSettings);
+const couponMock = jest.mocked(findCouponById);
+const userMock = jest.mocked(findUserById);
+const createMock = jest.mocked(createOrderWithChildren);
+const statusMock = jest.mocked(setOrderStatus);
+const deleteMock = jest.mocked(deleteOrder);
+const paidMock = jest.mocked(markOrderPaid);
+
+function makeProduct(id: number, shopId: number, overrides: Partial<ProductRecord> = {}): ProductRecord {
+  return {
+    id,
+    name: `Producto ${id}`,
+    slug: `producto-${id}`,
+    description: '',
+    typeId: 1,
+    shopId,
+    manufacturerId: null,
+    productType: 'simple',
+    price: 2,
+    salePrice: 1.6,
+    minPrice: 2,
+    maxPrice: 2,
+    quantity: 16,
+    inStock: true,
+    soldQuantity: 2,
+    sku: null,
+    unit: '1 pc',
+    status: 'publish',
+    visibility: 'visibility_public',
+    image: null,
+    gallery: [],
+    ratings: 0,
+    totalReviews: 0,
+    isTaxable: false,
+    isDigital: false,
+    isExternal: false,
+    externalProductUrl: null,
+    language: 'en',
+    translatedLanguages: ['en'],
+    sourceStore: null,
+    sourceProductId: null,
+    sourceUrl: null,
+    scrapedAt: null,
+    createdAt: CREATED,
+    updatedAt: CREATED,
+    type: { id: 1, name: 'T', slug: 't', icon: null, settings: {}, banners: [], language: 'en', createdAt: CREATED, updatedAt: CREATED },
+    shop: { ...SHOP, id: shopId },
+    manufacturer: null,
+    categories: [],
+    tags: [],
+    ...overrides,
+  };
+}
+
+const DIR = { zip: '40391', city: 'Winchester', state: 'KY', country: 'United States', street_address: '2148 Straford Park' };
+
+function makeCoupon(overrides: Partial<CouponRecord> = {}): CouponRecord {
+  return {
+    id: 9,
+    code: 'ZZ',
+    description: null,
+    image: null,
+    type: 'fixed',
+    amount: 5,
+    minimumCartAmount: 0,
+    activeFrom: new Date('2020-01-01T00:00:00.000Z'),
+    expireAt: new Date('2099-01-01T00:00:00.000Z'),
+    target: false,
+    isApprove: true,
+    shopId: null,
+    userId: null,
+    language: 'en',
+    createdAt: CREATED,
+    updatedAt: CREATED,
+    ...overrides,
+  };
+}
+
+function orderDto(overrides: Partial<CreateOrderDto> = {}): CreateOrderDto {
+  return {
+    products: [
+      { product_id: 1, order_quantity: 2, unit_price: 0.01, subtotal: 0.02 },
+      { product_id: 21, order_quantity: 2, unit_price: 8, subtotal: 16 },
+    ],
+    amount: 19.2,
+    sales_tax: 0.384,
+    total: 69.584,
+    payment_gateway: undefined,
+    customer_contact: '+19999999999',
+    customer_name: 'Customer',
+    delivery_time: 'Express Delivery',
+    shipping_address: DIR,
+    billing_address: DIR,
+    ...overrides,
+  } as CreateOrderDto;
+}
+
+describe('OrdersService — escritura', () => {
+  let service: OrdersService;
+  const verifyOrder = jest.fn();
+
+  beforeEach(async () => {
+    jest.resetAllMocks();
+    const moduleRef = await Test.createTestingModule({
+      providers: [
+        OrdersService,
+        { provide: AuthService, useValue: {} },
+        { provide: StripePaymentService, useValue: {} },
+        { provide: PaypalPaymentService, useValue: { verifyOrder } },
+      ],
+    }).compile();
+    service = moduleRef.get(OrdersService);
+    settingsMock.mockResolvedValue({
+      id: 1,
+      options: { taxClass: '1', shippingClass: '1', freeShipping: false, freeShippingAmount: 0, paymentGateway: [] },
+      language: 'en',
+      createdAt: CREATED,
+      updatedAt: CREATED,
+    });
+    taxMock.mockResolvedValue({
+      id: 1, name: 'Global', rate: 2, isGlobal: true, country: null, state: null, zip: null, city: null,
+      priority: null, onShipping: true, createdAt: CREATED, updatedAt: CREATED,
+    });
+    shippingMock.mockResolvedValue({ id: 1, name: 'Global', amount: 50, isGlobal: true, type: 'fixed', createdAt: CREATED, updatedAt: CREATED });
+    productsMock.mockResolvedValue([makeProduct(1, 6), makeProduct(21, 4, { price: 9, salePrice: 8, minPrice: 9, maxPrice: 9 })]);
+    createMock.mockResolvedValue(makeParentWithChild());
+  });
+
+  describe('verifyCheckout (V-1)', () => {
+    it('calcula impuesto y envío con las 5 claves del contrato en su orden', async () => {
+      const verified = await service.verifyCheckout({
+        amount: 10,
+        products: [{ product_id: 1, order_quantity: 2, unit_price: 1.6, subtotal: 3.2 }],
+        shipping_address: DIR,
+      } as CheckoutVerificationDto);
+      expect(Object.keys(verified)).toEqual(['total_tax', 'shipping_charge', 'unavailable_products', 'wallet_currency', 'wallet_amount']);
+      expect(verified).toEqual({ total_tax: 0.064, shipping_charge: 50, unavailable_products: [], wallet_currency: 0, wallet_amount: 0 });
+      expect(taxMock).toHaveBeenCalledWith(1);
+      expect(shippingMock).toHaveBeenCalledWith(1);
+    });
+
+    it('sin dirección no hay envío; con stock corto, el producto sale en unavailable_products', async () => {
+      const verified = await service.verifyCheckout({
+        amount: 10,
+        products: [{ product_id: 1, order_quantity: 99, unit_price: 1.6, subtotal: 158.4 }],
+      } as CheckoutVerificationDto);
+      expect(verified).toMatchObject({ total_tax: 0, shipping_charge: 0, unavailable_products: [1] });
+    });
+  });
+
+  describe('create (V-2)', () => {
+    it('totales del servidor, una hija por tienda, snapshot del producto y estados de COD', async () => {
+      userMock.mockResolvedValue({ id: 2, name: 'Customer', email: 'customer@demo.com', isActive: true, emailVerifiedAt: null, createdAt: CREATED, updatedAt: CREATED });
+      const order = await service.create(orderDto(), 2);
+      const input = createMock.mock.calls[0][0];
+      expect(input).toMatchObject({
+        customerId: 2,
+        amount: '19.2',
+        salesTax: '0.384',
+        deliveryFee: '50',
+        discount: '0',
+        total: '69.584',
+        couponId: null,
+        paymentGateway: 'CASH_ON_DELIVERY',
+        orderStatus: 'order-processing',
+        paymentStatus: 'payment-cash-on-delivery',
+        customerName: 'Customer',
+      });
+      expect(Object.keys(input.customerSnapshot as object)).toHaveLength(9);
+      expect(input.lines.map((l) => [l.productId, l.unitPrice, l.subtotal])).toEqual([[1, '1.6', '3.2'], [21, '8', '16']]);
+      expect(input.children.map((c) => [c.shopId, c.amount, c.lines.length])).toEqual([[6, '3.2', 1], [4, '16', 1]]);
+      const snapshot = input.lines[0].productSnapshot as Record<string, unknown>;
+      expect(Object.keys(snapshot)).toHaveLength(44);
+      expect(Object.keys(snapshot).slice(-2)).toEqual(['translated_languages', 'variation_options']);
+      expect(snapshot).toMatchObject({ id: 1, quantity: 16, sold_quantity: 2, price: 2, sale_price: 1.6 });
+      expect(Object.keys(order).slice(-2)).toEqual(['children', 'payment_intent']);
+      expect(order.payment_intent).toBeNull();
+    });
+
+    it('invitado: sin usuario, customer_id y snapshot nulos', async () => {
+      await service.create(orderDto(), null);
+      expect(createMock.mock.calls[0][0]).toMatchObject({ customerId: null, customerSnapshot: null });
+      expect(userMock).not.toHaveBeenCalled();
+    });
+
+    it('cupón vigente descuenta; inexistente o vencido ⇒ 422 sin escribir', async () => {
+      couponMock.mockResolvedValueOnce(makeCoupon());
+      await service.create(orderDto({ coupon_id: 9 }), null);
+      expect(createMock.mock.calls[0][0]).toMatchObject({ couponId: 9, discount: '5', total: '64.584' });
+
+      couponMock.mockResolvedValueOnce(makeCoupon({ expireAt: new Date('2021-01-01T00:00:00.000Z') }));
+      await expect(service.create(orderDto({ coupon_id: 9 }), null)).rejects.toBeInstanceOf(UnprocessableEntityException);
+      couponMock.mockResolvedValueOnce(null);
+      await expect(service.create(orderDto({ coupon_id: 77 }), null)).rejects.toBeInstanceOf(UnprocessableEntityException);
+      expect(createMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('stock insuficiente ⇒ 422 con la lista; carrera en la transacción ⇒ 409', async () => {
+      const rejection = service.create(orderDto({ products: [{ product_id: 1, order_quantity: 99, unit_price: 1.6, subtotal: 1 }] }), null);
+      await expect(rejection).rejects.toBeInstanceOf(UnprocessableEntityException);
+      await rejection.catch((error: UnprocessableEntityException) => {
+        expect(error.getResponse()).toMatchObject({ statusCode: 422, unavailable_products: [1] });
+      });
+      expect(createMock).not.toHaveBeenCalled();
+
+      createMock.mockRejectedValueOnce(new InsufficientStockError(1));
+      await expect(service.create(orderDto(), null)).rejects.toBeInstanceOf(ConflictException);
+    });
+
+    it('FULL_WALLET_PAYMENT ⇒ 422 (V-5); pasarela desconocida ⇒ 400; sin productos ⇒ 400', async () => {
+      await expect(service.create(orderDto({ payment_gateway: 'FULL_WALLET_PAYMENT' } as Partial<CreateOrderDto>), null)).rejects.toBeInstanceOf(
+        UnprocessableEntityException
+      );
+      await expect(service.create(orderDto({ payment_gateway: 'ZZ' } as unknown as Partial<CreateOrderDto>), null)).rejects.toBeInstanceOf(
+        BadRequestException
+      );
+      await expect(service.create(orderDto({ products: [] }), null)).rejects.toBeInstanceOf(BadRequestException);
+      expect(createMock).not.toHaveBeenCalled();
+    });
+
+    it('STRIPE: estados pendientes y payment_intent del mock permanente (o null si la pasarela falla)', async () => {
+      const order = await service.create(orderDto({ payment_gateway: 'STRIPE' } as Partial<CreateOrderDto>), null);
+      expect(createMock.mock.calls[0][0]).toMatchObject({ orderStatus: 'order-pending', paymentStatus: 'payment-pending' });
+      expect(order).toHaveProperty('payment_intent', null);
+    });
+  });
+
+  describe('update / remove (V-7)', () => {
+    it('update pasa order_status y payment_status al repositorio y devuelve la orden', async () => {
+      statusMock.mockResolvedValue(makeParentWithChild());
+      const order = await service.update(48, { order_status: 'order-completed' } as UpdateOrderDto);
+      expect(statusMock).toHaveBeenCalledWith(48, { orderStatus: 'order-completed' });
+      expect(order.id).toBe(48);
+    });
+
+    it('update sin estado o con id inválido ⇒ 400; inexistente ⇒ 404', async () => {
+      await expect(service.update(48, {} as UpdateOrderDto)).rejects.toBeInstanceOf(BadRequestException);
+      await expect(service.update(Number.NaN, { order_status: 'order-completed' } as UpdateOrderDto)).rejects.toBeInstanceOf(
+        BadRequestException
+      );
+      statusMock.mockRejectedValue(new RecordNotFoundError('orders', 999));
+      await expect(service.update(999, { order_status: 'order-completed' } as UpdateOrderDto)).rejects.toBeInstanceOf(
+        NotFoundException
+      );
+    });
+
+    it('remove devuelve el snapshot; inexistente ⇒ 404', async () => {
+      deleteMock.mockResolvedValueOnce(makeParentWithChild());
+      expect((await service.remove(48)).id).toBe(48);
+      deleteMock.mockRejectedValueOnce(new RecordNotFoundError('orders', 999));
+      await expect(service.remove(999)).rejects.toBeInstanceOf(NotFoundException);
+    });
+  });
+
+  describe('pay (V-8)', () => {
+    it('STRIPE marca la orden pedida; inexistente ⇒ 404', async () => {
+      findMock.mockResolvedValueOnce(makeOrder({ paymentGateway: 'STRIPE', trackingNumber: '20261023000001' }));
+      await service.pay(20261023000001);
+      expect(findMock).toHaveBeenCalledWith('20261023000001');
+      expect(paidMock).toHaveBeenCalledWith('20261023000001');
+      findMock.mockResolvedValueOnce(null);
+      await expect(service.pay('00000000000000')).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('PAYPAL sin intento en el mock ⇒ 422 sin marcar; con intento, verifica y marca', async () => {
+      findMock.mockResolvedValueOnce(makeOrder({ paymentGateway: 'PAYPAL', trackingNumber: '20261023000002' }));
+      await expect(service.pay('20261023000002')).rejects.toBeInstanceOf(UnprocessableEntityException);
+      expect(paidMock).not.toHaveBeenCalled();
+
+      findMock.mockResolvedValueOnce(makeOrder({ paymentGateway: 'PAYPAL', trackingNumber: '334983046149' }));
+      await service.pay('334983046149');
+      expect(verifyOrder).toHaveBeenCalledTimes(1);
+      expect(paidMock).toHaveBeenCalledWith('334983046149');
+    });
+
+    it('otras pasarelas: sin cambio', async () => {
+      findMock.mockResolvedValueOnce(makeOrder({ paymentGateway: 'CASH_ON_DELIVERY' }));
+      await service.pay('20240207303639');
+      expect(paidMock).not.toHaveBeenCalled();
     });
   });
 });

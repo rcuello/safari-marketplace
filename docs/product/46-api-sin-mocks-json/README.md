@@ -52,7 +52,7 @@ barrel.
 | [US-56](./56-conversations-messages-postgres.md) | `conversations` y `messages` | 5 | `conversations`, `messages` | US-55 | ~1500 | ✅ Implementada (2026-10-22) |
 | [US-57](./57-order-statuses-postgres.md) | `order-status` | 5 | `order_statuses` | US-56 | ~900 | ✅ Implementada (2026-10-23) |
 | [US-58](./58-orders-lectura-postgres.md) | Órdenes: esquema, seed y lectura | 3 | `orders`, `order_products` | US-57 | ~2200 | ✅ Implementada (2026-10-23) |
-| [US-59](./59-orders-escritura-checkout.md) | Órdenes: escritura y `checkout/verify` | 5 | — (única US sin DDL ni `db-reset`) | US-58 | ~1800 | |
+| [US-59](./59-orders-escritura-checkout.md) | Órdenes: escritura y `checkout/verify` | 5 | — (única US sin DDL ni `db-reset`) | US-58 | ~1800 | ✅ Implementada (2026-10-23) |
 | [US-60](./60-downloads-export-invoice.md) | `downloads`, export e invoice | 4 | `order_files` | US-59 | ~900 | |
 | [US-61](./61-analytics-calculado.md) | `analytics` calculado desde Postgres | 4 | — (sin DDL) | US-60 | ~1100 | |
 | [US-62](./62-withdraws-postgres.md) | `withdraws` | 5 (+1) | `withdraws` | US-61 | ~1100 | |

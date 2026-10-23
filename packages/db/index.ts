@@ -1,6 +1,8 @@
 export type { Prisma, PrismaClient } from './generated/prisma/client/client';
 export { prisma } from './src/client';
 export { _setNowProvider, now } from './src/clock';
+/** Aritmética decimal exacta (la de `numeric`); la usa el cálculo del checkout. */
+export { Decimal } from './generated/prisma/client/internal/prismaNamespace';
 export type { CatalogErrorCode } from './src/domain-errors';
 export {
   CATALOG_ERROR_CODES,
@@ -259,10 +261,24 @@ export {
   updateAbusiveReport,
 } from './src/repositories/abusive-reports.repository';
 export type {
+  CreateOrderChildInput,
+  CreateOrderInput,
   ListOrdersInput,
   OrderDetailRecord,
+  OrderLineInput,
 } from './src/repositories/orders.repository';
-export { findOrderByIdOrTracking, listOrders } from './src/repositories/orders.repository';
+export {
+  ORDER_STATUSES,
+  PAYMENT_STATUSES,
+  InsufficientStockError,
+  createOrderWithChildren,
+  deleteOrder,
+  findOrderByIdOrTracking,
+  findProductsForOrder,
+  listOrders,
+  markOrderPaid,
+  setOrderStatus,
+} from './src/repositories/orders.repository';
 export type {
   CreateOrderStatusInput,
   ListOrderStatusesInput,

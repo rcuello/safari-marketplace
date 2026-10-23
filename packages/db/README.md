@@ -433,6 +433,28 @@ de `shops.repository.ts`) y `children` (por `id`, vacío en las hijas).
   `id` y un `string` por `tracking_number`. `null` si no existe; no
   mira de quién es.
 
+Escrituras (US-59). Reciben las cifras ya calculadas por la API: el dinero
+como **texto decimal** (`"0.044"`), para que llegue exacto a `numeric` sin
+pasar por `float`. El barrel exporta `Decimal` (el de Prisma) para ese
+cálculo.
+
+- **`findProductsForOrder(ids)`**: los productos vivos de un carrito, como
+  `ProductRecord`; los inexistentes no vienen.
+- **`createOrderWithChildren(input)`**: en un `$transaction`, el padre, una
+  hija por tienda con sus líneas y el descuento de stock (`updateMany …
+  where quantity >= n`). Sin stock: `InsufficientStockError` (código del
+  409) y rollback. Fija `createdAt`/`updatedAt` con `now()` y genera los
+  `tracking_number` (`YYYYMMDD` UTC + 6 dígitos, hasta 5 intentos).
+- **`setOrderStatus(id, {orderStatus?, paymentStatus?})`**: valida contra
+  `ORDER_STATUSES`/`PAYMENT_STATUSES` (`InvalidFieldValueError`) y, en un
+  padre, propaga a sus hijas. No se llama `updateOrderStatus` porque ese
+  nombre ya es del catálogo de estados (US-57).
+- **`markOrderPaid(trackingNumber)`**: `order-processing` +
+  `payment-success` en la orden y sus hijas.
+- **`deleteOrder(id)`**: devuelve el snapshot previo; hijas y líneas por
+  CASCADE. Si el `SET NULL` de `reviews.order_id` chocaría con otra
+  reseña del autor sin orden, `SlugConflictError` (409) y no borra nada.
+
 ### Identidad (US-21, Épico 19) — `users.repository.ts`
 
 Mismo agregado por introspección que el catálogo: `users`, `profiles`,
