@@ -24,5 +24,6 @@ export class Coupon extends CoreEntity {
   translated_languages: string[];
   target?: boolean;
   shop_id?: number;
+  user_id?: number;
   is_approve?: boolean;
 }

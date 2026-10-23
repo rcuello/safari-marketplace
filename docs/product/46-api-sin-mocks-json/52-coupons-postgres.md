@@ -7,7 +7,7 @@
 
 **Épico:** [Épico 46](./README.md)
 **Fecha:** 2026-10-20
-**Status:** Listo para ejecución
+**Status:** Implementada (2026-10-22, rama `us-52-coupons-postgres`)
 **Depende de:** US-51 (secuencialidad de archivos compartidos, R-2 del épico; sin dependencia de datos)
 **LOC est.:** ~1500
 
@@ -316,22 +316,129 @@ Feature: Cupones desde Postgres
 
 Sigue el **Protocolo de ejecución** del README del épico. Lo específico:
 
-- [ ] Línea base: los 5 cuerpos capturados con la API recién arrancada; se
+- [x] Línea base: los 5 cuerpos capturados con la API recién arrancada; se
   pega la lista de archivos con sus bytes.
-- [ ] `just db-seed-generate` con los conteos nuevos en consola, más el
+- [x] `just db-seed-generate` con los conteos nuevos en consola, más el
   fallo pegado de una corrida con un `shop_id` inexistente inyectado (y el
   JSON restaurado).
-- [ ] `just db-reset` y `psql` con: `count(*)` = 10; el reparto por
+- [x] `just db-reset` y `psql` con: `count(*)` = 10; el reparto por
   `shop_id`; 0 huérfanas por FK; conteos previos intactos.
-- [ ] `npx prisma validate` + `migrate diff --exit-code` en `EXIT=0`, y
+- [x] `npx prisma validate` + `migrate diff --exit-code` en `EXIT=0`, y
   `just db-build` limpio.
-- [ ] CA-2: salida de `node -e` con el deep-equal y la lista exacta de
+- [x] CA-2: salida de `node -e` con el deep-equal y la lista exacta de
   claves excluidas (solo V-1).
-- [ ] CA-3, CA-4 y CA-5: los `curl` con Bearer, el status exacto y el cuerpo
+- [x] CA-3, CA-4 y CA-5: los `curl` con Bearer, el status exacto y el cuerpo
   relevante, incluido el `GET` posterior al reinicio.
-- [ ] CA-6: `grep` vacío; `just db-check`, `npx jest`, `just build-api` y
+- [x] CA-6: `grep` vacío; `just db-check`, `npx jest`, `just build-api` y
   `just verify` con recuentos.
-- [ ] Status actualizado aquí y en la tabla del épico.
+- [x] Status actualizado aquí y en la tabla del épico.
+
+## Evidencia (2026-10-22)
+
+**Línea base**, con la API recién arrancada sobre `main` (`737becd`):
+
+```
+  497 base-coupon-4off.json
+ 1822 base-coupons-admin-search.json
+ 5306 base-coupons-shop.json
+ 3303 base-coupons-shop1.json
+  506 base-verify.json
+```
+
+**Seed.** `just db-seed-generate` termina con `… · 3 store_notices · 10
+coupons`. Con `shop_id: 999` inyectado en el id 10 (y el JSON restaurado
+después, sin diff):
+
+```
+El mock viola 1 restriccion(es) del esquema:
+  - coupons 10: shop_id 999 inexistente
+EXIT=1
+```
+
+**Desvío del texto de la US:** el helper `json()` del generador castea a
+`::jsonb`, y un `'…'::jsonb` insertado en una columna `json` llega ya
+reordenado. Se añadió `jsonTal()` (`::json`) solo para `coupons.image`. Con
+`json()` habría fallado CA-2.
+
+**CA-1** (`just db-reset` + `psql`):
+
+| Medida | Valor |
+|---|---|
+| `count(*)` | 10 (9 `fixed` + 1 `percentage`; 10 `is_approve`; 1 `target`) |
+| Por tienda | shop 1 → 6 (`10,7,6,3,2,1`), shop 2 → 2, shop 3 → 2 |
+| Huérfanas `shop_id` / `user_id` | 0 / 0 |
+| `image` del id 10 | `{"thumbnail":…,"original":…,"id":924}` (orden del mock) |
+| Conteos previos | products 1200 · shops 12 · users 3 · store_notices 3 · attributes 8 · attribute_values 27 · faqs 19 · taxes 1 |
+
+`git diff db/schema.sql`: 39 inserciones y 0 eliminaciones.
+
+**Prisma.** `The schema at prismaschema.prisma is valid` y `migrate diff
+--exit-code` con `EXIT=0`. `just db-build` limpio.
+
+**CA-2** (`node`, deep-equal con orden de claves, excluyendo solo
+`is_valid`):
+
+```
+paginador idéntico: {"per_page":"20","total":10}
+new-coupons-shop.json: 10 diferencias V-1, 0 fuera de V-1
+  claves de image de los ids 10 y 4: 10:thumbnail,original,id 4:thumbnail,original,id
+new-coupon-4off.json: 1 diferencias V-1, 0 fuera de V-1
+new-admin-search.json: 3 diferencias V-1, 0 fuera de V-1   (paginador idéntico, total 3)
+```
+
+**CA-3:**
+
+| Query | total | ids |
+|---|---|---|
+| `shop_id=1` | 6 | 10, 7, 6, 3, 2, 1 |
+| `search=code:BAZAR` | 3 | BAZAR10, BAZAR20, BAZAR18 |
+| `shop_id=2&search=code:BAZAR` | 1 | BAZAR18 |
+| `GET /coupons/NOEXISTE` | 404 | V-5 |
+| `GET /coupons/4OFF/verify` | 200 | el cupón 4OFF (V-8) |
+
+**CA-4 y CA-5** (Bearer de `store_owner@demo.com` y `admin@demo.com`). Como
+las 12 tiendas del seed son del usuario 1, el caso "tienda ajena" usó una
+tienda centinela `zz-coupon-shop` del admin, borrada al final junto con los
+cupones `zz-coupon-*`:
+
+| Petición | Status | Resultado |
+|---|---|---|
+| `POST /coupons` dueño, tienda 1, mínimo 160 | 201 | `is_approve:0`, `is_valid:true`, `user_id:1` |
+| ídem sobre la tienda ajena | 403 | `No tienes permisos sobre la tienda 16.` |
+| ídem con código repetido | 409 | |
+| ídem sin token | 401 | |
+| `verify` `NOEXISTE` / `4OFF` (vencido) | 201 | `{is_valid:false, message:"error-invalid-coupon"}` |
+| `verify` `zz-coupon-a` sin aprobar | 201 | `is_valid:false` |
+| `approve-coupon` admin / dueño / id 999999 | 201 / 403 / 404 | `is_approve:1` |
+| `verify` `zz-coupon-a` aprobado, `sub_total` 500 | 201 | `is_valid:true`, `coupon` con 16 claves |
+| `verify` `zz-coupon-a`, `sub_total` 100 | 201 | `is_valid:false` (mínimo 160) |
+| `PUT` `{amount:9}` como dueño | 200 | `psql`: `amount` 5 → 9; `updated_at` 01:34:23.97 → 01:34:28.99 |
+| `PUT` id 999999 / código repetido | 404 / 409 | |
+| `DELETE` cupón de la tienda ajena: dueño / admin | 403 / 200 | devuelve el DTO; el `GET` siguiente da 404 |
+| **Tras reiniciar la API**, `GET /coupons/zz-coupon-a` | 200 | `is_approve:1`, `amount:9` |
+
+`POST /coupons/verify` y `approve-coupon` responden **201**, no 200: es el
+default de Nest para un `@Post` y el mock respondía igual. Se mantiene (D-1).
+
+**CA-6:**
+
+- El `grep` no devuelve nada (`exit=1`).
+- `just db-check`: 21 archivos y 318 tests (antes 20/309; +9 de
+  `coupons.integration.test.ts`).
+- `npx jest`: 19 suites y 389 tests (antes 18/364; +25 de
+  `coupons.service.spec.ts`).
+- `just build-api`: `Done in 86.00s`.
+- `just verify`: API `5503B`, Shop `cards:30`, Admin `cards:1`.
+- `/offers` responde 200. Los 10 cupones viajan en el estado
+  deshidratado con `is_valid:false` y el filtro de cliente los descarta
+  (V-1).
+
+**Para el reporte, fuera de alcance:**
+
+- El 409 de código duplicado dice "…con el slug `code`": es el texto común
+  de `SlugConflictError`, que no distingue el campo.
+- Las 12 tiendas son del usuario 1, así que el 403 por tienda ajena no se
+  puede reproducir con el seed tal cual.
 
 ## Notas para el agente ejecutor
 

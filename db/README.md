@@ -27,7 +27,7 @@ SQL inaplicable.
 · 1 become_seller · 3 shop_staff · 19 faqs · 5 terms_and_conditions
 · 5 refund_policies · 8 refund_reasons · 1 taxes · 1 shippings
 · 8 attributes · 27 attribute_values · 3 store_notices (6 destinatarios,
-6 lecturas)
+6 lecturas) · 10 coupons
 ```
 
 **Los ids del mock se preservan** para no romper las relaciones, y al final se
@@ -226,6 +226,32 @@ publica en la barra superior del panel.
 
 Los tres pivotes son puros (PK compuesta, FK en CASCADE, solo `created_at`),
 calco de `permission_user`.
+
+## Cupones: `coupons`
+
+Desde US-52, primera tabla del dominio transaccional. 10 filas del mock,
+ids 10→1: tienda 1 → 6, tienda 2 → 2, tienda 3 → 2; las 10 aprobadas y
+una (`4OFF`) con `target`.
+
+- **`is_valid` no es columna.** La API lo calcula en cada lectura:
+  vigente ⇔ `active_from <= now() < expire_at`, con el reloj de
+  `packages/db/src/clock.ts`. `POST /coupons/verify` exige además
+  `is_approve` y `sub_total >= minimum_cart_amount`.
+- **El seed está vencido.** Todos los `expire_at` del mock son anteriores
+  a 2025-06, así que las 10 filas salen con `is_valid: false` y las
+  páginas `/offers` y `/shops/[slug]/offers` del shop, que filtran en
+  cliente por `is_valid`, quedan vacías. Es correcto; renovar las fechas
+  sería otra US.
+- **`image` es `json`, no `jsonb`** (D-5 del Épico 46): dos filas traen
+  `{thumbnail, original, id}` y `jsonb` reordenaría las claves. Por eso el
+  generador la emite con `jsonTal()` (`::json`), no con `json()`, que
+  castea a `jsonb` antes de llegar a la columna.
+- **CHECK**: `type ∈ {fixed, percentage, free_shipping}`, `amount >= 0`,
+  `minimum_cart_amount >= 0` y `expire_at > active_from`. `code` es
+  UNIQUE.
+- **FK**: `shop_id` en CASCADE (como `products.shop_id`; `NULL` = cupón
+  global de super_admin) y `user_id` en SET NULL. `orders.coupon_id`
+  todavía no existe (US-58).
 
 ## Cómo se adapta el scraper
 

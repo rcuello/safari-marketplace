@@ -41,6 +41,7 @@ const taxes = leer('taxes');
 const shippings = leer('shippings');
 const attributes = leer('attributes');
 const storeNotices = leer('store-notices');
+const coupons = leer('coupons');
 
 // ── Literales SQL ────────────────────────────────────────────────────────
 const txt = (v) =>
@@ -49,6 +50,10 @@ const num = (v) => (v === null || v === undefined || v === '' ? 'NULL' : Number(
 const bool = (v) => (v ? 'true' : 'false');
 const json = (v) =>
   v === null || v === undefined ? 'NULL' : `${txt(JSON.stringify(v))}::jsonb`;
+// Para columnas `json` (D-5 del Épico 46): castear a jsonb reordenaría las
+// claves ANTES de llegar a la columna, que es justo lo que `json` evita.
+const jsonTal = (v) =>
+  v === null || v === undefined ? 'NULL' : `${txt(JSON.stringify(v))}::json`;
 const arr = (v) =>
   !Array.isArray(v) || !v.length
     ? `ARRAY[]::text[]`
@@ -314,6 +319,23 @@ for (const n of avisos) {
     problemas.push(`store_notices ${n.id}: trae shops[] y el generador no los siembra todavía`);
 }
 
+// ── Cupones (US-52) ──────────────────────────────────────────────────────
+// is_valid NO se siembra: la API lo calcula desde la vigencia. user_id es
+// null en las 10 filas del mock; si alguna lo trajera, tendría que pasar por
+// resolverUsuarioPorEmail (D-4) y aquí no hay snapshot con email.
+if (new Set(coupons.map((c) => c.code)).size !== coupons.length)
+  problemas.push('coupons: code duplicado');
+for (const c of coupons) {
+  if (c.shop_id != null && !idsFinalesShops.has(c.shop_id))
+    problemas.push(`coupons ${c.id}: shop_id ${c.shop_id} inexistente`);
+  if (!['fixed', 'percentage', 'free_shipping'].includes(c.type))
+    problemas.push(`coupons ${c.id}: type '${c.type}' fuera del CHECK`);
+  if (!(new Date(c.expire_at) > new Date(c.active_from)))
+    problemas.push(`coupons ${c.id}: expire_at no es posterior a active_from`);
+  if (c.user_id != null)
+    problemas.push(`coupons ${c.id}: trae user_id y no hay snapshot para resolverlo por email`);
+}
+
 if (problemas.length) {
   console.error(`\nEl mock viola ${problemas.length} restriccion(es) del esquema:`);
   problemas.slice(0, 20).forEach((p) => console.error('  - ' + p));
@@ -345,7 +367,7 @@ L.push(
     `${refundPolicies.length} refund_policies · ${refundReasons.length} refund_reasons · ` +
     `${taxes.length} taxes · ${shippings.length} shippings · ` +
     `${attributes.length} attributes · ${valoresAtributo.length} attribute_values · ` +
-    `${avisos.length} store_notices`,
+    `${avisos.length} store_notices · ${coupons.length} coupons`,
   '-- =====================================================================',
   '',
   'BEGIN;'
@@ -649,6 +671,25 @@ L.push(
     .join(',\n') + '\nON CONFLICT (store_notice_id, user_id) DO NOTHING;'
 );
 
+// coupons (US-52; tras shops: la FK lo exige) --------------------------------
+bloque(`coupons — ${coupons.length} (vigencia del mock; is_valid se calcula en la API)`);
+L.push(
+  '-- target/is_approve llegan como entero 1/0 -> bool(). image va a una columna',
+  '-- json (no jsonb) para conservar el orden de claves. Sin timestamps: el mock',
+  '-- no los trae.',
+  'INSERT INTO coupons (id, code, description, image, type, amount, minimum_cart_amount, active_from, expire_at, target, is_approve, shop_id, user_id, language) VALUES'
+);
+L.push(
+  coupons
+    .map(
+      (c) =>
+        `  (${c.id}, ${txt(c.code)}, ${txt(c.description)}, ${jsonTal(c.image)}, ${txt(c.type)}, ` +
+        `${num(c.amount)}, ${num(c.minimum_cart_amount ?? 0)}, ${txt(c.active_from)}, ${txt(c.expire_at)}, ` +
+        `${bool(c.target)}, ${bool(c.is_approve)}, ${num(c.shop_id)}, ${num(c.user_id)}, ${txt(c.language ?? 'en')})`
+    )
+    .join(',\n') + '\nON CONFLICT (id) DO NOTHING;'
+);
+
 // categories -------------------------------------------------------------
 const raices = categories.filter((c) => !c.parent_id).length;
 bloque(`categories — ${categories.length} (${raices} raíces, ${categories.length - raices} hijas)`);
@@ -785,7 +826,7 @@ L.push(
   '-- mock, así que hay que adelantar las secuencias o el primer INSERT nuevo',
   '-- chocaría con una clave existente.'
 );
-for (const t of ['types', 'users', 'permissions', 'shops', 'categories', 'manufacturers', 'tags', 'products', 'faqs', 'terms_and_conditions', 'refund_policies', 'refund_reasons', 'taxes', 'shippings', 'attributes', 'attribute_values', 'store_notices']) {
+for (const t of ['types', 'users', 'permissions', 'shops', 'categories', 'manufacturers', 'tags', 'products', 'faqs', 'terms_and_conditions', 'refund_policies', 'refund_reasons', 'taxes', 'shippings', 'attributes', 'attribute_values', 'store_notices', 'coupons']) {
   L.push(`SELECT setval('${t}_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM ${t}), 1));`);
 }
 
@@ -805,5 +846,5 @@ console.log(
     `${refundPolicies.length} refund_policies · ${refundReasons.length} refund_reasons · ` +
     `${taxes.length} taxes · ${shippings.length} shippings · ` +
     `${attributes.length} attributes · ${valoresAtributo.length} attribute_values · ` +
-    `${avisos.length} store_notices`
+    `${avisos.length} store_notices · ${coupons.length} coupons`
 );

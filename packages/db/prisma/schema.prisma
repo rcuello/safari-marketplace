@@ -20,7 +20,10 @@
 //     (∈ fixed|percentage|free), store_notices_priority_check (∈ high|
 //     medium|low), store_notices_type_check (∈ all_vendor|specific_vendor|
 //     all_shop|specific_shop), store_notices_vigencia_valida
-//     (effective_from <= expired_at). Los repositorios los validan
+//     (effective_from <= expired_at), coupons_type_check (∈ fixed|
+//     percentage|free_shipping), coupons_amount_check (amount ≥ 0),
+//     coupons_minimum_cart_amount_check (≥ 0), coupons_vigencia_valida
+//     (expire_at > active_from). Los repositorios los validan
 //     antes de escribir y traducen la violación a errores de dominio.
 //   · El índice de expresión products_nombre_trgm_idx
 //     (gin (lower(name) gin_trgm_ops)) que acelera la búsqueda por
@@ -97,6 +100,7 @@ model Shop {
   refundPolicies     RefundPolicy[]
   attributes         Attribute[]
   storeNotices       StoreNoticeShop[]
+  coupons            Coupon[]
 
   @@map("shops")
 }
@@ -265,6 +269,7 @@ model User {
   updatedStoreNotices StoreNotice[]         @relation("StoreNoticeUpdater")
   storeNotices        StoreNoticeUser[]
   storeNoticeReads    StoreNoticeRead[]
+  coupons             Coupon[]
 
   @@map("users")
 }
@@ -582,4 +587,34 @@ model StoreNoticeRead {
   @@id([storeNoticeId, userId])
   @@index([userId], map: "store_notice_read_usuario_idx")
   @@map("store_notice_read")
+}
+
+// =====================================================================
+// Cupones (US-52, Épico 46)
+// =====================================================================
+
+model Coupon {
+  id                BigInt   @id @default(autoincrement())
+  code              String   @unique
+  description       String?
+  image             Json?    @db.Json
+  type              String
+  amount            Decimal  @db.Decimal
+  minimumCartAmount Decimal  @default(0) @map("minimum_cart_amount") @db.Decimal
+  activeFrom        DateTime @map("active_from") @db.Timestamptz(6)
+  expireAt          DateTime @map("expire_at") @db.Timestamptz(6)
+  target            Boolean  @default(false)
+  isApprove         Boolean  @default(false) @map("is_approve")
+  shopId            BigInt?  @map("shop_id")
+  userId            BigInt?  @map("user_id")
+  language          String   @default("es")
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  shop Shop? @relation(fields: [shopId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user User? @relation(fields: [userId], references: [id], onUpdate: NoAction)
+
+  @@index([shopId], map: "coupons_shop_idx")
+  @@index([userId], map: "coupons_user_idx")
+  @@map("coupons")
 }

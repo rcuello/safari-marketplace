@@ -738,6 +738,41 @@ CREATE TABLE IF NOT EXISTS store_notice_read (
 
 
 -- =====================================================================
+-- Cupones (US-52, Épico 46) — primera tabla del dominio transaccional.
+--
+-- Sembrada desde coupons.json (10 cupones). `is_valid` NO es columna: la API
+-- lo calcula en cada lectura desde la vigencia (active_from <= now() <
+-- expire_at). Con el seed del mock las 10 filas ya vencieron.
+--
+-- `image` es `json`, no `jsonb` (D-5): el contrato preserva el orden de
+-- claves y dos filas traen {thumbnail, original, id}. Un cupón de tienda
+-- muere con su tienda (CASCADE, como products.shop_id); shop_id NULL es un
+-- cupón global de super_admin. El autor puede borrarse (SET NULL).
+-- Sin trigger de updated_at (reloj único, ver abajo).
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS coupons (
+    id                   bigserial    PRIMARY KEY,
+    code                 text         NOT NULL UNIQUE,
+    description          text,
+    image                json,
+    type                 text         NOT NULL
+                                      CHECK (type IN ('fixed', 'percentage', 'free_shipping')),
+    amount               numeric      NOT NULL CHECK (amount >= 0),
+    minimum_cart_amount  numeric      NOT NULL DEFAULT 0 CHECK (minimum_cart_amount >= 0),
+    active_from          timestamptz  NOT NULL,
+    expire_at            timestamptz  NOT NULL,
+    target               boolean      NOT NULL DEFAULT false,
+    is_approve           boolean      NOT NULL DEFAULT false,
+    shop_id              bigint       REFERENCES shops(id) ON DELETE CASCADE,
+    user_id              bigint       REFERENCES users(id) ON DELETE SET NULL,
+    language             text         NOT NULL DEFAULT 'es',
+    created_at           timestamptz  NOT NULL DEFAULT now(),
+    updated_at           timestamptz  NOT NULL DEFAULT now(),
+    CONSTRAINT coupons_vigencia_valida CHECK (expire_at > active_from)
+);
+
+
+-- =====================================================================
 -- Índices.
 --
 -- No son decorativos: cada uno responde a un filtro que el frontend
@@ -802,6 +837,10 @@ CREATE INDEX IF NOT EXISTS store_notices_updated_by_idx   ON store_notices (upda
 CREATE INDEX IF NOT EXISTS store_notice_user_usuario_idx  ON store_notice_user (user_id);
 CREATE INDEX IF NOT EXISTS store_notice_shop_tienda_idx   ON store_notice_shop (shop_id);
 CREATE INDEX IF NOT EXISTS store_notice_read_usuario_idx  ON store_notice_read (user_id);
+
+-- Cupones (US-52): el shop filtra por shop_id en /shops/[slug]/offers.
+CREATE INDEX IF NOT EXISTS coupons_shop_idx               ON coupons (shop_id);
+CREATE INDEX IF NOT EXISTS coupons_user_idx               ON coupons (user_id);
 
 
 -- ---------------------------------------------------------------------

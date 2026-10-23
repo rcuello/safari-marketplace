@@ -9,7 +9,7 @@
 -- ya existen, y creando en tiempo de ejecución únicamente lo que es suyo
 -- (los retailers como shops, las marcas como manufacturers).
 --
--- 10 types · 12 shops · 198 categorías · 14 manufacturers · 10 tags · 1200 productos · 3 usuarios · 4 permisos · 1 become_seller · 3 shop_staff · 19 faqs · 5 terms_and_conditions · 5 refund_policies · 8 refund_reasons · 1 taxes · 1 shippings · 8 attributes · 27 attribute_values · 3 store_notices
+-- 10 types · 12 shops · 198 categorías · 14 manufacturers · 10 tags · 1200 productos · 3 usuarios · 4 permisos · 1 become_seller · 3 shop_staff · 19 faqs · 5 terms_and_conditions · 5 refund_policies · 8 refund_reasons · 1 taxes · 1 shippings · 8 attributes · 27 attribute_values · 3 store_notices · 10 coupons
 -- =====================================================================
 
 BEGIN;
@@ -289,6 +289,25 @@ INSERT INTO store_notice_read (store_notice_id, user_id, is_read) VALUES
   (1, 3, true),
   (1, 1, false)
 ON CONFLICT (store_notice_id, user_id) DO NOTHING;
+
+-- ────────────────────────────────────────────────────────────────────
+-- coupons — 10 (vigencia del mock; is_valid se calcula en la API)
+-- ────────────────────────────────────────────────────────────────────
+-- target/is_approve llegan como entero 1/0 -> bool(). image va a una columna
+-- json (no jsonb) para conservar el orden de claves. Sin timestamps: el mock
+-- no los trae.
+INSERT INTO coupons (id, code, description, image, type, amount, minimum_cart_amount, active_from, expire_at, target, is_approve, shop_id, user_id, language) VALUES
+  (10, '4OFF', NULL, '{"thumbnail":"https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/924/conversions/4x2x-thumbnail.jpg","original":"https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/924/4x2x.png","id":924}'::json, 'fixed', 4, 160, '2021-03-28T05:46:42.000Z', '2024-03-28T05:46:42.000Z', true, true, 1, NULL, 'en'),
+  (9, '5OFF', NULL, '{"id":925,"original":"https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/925/5x2x.png","thumbnail":"https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/925/conversions/5x2x-thumbnail.jpg"}'::json, 'fixed', 5, 0, '2021-03-28T05:46:42.000Z', '2024-06-23T05:46:42.000Z', false, true, 2, NULL, 'en'),
+  (8, 'OFF6', NULL, '{"id":926,"original":"https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/926/6x2x.png","thumbnail":"https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/926/conversions/6x2x-thumbnail.jpg"}'::json, 'fixed', 6, 0, '2021-03-28T05:46:42.000Z', '2024-07-14T05:46:42.000Z', false, true, 3, NULL, 'en'),
+  (7, 'BAZAR10', NULL, '{"id":927,"original":"https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/927/10x2x.png","thumbnail":"https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/927/conversions/10x2x-thumbnail.jpg"}'::json, 'fixed', 10, 0, '2021-03-28T05:46:42.000Z', '2025-05-26T05:46:42.000Z', false, true, 1, NULL, 'en'),
+  (6, 'BAZAR20', NULL, '{"id":928,"original":"https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/928/20x2x.png","thumbnail":"https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/928/conversions/20x2x-thumbnail.jpg"}'::json, 'fixed', 20, 0, '2021-03-27T20:55:49.000Z', '2024-04-26T20:55:49.000Z', false, true, 1, NULL, 'en'),
+  (5, 'BAZAR18', NULL, '{"id":929,"original":"https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/929/18x2x.png","thumbnail":"https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/929/conversions/18x2x-thumbnail.jpg"}'::json, 'fixed', 18, 0, '2021-03-27T20:55:49.000Z', '2024-04-15T20:55:49.000Z', false, true, 2, NULL, 'en'),
+  (4, 'HELLO15', NULL, '{"thumbnail":"https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/930/conversions/15x2x-thumbnail.jpg","original":"https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/930/15x2x.png","id":930}'::json, 'percentage', 15, 100, '2021-03-27T20:48:28.000Z', '2024-04-23T20:48:28.000Z', false, true, 3, NULL, 'en'),
+  (3, 'EID12', NULL, '{"id":931,"original":"https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/931/12x2x.png","thumbnail":"https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/931/conversions/12x2x-thumbnail.jpg"}'::json, 'fixed', 12, 0, '2021-03-27T20:48:28.000Z', '2024-05-26T20:48:28.000Z', false, true, 1, NULL, 'en'),
+  (2, 'FOO', NULL, '{"id":932,"original":"https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/932/8x2x.png","thumbnail":"https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/932/conversions/8x2x-thumbnail.jpg"}'::json, 'fixed', 8, 0, '2021-03-27T05:33:22.000Z', '2024-05-26T05:33:22.000Z', false, true, 1, NULL, 'en'),
+  (1, 'EID2', NULL, '{"id":933,"original":"https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/933/2x2x.png","thumbnail":"https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/933/conversions/2x2x-thumbnail.jpg"}'::json, 'fixed', 2, 0, '2021-03-10T21:48:15.000Z', '2024-07-27T21:48:15.000Z', false, true, 1, NULL, 'en')
+ON CONFLICT (id) DO NOTHING;
 
 -- ────────────────────────────────────────────────────────────────────
 -- categories — 198 (83 raíces, 115 hijas)
@@ -1913,5 +1932,6 @@ SELECT setval('shippings_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM shi
 SELECT setval('attributes_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM attributes), 1));
 SELECT setval('attribute_values_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM attribute_values), 1));
 SELECT setval('store_notices_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM store_notices), 1));
+SELECT setval('coupons_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM coupons), 1));
 
 COMMIT;

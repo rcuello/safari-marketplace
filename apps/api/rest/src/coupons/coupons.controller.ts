@@ -12,21 +12,30 @@ import { CouponsService } from './coupons.service';
 import { CreateCouponDto } from './dto/create-coupon.dto';
 import { GetCouponsDto } from './dto/get-coupons.dto';
 import { UpdateCouponDto } from './dto/update-coupon.dto';
+import { VerifyCouponInput } from './dto/verify-coupon.dto';
 import { Public } from 'src/auth/decorators/public.decorator';
 import {
   ADMIN_ONLY,
   ADMIN_OWNER_AND_STAFF,
   Permissions,
 } from 'src/auth/decorators/permissions.decorator';
+import {
+  CurrentUser,
+  CurrentUserPayload,
+} from 'src/auth/decorators/current-user.decorator';
 
 @Controller('coupons')
 export class CouponsController {
   constructor(private readonly couponsService: CouponsService) {}
 
+  // Las escrituras llevan @CurrentUser: propiedad por tienda (DD29-4, US-52).
   @Permissions(...ADMIN_OWNER_AND_STAFF)
   @Post()
-  createCoupon(@Body() createCouponDto: CreateCouponDto) {
-    return this.couponsService.create(createCouponDto);
+  createCoupon(
+    @Body() createCouponDto: CreateCouponDto,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
+    return this.couponsService.create(createCouponDto, user);
   }
 
   // La lista ya se prefetchea anónima en coupon.ssr.ts (cierre del usuario, proposal.md).
@@ -38,24 +47,23 @@ export class CouponsController {
 
   @Public()
   @Get(':param')
-  getCoupon(
-    @Param('param') param: string,
-    @Query('language') language: string,
-  ) {
-    return this.couponsService.getCoupon(param, language);
+  getCoupon(@Param('param') param: string) {
+    return this.couponsService.getCoupon(param);
   }
 
+  // Leía `@Param('param')` en una ruta `:id` y siempre llegaba `undefined`
+  // (V-8). El `:id` es el código: misma búsqueda que `GET :param`.
   @Public()
   @Get(':id/verify')
-  verify(@Param('param') param: string, @Query('language') language: string) {
-    return this.couponsService.getCoupon(param, language);
+  verify(@Param('id') id: string) {
+    return this.couponsService.getCoupon(id);
   }
 
   // `verify` corre en el carrito de invitado (cierre del usuario, proposal.md).
   @Public()
   @Post('verify')
-  verifyCoupon(@Body('code') code: string) {
-    return this.couponsService.verifyCoupon(code);
+  verifyCoupon(@Body() verifyCouponInput: VerifyCouponInput) {
+    return this.couponsService.verifyCoupon(verifyCouponInput);
   }
 
   @Permissions(...ADMIN_OWNER_AND_STAFF)
@@ -63,14 +71,18 @@ export class CouponsController {
   updateCoupon(
     @Param('id') id: string,
     @Body() updateCouponDto: UpdateCouponDto,
+    @CurrentUser() user: CurrentUserPayload,
   ) {
-    return this.couponsService.update(+id, updateCouponDto);
+    return this.couponsService.update(+id, updateCouponDto, user);
   }
 
   @Permissions(...ADMIN_OWNER_AND_STAFF)
   @Delete(':id')
-  deleteCoupon(@Param('id') id: string) {
-    return this.couponsService.remove(+id);
+  deleteCoupon(
+    @Param('id') id: string,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
+    return this.couponsService.remove(+id, user);
   }
 }
 
@@ -80,8 +92,8 @@ export class DisapproveCouponController {
   constructor(private couponsService: CouponsService) {}
 
   @Post()
-  async disapproveCoupon(@Body('id') id) {
-    return this.couponsService.disapproveCoupon(id);
+  async disapproveCoupon(@Body('id') id: unknown) {
+    return this.couponsService.setApproval(id, false);
   }
 }
 
@@ -91,7 +103,7 @@ export class ApproveCouponController {
   constructor(private couponsService: CouponsService) {}
 
   @Post()
-  async approveCoupon(@Body('id') id) {
-    return this.couponsService.approveCoupon(id);
+  async approveCoupon(@Body('id') id: unknown) {
+    return this.couponsService.setApproval(id, true);
   }
 }

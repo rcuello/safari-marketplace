@@ -33,6 +33,7 @@ export type {
   AttributeValueRecord,
   BecomeSellerRecord,
   CategoryRecord,
+  CouponRecord,
   FaqRecord,
   ManufacturerRecord,
   PermissionRecord,
@@ -178,6 +179,21 @@ export {
   markStoreNoticeRead,
   updateStoreNotice,
 } from './src/repositories/store-notices.repository';
+export type {
+  CreateCouponInput,
+  ListCouponsInput,
+  UpdateCouponInput,
+} from './src/repositories/coupons.repository';
+export {
+  COUPON_TYPES,
+  createCoupon,
+  deleteCoupon,
+  findCouponByCode,
+  findCouponById,
+  listCoupons,
+  setCouponApproval,
+  updateCoupon,
+} from './src/repositories/coupons.repository';
 export type {
   CategoryAncestor,
   CategoryDescendant,

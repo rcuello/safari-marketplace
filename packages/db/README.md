@@ -117,7 +117,9 @@ No usar `prisma migrate dev` ni `prisma db push` contra esta base.
   US-48 `refund_policies_target_check` y `refund_policies_status_check`, y
   desde US-49 `taxes_rate_check`, `shippings_amount_check` y
   `shippings_type_check`, y desde US-51 `store_notices_priority_check`,
-  `store_notices_type_check` y `store_notices_vigencia_valida`) no existen
+  `store_notices_type_check` y `store_notices_vigencia_valida`, y desde
+  US-52 `coupons_type_check`, `coupons_amount_check`,
+  `coupons_minimum_cart_amount_check` y `coupons_vigencia_valida`) no existen
   para Prisma. Los repositorios los validan antes de escribir (tipos +
   guard de `salePrice < price`) y traducen la violación que llegue de
   Postgres a errores de dominio: `InvalidSalePriceError`,
@@ -243,6 +245,29 @@ tiendas por `shopId ASC` y permisos por `permissionId ASC`.
 Los tres CHECK de `store_notices` se validan antes de escribir con
 `InvalidFieldValueError`. Los valores admitidos se exportan como
 `STORE_NOTICE_PRIORITIES` y `STORE_NOTICE_TYPES`.
+
+### Cupones (US-52, Épico 46) — `coupons.repository.ts`
+
+`CouponRecord` es la fila plana: importes como number (`_dec`), `target`
+e `isApprove` booleanos e `image` tal cual sale de la columna `json`, con
+su orden de claves. **No trae `isValid`**: depende del reloj y lo calcula la
+API con `now()`.
+
+- **`listCoupons`**: paginado en `id DESC`; `shopId` y `code` (parcial,
+  case-insensitive) se combinan con AND. `{items, total}`.
+- **`findCouponByCode`** (exacto, distingue mayúsculas) y
+  **`findCouponById`**: `null` si no existe.
+- **`createCoupon`**: nace con `isApprove` en `false`. Un `code`
+  repetido da `SlugConflictError` (409) y una tienda inexistente
+  `InvalidReferenceError` en `shop_id`.
+- **`updateCoupon`**: `shopId`/`userId` no cambian; la vigencia se valida
+  contra la fila, así que basta con que cambie una fecha. Fija `updatedAt`.
+- **`setCouponApproval`** (moderación) y **`deleteCoupon`** (devuelve la
+  fila borrada). Id inexistente ⇒ `RecordNotFoundError`.
+
+Los cuatro CHECK se validan antes de escribir con `InvalidFieldValueError`
+(`NaN` y fechas inválidas incluidos). Los tipos admitidos se exportan como
+`COUPON_TYPES`. `image: null` se trata como ausente (DD-5, como `tags`).
 
 ### Identidad (US-21, Épico 19) — `users.repository.ts`
 

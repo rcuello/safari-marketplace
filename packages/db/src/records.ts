@@ -22,6 +22,7 @@ import type {
   AttributeValue,
   BecomeSeller,
   Category,
+  Coupon,
   Faq,
   Manufacturer,
   Permission,
@@ -276,6 +277,31 @@ export interface ShippingRecord {
   amount: number;
   isGlobal: boolean;
   type: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/**
+ * Cupón (US-52). `amount`/`minimumCartAmount` son `numeric` sin escala →
+ * number. `image` sale de una columna `json` (no `jsonb`): conserva el
+ * orden de claves del mock. `is_valid` NO está aquí: depende del reloj y lo
+ * calcula el consumidor.
+ */
+export interface CouponRecord {
+  id: number;
+  code: string;
+  description: string | null;
+  image: Prisma.JsonValue | null;
+  type: string;
+  amount: number;
+  minimumCartAmount: number;
+  activeFrom: Date;
+  expireAt: Date;
+  target: boolean;
+  isApprove: boolean;
+  shopId: number | null;
+  userId: number | null;
+  language: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -633,6 +659,27 @@ export function _toStoreNoticeRecord(row: StoreNotice): StoreNoticeRecord {
     type: row.type,
     createdBy: _id(row.createdBy),
     updatedBy: _id(row.updatedBy),
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+export function _toCouponRecord(row: Coupon): CouponRecord {
+  return {
+    id: _id(row.id),
+    code: row.code,
+    description: row.description,
+    image: row.image,
+    type: row.type,
+    amount: _dec(row.amount),
+    minimumCartAmount: _dec(row.minimumCartAmount),
+    activeFrom: row.activeFrom,
+    expireAt: row.expireAt,
+    target: row.target,
+    isApprove: row.isApprove,
+    shopId: _id(row.shopId),
+    userId: _id(row.userId),
+    language: row.language,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
