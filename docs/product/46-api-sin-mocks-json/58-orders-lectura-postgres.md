@@ -8,7 +8,7 @@
 
 **Épico:** [Épico 46](./README.md)
 **Fecha:** 2026-10-20
-**Status:** Listo para ejecución
+**Status:** Implementada (2026-10-23, rama `us-58-orders-lectura`, en dos cortes)
 **Depende de:** US-57 por orden (R-2). Por datos depende de **US-52**
 (`coupons`, destino de la FK `orders.coupon_id`) y de **US-54** (`reviews`,
 cuya FK `order_id` cierra esta US). Las dos están antes en la secuencia.
@@ -484,20 +484,20 @@ Feature: Lectura de ordenes desde Postgres
 
 Se sigue el Protocolo del [README del épico](./README.md#protocolo-de-ejecución-de-una-us-de-este-épico).
 
-- [ ] Línea base pegada, incluida la evidencia de la fuga (`customer-lista`
+- [x] Línea base pegada, incluida la evidencia de la fuga (`customer-lista`
   con `customer_id` {2, 6}) y de la fila 0 ante un id inexistente.
-- [ ] Generador con los conteos; `just db-reset` limpio; `psql` de CA-1; dos
+- [x] Generador con los conteos; `just db-reset` limpio; `psql` de CA-1; dos
   `just db-migrate` seguidos sin error.
-- [ ] `prisma validate` + `migrate diff --exit-code` → `EXIT=0`;
+- [x] `prisma validate` + `migrate diff --exit-code` → `EXIT=0`;
   `just db-build` limpio.
-- [ ] `just db-check` y `npx jest` en verde con los recuentos nuevos.
-- [ ] `just build-api` y `just verify` en verde (`/api/settings` 5503 B).
-- [ ] Deep-equal de CA-2 con la lista de exclusiones y la comprobación del
+- [x] `just db-check` y `npx jest` en verde con los recuentos nuevos.
+- [x] `just build-api` y `just verify` en verde (`/api/settings` 5503 B).
+- [x] Deep-equal de CA-2 con la lista de exclusiones y la comprobación del
   orden de claves de los 76 snapshots.
-- [ ] `curl` de CA-3 y CA-4 con status exacto.
-- [ ] Prueba de CA-5 del borrado de producto con `SET NULL`, con limpieza
+- [x] `curl` de CA-3 y CA-4 con status exacto.
+- [x] Prueba de CA-5 del borrado de producto con `SET NULL`, con limpieza
   posterior.
-- [ ] Status actualizado y fila marcada en el épico. Si se partió, el reporte
+- [x] Status actualizado y fila marcada en el épico. Si se partió, el reporte
   indica qué entró en cada corte.
 
 ## Notas para el agente ejecutor
@@ -524,3 +524,168 @@ Se sigue el Protocolo del [README del épico](./README.md#protocolo-de-ejecució
 - Los conteos de esta US (40 / 76 / 12 / 6 / 19) se midieron con `node -e`
   sobre el JSON el 2026-10-20. Los asserts de los tests los toman de la
   base sembrada, no de aquí.
+
+## Evidencia (2026-10-23)
+
+**Cortes (R-1).** Corte 1/2: DDL, generador, seed, `schema.prisma`, records,
+`orders.repository.ts` y su integration test, el `COUNT_PRODUCTS` exportado
+en `shops.repository.ts` y el ajuste del test de reseñas por la FK nueva.
+Corte 2/2: `order-dto.mapper.ts`, `OrdersService`, controlador y spec.
+
+**Línea base**, con la API recién arrancada sobre `main` (`3d0384b`) y antes
+de cualquier escritura:
+
+```
+216812 admin-lista.json            (20 padres, ids 48,41,39…5; per_page "20" string)
+   322 admin-shop7.json            (total 0: shop_id nunca casa)
+216854 admin-tracking.json         (total 20: search ignorado)
+184204 customer-lista.json         (total 20, customer_id [2, 6]   ← la fuga)
+ 21107 orden-48.json               (33 claves: incluye shop y wallet_point)
+ 21107 orden-48-por-tracking.json
+ 12453 orden-41-tracking.json
+ 12453 customer-41.json            (el cliente ve la orden del admin)
+GET /orders/999999 → id 48 (fila 0)
+GET /orders/abc    → 200
+hija 49: created_at 2024-02-07T01:08:38.000000Z (6 decimales); padre 48: …37.000Z
+```
+
+**Seed.** El mock coincide con lo medido en la US: 40 ids y 40 tracking
+únicos de 14 dígitos, 76 líneas con 31 productos (todos sembrados), 12 con
+variación y 6 hijas de la tienda 7. `node db/generate-seed.mjs` termina con
+`… · 10 order_statuses · 40 orders · 76 order_products`, y `users` sigue en
+5.
+
+**CA-1** (`just db-reset` + `psql`):
+
+```
+ orders 40 | padres 20 | hijas 20 | lineas 76 | customer_id=3: 2 | con variación 12 | shop_id=7: 6 | orders_id_seq 49
+ huérfanas parent / customer / shop / coupon / línea.order / línea.product = 0 / 0 / 0 / 0 / 0 / 0
+ products 1200 · users 5 · reviews 85 · coupons 10 · order_statuses 10
+ orden 23: shipping_address json_typeof = array · orden 48: sales_tax 0.29, total 64.79, cancelled_amount 0.00
+
+INSERT padre con shop_id 7
+ERROR:  new row for relation "orders" violates check constraint "orders_padre_o_hija"
+INSERT padre con shipping_address '[]'  → INSERT 0 1 (en BEGIN … ROLLBACK)
+
+\d reviews
+Foreign-key constraints:
+    "reviews_order_id_fkey" FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE SET NULL
+```
+
+`just db-migrate` dos veces seguidas: las dos terminan en `* esquema y datos
+de referencia aplicados`, y `pg_constraint` cuenta **1**
+`reviews_order_id_fkey`.
+
+```
+$ npx prisma validate
+The schema at prisma\schema.prisma is valid 🚀
+$ npx prisma migrate diff --from-config-datasource --to-schema ./prisma/schema.prisma --exit-code
+No difference detected.
+EXIT=0
+```
+
+**CA-2** (token de admin), tras el `db-reset` final. Se excluyen solo las
+claves de V-5 a V-10 (`shop`, `wallet_point`, el `customer_id` de 41/42,
+el `created_at` de las hijas y `pivot.created_at/updated_at`). Además del
+deep-equal se compara el texto JSON, que también exige el orden de claves:
+
+```
+admin-lista.json         deep-equal IGUAL · texto IGUAL · paginador IGUAL
+orden-48.json            deep-equal IGUAL · texto IGUAL · paginador n/a
+orden-41-tracking.json   deep-equal IGUAL · texto IGUAL · paginador n/a
+orden de claves de producto+pivot idéntico al mock: 76/76 líneas (40 órdenes)
+hijas con shop de 16 claves: 20/20; hija 49: 13 primeras = mock true
+padres con children y sin shop/wallet_point: 20/20
+created_at padre 48: antes 2024-02-07T01:08:37.000Z · después 2024-02-07T01:08:37.000Z;
+  hija 49: antes 2024-02-07T01:08:38.000000Z · después 2024-02-07T01:08:38.000Z
+customer_id 41: antes 6 · después 3; customer.id 6
+```
+
+| Respuesta | Bytes antes → después | Por qué cambia |
+|---|---|---|
+| `GET /orders?limit=20&page=1` | 216812 → 239292 | V-7: las 19 hijas sin `shop` lo ganan; V-9 |
+| `GET /orders/48` | 21107 → 21045 | V-6 quita `shop: null` y `wallet_point: null`; V-8 suma 3 claves a la tienda de la 49; V-9 |
+| `GET /orders/tracking-number/20231105635099` | 12453 → 13874 | V-7 en la hija 42 |
+
+**CA-3** (R-5):
+
+| Llamada | Status | Resultado |
+|---|---|---|
+| cliente `GET /orders?with=refund` | 200 | `total 19`, `data 15`, `customer_id [2]` |
+| cliente `GET /orders?limit=50` | 200 | `total 19`, sin 41 ni 42 |
+| cliente `GET /orders?customer_id=3` | 200 | `total 19`, `customer_id [2]`: el controlador pisa el query |
+| cliente `GET /orders/41` | 404 | `No existe la orden 41.` |
+| cliente `GET /orders/20231105635099` · `/orders/tracking-number/20231105635099` | 404 · 404 | |
+| cliente `GET /orders/48` · `/orders/20240207303639?with=refund;reviews` | 200 · 200 | sus órdenes |
+| admin `GET /orders/41` · `/orders/20231105635099` · `/tracking-number/…` | 200 · 200 · 200 | |
+| `store_owner` `GET /orders/41` | 200 | ve todo (ver «NO incluye») |
+| sin token `GET /orders` | 401 | |
+
+**CA-4** (admin):
+
+| Llamada | Status | Resultado |
+|---|---|---|
+| `GET /orders?shop_id=7&limit=20` | 200 | `total 6`, ids 24,14,12,10,8,6, `parent_id` nulos 0, `shop.id` [7] |
+| `search=tracking_number:20240207303639` | 200 | `total 1`, id 48 |
+| `search=tracking_number:20240207244522` (hija 49) | 200 | `total 1`, id 49 |
+| `search=tracking_number:00000000000000` | 200 | `total 0` |
+| `GET /orders?customer_id=3` | 200 | `total 1`, id 41 |
+| `GET /orders/999999` | 404 | `No existe la orden 999999.` |
+| `GET /orders/abc` · `/0` · `/1e21` | 400 | `` `abc` no es un id ni un número de seguimiento. `` |
+| `GET /orders/tracking-number/00000000000000` | 404 | |
+
+**CA-5:**
+
+```
+producto centinela 1275 (psql) · orden centinela 53 con una línea → (53, 1, 1275)
+DELETE /products/1275 [200]
+línea tras borrar | 53 | 1 | NULL | {"id":1275}      ← SET NULL, el snapshot queda
+producto existe   | 0
+limpieza: DELETE FROM orders WHERE note='zz-orders-' → orders 40 · order_products 76 · products 1200
+POST /orders/payment {"tracking_number":20240207303639} [200]   ← sigue sobre el JSON
+```
+
+Las secuencias que avanzaron los centinelas (`orders`, `products`) volvieron
+al sembrado con el `db-reset` final: `orders 40 · order_products 76 ·
+orders_id_seq 49 · products 1200`.
+
+```
+$ just db-check
+ Test Files  28 passed (28)
+      Tests  369 passed (369)
+$ cd apps/api/rest && npx jest
+Test Suites: 30 passed, 30 total
+Tests:       482 passed, 482 total
+$ npx tsc --noEmit -p tsconfig.json   → exit 0
+$ just build-api                      → Done in 35.34s.
+$ just verify
+OK   API    :9001/api/settings  200  5503B  524ms
+OK   Shop   :3003/en  200  190788B  917ms  cards:30
+OK   Admin  :3002/en/login  200  72821B  2291ms  cards:1
+```
+
+Antes: 27 archivos / 361 tests en `db-check` y 29 suites / 473 en jest. Se
+suman el integration test de órdenes (8 casos) y el spec de lectura (9).
+`reviews.integration.test.ts` sigue en verde.
+
+**Notas frente al texto de la US:**
+
+- **El test de reseñas de US-54 cambió por la FK.** Creaba una reseña con
+  `orderId: 77`, una orden que no existe. Con `reviews_order_id_fkey` eso ya
+  no es posible. Ahora usa la 41, una orden sembrada del admin que incluye
+  el producto 2. Por la misma razón, `POST /reviews` con un `order_id`
+  inexistente deja de crear la reseña: la base lo rechaza (`P2003`).
+- **Borrar una orden puede chocar con las reseñas.** Si el autor tiene una
+  reseña del mismo producto sin orden, el `SET NULL` de
+  `reviews_order_id_fkey` viola `reviews_autor_producto_orden_key` y el
+  `DELETE` falla. Lo encontró el integration test. Hoy ninguna ruta borra
+  órdenes de verdad; queda para US-59.
+- **`POST /orders/payment` sigue sobre el JSON.** Su búsqueda pasó a
+  `getMockOrderForPayment`, con la misma regla del mock (id o tracking,
+  fallback a la fila 0), porque los `GET` ahora leen Postgres.
+  `orders.json` sigue importado solo para `create`, `update`, `payment` y
+  los cambios de estado de US-59, y está comentado.
+- **`store_owner` ve todas las órdenes** (también el detalle de la 41).
+  Restringirlo a sus tiendas es decisión de autorización (R-6) y queda
+  fuera.
+- **`with=refund;reviews`** se sigue ignorando.

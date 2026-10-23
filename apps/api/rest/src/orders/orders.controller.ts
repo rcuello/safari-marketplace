@@ -65,13 +65,19 @@ export class OrdersController {
   }
 
   @Get(':id')
-  getOrderById(@Param('id') id: number) {
-    return this.ordersService.getOrderByIdOrTrackingNumber(Number(id));
+  getOrderById(
+    @Param('id') id: string,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
+    return this.ordersService.getOrder(id, user);
   }
 
   @Get('tracking-number/:tracking_id')
-  getOrderByTrackingNumber(@Param('tracking_id') tracking_id: number) {
-    return this.ordersService.getOrderByIdOrTrackingNumber(tracking_id);
+  getOrderByTrackingNumber(
+    @Param('tracking_id') tracking_id: string,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
+    return this.ordersService.getOrderByTrackingNumber(tracking_id, user);
   }
 
   @Permissions(...ADMIN_OWNER_AND_STAFF)
@@ -96,7 +102,7 @@ export class OrdersController {
   @HttpCode(200)
   async submitPayment(@Body() orderPaymentDto: OrderPaymentDto): Promise<void> {
     const { tracking_number } = orderPaymentDto;
-    const order: Order = await this.ordersService.getOrderByIdOrTrackingNumber(
+    const order: Order = this.ordersService.getMockOrderForPayment(
       tracking_number,
     );
     switch (order.payment_gateway.toString().toLowerCase()) {
