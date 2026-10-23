@@ -122,7 +122,8 @@ No usar `prisma migrate dev` ni `prisma db push` contra esta base.
   `coupons_minimum_cart_amount_check` y `coupons_vigencia_valida`, y desde
   US-54 `reviews_rating_check`, `reviews_photos_check`, los dos
   `reviews_*_feedbacks_count_check`, `abusive_reports_model_type_check` y
-  `abusive_reports_message_check`) no existen
+  `abusive_reports_message_check`, y desde US-55 `questions_question_check` y
+  los dos `questions_*_feedbacks_count_check`) no existen
   para Prisma. Los repositorios los validan antes de escribir (tipos +
   guard de `salePrice < price`) y traducen la violación que llegue de
   Postgres a errores de dominio: `InvalidSalePriceError`,
@@ -327,11 +328,36 @@ polimórfica y no hay relación para `_count`.
 - **`createAbusiveReport`**: valida el objeto con
   **`assertReportableExists`**. Una reseña inexistente da
   `RecordNotFoundError`. `'Question'` y cualquier otro tipo dan
-  `InvalidFieldValueError` hasta US-55, que solo tiene que añadir su rama.
-  Un reporte repetido da `SlugConflictError`.
+  `InvalidFieldValueError`. Desde US-55, `'Question'` se valida contra
+  `questions` y una pregunta inexistente da `RecordNotFoundError`. Un
+  reporte repetido da `SlugConflictError`.
+- **`_countReports(modelType, ids)`** (interno del paquete): el `groupBy`
+  que usan reseñas y preguntas para su `abusiveReportsCount`.
 
 `message` vacío se rechaza con `InvalidFieldValueError`. Los tipos
 admitidos por el CHECK se exportan como `REPORTABLE_MODEL_TYPES`.
+
+### Preguntas (US-55, Épico 46) — `questions.repository.ts`
+
+`QuestionRecord` es la fila plana (`answer` null = sin responder). Las
+lecturas devuelven `QuestionDetailRecord`, con el autor, el producto
+hidratado y `abusiveReportsCount`, igual que las reseñas.
+
+- **`listQuestions`**: paginado en `id DESC` (`limit` 10). Filtra por
+  `productId`, `shopId`, `question` (parcial, case-insensitive) y
+  `typeSlug`, combinados con AND.
+- **`listUserQuestions(userId)`**: `created_at DESC, id DESC` (`limit` 8).
+- **`findQuestionById`**: `null` si no existe.
+- **`createQuestion`**: nace sin respuesta. El producto debe existir y
+  `shopId` debe ser su tienda.
+- **`answerQuestion`** (responde, y cambia `question` solo si llega) y
+  **`updateQuestionText`** (el autor; no toca la respuesta). Las dos fijan
+  `updatedAt`.
+- **`deleteQuestion`**: borra la pregunta y sus reportes en un
+  `$transaction`.
+
+`question` vacía se rechaza con `InvalidFieldValueError`. No hay UNIQUE: un
+usuario puede preguntar varias veces sobre el mismo producto.
 
 ### Identidad (US-21, Épico 19) — `users.repository.ts`
 

@@ -13,6 +13,10 @@ import { GetQuestionDto } from './dto/get-questions.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
 import { QuestionService } from './questions.service';
 import { Public } from 'src/auth/decorators/public.decorator';
+import {
+  CurrentUser,
+  CurrentUserPayload,
+} from 'src/auth/decorators/current-user.decorator';
 
 @Controller('questions')
 export class QuestionController {
@@ -31,24 +35,28 @@ export class QuestionController {
   find(@Param('id') id: string) {
     return this.questionService.findQuestion(+id);
   }
-  // create
+  // create — el autor es quien llama (US-55).
   @Post()
-  create(@Body() createQuestionDto: CreateQuestionDto) {
-    return this.questionService.create(createQuestionDto);
+  create(
+    @Body() createQuestionDto: CreateQuestionDto,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
+    return this.questionService.create(createQuestionDto, user);
   }
 
-  // update
+  // update = responder: super_admin o dueño de la tienda (US-55).
   @Put(':id')
   update(
     @Param('id') id: string,
     @Body() updateQuestionDto: UpdateQuestionDto,
+    @CurrentUser() user: CurrentUserPayload,
   ) {
-    return this.questionService.update(+id, updateQuestionDto);
+    return this.questionService.update(+id, updateQuestionDto, user);
   }
 
-  // delete
+  // delete — el autor, el dueño de la tienda o super_admin (US-55).
   @Delete(':id')
-  delete(@Param('id') id: string) {
-    return this.questionService.delete(+id);
+  delete(@Param('id') id: string, @CurrentUser() user: CurrentUserPayload) {
+    return this.questionService.delete(+id, user);
   }
 }

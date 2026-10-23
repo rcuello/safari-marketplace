@@ -27,7 +27,7 @@ SQL inaplicable.
 · 1 become_seller · 3 shop_staff · 19 faqs · 5 terms_and_conditions
 · 5 refund_policies · 8 refund_reasons · 1 taxes · 1 shippings
 · 8 attributes · 27 attribute_values · 3 store_notices (6 destinatarios,
-6 lecturas) · 10 coupons · 10 wishlists · 85 reviews · 3 abusive_reports
+6 lecturas) · 10 coupons · 10 wishlists · 85 reviews · 3 abusive_reports · 68 questions
 ```
 
 **Los ids del mock se preservan** para no romper las relaciones, y al final se
@@ -312,6 +312,26 @@ corto (`'Review'`, y `'Question'` desde US-55). El generador normaliza el
 FQCN de Laravel (`MarvelDatabaseModelsReview`) y la API lo vuelve a
 emitir así. Hay un reporte por usuario y objeto, y borrar una reseña borra
 sus reportes en la misma transacción.
+
+## Preguntas sobre productos: `questions`
+
+Desde US-55. 68 filas, ids 68→1. Por autor: 2 → 54 y 4 → 14 (el 4,
+`customer2@demo.com`, lo siembra el bloque de reseñas, así que aquí el
+helper solo remapea; si tuviera que sembrar, la generación para). El
+producto 1 tiene 6 y la tienda 6, 39.
+
+- **CASCADE en las tres FK**, por el mismo criterio que `reviews`, y
+  `shop_id` debe ser la tienda del producto.
+- **Sin UNIQUE (user, product)**: el mock trae 20 pares repetidos legítimos.
+- **`answer` NULL = sin responder.** Una pregunta nueva nace así; en el seed
+  las 68 tienen respuesta.
+- **Búsqueda**: índice trigram `questions_question_trgm_idx` sobre
+  `lower(question)`, como `products_nombre_trgm_idx`. El `ILIKE` que genera
+  Prisma con `contains` + `insensitive` **no** lo usa (`EXPLAIN`: `Seq
+  Scan`, también con `enable_seqscan=off`); `lower(question) LIKE` sí. Con
+  68 filas no importa; es el mismo caso que el índice de productos.
+- **Reportable**: `abusive_reports` admite `model_type = 'Question'` y borrar
+  una pregunta borra sus reportes en la misma transacción.
 
 ## Cómo se adapta el scraper
 

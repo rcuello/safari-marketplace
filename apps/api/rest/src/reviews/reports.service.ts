@@ -67,8 +67,8 @@ export class AbusiveReportService {
 
   /**
    * `model_type` acepta el nombre corto (lo que envía el shop) o el FQCN. El
-   * repositorio valida que el objeto exista: una reseña inexistente es 404
-   * y 'Question' es 400 hasta US-55. Reportar dos veces lo mismo es 409.
+   * repositorio valida que el objeto exista: una reseña o pregunta
+   * (US-55) inexistente es 404. Reportar dos veces lo mismo es 409.
    */
   async create(dto: CreateReportDto, user: CurrentUserPayload): Promise<Report> {
     const modelType = toShortModelType(dto.model_type);

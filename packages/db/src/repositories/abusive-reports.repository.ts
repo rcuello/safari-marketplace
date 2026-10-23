@@ -1,10 +1,9 @@
 /**
  * abusive-reports.repository.ts — reportes de abuso (US-54).
  *
- * Polimórfica: `(modelType, modelId)` apunta a una reseña (y, desde US-55, a
- * una pregunta) sin FK. `assertReportableExists` valida el objeto antes de
- * escribir; es el único punto que US-55 tiene que tocar para admitir
- * 'Question'. Un reporte por usuario y objeto: el `P2002` del UNIQUE llega
+ * Polimórfica: `(modelType, modelId)` apunta a una reseña o (desde US-55) a
+ * una pregunta, sin FK. `assertReportableExists` valida el objeto antes de
+ * escribir. Un reporte por usuario y objeto: el `P2002` del UNIQUE llega
  * como `SlugConflictError` (409).
  *
  * Las lecturas traen el autor (`UserRecord`).
@@ -65,9 +64,24 @@ export async function findAbusiveReportById(id: number): Promise<AbusiveReportDe
 }
 
 /**
- * El objeto reportado debe existir. 'Question' se rechaza con 400 hasta que
- * US-55 cree `questions`: entonces esta rama pasa a consultar esa tabla.
+ * Reportes por objeto, en UNA consulta (la tabla es polimórfica y no hay
+ * relación para `_count`). Interno del paquete: lo usan los repositorios de
+ * reseñas y preguntas para su `abusiveReportsCount`.
  */
+export async function _countReports(
+  modelType: (typeof REPORTABLE_MODEL_TYPES)[number],
+  ids: bigint[]
+): Promise<Map<number, number>> {
+  if (ids.length === 0) return new Map();
+  const groups = await prisma.abusiveReport.groupBy({
+    by: ['modelId'],
+    where: { modelType, modelId: { in: ids } },
+    _count: { _all: true },
+  });
+  return new Map(groups.map((g) => [Number(g.modelId), g._count._all]));
+}
+
+/** El objeto reportado debe existir: una reseña (US-54) o una pregunta (US-55). */
 export async function assertReportableExists(modelType: string, modelId: number): Promise<void> {
   switch (modelType) {
     case 'Review': {
@@ -75,12 +89,17 @@ export async function assertReportableExists(modelType: string, modelId: number)
       if (!review) throw new RecordNotFoundError('reviews', modelId);
       return;
     }
+    case 'Question': {
+      const question = await prisma.question.findUnique({ where: { id: modelId }, select: { id: true } });
+      if (!question) throw new RecordNotFoundError('questions', modelId);
+      return;
+    }
     default:
       throw new InvalidFieldValueError(
         'abusive_reports',
         'model_type',
         modelType,
-        modelType === 'Question' ? 'questions no existe hasta US-55' : 'abusive_reports_model_type_check'
+        'abusive_reports_model_type_check'
       );
   }
 }

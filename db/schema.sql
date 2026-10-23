@@ -847,6 +847,33 @@ CREATE TABLE IF NOT EXISTS abusive_reports (
 
 
 -- =====================================================================
+-- Preguntas sobre productos (US-55, Épico 46) — questions.
+--
+-- Sembradas desde questions.json (68). Sus autores son los usuarios 2 y 4;
+-- el 4 (customer2@demo.com) lo siembra el bloque de reseñas (US-54).
+--
+-- CASCADE en las tres FK por el mismo criterio que reviews: la pregunta es
+-- contenido de su autor sobre un producto de una tienda. SIN UNIQUE (user,
+-- product): el mock trae 20 pares repetidos legítimos (varias preguntas del
+-- mismo usuario sobre el mismo producto). `answer` NULL = sin responder.
+-- Los contadores de feedback son columnas, como en reviews. Es reportable
+-- desde abusive_reports (model_type 'Question'). Sin trigger de updated_at.
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS questions (
+    id                        bigserial    PRIMARY KEY,
+    user_id                   bigint       NOT NULL REFERENCES users(id)    ON DELETE CASCADE,
+    shop_id                   bigint       NOT NULL REFERENCES shops(id)    ON DELETE CASCADE,
+    product_id                bigint       NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    question                  text         NOT NULL CHECK (length(question) > 0),
+    answer                    text,
+    positive_feedbacks_count  integer      NOT NULL DEFAULT 0 CHECK (positive_feedbacks_count >= 0),
+    negative_feedbacks_count  integer      NOT NULL DEFAULT 0 CHECK (negative_feedbacks_count >= 0),
+    created_at                timestamptz  NOT NULL DEFAULT now(),
+    updated_at                timestamptz  NOT NULL DEFAULT now()
+);
+
+
+-- =====================================================================
 -- Índices.
 --
 -- No son decorativos: cada uno responde a un filtro que el frontend
@@ -926,6 +953,15 @@ CREATE INDEX IF NOT EXISTS wishlists_producto_idx         ON wishlists (product_
 CREATE INDEX IF NOT EXISTS reviews_shop_idx               ON reviews (shop_id);
 CREATE INDEX IF NOT EXISTS reviews_producto_idx           ON reviews (product_id);
 CREATE INDEX IF NOT EXISTS abusive_reports_modelo_idx     ON abusive_reports (model_type, model_id);
+
+-- Preguntas (US-55): cada FK con su índice (my-questions filtra por user_id,
+-- el shop por product_id y el admin por shop_id). La búsqueda por texto
+-- sigue el precedente de products_nombre_trgm_idx.
+CREATE INDEX IF NOT EXISTS questions_user_idx             ON questions (user_id);
+CREATE INDEX IF NOT EXISTS questions_shop_idx             ON questions (shop_id);
+CREATE INDEX IF NOT EXISTS questions_producto_idx         ON questions (product_id);
+CREATE INDEX IF NOT EXISTS questions_question_trgm_idx
+    ON questions USING gin (lower(question) gin_trgm_ops);
 
 
 -- ---------------------------------------------------------------------

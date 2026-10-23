@@ -39,6 +39,7 @@ export type {
   ManufacturerRecord,
   PermissionRecord,
   ProfileRecord,
+  QuestionRecord,
   RefundPolicyRecord,
   RefundReasonRecord,
   ReviewRecord,
@@ -209,6 +210,20 @@ export {
   listReviews,
   updateReview,
 } from './src/repositories/reviews.repository';
+export type {
+  CreateQuestionInput,
+  ListQuestionsInput,
+  QuestionDetailRecord,
+} from './src/repositories/questions.repository';
+export {
+  answerQuestion,
+  createQuestion,
+  deleteQuestion,
+  findQuestionById,
+  listQuestions,
+  listUserQuestions,
+  updateQuestionText,
+} from './src/repositories/questions.repository';
 export type {
   AbusiveReportDetailRecord,
   CreateAbusiveReportInput,

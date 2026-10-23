@@ -27,6 +27,7 @@ import {
   type ReviewRecord,
   type UserRecord,
 } from '../records';
+import { _countReports } from './abusive-reports.repository';
 import { _toProductRecord, PRODUCT_INCLUDE, type ProductRecord } from './products.repository';
 
 export interface ReviewDetailRecord extends ReviewRecord {
@@ -42,20 +43,9 @@ const REVIEW_INCLUDE = {
 
 type ReviewPayload = Prisma.ReviewGetPayload<{ include: typeof REVIEW_INCLUDE }>;
 
-/** Conteo de reportes por reseña, en una sola consulta. */
-async function _reportCounts(ids: bigint[]): Promise<Map<number, number>> {
-  if (ids.length === 0) return new Map();
-  const groups = await prisma.abusiveReport.groupBy({
-    by: ['modelId'],
-    where: { modelType: 'Review', modelId: { in: ids } },
-    _count: { _all: true },
-  });
-  return new Map(groups.map((g) => [Number(g.modelId), g._count._all]));
-}
-
 /** Un producto que se está borrando en cascada descarta la fila (como `listProducts`). */
 async function _toDetails(rows: ReviewPayload[]): Promise<ReviewDetailRecord[]> {
-  const counts = await _reportCounts(rows.map((r) => r.id));
+  const counts = await _countReports('Review', rows.map((r) => r.id));
   const details: ReviewDetailRecord[] = [];
   for (const row of rows) {
     const product = _toProductRecord(row.product);

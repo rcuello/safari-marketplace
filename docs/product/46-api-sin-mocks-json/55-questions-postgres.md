@@ -7,7 +7,7 @@
 
 **Épico:** [Épico 46](./README.md)
 **Fecha:** 2026-10-20
-**Status:** Listo para ejecución
+**Status:** Implementada (2026-10-22, rama `us-55-questions-postgres`)
 **Depende de:** US-54 (siembra el usuario 4, autor de 14 preguntas, y crea `abusive_reports`; secuencialidad R-2)
 **LOC est.:** ~1500
 
@@ -323,19 +323,155 @@ Feature: Preguntas sobre productos desde Postgres
 
 Sigue el **Protocolo de ejecución** del README del épico. Lo específico:
 
-- [ ] Precondición pegada: `psql -c "SELECT id, email FROM users WHERE id = 4"`
+- [x] Precondición pegada: `psql -c "SELECT id, email FROM users WHERE id = 4"`
   devuelve `customer2@demo.com`, y existe la tabla `abusive_reports`.
-- [ ] Línea base: los 5 cuerpos, con `base-q-p1-apple.json` mostrando
+- [x] Línea base: los 5 cuerpos, con `base-q-p1-apple.json` mostrando
   `data: []`.
-- [ ] `just db-reset` y `psql` con los conteos de las Reglas y las
+- [x] `just db-reset` y `psql` con los conteos de las Reglas y las
   consultas de CA-1.
-- [ ] `prisma validate` y `migrate diff --exit-code` en `EXIT=0`, y
+- [x] `prisma validate` y `migrate diff --exit-code` en `EXIT=0`, y
   `just db-build`.
-- [ ] CA-2: `node -e` con deep-equal y las claves excluidas.
-- [ ] CA-3 a CA-6: `curl` con Bearer (admin, `store_owner`, cliente,
+- [x] CA-2: `node -e` con deep-equal y las claves excluidas.
+- [x] CA-3 a CA-6: `curl` con Bearer (admin, `store_owner`, cliente,
   `customer2`) y status exacto.
-- [ ] CA-7: `grep` vacío y los 4 comandos en verde con recuentos.
-- [ ] Status actualizado aquí y en el épico.
+- [x] CA-7: `grep` vacío y los 4 comandos en verde con recuentos.
+- [x] Status actualizado aquí y en el épico.
+
+## Evidencia (2026-10-22)
+
+**Precondición:**
+
+```
+$ psql -c "SELECT id, email FROM users WHERE id = 4"
+4|customer2@demo.com
+$ psql -c "select to_regclass('abusive_reports')"
+abusive_reports
+```
+
+**Línea base**, con la API recién arrancada sobre `main` (`8ff47cb`):
+
+```
+22974 base-myq-cust.json      (total 68: las de todos, per_page 8)
+ 1890 base-q-68.json          (15 claves; user con email_verified)
+  357 base-q-admin-shop6.json (total 0)
+14743 base-q-p1.json          (34,33,32,31,26; total 6; per_page "5")
+  366 base-q-p1-apple.json    (data: [] ← V-1)
+```
+
+**Seed.** `just db-seed-generate` termina con `… · 3 abusive_reports · 68
+questions`, y `users` sigue en 5. Si se inyecta un autor que no existe (y el
+JSON se restaura después, sin diff), la guarda de la precondición para la
+generación:
+
+```
+El mock viola 1 restriccion(es) del esquema:
+  - questions: el autor 'nuevo@demo.com' no existía; debería venir sembrado por las reseñas (US-54)
+EXIT=1
+```
+
+**CA-1** (`just db-reset` + `psql`):
+
+| Medida | Valor |
+|---|---|
+| `questions` | 68 (usuario 2 → 54, usuario 4 → 14) |
+| Producto 1 | `34,33,32,31,26,2`; las de «apple»: `34,31,26` |
+| Tienda 6 | 39 |
+| Huérfanas (user, shop, product) | 0 / 0 / 0 |
+| `shop_id` ≠ `products.shop_id` | 0 |
+| `users` / `permission_user` | 5 / 8 |
+| Conteos previos | reviews 85 · abusive_reports 3 · products 1200 · wishlists 10 |
+
+**Prisma.** `validate` correcto y `migrate diff --exit-code` con `EXIT=0`.
+`just db-build` limpio.
+
+**Índice trigram (nota pedida por la US).** `EXPLAIN` muestra que el
+`ILIKE` que genera Prisma (`contains` + `mode: 'insensitive'`) **no** usa
+`questions_question_trgm_idx`: da `Seq Scan … Filter: (question ~~*
+'%apple%')`, también con `enable_seqscan=off`. `lower(question) LIKE
+'%apple%'` sí lo usa (`Bitmap Index Scan on questions_question_trgm_idx`).
+Con 68 filas no bloquea, y es el mismo caso que `products_nombre_trgm_idx`.
+
+**CA-2** (`node`, deep-equal con orden de claves):
+
+```
+new-q-p1.json: 5 filas (34,33,32,31,26), deep-equal; excluido: product (V-3), user.created_at/updated_at (V-4)
+  paginador idéntico, per_page = "5"   (total 6; url con answer=undefined)
+new-q-68.json: deep-equal; excluido: product (V-3), user.created_at/updated_at (V-4)
+```
+
+**CA-3:** `product_id=1&search=question:apple` da `total 3` (`34,31,26`);
+la línea base daba `[]`. `search=shop_id:6` da `total 39`, todas de la
+tienda 6. `GET /questions/999999` da 404.
+
+**CA-4:**
+
+| Llamada | Status | Resultado |
+|---|---|---|
+| `PUT /questions/68 {answer}` admin | 200 | el `GET` siguiente trae el nuevo `answer` y `updated_at` 2026-10-23T03:05:01.147Z (antes 2022-03-18 10:20:42) |
+| ídem con `store_owner@demo.com` | 200 | `psql`: `answer` persistido |
+| ídem con el cliente | 403 | |
+| `POST /questions` del cliente | 201 | `answer: null`, `user_id 2`, 15 claves |
+| con `shop_id` 999 / texto vacío / producto 999999 / sin token | 400 / 400 / 404 / 401 | |
+| `DELETE` de esa pregunta por `customer2` / por el autor | 403 / 200 | el `GET` siguiente da 404 |
+
+**CA-5:**
+
+| Llamada | Status | Resultado |
+|---|---|---|
+| `GET /my-questions` cliente | 200 | `total 54`, `count 8`, `per_page 8`, todas suyas |
+| `customer2` / admin | 200 / 200 | `total 14` / `total 0` |
+| `GET /my-questions/34` (de `customer2`) con el cliente / con `customer2` | 404 / 200 | |
+| `POST /my-questions` de `customer2` | 201 | `user_id 4` |
+| `PUT` del autor con `{question, answer: "trampa"}` | 200 | cambia el texto; `answer` sigue `null` |
+| `PUT` / `DELETE` de esa pregunta con el cliente | 404 / 404 | |
+| `DELETE` del autor | 200 | |
+
+**CA-6:**
+
+| Llamada | Status | Resultado |
+|---|---|---|
+| `POST /abusive_reports {68, 'Question'}` del cliente | 201 | `model_type` `Marvel\Database\Models\Question` |
+| `GET /questions/68` | 200 | `abusive_reports_count: 1` |
+| con `model_id` 999999 | 404 | `No existe un registro de questions con id 999999.` |
+| `GET /my-reports` del cliente | 200 | 4 filas; la primera, la pregunta 68 |
+
+Después de la evidencia se recreó la base con `just db-reset`: CA-4 había
+cambiado la respuesta de la pregunta 68 del seed. Hay 68 preguntas y 3
+reportes.
+
+**CA-7:**
+
+- El `grep` no devuelve nada (`exit=1`).
+- `just db-check`: 25 archivos y 346 tests (antes 24/337; +8 de
+  `questions.integration.test.ts` y +1 en `abusive-reports`).
+- `npx jest`: 26 suites y 450 tests (antes 24/431; +19).
+- `just build-api`: `Done in 122.49s`, y `tsc --noEmit` en 0.
+- `just verify`: API `5503B`, Shop `cards:30`, Admin `cards:1`.
+  `/products/apples` (con preguntas) responde 200.
+
+**Cambios en código de US-54**, todos pedidos por esta US o necesarios para
+ella:
+
+- `assertReportableExists` gana la rama `'Question'`.
+- El test de integración de `abusive-reports`, que esperaba 400 para
+  `'Question'`, ahora espera 404 para una pregunta inexistente y 201 para
+  una existente (V-8). Lo mismo en `reports.service.spec.ts`.
+- El `groupBy` del conteo de reportes pasó de `reviews.repository.ts` a
+  `_countReports(modelType, ids)` en `abusive-reports.repository.ts`, para
+  que lo usen reseñas y preguntas sin duplicarlo.
+- `toReviewUserDto` gana el parámetro `withEmailVerified`, como pedía la
+  nota: no hay una segunda copia de la proyección.
+
+**Decisiones que no estaban escritas en la US:**
+
+- Borrar una pregunta borra sus reportes en la misma transacción, igual que
+  las reseñas.
+- Desde `my-questions`, una pregunta ajena es 404 (no 403), también en `PUT`
+  y `DELETE`.
+
+**Fuera de alcance, para el reporte:** el `staff` de una tienda no puede
+responder (no hay función de pertenencia a `shop_staff` exportada), y el
+parámetro `answer` se sigue ignorando como filtro.
 
 ## Notas para el agente ejecutor
 

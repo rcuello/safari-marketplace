@@ -45,6 +45,7 @@ const coupons = leer('coupons');
 const wishlists = leer('wishlists');
 const reviews = leer('reviews');
 const abusiveReports = leer('reports');
+const questions = leer('questions');
 
 // ── Literales SQL ────────────────────────────────────────────────────────
 const txt = (v) =>
@@ -423,6 +424,26 @@ for (const a of reportes) {
   if (!a.message) problemas.push(`abusive_reports ${a.id}: message vacío`);
 }
 
+// ── Preguntas sobre productos (US-55) ────────────────────────────────────
+// Autores 2 y 4: el 4 (customer2) ya lo sembró el bloque de reseñas, así que
+// el helper solo REMAPEA. Si tuviera que sembrar aquí, US-54 no está
+// aplicada (o el mock cambió): se para. Sin UNIQUE (user, product): el mock
+// trae varios pares repetidos legítimos.
+const sembradosAntesDePreguntas = usuariosSembrados.length;
+const preguntas = questions.map((q) => ({
+  ...q,
+  _user_id: resolverUsuarioPorEmail(q.user, `questions ${q.id}.user`),
+}));
+for (const s of usuariosSembrados.slice(sembradosAntesDePreguntas))
+  problemas.push(`questions: el autor '${s.email}' no existía; debería venir sembrado por las reseñas (US-54)`);
+for (const q of preguntas) {
+  if (!tiendaDeProducto.has(q.product_id))
+    problemas.push(`questions ${q.id}: producto ${q.product_id} inexistente`);
+  else if (tiendaDeProducto.get(q.product_id) !== q.shop_id)
+    problemas.push(`questions ${q.id}: shop_id ${q.shop_id} no es la tienda del producto ${q.product_id}`);
+  if (!q.question) problemas.push(`questions ${q.id}: question vacía`);
+}
+
 if (problemas.length) {
   console.error(`\nEl mock viola ${problemas.length} restriccion(es) del esquema:`);
   problemas.slice(0, 20).forEach((p) => console.error('  - ' + p));
@@ -455,7 +476,7 @@ L.push(
     `${taxes.length} taxes · ${shippings.length} shippings · ` +
     `${attributes.length} attributes · ${valoresAtributo.length} attribute_values · ` +
     `${avisos.length} store_notices · ${coupons.length} coupons · ${wishlists.length} wishlists · ` +
-    `${resenas.length} reviews · ${reportes.length} abusive_reports`,
+    `${resenas.length} reviews · ${reportes.length} abusive_reports · ${preguntas.length} questions`,
   '-- =====================================================================',
   '',
   'BEGIN;'
@@ -971,6 +992,24 @@ L.push(
     .join(',\n') + '\nON CONFLICT (id) DO NOTHING;'
 );
 
+// questions (US-55; tras users, sembrados y products) -------------------------
+bloque(`questions — ${preguntas.length}`);
+L.push(
+  '-- user_id resuelto por email (D-4). Respuesta, contadores y fechas del mock.',
+  'INSERT INTO questions (id, user_id, shop_id, product_id, question, answer,',
+  '                       positive_feedbacks_count, negative_feedbacks_count, created_at, updated_at) VALUES'
+);
+L.push(
+  preguntas
+    .map(
+      (q) =>
+        `  (${q.id}, ${q._user_id}, ${q.shop_id}, ${q.product_id}, ${txt(q.question)}, ${txt(q.answer)}, ` +
+        `${num(q.positive_feedbacks_count ?? 0)}, ${num(q.negative_feedbacks_count ?? 0)}, ` +
+        `${ts(q.created_at)}, ${ts(q.updated_at)})`
+    )
+    .join(',\n') + '\nON CONFLICT (id) DO NOTHING;'
+);
+
 // category_product -------------------------------------------------------
 bloque('category_product — deliberadamente VACÍA');
 L.push(
@@ -990,7 +1029,7 @@ L.push(
   '-- mock, así que hay que adelantar las secuencias o el primer INSERT nuevo',
   '-- chocaría con una clave existente.'
 );
-for (const t of ['types', 'users', 'permissions', 'shops', 'categories', 'manufacturers', 'tags', 'products', 'faqs', 'terms_and_conditions', 'refund_policies', 'refund_reasons', 'taxes', 'shippings', 'attributes', 'attribute_values', 'store_notices', 'coupons', 'reviews', 'abusive_reports']) {
+for (const t of ['types', 'users', 'permissions', 'shops', 'categories', 'manufacturers', 'tags', 'products', 'faqs', 'terms_and_conditions', 'refund_policies', 'refund_reasons', 'taxes', 'shippings', 'attributes', 'attribute_values', 'store_notices', 'coupons', 'reviews', 'abusive_reports', 'questions']) {
   L.push(`SELECT setval('${t}_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM ${t}), 1));`);
 }
 
@@ -1011,5 +1050,5 @@ console.log(
     `${taxes.length} taxes · ${shippings.length} shippings · ` +
     `${attributes.length} attributes · ${valoresAtributo.length} attribute_values · ` +
     `${avisos.length} store_notices · ${coupons.length} coupons · ${wishlists.length} wishlists · ` +
-    `${resenas.length} reviews · ${reportes.length} abusive_reports`
+    `${resenas.length} reviews · ${reportes.length} abusive_reports · ${preguntas.length} questions`
 );

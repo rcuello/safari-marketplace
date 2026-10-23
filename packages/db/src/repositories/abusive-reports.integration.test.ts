@@ -1,6 +1,7 @@
 /**
  * Test de integración contra el Postgres real (sembrado por `just db-up`:
- * 3 reportes de customer@demo.com, id 2, sobre las reseñas 1, 21 y 78). US-54.
+ * 3 reportes de customer@demo.com, id 2, sobre las reseñas 1, 21 y 78). US-54;
+ * los reportes de preguntas, US-55.
  *
  * Las escrituras son del admin (3), sin reportes en el seed; se borran en
  * `beforeAll`/`afterAll`.
@@ -75,19 +76,29 @@ describe('createAbusiveReport', () => {
     ).rejects.toBeInstanceOf(SlugConflictError);
   });
 
-  it('reseña inexistente ⇒ RecordNotFoundError; Question, tipo desconocido o mensaje vacío ⇒ InvalidFieldValueError', async () => {
+  it('objeto inexistente ⇒ RecordNotFoundError; tipo desconocido o mensaje vacío ⇒ InvalidFieldValueError', async () => {
     const base = { userId: ADMIN, message: 'zz' };
-    await expect(
-      createAbusiveReport({ ...base, modelType: 'Review', modelId: 999_999 })
-    ).rejects.toBeInstanceOf(RecordNotFoundError);
-    for (const modelType of ['Question', 'Product']) {
-      await expect(createAbusiveReport({ ...base, modelType, modelId: 1 })).rejects.toBeInstanceOf(
-        InvalidFieldValueError
-      );
+    for (const modelType of ['Review', 'Question']) {
+      await expect(
+        createAbusiveReport({ ...base, modelType, modelId: 999_999 })
+      ).rejects.toBeInstanceOf(RecordNotFoundError);
     }
+    await expect(
+      createAbusiveReport({ ...base, modelType: 'Product', modelId: 1 })
+    ).rejects.toBeInstanceOf(InvalidFieldValueError);
     await expect(
       createAbusiveReport({ ...base, modelType: 'Review', modelId: 84, message: '' })
     ).rejects.toBeInstanceOf(InvalidFieldValueError);
+  });
+
+  it('reporta una pregunta existente (US-55)', async () => {
+    const created = await createAbusiveReport({
+      userId: ADMIN,
+      modelType: 'Question',
+      modelId: 68,
+      message: 'zz-report-question',
+    });
+    expect(created).toMatchObject({ modelType: 'Question', modelId: 68 });
   });
 });
 

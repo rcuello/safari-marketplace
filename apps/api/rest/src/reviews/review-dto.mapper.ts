@@ -28,9 +28,13 @@ export function toShortModelType(value: unknown): string | undefined {
  * Autor embebido en reseñas y reportes, con la forma mínima del mock:
  * `is_active` como NÚMERO y `shop_id: null`. No es el `toUserDto` de
  * `users/user-dto.mapper.ts`, que emite otra forma. Los timestamps son los
- * de `users` (V-3).
+ * de `users` (V-3). Las preguntas (US-55) añaden `email_verified` al final;
+ * las reseñas no lo traen.
  */
-export function toReviewUserDto(user: UserRecord): Record<string, unknown> {
+export function toReviewUserDto(
+  user: UserRecord,
+  { withEmailVerified = false }: { withEmailVerified?: boolean } = {},
+): Record<string, unknown> {
   return {
     id: user.id,
     name: user.name,
@@ -40,6 +44,7 @@ export function toReviewUserDto(user: UserRecord): Record<string, unknown> {
     updated_at: user.updatedAt,
     is_active: user.isActive ? 1 : 0,
     shop_id: null,
+    ...(withEmailVerified && { email_verified: user.emailVerifiedAt !== null }),
   };
 }
 

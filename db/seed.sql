@@ -9,7 +9,7 @@
 -- ya existen, y creando en tiempo de ejecución únicamente lo que es suyo
 -- (los retailers como shops, las marcas como manufacturers).
 --
--- 10 types · 12 shops · 198 categorías · 14 manufacturers · 10 tags · 1200 productos · 5 usuarios · 4 permisos · 1 become_seller · 3 shop_staff · 19 faqs · 5 terms_and_conditions · 5 refund_policies · 8 refund_reasons · 1 taxes · 1 shippings · 8 attributes · 27 attribute_values · 3 store_notices · 10 coupons · 10 wishlists · 85 reviews · 3 abusive_reports
+-- 10 types · 12 shops · 198 categorías · 14 manufacturers · 10 tags · 1200 productos · 5 usuarios · 4 permisos · 1 become_seller · 3 shop_staff · 19 faqs · 5 terms_and_conditions · 5 refund_policies · 8 refund_reasons · 1 taxes · 1 shippings · 8 attributes · 27 attribute_values · 3 store_notices · 10 coupons · 10 wishlists · 85 reviews · 3 abusive_reports · 68 questions
 -- =====================================================================
 
 BEGIN;
@@ -2033,6 +2033,115 @@ INSERT INTO abusive_reports (id, user_id, model_type, model_id, message, created
 ON CONFLICT (id) DO NOTHING;
 
 -- ────────────────────────────────────────────────────────────────────
+-- questions — 68
+-- ────────────────────────────────────────────────────────────────────
+-- user_id resuelto por email (D-4). Respuesta, contadores y fechas del mock.
+INSERT INTO questions (id, user_id, shop_id, product_id, question, answer,
+                       positive_feedbacks_count, negative_feedbacks_count, created_at, updated_at) VALUES
+  (68, 2, 5, 470, 'Is it sweet or sour?', 'its sweet as it contains suger.', 0, 0, '2022-03-18T10:19:46.000000Z', '2022-03-18T10:20:42.000000Z'),
+  (67, 2, 5, 468, 'Does it have preservatives?', 'No, this one does not have any preservatives', 0, 0, '2022-03-18T10:19:24.000000Z', '2022-03-18T10:21:00.000000Z'),
+  (66, 2, 5, 467, 'How many calories does it have?', 'its low on calories 30cal', 0, 0, '2022-03-18T10:18:47.000000Z', '2022-03-18T10:21:15.000000Z'),
+  (65, 2, 4, 25, 'Is it original?', 'yes its original', 0, 0, '2022-03-18T10:18:21.000000Z', '2022-03-18T10:23:36.000000Z'),
+  (64, 2, 4, 23, 'Do you have the big ones as well?', 'Unfortunately, this is the only ones we have.', 0, 0, '2022-03-18T10:17:59.000000Z', '2022-03-18T10:23:54.000000Z'),
+  (63, 2, 4, 22, 'Is it possible to get some more discount?', 'Unfortunaltey we do not have any further discounts.', 0, 0, '2022-03-18T10:16:48.000000Z', '2022-03-18T10:24:12.000000Z'),
+  (62, 2, 4, 21, 'What other shades you have?', 'We have 26 other shades please check our profile for full shades.', 0, 0, '2022-03-18T10:16:25.000000Z', '2022-03-18T10:28:53.000000Z'),
+  (61, 2, 4, 21, 'Does it come with brush?', 'Yes', 0, 0, '2022-03-18T10:16:11.000000Z', '2022-03-18T10:31:58.000000Z'),
+  (60, 2, 3, 105, 'Is there any variation available?', 'Unfortunately no', 0, 0, '2022-03-18T10:14:40.000000Z', '2022-03-18T10:32:07.000000Z'),
+  (59, 2, 3, 107, 'Does it have any color variation?', 'Yes, its also available in black and brown', 0, 0, '2022-03-18T10:14:11.000000Z', '2022-03-18T10:39:25.000000Z'),
+  (58, 2, 3, 104, 'Does it have any color variation?', 'Unfortunatley no', 0, 0, '2022-03-18T10:13:52.000000Z', '2022-03-18T10:39:33.000000Z'),
+  (57, 2, 3, 103, 'How many pockets does it have?', '3 pckets', 0, 0, '2022-03-18T10:13:27.000000Z', '2022-03-18T10:39:40.000000Z'),
+  (56, 2, 3, 102, 'Hi
+What is the maximum capacity.', '3-4 kgs', 0, 0, '2022-03-18T10:12:16.000000Z', '2022-03-18T10:39:51.000000Z'),
+  (55, 2, 2, 113, 'Can you make it yellow?', 'yes please provide us with the size details', 0, 0, '2022-03-18T09:22:43.000000Z', '2022-03-18T10:40:07.000000Z'),
+  (54, 2, 2, 111, 'Is it silk or linen?', 'Its acutally cotton', 0, 0, '2022-03-18T09:22:17.000000Z', '2022-03-18T10:40:15.000000Z'),
+  (53, 2, 2, 116, 'Can you make XXL size?', 'yes, it is possible.', 0, 0, '2022-03-18T09:21:59.000000Z', '2022-03-18T10:43:49.000000Z'),
+  (52, 2, 2, 110, 'Do you have red color for this dress?', 'yes it is available.', 0, 0, '2022-03-18T09:21:14.000000Z', '2022-03-18T10:43:39.000000Z'),
+  (51, 2, 1, 416, 'What foam has been used?', '4 inch poly foam', 0, 0, '2022-03-18T09:20:02.000000Z', '2022-03-18T10:43:28.000000Z'),
+  (50, 2, 1, 414, 'Can you make it silver color?', 'yes it is possible', 0, 0, '2022-03-18T09:19:43.000000Z', '2022-03-18T10:43:18.000000Z'),
+  (49, 2, 1, 413, 'Can you make some customization?', 'yes, please let us know in detail about your requirement.', 0, 0, '2022-03-18T09:19:26.000000Z', '2022-03-18T10:42:40.000000Z'),
+  (48, 2, 1, 412, 'What wood you have used?', 'It is processed Barmatik wood', 0, 0, '2022-03-18T09:18:54.000000Z', '2022-03-18T10:42:19.000000Z'),
+  (47, 2, 1, 412, 'What other color you can offer?', 'Any color of your choice.', 0, 0, '2022-03-18T09:18:46.000000Z', '2022-03-18T10:41:58.000000Z'),
+  (46, 2, 7, 930, 'Do you have Hebrew version?', 'Yes we do have Hebrew version.', 0, 0, '2022-03-18T09:18:12.000000Z', '2022-03-18T10:41:47.000000Z'),
+  (45, 2, 7, 931, 'How long will the delivery take?', '1-2 days depending on your location.', 0, 0, '2022-03-18T09:17:51.000000Z', '2022-03-18T10:41:33.000000Z'),
+  (44, 2, 7, 931, 'Do you have the soft version?', 'Unfortunately no', 0, 0, '2022-03-18T09:17:38.000000Z', '2022-03-18T10:41:20.000000Z'),
+  (43, 2, 7, 932, 'Do you have German version?', 'Unfortunately no', 0, 0, '2022-03-18T09:16:59.000000Z', '2022-03-18T10:41:16.000000Z'),
+  (42, 2, 7, 932, 'Do you have Hindi Version as well?', 'Unfortunately no', 0, 0, '2022-03-18T09:16:24.000000Z', '2022-03-18T10:41:12.000000Z'),
+  (41, 2, 7, 924, 'What is the version ?', 'Its the 3rd version', 0, 0, '2022-03-18T09:15:47.000000Z', '2022-03-18T10:41:02.000000Z'),
+  (40, 2, 7, 924, 'Can I get a soft copy?', 'Yes, it is possible. After purchase please send us your email address and we will mail you the soft copy.', 0, 0, '2022-03-18T09:15:26.000000Z', '2022-03-18T10:40:53.000000Z'),
+  (39, 4, 6, 3, 'how many will be there in 1lbs?', 'About 80-90 pcs', 0, 0, '2022-03-17T16:21:32.000000Z', '2022-03-17T16:22:18.000000Z'),
+  (38, 4, 6, 3, 'Do you also have local product?', 'Blueberries are imported and not locally produced.', 0, 0, '2022-03-17T16:21:18.000000Z', '2022-03-17T16:22:09.000000Z'),
+  (37, 4, 6, 3, 'How long can I store them in the freezer?', 'at least 2-3 weeks.', 0, 0, '2022-03-17T16:20:24.000000Z', '2022-03-17T16:21:52.000000Z'),
+  (36, 4, 6, 3, 'Hi
+Is this fresh?', 'yes', 0, 0, '2022-03-17T16:20:02.000000Z', '2022-03-17T16:21:40.000000Z'),
+  (35, 4, 6, 2, 'Can you arrange 1-hour delivery?', 'it will take more than one hour for delivery', 0, 0, '2022-03-17T16:14:27.000000Z', '2022-03-17T16:19:06.000000Z'),
+  (34, 4, 6, 1, 'Will it be good for apple puree?', 'Yes', 0, 0, '2022-03-17T16:12:05.000000Z', '2022-03-17T16:12:12.000000Z'),
+  (33, 4, 6, 1, 'Can you give me discount if I purchase 5lbs?', 'Unfortunately, we can not offer any further discount.', 0, 0, '2022-03-17T16:06:23.000000Z', '2022-03-17T16:07:14.000000Z'),
+  (32, 4, 6, 1, 'Is this local produce?', 'yes these are locally produced', 0, 0, '2022-03-17T16:05:48.000000Z', '2022-03-17T16:06:58.000000Z'),
+  (31, 4, 6, 1, 'do you have green apples as well?', 'Unfortunately no.', 0, 0, '2022-03-17T16:05:24.000000Z', '2022-03-17T16:06:39.000000Z'),
+  (30, 4, 6, 4, 'How many sprouts will be in 1lbs?', 'about 20-25 pcs', 0, 0, '2022-03-17T16:02:58.000000Z', '2022-03-17T16:04:37.000000Z'),
+  (29, 4, 6, 4, 'Is there an option to buy 0.5 lbs?', 'unfortunately no.', 0, 0, '2022-03-17T16:02:44.000000Z', '2022-03-17T16:04:29.000000Z'),
+  (28, 4, 6, 4, 'Is it fresh?', 'yes these are fresh products.', 0, 0, '2022-03-17T16:02:24.000000Z', '2022-03-17T16:04:17.000000Z'),
+  (27, 4, 6, 2, 'Hi
+is it frozen?', 'No, its fresh', 0, 0, '2022-03-17T15:19:21.000000Z', '2022-03-17T15:19:30.000000Z'),
+  (26, 4, 6, 1, 'How many apples will be there on 1 lbs', '3-4 pcs approximately', 0, 0, '2022-03-17T14:32:00.000000Z', '2022-03-17T15:18:44.000000Z'),
+  (25, 2, 6, 20, 'Hi
+What will be the approximate weight of 4pcs?', 'approximately 1 lbs', 0, 0, '2022-03-17T13:39:11.000000Z', '2022-03-17T13:40:33.000000Z'),
+  (24, 2, 6, 19, 'Hi
+What vegetables are in here?', 'green cabbage, lettuce, spinach and others.', 0, 0, '2022-03-17T13:38:42.000000Z', '2022-03-17T13:40:56.000000Z'),
+  (23, 2, 6, 18, 'Hi
+From where it is imported?', 'These are locally grown. We imported the seeds and grown them locally.', 0, 0, '2022-03-17T13:38:17.000000Z', '2022-03-17T13:41:17.000000Z'),
+  (22, 2, 6, 17, 'Hi
+Are these freshly packed?', 'yes these are freshly packed.', 0, 0, '2022-03-17T13:37:53.000000Z', '2022-03-17T13:41:28.000000Z'),
+  (21, 2, 6, 16, 'Hi
+Is this Frozen or Freshly chopped?', 'Hi
+it is freshly chopped.', 0, 0, '2022-03-17T13:34:04.000000Z', '2022-03-17T13:34:18.000000Z'),
+  (20, 2, 6, 16, 'Hi
+is this chopped as like the picture?', 'Hi
+Yes. it is chopped and cleaned', 0, 0, '2022-03-17T13:33:07.000000Z', '2022-03-17T13:33:38.000000Z'),
+  (19, 2, 6, 15, 'Hi
+Is this local or imported?', 'These are imported', 0, 0, '2022-03-17T13:32:44.000000Z', '2022-03-17T13:34:42.000000Z'),
+  (18, 2, 6, 14, 'Hi
+Will I get mixed color pepers or only one singe color', 'You will get mixed color peppers', 0, 0, '2022-03-17T13:27:58.000000Z', '2022-03-17T13:34:56.000000Z'),
+  (17, 2, 6, 14, 'Hi
+From where it is imported?', 'Hi
+there are quite a few countries from where we import these high-quality mixed peppers. Brasil, Mexico and Chile are some of them', 0, 0, '2022-03-17T13:27:38.000000Z', '2022-03-17T13:36:00.000000Z'),
+  (16, 2, 6, 13, 'Hi
+Is it the sweet lot or sour lot?', 'Sweet lot.', 0, 0, '2022-03-17T13:27:05.000000Z', '2022-03-17T13:36:13.000000Z'),
+  (15, 2, 6, 13, 'Hi
+What is the breed of these mangoes?', 'These are Harivanga Mangoes', 0, 0, '2022-03-17T13:25:35.000000Z', '2022-03-17T13:36:41.000000Z'),
+  (14, 2, 6, 12, 'Hi
+What type of limes are these?', 'These are Fat limes.', 0, 0, '2022-03-17T13:25:03.000000Z', '2022-03-17T13:36:52.000000Z'),
+  (13, 2, 6, 11, 'Hi
+Are these cleaned and processed?', 'Hi
+yes, these are cleaned and processed.', 0, 0, '2022-03-17T13:24:18.000000Z', '2022-03-17T13:39:50.000000Z'),
+  (12, 2, 6, 10, 'Hi
+Are this processed?', 'Hi
+yes these are processed?', 0, 0, '2022-03-17T13:23:50.000000Z', '2022-03-17T13:40:05.000000Z'),
+  (11, 2, 6, 9, 'Hi
+How long is the expiry of these dates?', 'approximately one year', 0, 0, '2022-03-17T13:23:24.000000Z', '2022-03-17T13:40:19.000000Z'),
+  (10, 2, 6, 9, 'Hi
+which brand of dates are these?', 'These are Ajwah dates', 0, 0, '2022-03-17T13:23:03.000000Z', '2022-03-17T13:41:49.000000Z'),
+  (9, 2, 6, 8, 'Hi
+Is this local or imported ?', 'These are local.', 0, 0, '2022-03-17T13:21:18.000000Z', '2022-03-17T13:41:59.000000Z'),
+  (8, 2, 6, 7, 'Hi
+Can this be stored in normal temperature?', 'yes you can store them in normal temperature for about a week.', 0, 0, '2022-03-17T13:20:52.000000Z', '2022-03-17T13:42:20.000000Z'),
+  (7, 2, 6, 6, 'Hi
+Is this the sweet lot or sour lot?', 'sweet lot', 0, 0, '2022-03-17T13:16:58.000000Z', '2022-03-17T13:42:29.000000Z'),
+  (6, 2, 6, 5, 'Hi
+Is this fresh or frozen?', 'these are frozen ones.', 0, 0, '2022-03-17T13:16:21.000000Z', '2022-03-17T13:42:38.000000Z'),
+  (5, 2, 6, 5, 'Hi
+is this sliced?', 'yes these are sliced.', 0, 0, '2022-03-17T13:16:09.000000Z', '2022-03-17T13:42:46.000000Z'),
+  (4, 2, 6, 4, 'Hi
+From where this is imported?', 'these are imported from Latin America', 0, 0, '2022-03-17T13:15:50.000000Z', '2022-03-17T13:51:35.000000Z'),
+  (3, 2, 6, 3, 'Hi
+From which country it is imported?', 'its imported from Europe.', 0, 0, '2022-03-17T13:15:11.000000Z', '2022-03-17T13:42:58.000000Z'),
+  (2, 2, 6, 1, 'Hi
+How long I can store this product?', 'in freezer you can store theme for about 2 weeks in minimum', 0, 0, '2022-03-17T13:14:10.000000Z', '2022-03-17T13:43:17.000000Z'),
+  (1, 2, 6, 2, 'Hi 
+Is this a Fresh product?', 'yes these are fresh products.', 0, 0, '2022-03-17T13:13:14.000000Z', '2022-03-17T13:43:33.000000Z')
+ON CONFLICT (id) DO NOTHING;
+
+-- ────────────────────────────────────────────────────────────────────
 -- category_product — deliberadamente VACÍA
 -- ────────────────────────────────────────────────────────────────────
 -- Ninguno de los 1200 productos del mock trae la relación con
@@ -2069,5 +2178,6 @@ SELECT setval('store_notices_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM
 SELECT setval('coupons_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM coupons), 1));
 SELECT setval('reviews_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM reviews), 1));
 SELECT setval('abusive_reports_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM abusive_reports), 1));
+SELECT setval('questions_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM questions), 1));
 
 COMMIT;

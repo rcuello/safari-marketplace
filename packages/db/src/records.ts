@@ -29,6 +29,7 @@ import type {
   Permission,
   Prisma,
   Profile,
+  Question,
   RefundPolicy,
   RefundReason,
   Review,
@@ -323,6 +324,20 @@ export interface ReviewRecord {
   comment: string;
   rating: number;
   photos: Prisma.JsonValue;
+  positiveFeedbacksCount: number;
+  negativeFeedbacksCount: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/** Pregunta sobre un producto (US-55). `answer` null = sin responder. */
+export interface QuestionRecord {
+  id: number;
+  userId: number;
+  shopId: number;
+  productId: number;
+  question: string;
+  answer: string | null;
   positiveFeedbacksCount: number;
   negativeFeedbacksCount: number;
   createdAt: Date;
@@ -744,6 +759,21 @@ export function _toAbusiveReportRecord(row: AbusiveReport): AbusiveReportRecord 
     modelType: row.modelType,
     modelId: _id(row.modelId),
     message: row.message,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+export function _toQuestionRecord(row: Question): QuestionRecord {
+  return {
+    id: _id(row.id),
+    userId: _id(row.userId),
+    shopId: _id(row.shopId),
+    productId: _id(row.productId),
+    question: row.question,
+    answer: row.answer,
+    positiveFeedbacksCount: row.positiveFeedbacksCount,
+    negativeFeedbacksCount: row.negativeFeedbacksCount,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };

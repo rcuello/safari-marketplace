@@ -1,70 +1,189 @@
-import { Injectable } from '@nestjs/common';
-import { plainToClass } from 'class-transformer';
-import Fuse from 'fuse.js';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
+import {
+  answerQuestion,
+  createQuestion,
+  deleteQuestion,
+  findQuestionById,
+  findShopOwnerById,
+  getUserFriendlyMessage,
+  isPrismaConnectionError,
+  listQuestions,
+  type QuestionDetailRecord,
+} from '@safari/db';
+import { CurrentUserPayload } from 'src/auth/decorators/current-user.decorator';
 import { paginate } from 'src/common/pagination/paginate';
-import { Question } from './entities/question.entity';
-import { GetQuestionDto } from './dto/get-questions.dto';
+import { parseSearch } from 'src/common/search/parse-search';
+import { toWriteHttpException } from 'src/common/errors/domain-error.mapper';
 import { CreateQuestionDto } from './dto/create-question.dto';
+import { GetQuestionDto } from './dto/get-questions.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
-import questionsJSON from '@db/questions.json';
+import { Question } from './entities/question.entity';
+import { toQuestionDto } from './question-dto.mapper';
 
-const questions = plainToClass(Question, questionsJSON);
-const options = {
-  keys: [],
-  threshold: 0.3,
-};
-const fuse = new Fuse(questions, options);
+export function readError(error: unknown): never {
+  if (isPrismaConnectionError(error)) {
+    throw new ServiceUnavailableException(getUserFriendlyMessage(error));
+  }
+  throw new InternalServerErrorException(getUserFriendlyMessage(error));
+}
+
+export function assertQuestionId(id: number): void {
+  if (!Number.isSafeInteger(id) || id <= 0) {
+    throw new NotFoundException(`No existe una pregunta con id ${id}.`);
+  }
+}
+
+/** Entero positivo seguro, o `null` si no lo es. */
+function parsePositiveInt(value: unknown): number | null {
+  const n = Number(value);
+  return Number.isSafeInteger(n) && n > 0 ? n : null;
+}
 
 @Injectable()
 export class QuestionService {
-  private question: Question[] = questions;
-
-  findAllQuestions({
-    limit,
-    page,
-    search,
-    answer,
-    product_id,
-  }: GetQuestionDto) {
+  /**
+   * Filtros reales combinados con AND: `product_id` del query y
+   * `question:<texto>` (V-1), `shop_id:N` y `type.slug:<x>` desde `search`.
+   * Las demás claves (y `answer`) se ignoran. Un número no válido devuelve la
+   * lista vacía. Orden `id DESC`, defaults `page=1`/`limit=10`; la url
+   * interpola `answer`, que casi siempre sale `undefined`, como el mock.
+   */
+  async findAllQuestions({ limit, page, search, answer, product_id }: GetQuestionDto) {
     if (!page) page = 1;
     if (!limit) limit = 10;
-    const startIndex = (page - 1) * limit;
-    const endIndex = page * limit;
-    let data: Question[] = this.question;
-
-    if (search) {
-      const parseSearchParams = search.split(';');
-      for (const searchParam of parseSearchParams) {
-        const [key, value] = searchParam.split(':');
-        data = fuse.search(value)?.map(({ item }) => item);
-      }
-    }
-
-    if (product_id) {
-      data = data.filter((p) => p.product_id === Number(product_id));
-    }
-
-    const results = data.slice(startIndex, endIndex);
     const url = `/questions?search=${search}&answer=${answer}&limit=${limit}`;
-    return {
-      data: results,
-      ...paginate(data.length, page, limit, results.length, url),
-    };
+    const tokens = parseSearch(search);
+
+    let productId: number | undefined;
+    let shopId: number | undefined;
+    for (const [raw, set] of [
+      [product_id, (n: number) => (productId = n)],
+      [tokens.shop_id, (n: number) => (shopId = n)],
+    ] as const) {
+      if (raw === undefined || raw === '') continue;
+      const n = parsePositiveInt(raw);
+      if (n === null) return { data: [], ...paginate(0, page, limit, 0, url) };
+      set(n);
+    }
+
+    try {
+      const { items, total } = await listQuestions({
+        productId,
+        shopId,
+        question: tokens.question || undefined,
+        typeSlug: tokens['type.slug'] || undefined,
+        page: Number(page),
+        limit: Number(limit),
+      });
+      return {
+        data: items.map(toQuestionDto),
+        ...paginate(total, page, limit, items.length, url),
+      };
+    } catch (error) {
+      readError(error);
+    }
   }
 
-  findQuestion(id: number) {
-    return this.question.find((p) => p.id === id);
+  /** DTO o 404. */
+  async findQuestion(id: number): Promise<Question> {
+    assertQuestionId(id);
+    return toQuestionDto(await this.findOrFail(id));
   }
 
-  create(createQuestionDto: CreateQuestionDto) {
-    return this.question[0];
+  /**
+   * `{question, product_id, shop_id}`; el autor es quien llama y la pregunta
+   * nace sin respuesta. 404 si el producto no existe; 400 si `shop_id` no es
+   * su tienda o la pregunta está vacía. Lo usan los dos controladores.
+   */
+  async create(dto: CreateQuestionDto, user: CurrentUserPayload): Promise<Question> {
+    const productId = parsePositiveInt(dto.product_id);
+    const shopId = parsePositiveInt(dto.shop_id);
+    if (productId === null) {
+      throw new BadRequestException(`\`product_id\` no admite \`${String(dto.product_id)}\`.`);
+    }
+    if (shopId === null) {
+      throw new BadRequestException(`\`shop_id\` no admite \`${String(dto.shop_id)}\`.`);
+    }
+    try {
+      const record = await createQuestion({
+        userId: user.sub,
+        productId,
+        shopId,
+        question: dto.question,
+      });
+      return toQuestionDto(record);
+    } catch (error) {
+      throw toWriteHttpException(error);
+    }
   }
 
-  update(id: number, updateQuestionDto: UpdateQuestionDto) {
-    return this.question[0];
+  /**
+   * Responder (V-5). Solo `super_admin` o el dueño de la tienda de la
+   * pregunta; si no, 403. Persiste `answer`, y `question` si llega (el
+   * `ReplyQuestion` del admin envía los dos). El staff no responde: no hay
+   * función de pertenencia a `shop_staff` exportada (fuera de alcance).
+   */
+  async update(id: number, dto: UpdateQuestionDto, user: CurrentUserPayload): Promise<Question> {
+    assertQuestionId(id);
+    const record = await this.findOrFail(id);
+    if (!(await this.isAdminOrShopOwner(record, user))) {
+      throw new ForbiddenException('Solo el dueño de la tienda puede responder esta pregunta.');
+    }
+    try {
+      const updated = await answerQuestion(id, {
+        answer: dto.answer ?? null,
+        ...(dto.question !== undefined && { question: dto.question }),
+      });
+      return toQuestionDto(updated);
+    } catch (error) {
+      throw toWriteHttpException(error);
+    }
   }
 
-  delete(id: number) {
-    return this.question[0];
+  /** El autor, el dueño de la tienda o `super_admin`. Devuelve la pregunta borrada. */
+  async delete(id: number, user: CurrentUserPayload): Promise<Question> {
+    assertQuestionId(id);
+    const record = await this.findOrFail(id);
+    if (record.userId !== user.sub && !(await this.isAdminOrShopOwner(record, user))) {
+      throw new ForbiddenException('No puedes borrar esta pregunta.');
+    }
+    try {
+      return toQuestionDto(await deleteQuestion(id));
+    } catch (error) {
+      throw toWriteHttpException(error);
+    }
+  }
+
+  /** `super_admin` corta sin consultar; si no, `findShopOwnerById` (precedente products). */
+  private async isAdminOrShopOwner(
+    record: QuestionDetailRecord,
+    user: CurrentUserPayload,
+  ): Promise<boolean> {
+    if (user.permissions.includes('super_admin')) return true;
+    try {
+      return (await findShopOwnerById(record.shopId)) === user.sub;
+    } catch (error) {
+      readError(error);
+    }
+  }
+
+  private async findOrFail(id: number): Promise<QuestionDetailRecord> {
+    let record: QuestionDetailRecord | null;
+    try {
+      record = await findQuestionById(id);
+    } catch (error) {
+      readError(error);
+    }
+    if (!record) {
+      throw new NotFoundException(`No existe una pregunta con id ${id}.`);
+    }
+    return record;
   }
 }

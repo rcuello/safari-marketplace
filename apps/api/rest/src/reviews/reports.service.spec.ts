@@ -131,13 +131,25 @@ describe('AbusiveReportService', () => {
       expect(createMock).not.toHaveBeenCalled();
     });
 
-    it('Question pasa al repositorio, que responde 400 hasta US-55; 404 y 409 se mapean', async () => {
-      const dto = { model_id: 1, model_type: 'Question', message: 'x' } as unknown as CreateReportDto;
+    it.each(['Question', 'Marvel\\Database\\Models\\Question'])(
+      'reporta una pregunta con model_type %s (US-55) y emite el FQCN',
+      async (modelType) => {
+        createMock.mockResolvedValue(makeReport({ modelType: 'Question', modelId: 68 }));
+        const dto = { model_id: 68, model_type: modelType, message: 'x' } as unknown as CreateReportDto;
+        const result = await service.create(dto, CUSTOMER);
+        expect(createMock).toHaveBeenCalledWith(expect.objectContaining({ modelType: 'Question', modelId: 68 }));
+        expect(result.model_type).toBe('Marvel\\Database\\Models\\Question');
+      },
+    );
+
+    it('404, 400 y 409 del repositorio se mapean', async () => {
+      const question = { model_id: 999, model_type: 'Question', message: 'x' } as unknown as CreateReportDto;
+      createMock.mockRejectedValueOnce(new RecordNotFoundError('questions', 999));
+      await expect(service.create(question, CUSTOMER)).rejects.toBeInstanceOf(NotFoundException);
       createMock.mockRejectedValueOnce(
-        new InvalidFieldValueError('abusive_reports', 'model_type', 'Question', 'questions no existe hasta US-55'),
+        new InvalidFieldValueError('abusive_reports', 'message', '', 'abusive_reports_message_check'),
       );
-      await expect(service.create(dto, CUSTOMER)).rejects.toBeInstanceOf(BadRequestException);
-      expect(createMock).toHaveBeenCalledWith(expect.objectContaining({ modelType: 'Question' }));
+      await expect(service.create(question, CUSTOMER)).rejects.toBeInstanceOf(BadRequestException);
 
       const review = { model_id: 85, model_type: 'Review', message: 'x' } as unknown as CreateReportDto;
       createMock.mockRejectedValueOnce(new RecordNotFoundError('reviews', 85));

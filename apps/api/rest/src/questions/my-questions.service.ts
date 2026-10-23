@@ -1,62 +1,88 @@
-import { Injectable } from '@nestjs/common';
-import { plainToClass } from 'class-transformer';
-import Fuse from 'fuse.js';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  deleteQuestion,
+  findQuestionById,
+  listUserQuestions,
+  updateQuestionText,
+  type QuestionDetailRecord,
+} from '@safari/db';
+import { CurrentUserPayload } from 'src/auth/decorators/current-user.decorator';
 import { paginate } from 'src/common/pagination/paginate';
-import { Question } from './entities/question.entity';
-import { GetQuestionDto } from './dto/get-questions.dto';
+import { toWriteHttpException } from 'src/common/errors/domain-error.mapper';
 import { CreateQuestionDto } from './dto/create-question.dto';
+import { GetQuestionDto } from './dto/get-questions.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
-import questionsJSON from '@db/questions.json';
+import { Question } from './entities/question.entity';
+import { toQuestionDto } from './question-dto.mapper';
+import { assertQuestionId, QuestionService, readError } from './questions.service';
 
-const myQuestions = plainToClass(Question, questionsJSON);
-const options = {
-  keys: ['answer'],
-  threshold: 0.3,
-};
-const fuse = new Fuse(myQuestions, options);
+export const MY_QUESTIONS_URL = '/my-questions?with=user&orderBy=created_at&sortedBy=desc';
 
+/**
+ * «Mis preguntas» (US-55): solo las del usuario que llama (V-2, corrección
+ * de privacidad: antes devolvía las 68 a cualquiera). Una pregunta ajena es
+ * 404, no 403: desde aquí no existe.
+ */
 @Injectable()
 export class MyQuestionsService {
-  private myQuestion: Question[] = myQuestions;
+  constructor(private readonly questionService: QuestionService) {}
 
-  findMyQuestions({ limit, page, search, answer }: GetQuestionDto) {
+  /** `created_at DESC, id DESC`; defaults `page=1`/`limit=8` y la url fija del mock. */
+  async findMyQuestions(userId: number, { limit, page }: GetQuestionDto) {
     if (!page) page = 1;
     if (!limit) limit = 8;
-    const startIndex = (page - 1) * limit;
-    const endIndex = page * limit;
-    let data: Question[] = this.myQuestion;
-
-    if (search) {
-      const parseSearchParams = search.split(';');
-      for (const searchParam of parseSearchParams) {
-        const [key, value] = searchParam.split(':');
-        data = fuse.search(value)?.map(({ item }) => item);
-      }
+    try {
+      const { items, total } = await listUserQuestions(userId, {
+        page: Number(page),
+        limit: Number(limit),
+      });
+      return {
+        data: items.map(toQuestionDto),
+        ...paginate(total, page, limit, items.length, MY_QUESTIONS_URL),
+      };
+    } catch (error) {
+      readError(error);
     }
-
-    const results = data.slice(startIndex, endIndex);
-    // const url = `/my-questions?search=${search}&answer=${answer}&limit=${limit}`;
-    const url = `/my-questions?with=user&orderBy=created_at&sortedBy=desc`;
-
-    return {
-      data: results,
-      ...paginate(data.length, page, limit, results.length, url),
-    };
   }
 
-  findMyQuestion(id: number) {
-    return this.myQuestion.find((p) => p.id === id);
+  async findMyQuestion(userId: number, id: number): Promise<Question> {
+    return toQuestionDto(await this.findOwn(userId, id));
   }
 
-  create(createQuestionDto: CreateQuestionDto) {
-    return this.myQuestion[0];
+  create(dto: CreateQuestionDto, user: CurrentUserPayload): Promise<Question> {
+    return this.questionService.create(dto, user);
   }
 
-  update(id: number, updateQuestionDto: UpdateQuestionDto) {
-    return this.myQuestion[0];
+  /** El autor edita el texto de su pregunta; la respuesta no se toca. */
+  async update(userId: number, id: number, dto: UpdateQuestionDto): Promise<Question> {
+    await this.findOwn(userId, id);
+    try {
+      return toQuestionDto(await updateQuestionText(id, dto.question));
+    } catch (error) {
+      throw toWriteHttpException(error);
+    }
   }
 
-  delete(id: number) {
-    return this.myQuestion[0];
+  async delete(userId: number, id: number): Promise<Question> {
+    await this.findOwn(userId, id);
+    try {
+      return toQuestionDto(await deleteQuestion(id));
+    } catch (error) {
+      throw toWriteHttpException(error);
+    }
+  }
+
+  private async findOwn(userId: number, id: number): Promise<QuestionDetailRecord> {
+    assertQuestionId(id);
+    let record: QuestionDetailRecord | null;
+    try {
+      record = await findQuestionById(id);
+    } catch (error) {
+      readError(error);
+    }
+    if (!record || record.userId !== userId) {
+      throw new NotFoundException(`No existe una pregunta tuya con id ${id}.`);
+    }
+    return record;
   }
 }
