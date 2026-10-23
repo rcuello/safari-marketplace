@@ -1096,6 +1096,46 @@ CREATE TABLE IF NOT EXISTS withdraws (
 
 
 -- =====================================================================
+-- Transferencias de propiedad de tienda (US-63, Épico 46) —
+-- ownership_transfers.
+--
+-- Sembrada desde ownership-transfer.json (6 solicitudes pending, sin tienda).
+-- Una fila registra que una tienda pasa (o pidió pasar) de previous_owner a
+-- current_owner; POST /transfer-shop-ownership inserta una 'approved' en la
+-- misma transacción que cambia shops.owner_id.
+--
+-- balance_info es la FOTO del balance al crear la transferencia (D-5): no se
+-- proyecta de ninguna tabla (no hay tabla de balances, decisión 4) ni se
+-- valida su shop_id. Va en json y no en jsonb, igual que order_info,
+-- refund_info y withdrawal_info: jsonb reordena las claves y el orden es
+-- contrato; payment_info sigue siendo un string dentro del documento.
+--
+-- Los usuarios son RESTRICT: el historial no se pierde al borrar a alguien
+-- (mismo criterio que shops.owner_id). La tienda es SET NULL. created_at y
+-- updated_at ordenan y siguen el reloj único, pero la API no los emite (el
+-- mock no los trae). Sin trigger (reloj único, ver abajo).
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS ownership_transfers (
+    id                      bigserial    PRIMARY KEY,
+    transaction_identifier  text         NOT NULL UNIQUE,
+    shop_id                 bigint       REFERENCES shops(id) ON DELETE SET NULL,
+    previous_owner_id       bigint       NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    current_owner_id        bigint       NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    created_by              bigint       NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    message                 text,
+    status                  text         NOT NULL DEFAULT 'pending'
+                                         CHECK (status IN ('pending', 'processing', 'approved', 'rejected')),
+    order_info              json,
+    balance_info            json,
+    refund_info             json,
+    withdrawal_info         json,
+    created_at              timestamptz  NOT NULL DEFAULT now(),
+    updated_at              timestamptz  NOT NULL DEFAULT now(),
+    CONSTRAINT ownership_transfers_owners_distintos CHECK (previous_owner_id <> current_owner_id)
+);
+
+
+-- =====================================================================
 -- Índices.
 --
 -- No son decorativos: cada uno responde a un filtro que el frontend
@@ -1210,6 +1250,13 @@ CREATE INDEX IF NOT EXISTS order_files_order_idx          ON order_files (order_
 
 -- Retiros (US-62): la lista filtra por tienda (la del dueño o la de la query).
 CREATE INDEX IF NOT EXISTS withdraws_shop_idx             ON withdraws (shop_id);
+
+-- Transferencias (US-63): el dueño ve las filas donde es previous o current
+-- owner; shop_id filtra la lista y created_by sirve a su FK.
+CREATE INDEX IF NOT EXISTS ownership_transfers_shop_idx       ON ownership_transfers (shop_id);
+CREATE INDEX IF NOT EXISTS ownership_transfers_previous_idx   ON ownership_transfers (previous_owner_id);
+CREATE INDEX IF NOT EXISTS ownership_transfers_current_idx    ON ownership_transfers (current_owner_id);
+CREATE INDEX IF NOT EXISTS ownership_transfers_created_by_idx ON ownership_transfers (created_by);
 
 
 -- ---------------------------------------------------------------------

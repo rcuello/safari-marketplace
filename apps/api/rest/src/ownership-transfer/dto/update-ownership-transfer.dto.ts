@@ -1,6 +1,5 @@
-import { PartialType } from '@nestjs/swagger';
-import { CreateOwnershipTransferDto } from './create-ownership-transfer.dto';
-
-export class UpdateOwnershipTransferDto extends PartialType(
-  CreateOwnershipTransferDto,
-) {}
+/** Cambio de estado y/o mensaje (US-63). No toca la tienda. */
+export class UpdateOwnershipTransferDto {
+  status?: string;
+  message?: string;
+}

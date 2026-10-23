@@ -52,6 +52,7 @@ const orderStatuses = leer('order-statuses');
 const orders = leer('orders');
 const orderFiles = leer('order-files');
 const withdraws = leer('withdraws');
+const transferencias = leer('ownership-transfer');
 
 // ── Literales SQL ────────────────────────────────────────────────────────
 const txt = (v) =>
@@ -293,12 +294,16 @@ if (new Set(valoresAtributo.map((v) => `${v._padre}:${v.slug}`)).size !== valore
 //     snapshots con ese email ya lo remapean;
 //   · email ausente, id del snapshot no válido u ocupado por OTRO email ⇒
 //     anota el problema y devuelve null: la generación se detiene antes de
-//     escribir seed.sql.
+//     escribir seed.sql;
+//   · `permisosExtra` (US-63, opcional): nombres de permiso que el usuario
+//     SEMBRADO recibe además de `customer` (los owners de ownership-transfer
+//     son dueños de tienda: `store_owner`). No toca a un usuario conocido.
 const PERMISO_CUSTOMER = permissionsCatalogo.find((p) => p.name === 'customer').id;
+const idPermiso = (nombre) => permissionsCatalogo.find((p) => p.name === nombre).id;
 const idPorEmail = new Map(users.map((u) => [String(u.email).toLowerCase(), u.id]));
 const emailPorId = new Map(users.map((u) => [u.id, String(u.email).toLowerCase()]));
 const usuariosSembrados = [];
-function resolverUsuarioPorEmail(snapshot, donde) {
+function resolverUsuarioPorEmail(snapshot, donde, permisosExtra = []) {
   const email = snapshot?.email ? String(snapshot.email).trim().toLowerCase() : '';
   if (!email) {
     problemas.push(`${donde}: el snapshot de usuario no trae email`);
@@ -325,6 +330,7 @@ function resolverUsuarioPorEmail(snapshot, donde) {
     email_verified_at: snapshot.email_verified_at ?? null,
     created_at: snapshot.created_at ?? null,
     updated_at: snapshot.updated_at ?? null,
+    _permisos: [PERMISO_CUSTOMER, ...permisosExtra.map(idPermiso)],
     _origen: donde,
   });
   idPorEmail.set(email, id);
@@ -588,6 +594,42 @@ for (const w of withdraws) {
   if (!w.payment_method) problemas.push(`withdraws ${w.id}: sin payment_method`);
 }
 
+// ── Transferencias de propiedad (US-63) ──────────────────────────────────
+// Los owners traen snapshot con email: se resuelven con el helper y, si son
+// nuevos, se siembran con 'store_owner'. created_by trae solo el id: se
+// remapea por la tabla de D-4. Un owner cuyo email ya existe en el seed solo
+// se acepta si su id del mock está en esa tabla y apunta a ese usuario (o si
+// lo sembró una fila anterior de este mismo bloque); si no, es otra persona
+// con el mismo email (también en otra caja) y se para.
+const REMAPEO_ID_MOCK = new Map([[6, 3]]);
+const ESTADOS_TRANSFERENCIA = ['pending', 'processing', 'approved', 'rejected'];
+const sembradosAntesDeTransferencias = usuariosSembrados.length;
+const resolverOwner = (snapshot, donde) => {
+  const conocido = idPorEmail.get(String(snapshot?.email ?? '').trim().toLowerCase());
+  const sembradoAqui = usuariosSembrados.slice(sembradosAntesDeTransferencias).some((u) => u.id === conocido);
+  if (conocido !== undefined && !sembradoAqui && REMAPEO_ID_MOCK.get(snapshot.id) !== conocido) {
+    problemas.push(`${donde}: '${snapshot.email}' (id ${snapshot.id}) choca con el usuario ${conocido} del seed`);
+    return null;
+  }
+  return resolverUsuarioPorEmail(snapshot, donde, ['store_owner']);
+};
+for (const t of transferencias) {
+  t._previous_owner_id = resolverOwner(t.previous_owner, `ownership_transfers ${t.id}.previous_owner`);
+  t._current_owner_id = resolverOwner(t.current_owner, `ownership_transfers ${t.id}.current_owner`);
+  t._created_by = REMAPEO_ID_MOCK.get(t.created_by) ?? null;
+  if (t._created_by === null)
+    problemas.push(`ownership_transfers ${t.id}: created_by ${t.created_by} sin entrada en la tabla de remapeo (D-4)`);
+  if (t._previous_owner_id !== null && t._previous_owner_id === t._current_owner_id)
+    problemas.push(`ownership_transfers ${t.id}: previous_owner y current_owner son el mismo usuario`);
+  if (!/^\d{4}-\d{2}-\d{2}-\d{4}$/.test(t.transaction_identifier ?? ''))
+    problemas.push(`ownership_transfers ${t.id}: transaction_identifier '${t.transaction_identifier}' sin formato YYYY-MM-DD-NNNN`);
+  if (!ESTADOS_TRANSFERENCIA.includes(t.status))
+    problemas.push(`ownership_transfers ${t.id}: status '${t.status}' fuera del CHECK`);
+}
+if (new Set(transferencias.map((t) => t.transaction_identifier)).size !== transferencias.length)
+  problemas.push('ownership_transfers: transaction_identifier duplicado');
+const ownersSembrados = usuariosSembrados.slice(sembradosAntesDeTransferencias);
+
 if (problemas.length) {
   console.error(`\nEl mock viola ${problemas.length} restriccion(es) del esquema:`);
   problemas.slice(0, 20).forEach((p) => console.error('  - ' + p));
@@ -624,7 +666,7 @@ L.push(
     `${conversaciones.length} conversations · ${mensajes.length} messages · ` +
     `${orderStatuses.length} order_statuses · ${ordenes.length} orders · ` +
     `${ordenes.reduce((n, o) => n + o.products.length, 0)} order_products · ${orderFiles.length} order_files · ` +
-    `${withdraws.length} withdraws`,
+    `${withdraws.length} withdraws · ${transferencias.length} ownership_transfers`,
   '-- =====================================================================',
   '',
   'BEGIN;'
@@ -740,6 +782,8 @@ L.push(
   '-- No están en users.json: los referencian los `user` embebidos de otros',
   '-- mocks (reviews.json). Id, nombre y timestamps del snapshot, contraseña',
   "-- demo y permiso 'customer'; sin perfil. El setval de users cubre el máximo.",
+  "-- Los owners de ownership-transfer.json (US-63) llevan además 'store_owner':",
+  '-- en el mock son dueños de tienda, y sin él no salen en /vendors/list.',
   'INSERT INTO users (id, name, email, password_hash, is_active, email_verified_at, created_at, updated_at) VALUES'
 );
 L.push(
@@ -753,7 +797,7 @@ L.push(
 );
 L.push('INSERT INTO permission_user (user_id, permission_id) VALUES');
 L.push(
-  usuariosSembrados.map((u) => `  (${u.id}, ${PERMISO_CUSTOMER})`).join(',\n') +
+  usuariosSembrados.flatMap((u) => u._permisos.map((p) => `  (${u.id}, ${p})`)).join(',\n') +
     '\nON CONFLICT (user_id, permission_id) DO NOTHING;'
 );
 
@@ -1282,6 +1326,34 @@ L.push(
     .join(',\n') + '\nON CONFLICT (id) DO NOTHING;'
 );
 
+// ownership_transfers (US-63; tras users) ------------------------------------
+bloque(
+  `ownership_transfers — ${transferencias.length} (owners sembrados: ` +
+    `${ownersSembrados.map((u) => u.id).join(', ')})`
+);
+L.push(
+  '-- Ids del mock. previous/current_owner y created_by resueltos por email y por',
+  '-- la tabla de D-4 (el 6 del mock es admin@demo.com = 3 aquí). shop_id NULL:',
+  '-- el mock no lo trae. balance_info va verbatim en json (no jsonb): es la foto',
+  '-- histórica del balance y el orden de sus claves es contrato; payment_info',
+  '-- sigue siendo un string dentro. El mock no trae timestamps: se derivan del',
+  '-- transaction_identifier (YYYY-MM-DD-NNNN -> YYYY-MM-DD 00:00 UTC) para que',
+  '-- el orden temporal sea el real y no un now() idéntico.',
+  'INSERT INTO ownership_transfers (id, transaction_identifier, shop_id, previous_owner_id, current_owner_id, created_by, message, status, order_info, balance_info, refund_info, withdrawal_info, created_at, updated_at) VALUES'
+);
+L.push(
+  transferencias
+    .map((t) => {
+      const fecha = ts(`${t.transaction_identifier.slice(0, 10)}T00:00:00Z`);
+      return (
+        `  (${t.id}, ${txt(t.transaction_identifier)}, NULL, ${num(t._previous_owner_id)}, ${num(t._current_owner_id)}, ` +
+        `${num(t._created_by)}, ${txt(t.message)}, ${txt(t.status)}, ${jsonTal(t.order_info)}, ${jsonTal(t.balance_info)}, ` +
+        `${jsonTal(t.refund_info)}, ${jsonTal(t.withdrawal_info)}, ${fecha}, ${fecha})`
+      );
+    })
+    .join(',\n') + '\nON CONFLICT (id) DO NOTHING;'
+);
+
 // category_product -------------------------------------------------------
 bloque('category_product — deliberadamente VACÍA');
 L.push(
@@ -1301,7 +1373,7 @@ L.push(
   '-- mock, así que hay que adelantar las secuencias o el primer INSERT nuevo',
   '-- chocaría con una clave existente.'
 );
-for (const t of ['types', 'users', 'permissions', 'shops', 'categories', 'manufacturers', 'tags', 'products', 'faqs', 'terms_and_conditions', 'refund_policies', 'refund_reasons', 'taxes', 'shippings', 'attributes', 'attribute_values', 'store_notices', 'coupons', 'reviews', 'abusive_reports', 'questions', 'conversations', 'messages', 'order_statuses', 'orders', 'order_files', 'withdraws']) {
+for (const t of ['types', 'users', 'permissions', 'shops', 'categories', 'manufacturers', 'tags', 'products', 'faqs', 'terms_and_conditions', 'refund_policies', 'refund_reasons', 'taxes', 'shippings', 'attributes', 'attribute_values', 'store_notices', 'coupons', 'reviews', 'abusive_reports', 'questions', 'conversations', 'messages', 'order_statuses', 'orders', 'order_files', 'withdraws', 'ownership_transfers']) {
   L.push(`SELECT setval('${t}_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM ${t}), 1));`);
 }
 
@@ -1326,5 +1398,5 @@ console.log(
     `${conversaciones.length} conversations · ${mensajes.length} messages · ` +
     `${orderStatuses.length} order_statuses · ${ordenes.length} orders · ` +
     `${ordenes.reduce((n, o) => n + o.products.length, 0)} order_products · ${orderFiles.length} order_files · ` +
-    `${withdraws.length} withdraws`
+    `${withdraws.length} withdraws · ${transferencias.length} ownership_transfers`
 );

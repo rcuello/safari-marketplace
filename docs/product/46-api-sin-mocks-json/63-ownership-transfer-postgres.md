@@ -10,7 +10,7 @@
 
 **Épico:** [Épico 46](./README.md)
 **Fecha:** 2026-10-20
-**Status:** Listo para ejecución
+**Status:** ✅ Implementada (2026-10-23)
 **Depende de:** [US-62](./62-withdraws-postgres.md). La dependencia es por
 los archivos compartidos (R-2). En datos necesita el helper
 `resolverUsuarioPorEmail` que extendió US-54 (D-4).
@@ -468,3 +468,252 @@ Seguir los pasos 1-10 del **Protocolo de ejecución** del [README del
   ¿el test cuenta el seed (dato esperado) o un comportamiento (regresión)?
   Solo en el primer caso se actualiza la cifra (R-3 del épico; regla 5 de
   `agent-behaviors`).
+
+## Evidencia (2026-10-23)
+
+**Línea base y después** (API recién arrancada; el antes, con el servicio
+del mock):
+
+```
+archivo        antes                                   después
+list           200 6143B  ids 10,9,8,7,6,5 total 6     200 7601B  ids 10,9,8,7,6,5 total 6 (CA-2)
+search         200 6207B  data 6 total 0 (fallback)    200 1336B  data 1 total 1, id 8 (V-3)
+detail         200    1B  vacío                        200  936B  id 10 mack@gmail.com -> jack@gmail.com (V-4)
+transfer       404   92B  Cannot POST                  201, tienda 2 con owner jack (V-8; ver CA-5)
+vendors        200 16374B data 2 (1,3)                 200 20730B data 8 (1,3,42,45,48,49,51,53) (V-6)
+cliente GET /ownership-transfer: 403 antes y después
+```
+
+**Seed:**
+
+```
+$ node db/generate-seed.mjs
+  … · 11 usuarios · … · 10 order_files · 2 withdraws · 6 ownership_transfers
+
+# corrida fallida: previous_owner.email de la fila 10 cambiado a "CUSTOMER@DEMO.COM" (copia de respaldo)
+El mock viola 1 restriccion(es) del esquema:
+  - ownership_transfers 10.previous_owner: 'CUSTOMER@DEMO.COM' (id 48) choca con el usuario 2 del seed
+exit=1
+# JSON restaurado desde la copia: git diff vacío; seed.sql intacto (cmp)
+```
+
+Cómo se resolvieron los usuarios:
+
+- `resolverUsuarioPorEmail` recibió un tercer parámetro opcional,
+  `permisosExtra`, documentado en su contrato. Los 6 owners nuevos entran
+  con `customer` y `store_owner`.
+- `created_by` se resuelve con la tabla de remapeo de D-4, `REMAPEO_ID_MOCK
+  = {6 → 3}`. Un `created_by` sin entrada en la tabla es error.
+- Un owner cuyo email ya existe solo se acepta en dos casos: si su id del
+  mock está en esa tabla y apunta a ese usuario, o si lo sembró una fila
+  anterior del mismo bloque (el 51 aparece en 3 filas).
+
+**CA-1** (`just db-reset` sin errores + `psql`):
+
+```
+ users 11 · permission_user 20 (8 previas + 12)
+ id | transaction_identifier | previous_owner_id | current_owner_id | created_by | shop_id | status  |       created_at
+ 10 | 2024-08-03-0001        |                48 |               49 |          3 |         | pending | 2024-08-03 00:00:00+00
+  9 | 2024-08-01-0003        |                 3 |               51 |          3 |         | pending | 2024-08-01 00:00:00+00
+  8 | 2024-08-01-0002        |                53 |               51 |          3 |         | pending | 2024-08-01 00:00:00+00
+  7 | 2024-08-01-0001        |                 3 |               51 |          3 |         | pending | 2024-08-01 00:00:00+00
+  6 | 2024-07-25-0001        |                 3 |               45 |          3 |         | pending | 2024-07-25 00:00:00+00
+  5 | 2024-07-19-0001        |                 3 |               42 |          3 |         | pending | 2024-07-19 00:00:00+00
+ huérfanas: created_by 0 · previous_owner 0 · current_owner 0 · shop 0
+ users_id_seq 53 · ownership_transfers_id_seq 10 · json_typeof(balance_info) = object
+ 42, 45, 48, 49, 51, 53 → customer,store_owner
+POST /token jack@gmail.com → 201, permissions=customer,store_owner
+```
+
+CA-1 dice «da 200»: `POST /api/token` responde **201**, igual que con
+cualquier usuario y que antes de esta US. Es el default de Nest para un
+`@Post`, no un cambio.
+
+```
+$ npx prisma validate
+The schema at prisma\schema.prisma is valid 🚀
+$ npx prisma migrate diff --from-config-datasource --to-schema ./prisma/schema.prisma --exit-code
+No difference detected.
+EXIT=0
+```
+
+El modelo `OwnershipTransfer` tiene los 4 `*Info` como `Json? @db.Json` y
+tres relaciones con nombre hacia `User`: `OwnershipTransferPreviousOwner`,
+`OwnershipTransferCurrentOwner` y `OwnershipTransferCreator`. Sus inversas
+son `transfersFrom`, `transfersTo` y `transfersCreated`, y en `Shop` está
+`ownershipTransfers`. Los dos CHECK nuevos se añadieron a la cabecera.
+
+**CA-2** (`node`, deep-equal recursivo con orden de claves de la lista contra
+la línea base): 44 diferencias, **todas** dentro de V-1, V-2 y V-7, y
+ninguna de conjunto u orden de claves:
+
+```
+data[0].previous_owner.created_at: "2024-07-26T03:45:11.000000Z" -> "2024-07-26T03:45:11.000Z"   (V-2, ×4 por fila en los owners sembrados)
+data[0].created_by: 6 -> 3                                                                        (V-1, en las 6)
+data[1].previous_owner.id: 6 -> 3                                                                 (V-1, filas 9, 7, 6 y 5)
+data[1].previous_owner.email_verified_at: "2024-05-16T05:13:23.000000Z" -> "2023-11-12T10:59:14.000Z"
+data[1].previous_owner.created_at/updated_at: "2024-05-16T05:13:23.000000Z" -> "2026-10-23T19:56:13.797Z"
+data[1].previous_owner.profile: null -> {"id":3,"avatar":{…},"contact":"19365141641631",…,"customer_id":3,…}
+first_page_url / last_page_url: ".../api/refund-policies?search=undefined&limit=10&page=1" -> ".../api/ownership-transfer?search=undefined&limit=10&page=1"   (V-7)
+ids 10,9,8,7,6,5
+balance_info texto idéntico (con orden) en las 6: true · payment_info string: true
+```
+
+El `previous_owner` de las filas 9, 7, 6 y 5 es ahora el usuario 3 del seed.
+Su `name` y su `email` son los del mock (`Jhon Doe`, `admin@demo.com`); su
+`email_verified_at`, sus timestamps y su `profile` (no nulo) son los del
+seed. Todo eso entra en V-1. El resto es igual, `per_page: "10"` incluido.
+
+**CA-3:**
+
+```
+200 GET ownership-transfer?limit=10&search=transaction_identifier:2024-08-01-0002 (admin) → 8 total 1
+200 GET ownership-transfer?limit=10 (jack@gmail.com)                                     → 10 total 1
+200 GET ownership-transfer?limit=10 (store_owner@demo.com, no participa en ninguna)      → total 0
+200 GET ownership-transfer/2024-08-03-0001 (admin)  → 10 mack@gmail.com -> jack@gmail.com
+404 GET ownership-transfer/2099-01-01-0001          → No existe una transferencia 2099-01-01-0001.
+404 GET ownership-transfer/2024-08-01-0002 (jack)   → no participa en la fila 8
+```
+
+El dueño centinela `zz-transfer-owner` está en el integration test y recibe
+`{items: [], total: 0}`.
+
+**CA-4:**
+
+```
+201 POST ownership-transfer {"shop_id":"2","vendor_id":"49","message":"zz-transfer-curl"} → 21 2026-10-23-0001 pending prev 1 curr 49 by 3
+201 POST ownership-transfer {"shop_id":"2","vendor_id":"49"}                              → 22 2026-10-23-0002 pending prev 1 curr 49 by 3
+200 PUT ownership-transfer/21 {"status":"rejected"}  → rejected; updated_at 20:11:46.416 → 20:12:19.862
+400 PUT ownership-transfer/21 {"status":"Rejected"}  → `ownership_transfers.status` no admite `Rejected` — CHECK ownership_transfers_status_check.
+404 PUT ownership-transfer/999999                    → No existe un registro de `ownership_transfers` con id 999999.
+403 POST / PUT ownership-transfer/10 / DELETE ownership-transfer/21 (dueño) → No tienes permisos suficientes para esta operación.
+200 DELETE ownership-transfer/21 (admin)             → la fila borrada
+404 GET ownership-transfer/2026-10-23-0001           → No existe una transferencia 2026-10-23-0001.
+```
+
+El integration test fija el reloj en 2030-05-05 y comprueba `-0001` y
+`-0002`. También comprueba `SameOwnerError` (409) cuando el vendedor ya es
+el dueño, y que una tienda o un vendedor inexistentes dan 400.
+
+**CA-5:**
+
+```
+400 POST transfer-shop-ownership vendor_id 2 (sin store_owner) → `ownership_transfers.vendor_id` no admite `2` — CHECK store_owner.
+409 POST transfer-shop-ownership vendor_id 1 (ya es el dueño)  → El usuario 1 ya es el dueño de la tienda 2.
+404 POST transfer-shop-ownership shop_id 999999                → No existe un registro de `shops` con id 999999.
+400 POST transfer-shop-ownership vendor_id "abc"               → `abc` no es un vendor_id.
+tras los fallos: shops[2].owner_id=1 · transfers 6 -> 6
+201 POST transfer-shop-ownership {"id":49,"name":"jack","shop_id":"2","vendor_id":"49","message":"zz-transfer-curl"}
+    → shop 2 Clothing Shop owner_id 49 owner {"id":49,"name":"jack","email":"jack@gmail.com"} claves 16
+shops[2].owner_id=49
+23|2026-10-23-0001|2|1|49|3|approved|zz-transfer-curl
+dueño y cliente POST transfer-shop-ownership → 403 / 403
+cliente GET, GET /:id, POST, PUT, DELETE de ownership-transfer → 403 ×5
+```
+
+El integration test fuerza los cuatro fallos dentro de la transacción y
+comprueba que ni `shops` ni `ownership_transfers` cambiaron; después
+transfiere y restaura.
+
+**Estado final de la base:** `UPDATE shops SET owner_id=1, updated_at=<el
+original como texto>` y `DELETE` de la fila creada. Quedan 6
+transferencias y la tienda 2 con dueño 1 y su `updated_at` original. Las
+secuencias quedaron adelantadas por los tests y los `curl`.
+
+**CA-6:**
+
+```
+$ just db-check
+ Test Files  32 passed (32)
+      Tests  396 passed (396)
+$ cd apps/api/rest && npx jest
+Test Suites: 34 passed, 34 total
+Tests:       530 passed, 530 total
+$ npx tsc --noEmit -p tsconfig.json   → exit 0
+$ just build-api                      → Done in 92.73s.
+$ just verify
+OK   API    :9001/api/settings  200  5503B  527ms
+OK   Shop   :3003/en  200  190788B  826ms  cards:30
+OK   Admin  :3002/en/login  200  72821B  101ms  cards:1
+GET /shops: 16 claves en las 12 tiendas
+$ grep -rn "@db/" apps/api/rest/src/ownership-transfer/   → sin salida, exit=1
+```
+
+Antes (US-62): 31 archivos / 390 tests en `db-check` y 33 suites / 524 en
+jest. Se suman el integration test (6 casos) y
+`ownership-transfer.service.spec.ts` (6 casos).
+
+**Incidencia en la primera corrida.** Encadené `db-check`, `jest`,
+`build-api` y `verify` en un solo comando.
+
+- `db-check` dio 4 fallos por **timeout de 5000 ms**, en `slug`,
+  `categories` (2) y `order-files`. Ninguno es un archivo de esta US.
+- `verify` dio la tienda en 500: el log del shop muestra `ECONNREFUSED`
+  contra `:9001`, porque `build-api` reescribe `dist/` y la API en modo
+  watch se reinicia.
+
+Después, por separado, `verify` quedó verde y `db-check` dio 396/396 dos
+veces seguidas. Lo atribuyo a la carga de la máquina, pero no lo demostré;
+queda anotado junto al fallo intermitente de US-60.
+
+**Asserts de conteo que cambiaron (R-3):**
+`store-notices.integration.test.ts`, en dos casos:
+
+- `all_vendor va a todos los store_owner` esperaba `[3, 1]`.
+- `borra en cascada…` esperaba 2 destinatarios.
+
+Diagnóstico: el test cuenta el seed, no un comportamiento. `all_vendor` va
+a todos los `store_owner`, y ahora son 8 a propósito (V-6). Los dos asserts
+leen la lista de `store_owner` de la base: el primero exige que sean 8 y
+terminen en `[3, 1]`. Los demás asserts de usuarios no cambiaron.
+
+**CA-7 — cierre del épico:**
+
+```
+$ cd apps/api/rest/src
+$ grep -rlnE "from '@db/|db/pickbazar/|\.json'" --include=*.ts . | grep -v "\.spec\.ts" | sort
+./authors/authors.service.ts
+./flash-sale/flash-sale.service.ts
+./orders/orders.service.ts
+./payment/stripe-payment.service.ts
+./payment-intent/payment-intent.controller.ts
+./payment-intent/payment-intent.service.ts
+./payment-method/payment-method.service.ts
+$ grep -nE "from '@db/" orders/orders.service.ts
+1:import paymentGatewayJson from '@db/payment-gateway.json';
+2:import paymentIntentJson from '@db/payment-intent.json';
+```
+
+Solo aparecen los mocks permanentes de la decisión 2: `payment-intent/`,
+`payment-method/`, `authors/`, `flash-sale/` y `payment/`, más
+`orders.service.ts`, que solo importa la pasarela. No hay ningún mock sin
+declarar.
+
+**Decisiones de implementación:**
+
+- `POST /ownership-transfer` lee el dueño anterior **dentro** de la
+  transacción (`SELECT … FOR UPDATE` sobre la tienda) en vez de con
+  `findShopOwnerById` antes. Es el mismo valor, sin la carrera entre leer y
+  escribir. Si la tienda no existe da 400; si el vendedor ya es el dueño,
+  409 (`SameOwnerError`, que reutiliza el código del conflicto).
+- `transaction_identifier`: el siguiente número del día se calcula dentro
+  de la transacción. Si dos se adelantan con el mismo, el UNIQUE da P2002 y
+  la transacción entera se reintenta (hasta 5 veces).
+- `transfer-shop-ownership` también bloquea la tienda con `FOR UPDATE`, así
+  que dos transferencias simultáneas de la misma tienda no registran un
+  `previous_owner` viejo.
+- Un vendedor sin `store_owner` da 400 (`InvalidFieldValueError`); uno
+  inexistente, 400 (`InvalidReferenceError`).
+- `PUT`/`DELETE` con un id que no es entero positivo dan 404 sin tocar la
+  base. Un `shop_id`/`vendor_id` inválido da 400.
+
+**Notas para el reporte:**
+
+- Aprobar una solicitud `pending` por `PUT` **no** mueve la tienda (NO
+  incluye): hay que diseñar ese flujo.
+- `balance_info` queda `null` en las filas nuevas: no hay tabla de balances
+  (decisión 4).
+- Los hooks `approve`/`disapprove` del admin siguen sin consumidor.
+- `CLAUDE.md` todavía describe la API como híbrida con 24 módulos sobre
+  JSON. Con el épico cerrado ese texto quedó viejo, pero es documentación
+  del dueño y no la toqué.

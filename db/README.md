@@ -23,13 +23,13 @@ que si el mock violara alguna restricción del esquema falla en vez de producir
 SQL inaplicable.
 
 ```
-10 types · 12 shops · 198 categorías · 14 manufacturers · 10 tags · 1200 productos · 5 usuarios · 4 permisos
+10 types · 12 shops · 198 categorías · 14 manufacturers · 10 tags · 1200 productos · 11 usuarios · 4 permisos
 · 1 become_seller · 3 shop_staff · 19 faqs · 5 terms_and_conditions
 · 5 refund_policies · 8 refund_reasons · 1 taxes · 1 shippings
 · 8 attributes · 27 attribute_values · 3 store_notices (6 destinatarios,
 6 lecturas) · 10 coupons · 10 wishlists · 85 reviews · 3 abusive_reports · 68 questions · 2 conversations · 5 messages
 · 10 order_statuses · 40 orders (20 padres + 20 hijas) · 76 order_products
-· 10 order_files · 2 withdraws
+· 10 order_files · 2 withdraws · 6 ownership_transfers
 ```
 
 **Los ids del mock se preservan** para no romper las relaciones, y al final se
@@ -53,7 +53,7 @@ Desde US-20, `users.json` (el mismo mock) siembra 6 tablas: `users`, `profiles`
 aceptando cualquier contraseña hasta US-22 — este dato solo queda sembrado y
 disponible.
 
-**Credencial demo**: los 5 usuarios (los 3 de `users.json` y los 2 que
+**Credencial demo**: los 11 usuarios (los 3 de `users.json` y los 8 que
 siembra el helper de identidad, ver más abajo) comparten la contraseña `demodemo`,
 guardada como hash bcrypt (costo 10). El literal vive en
 `generate-seed.mjs` como constante `HASH_DEMO`, con el comando de
@@ -220,6 +220,19 @@ válido o si su id ya es de **otro** email:
 Quedan 5 usuarios y 8 filas en `permission_user`. Por eso `GET /users` y
 `getUsersToNotify` pasan de 3 a 5.
 
+Desde US-63 el helper acepta permisos extra para los usuarios que siembra.
+Los 6 owners de `ownership-transfer.json` (42 `shop@gmail.com`, 45
+`demobook@gmail.com`, 48 `mack@gmail.com`, 49 `jack@gmail.com`, 51
+`joel@joelmale.com` y 53 `lamp@gmail.com`) entran con `customer` y
+`store_owner`: en el mock son dueños de tienda. Quedan **11 usuarios** y
+**20 filas** en `permission_user`, y `/vendors/list` pasa de 2 a 8. Un
+owner cuyo email ya existe en el seed solo se acepta si su id del mock está
+en la tabla de remapeo de D-4 (`6 → 3`); si no, la generación falla:
+
+```
+  - ownership_transfers 10.previous_owner: 'CUSTOMER@DEMO.COM' (id 48) choca con el usuario 2 del seed
+```
+
 ## Avisos de tienda: `store_notices` y sus tres pivotes
 
 Desde US-51, los avisos que el super admin (o un dueño, para su tienda)
@@ -234,8 +247,8 @@ publica en la barra superior del panel.
   mock, sin zona, que Postgres toma en UTC (la zona de la imagen).
 - **`store_notice_user`** (6 filas) y **`store_notice_shop`** (0): los
   destinatarios. El `type` decide cuáles: `all_vendor` va a todos los
-  usuarios con permiso `store_owner` (en el seed, el 1 y el 3, que es
-  exactamente el `users[]` del mock tras el remapeo); `specific_*` va a los
+  usuarios con permiso `store_owner` (en el seed eran el 1 y el 3, que es
+  exactamente el `users[]` del mock tras el remapeo; desde US-63 son 8); `specific_*` va a los
   ids que se envían; `all_shop` va a todas las tiendas.
 - **`store_notice_read`** (6 filas, 3 leídas): si cada usuario leyó el
   aviso. El `is_read` que emite la API es el de **quien consulta**, no uno
@@ -476,6 +489,30 @@ Desde US-62. 2 filas con los ids y las fechas del mock, las dos de la tienda
 - **Sin balance**: no hay tabla de balances, así que aprobar no descuenta
   nada (decisión 4 del épico).
 - Sin `deleted_at`: se borra de verdad. La tienda es `CASCADE`.
+
+## Transferencias de propiedad: `ownership_transfers`
+
+Desde US-63. 6 solicitudes `pending` con los ids del mock (5-10), sin tienda
+(`shop_id` NULL: el mock no lo trae) y creadas por el admin (`created_by`
+6 → 3 por la tabla de D-4).
+
+- **Owners**: `previous_owner_id` es el 3 en 4 filas y el 48 y el 53 en una
+  cada uno; `current_owner_id` es el 51 en 3 filas y el 49, el 45 y el 42 en
+  una cada uno. Los 6 que no son el admin se siembran (ver Identidad).
+- **`balance_info` es una foto histórica** (D-5): no se proyecta de ninguna
+  tabla ni se valida su `shop_id: 22`. Va en `json`, no en `jsonb`, igual
+  que los otros `*_info`, porque el orden de sus claves es contrato.
+  `payment_info` sigue siendo un string dentro.
+- **Timestamps derivados**: el mock no los trae; el seed los toma del
+  `transaction_identifier` (`YYYY-MM-DD-NNNN` → ese día a las 00:00 UTC), y
+  la API no los emite.
+- `status` en minúscula: `pending`, `processing`, `approved` o `rejected`
+  (CHECK). `CHECK (previous_owner_id <> current_owner_id)`.
+- FK: los tres usuarios son `RESTRICT` (el historial no se pierde); la
+  tienda, `SET NULL`.
+- `POST /transfer-shop-ownership` es la única escritura sobre
+  `shops.owner_id`: en una transacción cambia el dueño e inserta la fila
+  `approved`. Aprobar una solicitud por `PUT` no mueve la tienda.
 
 ## Cómo se adapta el scraper
 

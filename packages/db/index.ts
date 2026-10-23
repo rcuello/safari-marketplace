@@ -45,6 +45,7 @@ export type {
   OrderProductRecord,
   OrderRecord,
   OrderStatusRecord,
+  OwnershipTransferRecord,
   PermissionRecord,
   ProfileRecord,
   QuestionRecord,
@@ -313,6 +314,25 @@ export {
   listLowStockProducts,
   listTopRatedProducts,
 } from './src/repositories/analytics.repository';
+export type {
+  CreateOwnershipTransferInput,
+  ListOwnershipTransfersInput,
+  OwnershipTransferDetailRecord,
+  OwnershipTransferOwnerRecord,
+  ShopTransferResult,
+  TransferShopOwnershipInput,
+  UpdateOwnershipTransferInput,
+} from './src/repositories/ownership-transfers.repository';
+export {
+  OWNERSHIP_TRANSFER_STATUSES,
+  SameOwnerError,
+  createOwnershipTransfer,
+  deleteOwnershipTransfer,
+  findOwnershipTransferByIdentifier,
+  listOwnershipTransfers,
+  transferShopOwnership,
+  updateOwnershipTransfer,
+} from './src/repositories/ownership-transfers.repository';
 export type {
   CreateWithdrawInput,
   ListWithdrawsInput,

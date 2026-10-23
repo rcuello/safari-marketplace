@@ -10,7 +10,10 @@ export class RefundPolicyPaginator extends Paginator<OwnershipTransfer> {
 export class GetOwnershipTransferDto extends PaginationArgs {
   orderBy?: QueryReviewsOrderByColumn;
   sortedBy?: SortOrder;
+  /** Solo se entiende `transaction_identifier:X` (exacto). */
   search?: string;
+  /** Llega como string: no hay `transform` en el `ValidationPipe`. */
+  shop_id?: string;
 }
 
 export enum QueryReviewsOrderByColumn {

@@ -7,7 +7,7 @@
 > `db-reset`: se ejecuta de punta a punta sin esperar a una habilitadora.
 
 **Fecha:** 2026-10-20
-**Status:** Refinado
+**Status:** ✅ Completado (2026-10-23)
 
 ## Por qué este épico existe y qué reemplaza
 
@@ -56,7 +56,7 @@ barrel.
 | [US-60](./60-downloads-export-invoice.md) | `downloads`, export e invoice | 4 | `order_files` | US-59 | ~900 | ✅ Implementada (2026-10-23) |
 | [US-61](./61-analytics-calculado.md) | `analytics` calculado desde Postgres | 4 | — (sin DDL) | US-60 | ~1100 | ✅ Implementada (2026-10-23) |
 | [US-62](./62-withdraws-postgres.md) | `withdraws` | 5 (+1) | `withdraws` | US-61 | ~1100 | ✅ Implementada (2026-10-23) |
-| [US-63](./63-ownership-transfer-postgres.md) | `ownership-transfer` + `transfer-shop-ownership` | 5 (+1) | `ownership_transfers` | US-62 | ~1500 | |
+| [US-63](./63-ownership-transfer-postgres.md) | `ownership-transfer` + `transfer-shop-ownership` | 5 (+1) | `ownership_transfers` | US-62 | ~1500 | ✅ Implementada (2026-10-23) |
 
 **Total: 17 US, 120 rutas migradas (+3 rutas nuevas que el frontend ya llama
 y hoy dan 404), ~24 400 LOC estimadas.** Las cifras son suelo, no techo

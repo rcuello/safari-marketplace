@@ -9,7 +9,7 @@
 -- ya existen, y creando en tiempo de ejecución únicamente lo que es suyo
 -- (los retailers como shops, las marcas como manufacturers).
 --
--- 10 types · 12 shops · 198 categorías · 14 manufacturers · 10 tags · 1200 productos · 5 usuarios · 4 permisos · 1 become_seller · 3 shop_staff · 19 faqs · 5 terms_and_conditions · 5 refund_policies · 8 refund_reasons · 1 taxes · 1 shippings · 8 attributes · 27 attribute_values · 3 store_notices · 10 coupons · 10 wishlists · 85 reviews · 3 abusive_reports · 68 questions · 2 conversations · 5 messages · 10 order_statuses · 40 orders · 76 order_products · 10 order_files · 2 withdraws
+-- 10 types · 12 shops · 198 categorías · 14 manufacturers · 10 tags · 1200 productos · 11 usuarios · 4 permisos · 1 become_seller · 3 shop_staff · 19 faqs · 5 terms_and_conditions · 5 refund_policies · 8 refund_reasons · 1 taxes · 1 shippings · 8 attributes · 27 attribute_values · 3 store_notices · 10 coupons · 10 wishlists · 85 reviews · 3 abusive_reports · 68 questions · 2 conversations · 5 messages · 10 order_statuses · 40 orders · 76 order_products · 10 order_files · 2 withdraws · 6 ownership_transfers
 -- =====================================================================
 
 BEGIN;
@@ -100,18 +100,38 @@ INSERT INTO permission_user (user_id, permission_id) VALUES
 ON CONFLICT (user_id, permission_id) DO NOTHING;
 
 -- ────────────────────────────────────────────────────────────────────
--- users sembrados desde snapshots — 2 (4 customer2@demo.com, 5 customer3@demo.com)
+-- users sembrados desde snapshots — 8 (4 customer2@demo.com, 5 customer3@demo.com, 48 mack@gmail.com, 49 jack@gmail.com, 51 joel@joelmale.com, 53 lamp@gmail.com, 45 demobook@gmail.com, 42 shop@gmail.com)
 -- ────────────────────────────────────────────────────────────────────
 -- No están en users.json: los referencian los `user` embebidos de otros
 -- mocks (reviews.json). Id, nombre y timestamps del snapshot, contraseña
 -- demo y permiso 'customer'; sin perfil. El setval de users cubre el máximo.
+-- Los owners de ownership-transfer.json (US-63) llevan además 'store_owner':
+-- en el mock son dueños de tienda, y sin él no salen en /vendors/list.
 INSERT INTO users (id, name, email, password_hash, is_active, email_verified_at, created_at, updated_at) VALUES
   (4, 'customer2', 'customer2@demo.com', '$2b$10$j/.1t7ZmKUU4qHu8Elw3dO6N4udivEj1oxeVxA1m6HOnp7D4J761S', true, NULL, '2022-03-17T14:15:08.000000Z', '2022-03-17T14:15:08.000000Z'),
-  (5, 'customer3', 'customer3@demo.com', '$2b$10$j/.1t7ZmKUU4qHu8Elw3dO6N4udivEj1oxeVxA1m6HOnp7D4J761S', true, NULL, '2022-03-17T16:25:39.000000Z', '2022-03-17T16:25:39.000000Z')
+  (5, 'customer3', 'customer3@demo.com', '$2b$10$j/.1t7ZmKUU4qHu8Elw3dO6N4udivEj1oxeVxA1m6HOnp7D4J761S', true, NULL, '2022-03-17T16:25:39.000000Z', '2022-03-17T16:25:39.000000Z'),
+  (48, 'mack', 'mack@gmail.com', '$2b$10$j/.1t7ZmKUU4qHu8Elw3dO6N4udivEj1oxeVxA1m6HOnp7D4J761S', true, NULL, '2024-07-26T03:45:11.000000Z', '2024-07-26T03:45:11.000000Z'),
+  (49, 'jack', 'jack@gmail.com', '$2b$10$j/.1t7ZmKUU4qHu8Elw3dO6N4udivEj1oxeVxA1m6HOnp7D4J761S', true, NULL, '2024-07-26T03:48:27.000000Z', '2024-07-26T03:48:27.000000Z'),
+  (51, 'Joel', 'joel@joelmale.com', '$2b$10$j/.1t7ZmKUU4qHu8Elw3dO6N4udivEj1oxeVxA1m6HOnp7D4J761S', true, NULL, '2024-07-28T22:47:29.000000Z', '2024-07-28T22:47:29.000000Z'),
+  (53, 'lamp', 'lamp@gmail.com', '$2b$10$j/.1t7ZmKUU4qHu8Elw3dO6N4udivEj1oxeVxA1m6HOnp7D4J761S', true, NULL, '2024-07-29T03:09:17.000000Z', '2024-07-29T03:09:17.000000Z'),
+  (45, 'Demo Book', 'demobook@gmail.com', '$2b$10$j/.1t7ZmKUU4qHu8Elw3dO6N4udivEj1oxeVxA1m6HOnp7D4J761S', true, NULL, '2024-07-24T06:29:11.000000Z', '2024-07-24T06:29:11.000000Z'),
+  (42, 'shop', 'shop@gmail.com', '$2b$10$j/.1t7ZmKUU4qHu8Elw3dO6N4udivEj1oxeVxA1m6HOnp7D4J761S', true, NULL, '2024-07-17T17:52:51.000000Z', '2024-07-17T17:52:51.000000Z')
 ON CONFLICT (id) DO NOTHING;
 INSERT INTO permission_user (user_id, permission_id) VALUES
   (4, 2),
-  (5, 2)
+  (5, 2),
+  (48, 2),
+  (48, 3),
+  (49, 2),
+  (49, 3),
+  (51, 2),
+  (51, 3),
+  (53, 2),
+  (53, 3),
+  (45, 2),
+  (45, 3),
+  (42, 2),
+  (42, 3)
 ON CONFLICT (user_id, permission_id) DO NOTHING;
 
 -- ────────────────────────────────────────────────────────────────────
@@ -2340,6 +2360,25 @@ Bkash Personal', 'Kinldy Send My Balance before next week.', '2023-11-06T17:49:4
 ON CONFLICT (id) DO NOTHING;
 
 -- ────────────────────────────────────────────────────────────────────
+-- ownership_transfers — 6 (owners sembrados: 48, 49, 51, 53, 45, 42)
+-- ────────────────────────────────────────────────────────────────────
+-- Ids del mock. previous/current_owner y created_by resueltos por email y por
+-- la tabla de D-4 (el 6 del mock es admin@demo.com = 3 aquí). shop_id NULL:
+-- el mock no lo trae. balance_info va verbatim en json (no jsonb): es la foto
+-- histórica del balance y el orden de sus claves es contrato; payment_info
+-- sigue siendo un string dentro. El mock no trae timestamps: se derivan del
+-- transaction_identifier (YYYY-MM-DD-NNNN -> YYYY-MM-DD 00:00 UTC) para que
+-- el orden temporal sea el real y no un now() idéntico.
+INSERT INTO ownership_transfers (id, transaction_identifier, shop_id, previous_owner_id, current_owner_id, created_by, message, status, order_info, balance_info, refund_info, withdrawal_info, created_at, updated_at) VALUES
+  (10, '2024-08-03-0001', NULL, 48, 49, 3, NULL, 'pending', NULL, '{"id":24,"shop_id":22,"admin_commission_rate":10,"total_earnings":0,"withdrawn_amount":0,"current_balance":0,"payment_info":"{\"name\":\"1313\",\"email\":\"1313@ghmail.com\",\"bank\":\"1313\",\"account\":131313}","created_at":"2024-07-26 03:47:01","updated_at":"2024-08-03 16:19:21"}'::json, NULL, NULL, '2024-08-03T00:00:00Z', '2024-08-03T00:00:00Z'),
+  (9, '2024-08-01-0003', NULL, 3, 51, 3, NULL, 'pending', NULL, '{"id":24,"shop_id":22,"admin_commission_rate":10,"total_earnings":0,"withdrawn_amount":0,"current_balance":0,"payment_info":"{\"name\":\"1313\",\"email\":\"1313@ghmail.com\",\"bank\":\"1313\",\"account\":131313}","created_at":"2024-07-26 03:47:01","updated_at":"2024-08-03 16:19:21"}'::json, NULL, NULL, '2024-08-01T00:00:00Z', '2024-08-01T00:00:00Z'),
+  (8, '2024-08-01-0002', NULL, 53, 51, 3, NULL, 'pending', NULL, '{"id":24,"shop_id":22,"admin_commission_rate":10,"total_earnings":0,"withdrawn_amount":0,"current_balance":0,"payment_info":"{\"name\":\"1313\",\"email\":\"1313@ghmail.com\",\"bank\":\"1313\",\"account\":131313}","created_at":"2024-07-26 03:47:01","updated_at":"2024-08-03 16:19:21"}'::json, NULL, NULL, '2024-08-01T00:00:00Z', '2024-08-01T00:00:00Z'),
+  (7, '2024-08-01-0001', NULL, 3, 51, 3, NULL, 'pending', NULL, '{"id":24,"shop_id":22,"admin_commission_rate":10,"total_earnings":0,"withdrawn_amount":0,"current_balance":0,"payment_info":"{\"name\":\"1313\",\"email\":\"1313@ghmail.com\",\"bank\":\"1313\",\"account\":131313}","created_at":"2024-07-26 03:47:01","updated_at":"2024-08-03 16:19:21"}'::json, NULL, NULL, '2024-08-01T00:00:00Z', '2024-08-01T00:00:00Z'),
+  (6, '2024-07-25-0001', NULL, 3, 45, 3, NULL, 'pending', NULL, '{"id":24,"shop_id":22,"admin_commission_rate":10,"total_earnings":0,"withdrawn_amount":0,"current_balance":0,"payment_info":"{\"name\":\"1313\",\"email\":\"1313@ghmail.com\",\"bank\":\"1313\",\"account\":131313}","created_at":"2024-07-26 03:47:01","updated_at":"2024-08-03 16:19:21"}'::json, NULL, NULL, '2024-07-25T00:00:00Z', '2024-07-25T00:00:00Z'),
+  (5, '2024-07-19-0001', NULL, 3, 42, 3, NULL, 'pending', NULL, '{"id":24,"shop_id":22,"admin_commission_rate":10,"total_earnings":0,"withdrawn_amount":0,"current_balance":0,"payment_info":"{\"name\":\"1313\",\"email\":\"1313@ghmail.com\",\"bank\":\"1313\",\"account\":131313}","created_at":"2024-07-26 03:47:01","updated_at":"2024-08-03 16:19:21"}'::json, NULL, NULL, '2024-07-19T00:00:00Z', '2024-07-19T00:00:00Z')
+ON CONFLICT (id) DO NOTHING;
+
+-- ────────────────────────────────────────────────────────────────────
 -- category_product — deliberadamente VACÍA
 -- ────────────────────────────────────────────────────────────────────
 -- Ninguno de los 1200 productos del mock trae la relación con
@@ -2383,5 +2422,6 @@ SELECT setval('order_statuses_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FRO
 SELECT setval('orders_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM orders), 1));
 SELECT setval('order_files_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM order_files), 1));
 SELECT setval('withdraws_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM withdraws), 1));
+SELECT setval('ownership_transfers_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM ownership_transfers), 1));
 
 COMMIT;

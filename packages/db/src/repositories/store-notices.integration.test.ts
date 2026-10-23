@@ -29,6 +29,20 @@ import {
 const SENTINEL_PREFIX = 'zz-notice-';
 const ADMIN = 3;
 const OWNER = 1;
+
+/**
+ * Los store_owner del seed en id DESC, el orden de los destinatarios. Desde
+ * US-63 son 8 (1 y 3, más los 6 owners de ownership-transfer.json): se leen
+ * de la base en vez de fijar la lista.
+ */
+async function storeOwnerIds(): Promise<number[]> {
+  const rows = await prisma.user.findMany({
+    where: { permissions: { some: { permission: { name: 'store_owner' } } } },
+    orderBy: { id: 'desc' },
+    select: { id: true },
+  });
+  return rows.map((u) => Number(u.id));
+}
 const CUSTOMER = 2;
 const FUTURE = new Date('2030-01-01T00:00:00.000Z');
 
@@ -110,7 +124,7 @@ describe('createStoreNotice — destinatarios según type', () => {
     expect(created.creator.id).toBe(ADMIN);
   });
 
-  it('all_vendor va a todos los store_owner (1 y 3 en el seed)', async () => {
+  it('all_vendor va a todos los store_owner (8 en el seed desde US-63)', async () => {
     const created = await createStoreNotice({
       priority: 'low',
       notice: `${SENTINEL_PREFIX}todos`,
@@ -118,7 +132,10 @@ describe('createStoreNotice — destinatarios según type', () => {
       type: 'all_vendor',
       createdBy: ADMIN,
     });
-    expect(created.recipients.map((u) => u.id)).toEqual([ADMIN, OWNER]);
+    const owners = await storeOwnerIds();
+    expect(owners).toHaveLength(8);
+    expect(owners.slice(-2)).toEqual([ADMIN, OWNER]);
+    expect(created.recipients.map((u) => u.id)).toEqual(owners);
   });
 
   it('specific_shop va a las tiendas y no crea lecturas', async () => {
@@ -232,7 +249,7 @@ describe('markStoreNoticeRead / deleteStoreNotice', () => {
       createdBy: ADMIN,
     });
     const deleted = await deleteStoreNotice(created.id);
-    expect(deleted.recipients).toHaveLength(2);
+    expect(deleted.recipients).toHaveLength((await storeOwnerIds()).length);
     expect(await prisma.storeNoticeUser.count({ where: { storeNoticeId: created.id } })).toBe(0);
     expect(await prisma.storeNoticeRead.count({ where: { storeNoticeId: created.id } })).toBe(0);
     await expect(deleteStoreNotice(created.id)).rejects.toBeInstanceOf(RecordNotFoundError);

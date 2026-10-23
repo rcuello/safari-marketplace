@@ -31,6 +31,7 @@ import type {
   Order,
   OrderFile,
   Withdraw,
+  OwnershipTransfer,
   OrderProduct,
   OrderStatus,
   Permission,
@@ -469,6 +470,29 @@ export interface WithdrawRecord {
   status: string;
   details: string | null;
   note: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/**
+ * Transferencia de propiedad de tienda (US-63). `balanceInfo` y los otros
+ * `*Info` salen de columnas `json` como `Prisma.JsonValue`, con las claves
+ * en el orden del texto: `balanceInfo` es una foto histórica, no un balance
+ * vivo. `shopId` es `null` en las filas sembradas.
+ */
+export interface OwnershipTransferRecord {
+  id: number;
+  transactionIdentifier: string;
+  shopId: number | null;
+  previousOwnerId: number;
+  currentOwnerId: number;
+  createdById: number;
+  message: string | null;
+  status: string;
+  orderInfo: Prisma.JsonValue | null;
+  balanceInfo: Prisma.JsonValue | null;
+  refundInfo: Prisma.JsonValue | null;
+  withdrawalInfo: Prisma.JsonValue | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -987,6 +1011,25 @@ export function _toOrderProductRecord(row: OrderProduct): OrderProductRecord {
     unitPrice: _dec(row.unitPrice),
     subtotal: _dec(row.subtotal),
     productSnapshot: row.productSnapshot,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+export function _toOwnershipTransferRecord(row: OwnershipTransfer): OwnershipTransferRecord {
+  return {
+    id: _id(row.id),
+    transactionIdentifier: row.transactionIdentifier,
+    shopId: _id(row.shopId),
+    previousOwnerId: _id(row.previousOwnerId),
+    currentOwnerId: _id(row.currentOwnerId),
+    createdById: _id(row.createdById),
+    message: row.message,
+    status: row.status,
+    orderInfo: row.orderInfo,
+    balanceInfo: row.balanceInfo,
+    refundInfo: row.refundInfo,
+    withdrawalInfo: row.withdrawalInfo,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };

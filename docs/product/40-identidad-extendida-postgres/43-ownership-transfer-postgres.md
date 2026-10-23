@@ -8,7 +8,8 @@
 **Fecha:** 2026-09-15
 **Status:** **Reemplazada (2026-10-20) por
 [US-63](../46-api-sin-mocks-json/63-ownership-transfer-postgres.md) del
-[Épico 46](../46-api-sin-mocks-json/README.md).** El análisis de abajo se
+[Épico 46](../46-api-sin-mocks-json/README.md), implementada en US-63
+(2026-10-23).** El análisis de abajo se
 conserva como evidencia; US-63 corrige lo que la auditoría de 2026-10-20
 encontró (los owners no existen en el seed y `transfer-shop-ownership` sí
 tiene consumidor). Antes: **APLAZADA a la Fase 3** (opción C, decidida por el

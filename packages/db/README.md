@@ -467,6 +467,38 @@ siempre de un cliente: no hay función que liste las descargas de todos.
   primera por `id` del cliente con ese `digital_file_id` (se repite entre
   filas), o `null`.
 
+### Transferencias de propiedad (US-63, Épico 46) — `ownership-transfers.repository.ts`
+
+`OwnershipTransferRecord` es la fila plana; los `*Info` salen de columnas
+`json` como `Prisma.JsonValue`, con las claves en el orden del texto.
+`OwnershipTransferDetailRecord` le añade `previousOwner` y `currentOwner`
+(`UserRecord` + `profile`). Quién ve qué es regla de la API, que llega aquí
+como el filtro `participantId`.
+
+- **`listOwnershipTransfers({transactionIdentifier, shopId, participantId,
+  page, limit})`**: paginado (`limit` 10) en `created_at DESC, id DESC`.
+  `transactionIdentifier` es exacto; `participantId` deja las filas donde
+  ese usuario es el dueño anterior o el nuevo.
+- **`findOwnershipTransferByIdentifier(identifier)`**: o `null`.
+- **`createOwnershipTransfer({shopId, currentOwnerId, createdById,
+  message})`**: solicitud `pending`; el dueño anterior es el de la tienda,
+  leído con `FOR UPDATE` en la misma transacción. No toca `shops`.
+- **`updateOwnershipTransfer(id, {status, message})`**: `status` fuera de
+  `OWNERSHIP_TRANSFER_STATUSES` da `InvalidFieldValueError`; fija
+  `updatedAt: now()`. Tampoco toca `shops`.
+- **`deleteOwnershipTransfer(id)`**: borra y devuelve la fila.
+- **`transferShopOwnership({shopId, vendorId, createdById, message})`**: en
+  una `$transaction` bloquea la tienda, valida al vendedor (existe y tiene
+  `store_owner`), cambia `shops.owner_id` e inserta la fila `approved`.
+  Devuelve `{shop, owner, transfer}`. Tienda inexistente:
+  `RecordNotFoundError` (404); vendedor inválido: 400.
+
+`transaction_identifier` es `YYYY-MM-DD-NNNN` (día UTC de `now()`,
+secuencial por día) y se calcula dentro de la transacción; si otra se
+adelanta con el mismo número, el UNIQUE da P2002 y la transacción se repite
+(hasta 5 veces). `SameOwnerError` (409, reutiliza el código del conflicto)
+sale cuando el vendedor ya es el dueño.
+
 ### Retiros (US-62, Épico 46) — `withdraws.repository.ts`
 
 `WithdrawRecord` es la fila plana (`amount` con `_dec`: `10`, no `"10.00"`);
