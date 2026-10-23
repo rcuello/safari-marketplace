@@ -18,6 +18,7 @@
  */
 
 import type {
+  AbusiveReport,
   Attribute,
   AttributeValue,
   BecomeSeller,
@@ -30,6 +31,7 @@ import type {
   Profile,
   RefundPolicy,
   RefundReason,
+  Review,
   Setting,
   Shipping,
   Shop,
@@ -302,6 +304,38 @@ export interface CouponRecord {
   shopId: number | null;
   userId: number | null;
   language: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/**
+ * Reseña (US-54), fila plana. `photos` sale de una columna `json` (no
+ * `jsonb`): conserva el orden de claves de cada foto. Los contadores de
+ * feedback son columnas: no hay filas de votos que los respalden.
+ */
+export interface ReviewRecord {
+  id: number;
+  orderId: number | null;
+  userId: number;
+  shopId: number;
+  productId: number;
+  variationOptionId: number | null;
+  comment: string;
+  rating: number;
+  photos: Prisma.JsonValue;
+  positiveFeedbacksCount: number;
+  negativeFeedbacksCount: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/** Reporte de abuso (US-54). `modelType` es el nombre corto: 'Review' | 'Question'. */
+export interface AbusiveReportRecord {
+  id: number;
+  userId: number;
+  modelType: string;
+  modelId: number;
+  message: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -680,6 +714,36 @@ export function _toCouponRecord(row: Coupon): CouponRecord {
     shopId: _id(row.shopId),
     userId: _id(row.userId),
     language: row.language,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+export function _toReviewRecord(row: Review): ReviewRecord {
+  return {
+    id: _id(row.id),
+    orderId: _id(row.orderId),
+    userId: _id(row.userId),
+    shopId: _id(row.shopId),
+    productId: _id(row.productId),
+    variationOptionId: _id(row.variationOptionId),
+    comment: row.comment,
+    rating: row.rating,
+    photos: row.photos,
+    positiveFeedbacksCount: row.positiveFeedbacksCount,
+    negativeFeedbacksCount: row.negativeFeedbacksCount,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+export function _toAbusiveReportRecord(row: AbusiveReport): AbusiveReportRecord {
+  return {
+    id: _id(row.id),
+    userId: _id(row.userId),
+    modelType: row.modelType,
+    modelId: _id(row.modelId),
+    message: row.message,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };

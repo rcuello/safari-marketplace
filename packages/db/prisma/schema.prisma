@@ -23,7 +23,11 @@
 //     (effective_from <= expired_at), coupons_type_check (∈ fixed|
 //     percentage|free_shipping), coupons_amount_check (amount ≥ 0),
 //     coupons_minimum_cart_amount_check (≥ 0), coupons_vigencia_valida
-//     (expire_at > active_from). Los repositorios los validan
+//     (expire_at > active_from), reviews_rating_check (1..5),
+//     reviews_photos_check (json_typeof = 'array'), reviews_positive_/
+//     negative_feedbacks_count_check (≥ 0), abusive_reports_model_type_
+//     check (∈ Review|Question), abusive_reports_message_check
+//     (length > 0). Los repositorios los validan
 //     antes de escribir y traducen la violación a errores de dominio.
 //   · El índice de expresión products_nombre_trgm_idx
 //     (gin (lower(name) gin_trgm_ops)) que acelera la búsqueda por
@@ -33,6 +37,11 @@
 //     (US-20). `User.email` por eso NO lleva `@unique` aquí — el
 //     `$queryRaw` de `findUserCredentialsByEmail` es lo único que lo
 //     ejercita (ver users.repository.ts).
+//   · El índice único de expresión reviews_autor_producto_orden_key
+//     (unique (user_id, product_id, COALESCE(order_id, 0))): una reseña
+//     por compra y una sin orden por producto (US-54). Su P2002 lo traduce
+//     reviews.repository.ts; como users_email_lower_idx, migrate diff no
+//     lo acusa como drift.
 //   · El índice único PARCIAL products_procedencia_key sí aparece abajo,
 //     pero solo gracias al preview feature "partialIndexes" que la
 //     introspección activó. No quitar el preview: sin él Prisma trataría
@@ -101,6 +110,7 @@ model Shop {
   attributes         Attribute[]
   storeNotices       StoreNoticeShop[]
   coupons            Coupon[]
+  reviews            Review[]
 
   @@map("shops")
 }
@@ -207,6 +217,7 @@ model Product {
   categories   CategoryProduct[]
   tags         ProductTag[]
   wishlists    Wishlist[]
+  reviews      Review[]
 
   @@unique([sourceStore, sourceProductId], map: "products_procedencia_key", where: raw("(source_store IS NOT NULL)"))
   @@index([manufacturerId], map: "products_manufacturer_idx")
@@ -272,6 +283,8 @@ model User {
   storeNoticeReads    StoreNoticeRead[]
   coupons             Coupon[]
   wishlists           Wishlist[]
+  reviews             Review[]
+  abusiveReports      AbusiveReport[]
 
   @@map("users")
 }
@@ -636,4 +649,50 @@ model Wishlist {
   @@id([userId, productId])
   @@index([productId], map: "wishlists_producto_idx")
   @@map("wishlists")
+}
+
+// =====================================================================
+// Reseñas y reportes de abuso (US-54, Épico 46)
+// =====================================================================
+
+model Review {
+  id                     BigInt   @id @default(autoincrement())
+  orderId                BigInt?  @map("order_id")
+  userId                 BigInt   @map("user_id")
+  shopId                 BigInt   @map("shop_id")
+  productId              BigInt   @map("product_id")
+  variationOptionId      BigInt?  @map("variation_option_id")
+  comment                String
+  rating                 Int      @db.SmallInt
+  photos                 Json     @default("[]") @db.Json
+  positiveFeedbacksCount Int      @default(0) @map("positive_feedbacks_count")
+  negativeFeedbacksCount Int      @default(0) @map("negative_feedbacks_count")
+  createdAt              DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  shop    Shop    @relation(fields: [shopId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([productId], map: "reviews_producto_idx")
+  @@index([shopId], map: "reviews_shop_idx")
+  @@map("reviews")
+}
+
+/// Polimórfica: (modelType, modelId) apunta a una reseña (o, desde US-55, a
+/// una pregunta) sin FK. El repositorio valida que el objeto exista.
+model AbusiveReport {
+  id        BigInt   @id @default(autoincrement())
+  userId    BigInt   @map("user_id")
+  modelType String   @map("model_type")
+  modelId   BigInt   @map("model_id")
+  message   String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([userId, modelType, modelId])
+  @@index([modelType, modelId], map: "abusive_reports_modelo_idx")
+  @@map("abusive_reports")
 }

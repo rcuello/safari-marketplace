@@ -29,6 +29,7 @@ export { pingDatabase } from './src/health';
 export type { BuildPaginatorInput, Paginator } from './src/pagination';
 export { buildPaginator } from './src/pagination';
 export type {
+  AbusiveReportRecord,
   AttributeRecord,
   AttributeValueRecord,
   BecomeSellerRecord,
@@ -40,6 +41,7 @@ export type {
   ProfileRecord,
   RefundPolicyRecord,
   RefundReasonRecord,
+  ReviewRecord,
   SettingRecord,
   ShippingRecord,
   ShopRecord,
@@ -194,6 +196,33 @@ export {
   setCouponApproval,
   updateCoupon,
 } from './src/repositories/coupons.repository';
+export type {
+  CreateReviewInput,
+  ListReviewsInput,
+  ReviewDetailRecord,
+  UpdateReviewInput,
+} from './src/repositories/reviews.repository';
+export {
+  createReview,
+  deleteReview,
+  findReviewById,
+  listReviews,
+  updateReview,
+} from './src/repositories/reviews.repository';
+export type {
+  AbusiveReportDetailRecord,
+  CreateAbusiveReportInput,
+} from './src/repositories/abusive-reports.repository';
+export {
+  REPORTABLE_MODEL_TYPES,
+  assertReportableExists,
+  createAbusiveReport,
+  deleteAbusiveReport,
+  findAbusiveReportById,
+  listAbusiveReports,
+  listAbusiveReportsByUser,
+  updateAbusiveReport,
+} from './src/repositories/abusive-reports.repository';
 export type { ListWishlistProductsInput } from './src/repositories/wishlists.repository';
 export {
   addToWishlist,

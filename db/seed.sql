@@ -9,7 +9,7 @@
 -- ya existen, y creando en tiempo de ejecución únicamente lo que es suyo
 -- (los retailers como shops, las marcas como manufacturers).
 --
--- 10 types · 12 shops · 198 categorías · 14 manufacturers · 10 tags · 1200 productos · 3 usuarios · 4 permisos · 1 become_seller · 3 shop_staff · 19 faqs · 5 terms_and_conditions · 5 refund_policies · 8 refund_reasons · 1 taxes · 1 shippings · 8 attributes · 27 attribute_values · 3 store_notices · 10 coupons · 10 wishlists
+-- 10 types · 12 shops · 198 categorías · 14 manufacturers · 10 tags · 1200 productos · 5 usuarios · 4 permisos · 1 become_seller · 3 shop_staff · 19 faqs · 5 terms_and_conditions · 5 refund_policies · 8 refund_reasons · 1 taxes · 1 shippings · 8 attributes · 27 attribute_values · 3 store_notices · 10 coupons · 10 wishlists · 85 reviews · 3 abusive_reports
 -- =====================================================================
 
 BEGIN;
@@ -97,6 +97,21 @@ INSERT INTO permission_user (user_id, permission_id) VALUES
   (2, 2),
   (1, 2),
   (1, 3)
+ON CONFLICT (user_id, permission_id) DO NOTHING;
+
+-- ────────────────────────────────────────────────────────────────────
+-- users sembrados desde snapshots — 2 (4 customer2@demo.com, 5 customer3@demo.com)
+-- ────────────────────────────────────────────────────────────────────
+-- No están en users.json: los referencian los `user` embebidos de otros
+-- mocks (reviews.json). Id, nombre y timestamps del snapshot, contraseña
+-- demo y permiso 'customer'; sin perfil. El setval de users cubre el máximo.
+INSERT INTO users (id, name, email, password_hash, is_active, email_verified_at, created_at, updated_at) VALUES
+  (4, 'customer2', 'customer2@demo.com', '$2b$10$j/.1t7ZmKUU4qHu8Elw3dO6N4udivEj1oxeVxA1m6HOnp7D4J761S', true, NULL, '2022-03-17T14:15:08.000000Z', '2022-03-17T14:15:08.000000Z'),
+  (5, 'customer3', 'customer3@demo.com', '$2b$10$j/.1t7ZmKUU4qHu8Elw3dO6N4udivEj1oxeVxA1m6HOnp7D4J761S', true, NULL, '2022-03-17T16:25:39.000000Z', '2022-03-17T16:25:39.000000Z')
+ON CONFLICT (id) DO NOTHING;
+INSERT INTO permission_user (user_id, permission_id) VALUES
+  (4, 2),
+  (5, 2)
 ON CONFLICT (user_id, permission_id) DO NOTHING;
 
 -- ────────────────────────────────────────────────────────────────────
@@ -1918,6 +1933,106 @@ INSERT INTO wishlists (user_id, product_id, created_at) VALUES
 ON CONFLICT (user_id, product_id) DO NOTHING;
 
 -- ────────────────────────────────────────────────────────────────────
+-- reviews — 85 · abusive_reports — 3
+-- ────────────────────────────────────────────────────────────────────
+-- user_id resuelto por email (D-4). photos va a una columna json (no jsonb)
+-- para conservar el orden de claves. Contadores y fechas del mock.
+INSERT INTO reviews (id, order_id, user_id, shop_id, product_id, variation_option_id, comment, rating, photos,
+                     positive_feedbacks_count, negative_feedbacks_count, created_at, updated_at) VALUES
+  (85, NULL, 4, 7, 930, NULL, 'Book is good but had to wait for a late delivery.', 3, '[]'::json, 0, 0, '2022-03-18T09:06:12.000000Z', '2022-03-18T09:06:12.000000Z'),
+  (84, NULL, 4, 7, 931, NULL, 'For me its the book of the year.', 5, '[]'::json, 0, 0, '2022-03-18T09:05:49.000000Z', '2022-03-18T09:05:49.000000Z'),
+  (83, NULL, 4, 7, 932, NULL, 'Too much fiction all over.. Over done every part.', 1, '[]'::json, 0, 0, '2022-03-18T09:05:31.000000Z', '2022-03-18T09:05:31.000000Z'),
+  (82, NULL, 4, 7, 924, NULL, 'Five star all the way. Love the story.', 5, '[]'::json, 0, 0, '2022-03-18T09:05:08.000000Z', '2022-03-18T09:05:08.000000Z'),
+  (81, NULL, 4, 1, 416, NULL, 'Okay with the price but wood is not of good quality', 3, '[]'::json, 0, 0, '2022-03-18T09:03:13.000000Z', '2022-03-18T09:03:13.000000Z'),
+  (80, NULL, 4, 1, 414, NULL, 'This is what you call a deluxe bed. luxury redefined.', 5, '[]'::json, 0, 0, '2022-03-18T09:02:39.000000Z', '2022-03-18T09:02:39.000000Z'),
+  (79, NULL, 4, 1, 413, NULL, 'Fantastic product.', 5, '[]'::json, 0, 0, '2022-03-18T09:02:15.000000Z', '2022-03-18T09:02:15.000000Z'),
+  (78, NULL, 4, 1, 412, NULL, 'had to wait long time for delivery.', 1, '[]'::json, 0, 0, '2022-03-18T09:01:57.000000Z', '2022-03-18T09:01:57.000000Z'),
+  (77, NULL, 4, 2, 117, NULL, 'Top notch product and really well tailored', 5, '[]'::json, 0, 0, '2022-03-18T09:00:46.000000Z', '2022-03-18T09:00:46.000000Z'),
+  (76, NULL, 4, 2, 116, NULL, 'Got the wrong size.', 3, '[]'::json, 0, 0, '2022-03-18T09:00:19.000000Z', '2022-03-18T09:00:19.000000Z'),
+  (75, NULL, 4, 2, 113, NULL, 'The cloth quality was not good though the finishing was good.', 3, '[]'::json, 0, 0, '2022-03-18T09:00:03.000000Z', '2022-03-18T09:00:03.000000Z'),
+  (74, NULL, 4, 2, 111, NULL, 'Finished to perfection. Cloth quality is good as well.', 5, '[]'::json, 0, 0, '2022-03-18T08:59:30.000000Z', '2022-03-18T08:59:30.000000Z'),
+  (73, NULL, 4, 2, 110, NULL, 'Gave me the wrong color. Wanted an exchange but could not get it.', 1, '[]'::json, 0, 0, '2022-03-18T08:59:04.000000Z', '2022-03-18T08:59:04.000000Z'),
+  (72, NULL, 4, 3, 107, NULL, 'This is the best silver purse you will ever buy.', 5, '[]'::json, 0, 0, '2022-03-18T08:57:33.000000Z', '2022-03-18T08:57:33.000000Z'),
+  (71, NULL, 4, 3, 106, NULL, 'I love the red Gucci Purse.', 5, '[]'::json, 0, 0, '2022-03-18T08:57:11.000000Z', '2022-03-18T08:57:11.000000Z'),
+  (70, NULL, 4, 3, 105, NULL, 'Loved this one all the way. Smoothly finished.', 5, '[]'::json, 0, 0, '2022-03-18T08:55:38.000000Z', '2022-03-18T08:55:38.000000Z'),
+  (69, NULL, 4, 3, 104, NULL, 'This is worth every penny.', 5, '[]'::json, 0, 0, '2022-03-18T08:55:12.000000Z', '2022-03-18T08:55:12.000000Z'),
+  (68, NULL, 4, 3, 103, NULL, 'Genuine product superfast delivery.', 5, '[]'::json, 0, 0, '2022-03-18T08:52:06.000000Z', '2022-03-18T08:52:06.000000Z'),
+  (67, NULL, 4, 3, 102, NULL, 'Don''t buy this is the duplicate one', 1, '[]'::json, 0, 0, '2022-03-18T08:50:27.000000Z', '2022-03-18T08:50:27.000000Z'),
+  (66, NULL, 5, 4, 26, NULL, 'Really good shades of foundation.', 5, '[]'::json, 0, 0, '2022-03-18T08:41:42.000000Z', '2022-03-18T08:41:42.000000Z'),
+  (65, NULL, 5, 4, 25, NULL, 'the worst product you will ever buy.', 1, '[]'::json, 0, 0, '2022-03-18T08:41:20.000000Z', '2022-03-18T08:41:20.000000Z'),
+  (64, NULL, 5, 4, 24, NULL, 'Genuine product you can buy it with your eyes closed.', 5, '[]'::json, 0, 0, '2022-03-18T08:40:55.000000Z', '2022-03-18T08:40:55.000000Z'),
+  (63, NULL, 5, 4, 23, NULL, 'The cheap product was not worth this price. Definitely not recommending it.', 1, '[]'::json, 0, 0, '2022-03-18T08:40:32.000000Z', '2022-03-18T08:40:32.000000Z'),
+  (62, NULL, 5, 4, 22, NULL, 'Decent product and delivery was fast as well', 4, '[]'::json, 0, 0, '2022-03-18T08:39:57.000000Z', '2022-03-18T08:39:57.000000Z'),
+  (61, NULL, 5, 4, 21, NULL, 'Really good quality product at this price.', 5, '[]'::json, 0, 0, '2022-03-18T08:32:42.000000Z', '2022-03-18T08:32:42.000000Z'),
+  (60, NULL, 5, 5, 503, NULL, 'That''s what you call a traditional English muffin.', 5, '[]'::json, 0, 0, '2022-03-18T08:26:28.000000Z', '2022-03-18T08:26:28.000000Z'),
+  (59, NULL, 5, 5, 504, NULL, 'Really fresh and well-baked muffins', 5, '[]'::json, 0, 0, '2022-03-18T08:25:29.000000Z', '2022-03-18T08:25:29.000000Z'),
+  (58, NULL, 5, 5, 499, NULL, 'Chocolate part was good but the raspberry within tasted aweful', 4, '[]'::json, 0, 0, '2022-03-18T08:20:04.000000Z', '2022-03-18T08:20:04.000000Z'),
+  (57, NULL, 5, 5, 498, NULL, 'Decent product but delivery was way too late.', 3, '[]'::json, 0, 0, '2022-03-18T08:19:19.000000Z', '2022-03-18T08:19:19.000000Z'),
+  (56, NULL, 5, 5, 493, NULL, 'Good and tasty garlic breads.', 5, '[]'::json, 0, 0, '2022-03-18T08:18:59.000000Z', '2022-03-18T08:18:59.000000Z'),
+  (55, NULL, 5, 5, 492, NULL, 'Fresh and soft bread.', 5, '[]'::json, 0, 0, '2022-03-18T08:16:48.000000Z', '2022-03-18T08:16:48.000000Z'),
+  (54, NULL, 5, 5, 473, NULL, 'Worst green tea I have ever had.', 1, '[]'::json, 0, 0, '2022-03-18T08:14:58.000000Z', '2022-03-18T08:14:58.000000Z'),
+  (53, NULL, 5, 5, 486, NULL, 'That''s what you call a signature cake. Really soft and tasty.', 5, '[]'::json, 0, 0, '2022-03-18T08:14:34.000000Z', '2022-03-18T08:14:34.000000Z'),
+  (52, NULL, 5, 5, 469, NULL, 'Delivery was fast but taste was not good.', 3, '[]'::json, 0, 0, '2022-03-18T08:14:06.000000Z', '2022-03-18T08:14:06.000000Z'),
+  (51, NULL, 5, 5, 468, NULL, 'Good product and fast delivery.', 5, '[]'::json, 0, 0, '2022-03-18T08:13:50.000000Z', '2022-03-18T08:13:50.000000Z'),
+  (50, NULL, 5, 5, 467, NULL, 'Really tasty and yummy. Low suger.', 4, '[]'::json, 0, 0, '2022-03-18T08:13:18.000000Z', '2022-03-18T08:13:18.000000Z'),
+  (49, NULL, 5, 6, 10, NULL, 'Had to wait 3 days for delivery.', 2, '[]'::json, 0, 0, '2022-03-17T17:02:53.000000Z', '2022-03-17T17:02:53.000000Z'),
+  (48, NULL, 5, 6, 9, NULL, 'Decent quality', 4, '[]'::json, 0, 0, '2022-03-17T17:02:36.000000Z', '2022-03-17T17:02:36.000000Z'),
+  (47, NULL, 5, 6, 8, NULL, 'good product.', 5, '[]'::json, 0, 0, '2022-03-17T17:02:24.000000Z', '2022-03-17T17:02:24.000000Z'),
+  (46, NULL, 5, 6, 7, NULL, 'Good fresh quality produce.', 5, '[]'::json, 0, 0, '2022-03-17T17:02:11.000000Z', '2022-03-17T17:02:11.000000Z'),
+  (45, NULL, 5, 6, 6, NULL, 'wanted the sweet ones got the sour ones and delivery was late as well.', 3, '[]'::json, 0, 0, '2022-03-17T17:01:56.000000Z', '2022-03-17T17:01:56.000000Z'),
+  (44, NULL, 5, 6, 5, NULL, 'Don''t buy this product. Not good at all', 1, '[]'::json, 0, 0, '2022-03-17T17:01:36.000000Z', '2022-03-17T17:01:36.000000Z'),
+  (43, NULL, 5, 6, 4, NULL, 'Absolute best quality you will ever get.', 5, '[]'::json, 0, 0, '2022-03-17T17:01:17.000000Z', '2022-03-17T17:01:17.000000Z'),
+  (42, NULL, 5, 6, 3, NULL, 'Really tasty berries.', 5, '[]'::json, 0, 0, '2022-03-17T17:01:00.000000Z', '2022-03-17T17:01:00.000000Z'),
+  (41, NULL, 5, 6, 2, NULL, 'Decent product.', 3, '[]'::json, 0, 0, '2022-03-17T17:00:46.000000Z', '2022-03-17T17:00:46.000000Z'),
+  (40, NULL, 5, 6, 1, NULL, 'Excellent and tasty apples.', 5, '[]'::json, 0, 0, '2022-03-17T16:41:37.000000Z', '2022-03-17T16:41:37.000000Z'),
+  (39, NULL, 4, 6, 19, NULL, 'Simple well balanced magnificent product.', 5, '[]'::json, 0, 0, '2022-03-17T15:51:44.000000Z', '2022-03-17T15:51:44.000000Z'),
+  (38, NULL, 4, 6, 18, NULL, 'Don''t buy the worst product available here.', 1, '[]'::json, 0, 0, '2022-03-17T15:51:19.000000Z', '2022-03-17T15:51:19.000000Z'),
+  (37, NULL, 4, 6, 17, NULL, 'Quality product.', 5, '[]'::json, 0, 0, '2022-03-17T15:50:49.000000Z', '2022-03-17T15:50:49.000000Z'),
+  (36, NULL, 4, 6, 16, NULL, 'Simple one word to describe Excellent', 5, '[]'::json, 0, 0, '2022-03-17T15:50:36.000000Z', '2022-03-17T15:50:36.000000Z'),
+  (35, NULL, 4, 6, 15, NULL, 'Local and half-rotten product.', 2, '[]'::json, 0, 0, '2022-03-17T15:50:06.000000Z', '2022-03-17T15:50:06.000000Z'),
+  (34, NULL, 4, 6, 14, NULL, 'though product was good but only got the yellow peppers instead of mixed colored ones.', 4, '[]'::json, 0, 0, '2022-03-17T15:49:36.000000Z', '2022-03-17T15:49:36.000000Z'),
+  (33, NULL, 4, 6, 13, NULL, 'Really sweet and tasty mangoes.', 5, '[]'::json, 0, 0, '2022-03-17T15:48:47.000000Z', '2022-03-17T15:48:47.000000Z'),
+  (32, NULL, 4, 6, 12, NULL, 'Really juicy limes', 5, '[]'::json, 0, 0, '2022-03-17T15:47:47.000000Z', '2022-03-17T15:47:47.000000Z'),
+  (31, NULL, 4, 6, 11, NULL, 'Was properly sliced and cleaned but packaging can be improved.', 4, '[]'::json, 0, 0, '2022-03-17T15:47:32.000000Z', '2022-03-17T15:47:32.000000Z'),
+  (30, NULL, 4, 6, 10, NULL, 'Not cleaned properly', 3, '[]'::json, 0, 0, '2022-03-17T15:47:05.000000Z', '2022-03-17T15:47:05.000000Z'),
+  (29, NULL, 4, 6, 9, NULL, 'Dates were quality though the brand was different.', 5, '[]'::json, 0, 0, '2022-03-17T15:46:36.000000Z', '2022-03-17T15:46:36.000000Z'),
+  (28, NULL, 4, 6, 8, NULL, 'quality product', 5, '[]'::json, 0, 0, '2022-03-17T15:45:26.000000Z', '2022-03-17T15:45:26.000000Z'),
+  (27, NULL, 4, 6, 7, NULL, 'Good product.', 5, '[]'::json, 0, 0, '2022-03-17T15:31:36.000000Z', '2022-03-17T15:31:36.000000Z'),
+  (26, NULL, 4, 6, 6, NULL, 'I was looking for sweet ones but it turned out to be sour ones.', 2, '[]'::json, 0, 0, '2022-03-17T15:26:58.000000Z', '2022-03-17T15:26:58.000000Z'),
+  (25, NULL, 4, 6, 5, NULL, 'Ordered 3 days but have yet to get the product. Worst customer service.', 1, '[]'::json, 0, 0, '2022-03-17T15:26:28.000000Z', '2022-03-17T15:26:28.000000Z'),
+  (24, NULL, 4, 6, 4, NULL, 'Absolutely marvelous and fresh sprouts available in the country.', 5, '[]'::json, 0, 0, '2022-03-17T15:25:19.000000Z', '2022-03-17T15:25:19.000000Z'),
+  (23, NULL, 4, 6, 3, NULL, 'Really tasty product.', 5, '[]'::json, 0, 0, '2022-03-17T15:24:40.000000Z', '2022-03-17T15:24:40.000000Z'),
+  (22, NULL, 4, 6, 2, NULL, 'Fresh product but it was not cleaned properly.', 4, '[]'::json, 0, 0, '2022-03-17T15:24:24.000000Z', '2022-03-17T15:24:24.000000Z'),
+  (21, NULL, 4, 6, 1, NULL, 'Good quality and fresh apples.', 5, '[]'::json, 0, 0, '2022-03-17T15:24:03.000000Z', '2022-03-17T15:24:03.000000Z'),
+  (20, NULL, 2, 6, 20, NULL, 'Was really juicy lemons.', 5, '[]'::json, 0, 0, '2022-03-17T14:13:47.000000Z', '2022-03-17T14:13:47.000000Z'),
+  (19, NULL, 2, 6, 19, NULL, 'Nicely balanced and mixed of variety of vegetables.', 5, '[]'::json, 0, 0, '2022-03-17T14:13:27.000000Z', '2022-03-17T14:13:27.000000Z'),
+  (18, NULL, 2, 6, 18, NULL, 'One of the worst strawberries I have ever had. Mostly written and really sour.', 1, '[]'::json, 0, 0, '2022-03-17T14:13:03.000000Z', '2022-03-17T14:13:03.000000Z'),
+  (17, NULL, 2, 6, 17, NULL, 'Good quality product', 5, '[]'::json, 0, 0, '2022-03-17T14:12:28.000000Z', '2022-03-17T14:12:28.000000Z'),
+  (16, NULL, 2, 6, 16, NULL, 'Nicely peeled and chopped and packed.', 5, '[]'::json, 0, 0, '2022-03-17T14:12:07.000000Z', '2022-03-17T14:12:07.000000Z'),
+  (15, NULL, 2, 6, 15, NULL, 'Seller said these are imported but what I got was local pears.', 3, '[]'::json, 0, 0, '2022-03-17T14:01:29.000000Z', '2022-03-17T14:01:29.000000Z'),
+  (14, NULL, 2, 6, 14, NULL, 'Good quality product.', 5, '[]'::json, 0, 0, '2022-03-17T14:00:53.000000Z', '2022-03-17T14:00:53.000000Z'),
+  (13, NULL, 2, 6, 13, NULL, 'Though the mangoes were tasty, the seller said these are Harivanga but what I got is a different breed', 4, '[]'::json, 0, 0, '2022-03-17T13:53:32.000000Z', '2022-03-17T13:53:32.000000Z'),
+  (12, NULL, 2, 6, 12, NULL, 'Limes were juicy', 5, '[]'::json, 0, 0, '2022-03-17T13:52:39.000000Z', '2022-03-17T13:52:39.000000Z'),
+  (11, NULL, 2, 6, 11, NULL, 'Absolutely fresh produce.', 5, '[]'::json, 0, 0, '2022-03-17T13:52:25.000000Z', '2022-03-17T13:52:25.000000Z'),
+  (10, NULL, 2, 6, 10, NULL, 'Quality product.', 5, '[]'::json, 0, 0, '2022-03-17T13:52:12.000000Z', '2022-03-17T13:52:12.000000Z'),
+  (9, NULL, 2, 6, 9, NULL, 'the seller said these are Ajwah dates but sent me a different brand of dates.', 2, '[]'::json, 0, 0, '2022-03-17T13:48:55.000000Z', '2022-03-17T13:48:55.000000Z'),
+  (8, NULL, 2, 6, 8, NULL, 'was fresh and properly cleaned.', 5, '[]'::json, 0, 0, '2022-03-17T13:48:21.000000Z', '2022-03-17T13:48:21.000000Z'),
+  (7, NULL, 2, 6, 7, NULL, 'quality product.', 5, '[]'::json, 0, 0, '2022-03-17T13:48:05.000000Z', '2022-03-17T13:48:05.000000Z'),
+  (6, NULL, 2, 6, 6, NULL, 'The seller said these are a sweet lot which is a lie as these are sour lot.', 1, '[]'::json, 0, 0, '2022-03-17T13:47:48.000000Z', '2022-03-17T13:47:48.000000Z'),
+  (5, NULL, 2, 6, 5, NULL, 'was sliced and fresh but was not cleaned properly.', 3, '[]'::json, 0, 0, '2022-03-17T13:46:57.000000Z', '2022-03-17T13:46:57.000000Z'),
+  (4, NULL, 2, 6, 4, NULL, 'absolutely best sprouts in town.', 5, '[]'::json, 0, 0, '2022-03-17T13:46:30.000000Z', '2022-03-17T13:46:30.000000Z'),
+  (3, NULL, 2, 6, 3, NULL, 'Blueberries were good but delivery was not on time.', 4, '[]'::json, 0, 0, '2022-03-17T13:46:02.000000Z', '2022-03-17T13:46:02.000000Z'),
+  (2, NULL, 2, 6, 2, NULL, 'It''s not fully fresh. Was probably a few days old already.', 3, '[]'::json, 112, 13, '2022-03-17T13:45:24.000000Z', '2022-03-17T13:45:24.000000Z'),
+  (1, NULL, 2, 6, 1, NULL, 'Good and yummy', 4, '[{"id":1689,"original":"https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/1689/peakpx.jpg","thumbnail":"https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/1689/conversions/peakpx-thumbnail.jpg"}]'::json, 5, 2, '2022-03-17T08:17:44.000000Z', '2022-03-17T16:09:51.000000Z')
+ON CONFLICT (id) DO NOTHING;
+-- model_type normalizado del FQCN de Laravel al nombre corto ('Review').
+INSERT INTO abusive_reports (id, user_id, model_type, model_id, message, created_at, updated_at) VALUES
+  (3, 2, 'Review', 1, 'xvcgfdgdfg', '2022-07-26T04:35:51.000000Z', '2022-07-26T04:35:51.000000Z'),
+  (2, 2, 'Review', 21, 'this is abusive reports', '2022-07-26T02:38:16.000000Z', '2022-07-26T02:38:16.000000Z'),
+  (1, 2, 'Review', 78, 'this is a abusive report', '2022-07-25T05:27:17.000000Z', '2022-07-25T05:27:17.000000Z')
+ON CONFLICT (id) DO NOTHING;
+
+-- ────────────────────────────────────────────────────────────────────
 -- category_product — deliberadamente VACÍA
 -- ────────────────────────────────────────────────────────────────────
 -- Ninguno de los 1200 productos del mock trae la relación con
@@ -1952,5 +2067,7 @@ SELECT setval('attributes_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM at
 SELECT setval('attribute_values_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM attribute_values), 1));
 SELECT setval('store_notices_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM store_notices), 1));
 SELECT setval('coupons_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM coupons), 1));
+SELECT setval('reviews_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM reviews), 1));
+SELECT setval('abusive_reports_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM abusive_reports), 1));
 
 COMMIT;

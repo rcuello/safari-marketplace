@@ -792,6 +792,61 @@ CREATE TABLE IF NOT EXISTS wishlists (
 
 
 -- =====================================================================
+-- Reseñas y reportes de abuso (US-54, Épico 46) — reviews + abusive_reports.
+--
+-- Sembradas desde reviews.json (85) y reports.json (3). Las reseñas son de
+-- los usuarios 2, 4 y 5 del mock; el 4 y el 5 no estaban en users.json y el
+-- generador los SIEMBRA desde el `user` embebido (D-4).
+--
+-- reviews: contenido de su autor sobre un producto de una tienda; sin
+-- cualquiera de los tres no tiene sentido (CASCADE en las tres FK, mismo
+-- criterio que products.shop_id). order_id y variation_option_id van SIN FK:
+-- orders llega en US-58 y no hay tabla de variaciones. Los contadores de
+-- feedback son columnas: no hay filas de votos que los respalden. `photos`
+-- es `json`, no `jsonb` (D-5): el orden de claves de cada foto es contrato.
+--
+-- abusive_reports: polimórfica (model_type + model_id, sin FK); el
+-- repositorio valida que el objeto exista. model_type guarda el nombre
+-- corto ('Review'), la API emite el FQCN de Laravel. Un reporte por usuario
+-- y objeto. Sin trigger de updated_at (reloj único, ver abajo).
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS reviews (
+    id                        bigserial    PRIMARY KEY,
+    order_id                  bigint,
+    user_id                   bigint       NOT NULL REFERENCES users(id)    ON DELETE CASCADE,
+    shop_id                   bigint       NOT NULL REFERENCES shops(id)    ON DELETE CASCADE,
+    product_id                bigint       NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    variation_option_id       bigint,
+    comment                   text         NOT NULL,
+    rating                    smallint     NOT NULL CHECK (rating BETWEEN 1 AND 5),
+    photos                    json         NOT NULL DEFAULT '[]'
+                                           CHECK (json_typeof(photos) = 'array'),
+    positive_feedbacks_count  integer      NOT NULL DEFAULT 0 CHECK (positive_feedbacks_count >= 0),
+    negative_feedbacks_count  integer      NOT NULL DEFAULT 0 CHECK (negative_feedbacks_count >= 0),
+    created_at                timestamptz  NOT NULL DEFAULT now(),
+    updated_at                timestamptz  NOT NULL DEFAULT now()
+);
+
+-- Una reseña por compra, y una sin orden por producto. Índice de expresión:
+-- Prisma no lo modela (cabecera de schema.prisma), igual que
+-- users_email_lower_idx.
+CREATE UNIQUE INDEX IF NOT EXISTS reviews_autor_producto_orden_key
+    ON reviews (user_id, product_id, COALESCE(order_id, 0));
+
+
+CREATE TABLE IF NOT EXISTS abusive_reports (
+    id          bigserial    PRIMARY KEY,
+    user_id     bigint       NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    model_type  text         NOT NULL CHECK (model_type IN ('Review', 'Question')),
+    model_id    bigint       NOT NULL,
+    message     text         NOT NULL CHECK (length(message) > 0),
+    created_at  timestamptz  NOT NULL DEFAULT now(),
+    updated_at  timestamptz  NOT NULL DEFAULT now(),
+    UNIQUE (user_id, model_type, model_id)
+);
+
+
+-- =====================================================================
 -- Índices.
 --
 -- No son decorativos: cada uno responde a un filtro que el frontend
@@ -864,6 +919,13 @@ CREATE INDEX IF NOT EXISTS coupons_user_idx               ON coupons (user_id);
 -- Lista de deseos (US-53): el inverso del pivote, para la cascada desde
 -- products y para saber quién marcó un producto.
 CREATE INDEX IF NOT EXISTS wishlists_producto_idx         ON wishlists (product_id);
+
+-- Reseñas (US-54): el shop filtra por product_id y el admin por shop_id.
+-- user_id queda cubierto por la izquierda del único de expresión. El índice
+-- polimórfico de abusive_reports sirve al conteo por reseña.
+CREATE INDEX IF NOT EXISTS reviews_shop_idx               ON reviews (shop_id);
+CREATE INDEX IF NOT EXISTS reviews_producto_idx           ON reviews (product_id);
+CREATE INDEX IF NOT EXISTS abusive_reports_modelo_idx     ON abusive_reports (model_type, model_id);
 
 
 -- ---------------------------------------------------------------------

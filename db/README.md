@@ -23,11 +23,11 @@ que si el mock violara alguna restricción del esquema falla en vez de producir
 SQL inaplicable.
 
 ```
-10 types · 12 shops · 198 categorías · 14 manufacturers · 10 tags · 1200 productos · 3 usuarios · 4 permisos
+10 types · 12 shops · 198 categorías · 14 manufacturers · 10 tags · 1200 productos · 5 usuarios · 4 permisos
 · 1 become_seller · 3 shop_staff · 19 faqs · 5 terms_and_conditions
 · 5 refund_policies · 8 refund_reasons · 1 taxes · 1 shippings
 · 8 attributes · 27 attribute_values · 3 store_notices (6 destinatarios,
-6 lecturas) · 10 coupons · 10 wishlists
+6 lecturas) · 10 coupons · 10 wishlists · 85 reviews · 3 abusive_reports
 ```
 
 **Los ids del mock se preservan** para no romper las relaciones, y al final se
@@ -51,7 +51,8 @@ Desde US-20, `users.json` (el mismo mock) siembra 6 tablas: `users`, `profiles`
 aceptando cualquier contraseña hasta US-22 — este dato solo queda sembrado y
 disponible.
 
-**Credencial demo**: los 3 usuarios comparten la contraseña `demodemo`,
+**Credencial demo**: los 5 usuarios (los 3 de `users.json` y los 2 que
+siembra el helper de identidad, ver más abajo) comparten la contraseña `demodemo`,
 guardada como hash bcrypt (costo 10). El literal vive en
 `generate-seed.mjs` como constante `HASH_DEMO`, con el comando de
 regeneración en un comentario junto a ella — nunca se hashea en tiempo de
@@ -199,9 +200,23 @@ usan todos los mocks que apuntan a un usuario (D-4 del Épico 46). Esos mocks
 traen ids del Laravel original que el seed no tiene: el `6` es
 `admin@demo.com`, que aquí es el **3**. El helper recibe cualquier objeto con
 `email` y devuelve el id **del seed**, nunca el del snapshot. Un email que no
-casa detiene la generación sin escribir `seed.sql`. Por ahora solo remapea;
-US-54 lo extiende para sembrar los usuarios que falten. Es la misma trampa
-que ya documentaba `permission_user` (`pivot.model_id = 6`).
+casa detiene la generación sin escribir `seed.sql`. Es la misma trampa que
+ya documentaba `permission_user` (`pivot.model_id = 6`).
+
+**Desde US-54 el helper también siembra.** Si el email no existe, crea el
+usuario con el id, `name`, `is_active` y timestamps del snapshot, la
+contraseña demo y el permiso `customer`, sin perfil. Los snapshots
+siguientes con ese email ya lo remapean. Así entran **4
+`customer2@demo.com`** y **5 `customer3@demo.com`**, autores de 65 de las
+85 reseñas. La generación falla si el snapshot no trae email, si su id no es
+válido o si su id ya es de **otro** email:
+
+```
+  - reviews 85.user: 'customer2@demo.com' trae el id 3, que ya es de 'admin@demo.com'
+```
+
+Quedan 5 usuarios y 8 filas en `permission_user`. Por eso `GET /users` y
+`getUsersToNotify` pasan de 3 a 5.
 
 ## Avisos de tienda: `store_notices` y sus tres pivotes
 
@@ -269,6 +284,34 @@ Calco de `permission_user`/`product_tag`.
   mock: 945, 941, 755, 569, 400, 313, 155, 111, 110, 104.
 - El generador valida que cada producto exista y que no haya pares
   repetidos.
+
+## Reseñas y reportes de abuso: `reviews` y `abusive_reports`
+
+Desde US-54. **`reviews`**: 85 filas, ids 85→1. Por autor: 2 → 20, 4 → 38,
+5 → 27. Por rating: 12/4/12/10/47. La tienda 6 tiene 49.
+
+- **CASCADE en `user_id`, `shop_id` y `product_id`**: la reseña es
+  contenido de su autor sobre un producto de una tienda. `shop_id` debe ser
+  la tienda del producto; el generador y la API lo validan.
+- **`order_id` y `variation_option_id` sin FK**: `orders` llega en US-58 y
+  no hay tabla de variaciones. En el seed son `null`.
+- **Una reseña por compra.** El índice único de expresión
+  `reviews_autor_producto_orden_key (user_id, product_id, COALESCE(order_id,
+  0))` admite una reseña sin orden por producto y una por cada orden.
+  Prisma no lo modela y `migrate diff` no lo acusa como drift, igual que
+  `users_email_lower_idx`.
+- **`photos` es `json`, no `jsonb`** (D-5), con `CHECK (json_typeof(photos)
+  = 'array')`. `rating` va de 1 a 5.
+- **Los contadores de feedback son columnas** (112/13 en la reseña 2): no hay
+  filas de votos que los respalden y `feedbacks` es un stub fuera del épico.
+
+**`abusive_reports`**: 3 filas, todas del cliente (2), sobre las reseñas 1,
+21 y 78. Es **polimórfica** (`model_type` + `model_id`, sin FK): el
+repositorio valida que el objeto exista. `model_type` guarda el nombre
+corto (`'Review'`, y `'Question'` desde US-55). El generador normaliza el
+FQCN de Laravel (`MarvelDatabaseModelsReview`) y la API lo vuelve a
+emitir así. Hay un reporte por usuario y objeto, y borrar una reseña borra
+sus reportes en la misma transacción.
 
 ## Cómo se adapta el scraper
 

@@ -119,7 +119,10 @@ No usar `prisma migrate dev` ni `prisma db push` contra esta base.
   `shippings_type_check`, y desde US-51 `store_notices_priority_check`,
   `store_notices_type_check` y `store_notices_vigencia_valida`, y desde
   US-52 `coupons_type_check`, `coupons_amount_check`,
-  `coupons_minimum_cart_amount_check` y `coupons_vigencia_valida`) no existen
+  `coupons_minimum_cart_amount_check` y `coupons_vigencia_valida`, y desde
+  US-54 `reviews_rating_check`, `reviews_photos_check`, los dos
+  `reviews_*_feedbacks_count_check`, `abusive_reports_model_type_check` y
+  `abusive_reports_message_check`) no existen
   para Prisma. Los repositorios los validan antes de escribir (tipos +
   guard de `salePrice < price`) y traducen la violación que llegue de
   Postgres a errores de dominio: `InvalidSalePriceError`,
@@ -288,6 +291,47 @@ duplicarlo. Todo va por usuario.
 
 Un producto inexistente da `RecordNotFoundError('products', id)` en las tres
 escrituras.
+
+### Reseñas (US-54, Épico 46) — `reviews.repository.ts`
+
+`ReviewRecord` es la fila plana: `photos` tal cual sale de la columna
+`json`, con su orden de claves. Las lecturas devuelven
+`ReviewDetailRecord`, que añade el autor (`UserRecord`), el producto
+hidratado (`ProductRecord`, con el mismo `PRODUCT_INCLUDE`) y
+`abusiveReportsCount`. El conteo sale de **un** `groupBy` sobre
+`abusive_reports` por página, no de una consulta por reseña: la tabla es
+polimórfica y no hay relación para `_count`.
+
+- **`listReviews`**: paginado en `id DESC` (`limit` 30). Filtra por
+  `productId`, `shopId`, `rating` y `typeSlug` (el type del producto),
+  combinados con AND.
+- **`findReviewById`**: `null` si no existe.
+- **`createReview`**: el producto debe existir (`RecordNotFoundError`) y
+  `shopId` debe ser su tienda (`InvalidFieldValueError`). Si se repiten
+  usuario, producto y orden, da `SlugConflictError` (el único de expresión).
+- **`updateReview`**: solo `rating`, `comment` y `photos`; fija `updatedAt`.
+- **`deleteReview`**: borra la reseña y sus reportes en un `$transaction`
+  y la devuelve.
+
+`rating` (1..5) y `photos` (array) se validan con `InvalidFieldValueError`.
+
+### Reportes de abuso (US-54) — `abusive-reports.repository.ts`
+
+`AbusiveReportRecord` es la fila plana (`modelType` corto) y
+`AbusiveReportDetailRecord` le añade el autor.
+
+- **`listAbusiveReports`** (`id DESC`, moderación) y
+  **`listAbusiveReportsByUser`** (`created_at DESC`, `/my-reports`).
+- **`findAbusiveReportById`**, **`updateAbusiveReport`** (solo
+  `message`) y **`deleteAbusiveReport`** (devuelve la fila).
+- **`createAbusiveReport`**: valida el objeto con
+  **`assertReportableExists`**. Una reseña inexistente da
+  `RecordNotFoundError`. `'Question'` y cualquier otro tipo dan
+  `InvalidFieldValueError` hasta US-55, que solo tiene que añadir su rama.
+  Un reporte repetido da `SlugConflictError`.
+
+`message` vacío se rechaza con `InvalidFieldValueError`. Los tipos
+admitidos por el CHECK se exportan como `REPORTABLE_MODEL_TYPES`.
 
 ### Identidad (US-21, Épico 19) — `users.repository.ts`
 

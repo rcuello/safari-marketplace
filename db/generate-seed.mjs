@@ -43,6 +43,8 @@ const attributes = leer('attributes');
 const storeNotices = leer('store-notices');
 const coupons = leer('coupons');
 const wishlists = leer('wishlists');
+const reviews = leer('reviews');
+const abusiveReports = leer('reports');
 
 // ── Literales SQL ────────────────────────────────────────────────────────
 const txt = (v) =>
@@ -277,17 +279,49 @@ if (new Set(valoresAtributo.map((v) => `${v._padre}:${v.slug}`)).size !== valore
 //     `customer` embebido…) y una descripción de dónde salió, para el error;
 //   · busca el email case-insensitive entre los usuarios que el generador
 //     siembra y devuelve SU id, nunca el `id` del snapshot;
-//   · email ausente o desconocido ⇒ anota el problema y devuelve null: la
-//     generación se detiene antes de escribir seed.sql.
-// US-51 solo remapea. US-54 lo extiende para SEMBRAR los usuarios que falten.
+//   · email conocido ⇒ remapea (US-51);
+//   · email desconocido ⇒ SIEMBRA el usuario (US-54) con el id, name,
+//     is_active y timestamps del snapshot, la contraseña demo y el permiso
+//     `customer`, sin perfil. Queda en `usuariosSembrados` y los siguientes
+//     snapshots con ese email ya lo remapean;
+//   · email ausente, id del snapshot no válido u ocupado por OTRO email ⇒
+//     anota el problema y devuelve null: la generación se detiene antes de
+//     escribir seed.sql.
+const PERMISO_CUSTOMER = permissionsCatalogo.find((p) => p.name === 'customer').id;
 const idPorEmail = new Map(users.map((u) => [String(u.email).toLowerCase(), u.id]));
+const emailPorId = new Map(users.map((u) => [u.id, String(u.email).toLowerCase()]));
+const usuariosSembrados = [];
 function resolverUsuarioPorEmail(snapshot, donde) {
-  const email = snapshot?.email ? String(snapshot.email).toLowerCase() : null;
-  const id = email ? idPorEmail.get(email) : undefined;
-  if (id === undefined) {
-    problemas.push(`${donde}: email '${snapshot?.email}' no casa con ningún usuario del seed`);
+  const email = snapshot?.email ? String(snapshot.email).trim().toLowerCase() : '';
+  if (!email) {
+    problemas.push(`${donde}: el snapshot de usuario no trae email`);
     return null;
   }
+  const conocido = idPorEmail.get(email);
+  if (conocido !== undefined) return conocido;
+
+  const id = snapshot.id;
+  if (!Number.isSafeInteger(id) || id <= 0) {
+    problemas.push(`${donde}: '${email}' no existe y su snapshot no trae un id válido (${id})`);
+    return null;
+  }
+  const ocupante = emailPorId.get(id);
+  if (ocupante !== undefined) {
+    problemas.push(`${donde}: '${email}' trae el id ${id}, que ya es de '${ocupante}'`);
+    return null;
+  }
+  usuariosSembrados.push({
+    id,
+    name: snapshot.name ?? email,
+    email,
+    is_active: snapshot.is_active ?? 1,
+    email_verified_at: snapshot.email_verified_at ?? null,
+    created_at: snapshot.created_at ?? null,
+    updated_at: snapshot.updated_at ?? null,
+    _origen: donde,
+  });
+  idPorEmail.set(email, id);
+  emailPorId.set(id, email);
   return id;
 }
 
@@ -352,6 +386,43 @@ for (const w of wishlists) {
 if (new Set(wishlists.map((w) => w.id)).size !== wishlists.length)
   problemas.push('wishlists: producto repetido para el mismo usuario');
 
+// ── Reseñas y reportes de abuso (US-54) ──────────────────────────────────
+// El autor sale del `user` embebido por email: customer@demo.com remapea al
+// 2 del seed; customer2/customer3 (4 y 5) no existen y el helper los siembra.
+// shop_id debe ser la tienda del producto (la API lo exige al crear).
+const tiendaDeProducto = new Map(products.map((p) => [p.id, p.shop?.id]));
+const resenas = reviews.map((r) => ({
+  ...r,
+  _user_id: resolverUsuarioPorEmail(r.user, `reviews ${r.id}.user`),
+}));
+for (const r of resenas) {
+  if (!tiendaDeProducto.has(r.product_id))
+    problemas.push(`reviews ${r.id}: producto ${r.product_id} inexistente`);
+  else if (tiendaDeProducto.get(r.product_id) !== r.shop_id)
+    problemas.push(`reviews ${r.id}: shop_id ${r.shop_id} no es la tienda del producto ${r.product_id}`);
+  if (!(Number.isInteger(r.rating) && r.rating >= 1 && r.rating <= 5))
+    problemas.push(`reviews ${r.id}: rating '${r.rating}' fuera del CHECK (1..5)`);
+  if (!Array.isArray(r.photos)) problemas.push(`reviews ${r.id}: photos no es un array`);
+}
+if (new Set(resenas.map((r) => `${r._user_id}:${r.product_id}:${r.order_id ?? 0}`)).size !== resenas.length)
+  problemas.push('reviews: par (usuario, producto, orden) repetido');
+
+// model_type llega como FQCN de Laravel; la tabla guarda el nombre corto.
+const MODELOS_REPORTABLES = { 'Marvel\\Database\\Models\\Review': 'Review' };
+const idsResenas = new Set(reviews.map((r) => r.id));
+const reportes = abusiveReports.map((a) => ({
+  ...a,
+  _user_id: resolverUsuarioPorEmail(a.user, `abusive_reports ${a.id}.user`),
+  _model_type: MODELOS_REPORTABLES[a.model_type],
+}));
+for (const a of reportes) {
+  if (!a._model_type)
+    problemas.push(`abusive_reports ${a.id}: model_type '${a.model_type}' no soportado`);
+  else if (!idsResenas.has(a.model_id))
+    problemas.push(`abusive_reports ${a.id}: la reseña ${a.model_id} no existe`);
+  if (!a.message) problemas.push(`abusive_reports ${a.id}: message vacío`);
+}
+
 if (problemas.length) {
   console.error(`\nEl mock viola ${problemas.length} restriccion(es) del esquema:`);
   problemas.slice(0, 20).forEach((p) => console.error('  - ' + p));
@@ -377,13 +448,14 @@ L.push(
   '--',
   `-- ${types.length} types · ${shopsTodos.length} shops · ${categories.length} categorías · ` +
     `${manufacturers.length} manufacturers · ${tags.length} tags · ${products.length} productos · ` +
-    `${users.length} usuarios · ${permissionsCatalogo.length} permisos · ` +
+    `${users.length + usuariosSembrados.length} usuarios · ${permissionsCatalogo.length} permisos · ` +
     `1 become_seller · ${staffAsignaciones.length} shop_staff · ` +
     `${faqsFilas.length} faqs · ${termsFilas.length} terms_and_conditions · ` +
     `${refundPolicies.length} refund_policies · ${refundReasons.length} refund_reasons · ` +
     `${taxes.length} taxes · ${shippings.length} shippings · ` +
     `${attributes.length} attributes · ${valoresAtributo.length} attribute_values · ` +
-    `${avisos.length} store_notices · ${coupons.length} coupons · ${wishlists.length} wishlists`,
+    `${avisos.length} store_notices · ${coupons.length} coupons · ${wishlists.length} wishlists · ` +
+    `${resenas.length} reviews · ${reportes.length} abusive_reports`,
   '-- =====================================================================',
   '',
   'BEGIN;'
@@ -488,6 +560,32 @@ L.push(
   asignaciones
     .map((a) => `  (${a.user_id}, ${a.permission_id})`)
     .join(',\n') + '\nON CONFLICT (user_id, permission_id) DO NOTHING;'
+);
+
+// usuarios sembrados por el helper de identidad (US-54, D-4) ----------------
+bloque(
+  `users sembrados desde snapshots — ${usuariosSembrados.length} ` +
+    `(${usuariosSembrados.map((u) => `${u.id} ${u.email}`).join(', ')})`
+);
+L.push(
+  '-- No están en users.json: los referencian los `user` embebidos de otros',
+  '-- mocks (reviews.json). Id, nombre y timestamps del snapshot, contraseña',
+  "-- demo y permiso 'customer'; sin perfil. El setval de users cubre el máximo.",
+  'INSERT INTO users (id, name, email, password_hash, is_active, email_verified_at, created_at, updated_at) VALUES'
+);
+L.push(
+  usuariosSembrados
+    .map(
+      (u) =>
+        `  (${u.id}, ${txt(u.name)}, ${txt(u.email)}, ${txt(HASH_DEMO)}, ${bool(u.is_active)}, ` +
+        `${txt(u.email_verified_at)}, ${ts(u.created_at)}, ${ts(u.updated_at)})`
+    )
+    .join(',\n') + '\nON CONFLICT (id) DO NOTHING;'
+);
+L.push('INSERT INTO permission_user (user_id, permission_id) VALUES');
+L.push(
+  usuariosSembrados.map((u) => `  (${u.id}, ${PERMISO_CUSTOMER})`).join(',\n') +
+    '\nON CONFLICT (user_id, permission_id) DO NOTHING;'
 );
 
 // shops ------------------------------------------------------------------
@@ -840,6 +938,39 @@ L.push(
     .join(',\n') + '\nON CONFLICT (user_id, product_id) DO NOTHING;'
 );
 
+// reviews / abusive_reports (US-54; tras users, sembrados y products) --------
+bloque(`reviews — ${resenas.length} · abusive_reports — ${reportes.length}`);
+L.push(
+  '-- user_id resuelto por email (D-4). photos va a una columna json (no jsonb)',
+  '-- para conservar el orden de claves. Contadores y fechas del mock.',
+  'INSERT INTO reviews (id, order_id, user_id, shop_id, product_id, variation_option_id, comment, rating, photos,',
+  '                     positive_feedbacks_count, negative_feedbacks_count, created_at, updated_at) VALUES'
+);
+L.push(
+  resenas
+    .map(
+      (r) =>
+        `  (${r.id}, ${num(r.order_id)}, ${r._user_id}, ${r.shop_id}, ${r.product_id}, ${num(r.variation_option_id)}, ` +
+        `${txt(r.comment)}, ${r.rating}, ${jsonTal(r.photos ?? [])}, ` +
+        `${num(r.positive_feedbacks_count ?? 0)}, ${num(r.negative_feedbacks_count ?? 0)}, ` +
+        `${ts(r.created_at)}, ${ts(r.updated_at)})`
+    )
+    .join(',\n') + '\nON CONFLICT (id) DO NOTHING;'
+);
+L.push(
+  "-- model_type normalizado del FQCN de Laravel al nombre corto ('Review').",
+  'INSERT INTO abusive_reports (id, user_id, model_type, model_id, message, created_at, updated_at) VALUES'
+);
+L.push(
+  reportes
+    .map(
+      (a) =>
+        `  (${a.id}, ${a._user_id}, ${txt(a._model_type)}, ${a.model_id}, ${txt(a.message)}, ` +
+        `${ts(a.created_at)}, ${ts(a.updated_at)})`
+    )
+    .join(',\n') + '\nON CONFLICT (id) DO NOTHING;'
+);
+
 // category_product -------------------------------------------------------
 bloque('category_product — deliberadamente VACÍA');
 L.push(
@@ -859,7 +990,7 @@ L.push(
   '-- mock, así que hay que adelantar las secuencias o el primer INSERT nuevo',
   '-- chocaría con una clave existente.'
 );
-for (const t of ['types', 'users', 'permissions', 'shops', 'categories', 'manufacturers', 'tags', 'products', 'faqs', 'terms_and_conditions', 'refund_policies', 'refund_reasons', 'taxes', 'shippings', 'attributes', 'attribute_values', 'store_notices', 'coupons']) {
+for (const t of ['types', 'users', 'permissions', 'shops', 'categories', 'manufacturers', 'tags', 'products', 'faqs', 'terms_and_conditions', 'refund_policies', 'refund_reasons', 'taxes', 'shippings', 'attributes', 'attribute_values', 'store_notices', 'coupons', 'reviews', 'abusive_reports']) {
   L.push(`SELECT setval('${t}_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM ${t}), 1));`);
 }
 
@@ -872,12 +1003,13 @@ console.log(
     `  ${types.length} types · ${shopsTodos.length} shops (${recuperados.size} recuperados) · ` +
     `${categories.length} categorías · ${manufacturers.length} manufacturers · ` +
     `${tags.length} tags · ${products.length} productos · ` +
-    `${users.length} usuarios · ${permissionsCatalogo.length} permisos · ` +
+    `${users.length + usuariosSembrados.length} usuarios · ${permissionsCatalogo.length} permisos · ` +
     `1 become_seller · ${staffAsignaciones.length} shop_staff · ` +
     `${faqsFilas.length} faqs · ${termsFilas.length} terms_and_conditions ` +
     `(${termsDescartados.length} duplicados descartados) · ` +
     `${refundPolicies.length} refund_policies · ${refundReasons.length} refund_reasons · ` +
     `${taxes.length} taxes · ${shippings.length} shippings · ` +
     `${attributes.length} attributes · ${valoresAtributo.length} attribute_values · ` +
-    `${avisos.length} store_notices · ${coupons.length} coupons · ${wishlists.length} wishlists`
+    `${avisos.length} store_notices · ${coupons.length} coupons · ${wishlists.length} wishlists · ` +
+    `${resenas.length} reviews · ${reportes.length} abusive_reports`
 );
