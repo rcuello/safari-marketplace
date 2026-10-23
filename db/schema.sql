@@ -936,6 +936,113 @@ CREATE TABLE IF NOT EXISTS order_statuses (
 
 
 -- =====================================================================
+-- Órdenes (US-58, Épico 46) — orders + order_products.
+--
+-- Sembradas desde orders.json: 20 padres con 1 hija cada uno (40 filas) y
+-- 76 líneas. Padres e hijas comparten tabla, como en Pickbazar: el padre
+-- agrupa la compra y no tiene tienda; cada hija es la parte de una tienda.
+-- La CHECK orders_padre_o_hija lo exige.
+--
+-- Los snapshots (customer_snapshot, product_snapshot) y las direcciones
+-- van en json, NO en jsonb: jsonb reordena las claves y el contrato emite
+-- las 43 del producto y las 9 del cliente en el orden del mock. Son el
+-- estado en el momento de la compra, no la fila viva.
+--
+-- Dinero en numeric SIN escala (el mock trae 3 decimales: sales_tax 0.044),
+-- salvo cancelled_*, que el contrato emite como string con 2 decimales.
+-- order_status/payment_status/payment_gateway son los enums de la API
+-- (orders/entities/order.entity.ts), NO el catálogo order_statuses (US-57).
+--
+-- FK: el cliente se pone a NULL si se borra (la orden es histórica, y NULL
+-- es también el invitado); la tienda es RESTRICT (no hay deleteShop); el
+-- producto de una línea se pone a NULL para que DELETE /products siga
+-- funcionando con productos vendidos. Sin triggers (reloj único).
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS orders (
+    id                       bigserial    PRIMARY KEY,
+    tracking_number          text         NOT NULL UNIQUE
+                                          CHECK (tracking_number ~ '^[0-9]{14}$'),
+    parent_id                bigint       REFERENCES orders(id)  ON DELETE CASCADE,
+    customer_id              bigint       REFERENCES users(id)   ON DELETE SET NULL,
+    customer_contact         text,
+    customer_name            text,
+    customer_snapshot        json,
+    shop_id                  bigint       REFERENCES shops(id)   ON DELETE RESTRICT,
+    amount                   numeric      NOT NULL DEFAULT 0 CHECK (amount >= 0),
+    sales_tax                numeric      NOT NULL DEFAULT 0 CHECK (sales_tax >= 0),
+    paid_total               numeric      NOT NULL DEFAULT 0 CHECK (paid_total >= 0),
+    total                    numeric      NOT NULL DEFAULT 0 CHECK (total >= 0),
+    discount                 numeric      NOT NULL DEFAULT 0 CHECK (discount >= 0),
+    delivery_fee             numeric      NOT NULL DEFAULT 0 CHECK (delivery_fee >= 0),
+    cancelled_amount         numeric(12,2) NOT NULL DEFAULT 0,
+    cancelled_tax            numeric(12,2) NOT NULL DEFAULT 0,
+    cancelled_delivery_fee   numeric(12,2) NOT NULL DEFAULT 0,
+    note                     text,
+    altered_payment_gateway  text,
+    logistics_provider       text,
+    delivery_time            text,
+    language                 text         NOT NULL DEFAULT 'es',
+    coupon_id                bigint       REFERENCES coupons(id) ON DELETE SET NULL,
+    payment_gateway          text         NOT NULL
+                                          CHECK (payment_gateway IN ('STRIPE', 'CASH_ON_DELIVERY', 'CASH',
+                                                                     'FULL_WALLET_PAYMENT', 'PAYPAL', 'RAZORPAY')),
+    order_status             text         NOT NULL
+                                          CHECK (order_status IN ('order-pending', 'order-processing',
+                                                                  'order-completed', 'order-cancelled',
+                                                                  'order-refunded', 'order-failed',
+                                                                  'order-at-local-facility',
+                                                                  'order-out-for-delivery')),
+    payment_status           text         NOT NULL
+                                          CHECK (payment_status IN ('payment-pending', 'payment-processing',
+                                                                    'payment-success', 'payment-failed',
+                                                                    'payment-reversal', 'payment-cash-on-delivery',
+                                                                    'payment-cash', 'payment-wallet',
+                                                                    'payment-awaiting-for-approval')),
+    shipping_address         json         CHECK (shipping_address IS NULL
+                                                 OR json_typeof(shipping_address) IN ('object', 'array')),
+    billing_address          json         CHECK (billing_address IS NULL
+                                                 OR json_typeof(billing_address) IN ('object', 'array')),
+    created_at               timestamptz  NOT NULL DEFAULT now(),
+    updated_at               timestamptz  NOT NULL DEFAULT now(),
+    CONSTRAINT orders_padre_o_hija CHECK (
+        (parent_id IS NULL AND shop_id IS NULL) OR (parent_id IS NOT NULL AND shop_id IS NOT NULL)
+    )
+);
+
+
+-- Una línea por producto (y variación) de la orden. line_no conserva el
+-- orden del products[] del mock. variation_option_id sin FK: no hay tabla
+-- de variaciones. El snapshot es el producto sin su pivot; las columnas
+-- son el pivot.
+CREATE TABLE IF NOT EXISTS order_products (
+    order_id             bigint       NOT NULL REFERENCES orders(id)   ON DELETE CASCADE,
+    line_no              smallint     NOT NULL CHECK (line_no > 0),
+    product_id           bigint       REFERENCES products(id) ON DELETE SET NULL,
+    variation_option_id  bigint,
+    order_quantity       integer      NOT NULL CHECK (order_quantity > 0),
+    unit_price           numeric      NOT NULL CHECK (unit_price >= 0),
+    subtotal             numeric      NOT NULL CHECK (subtotal >= 0),
+    product_snapshot     json         NOT NULL,
+    created_at           timestamptz  NOT NULL DEFAULT now(),
+    updated_at           timestamptz  NOT NULL DEFAULT now(),
+    PRIMARY KEY (order_id, line_no),
+    UNIQUE (order_id, product_id, variation_option_id)
+);
+
+
+-- FK pendiente de US-54: reviews.order_id existía sin FK porque orders no
+-- existía. No se edita el CREATE TABLE reviews: se añade aquí, idempotente
+-- (db-up re-aplica este archivo sobre un volumen vivo y un ALTER desnudo
+-- fallaría la segunda vez). SET NULL: la reseña sobrevive a su orden.
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'reviews_order_id_fkey') THEN
+    ALTER TABLE reviews ADD CONSTRAINT reviews_order_id_fkey
+      FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE SET NULL;
+  END IF;
+END $$;
+
+
+-- =====================================================================
 -- Índices.
 --
 -- No son decorativos: cada uno responde a un filtro que el frontend
@@ -1032,6 +1139,15 @@ CREATE INDEX IF NOT EXISTS conversations_shop_idx         ON conversations (shop
 CREATE INDEX IF NOT EXISTS messages_conversacion_idx
     ON messages (conversation_id, created_at DESC, id DESC);
 CREATE INDEX IF NOT EXISTS messages_user_idx              ON messages (user_id);
+
+-- Órdenes (US-58): el listado del cliente filtra customer_id, el de una
+-- tienda shop_id y el detalle embebe hijas por parent_id. order_products
+-- ya queda cubierto por su PK para order_id.
+CREATE INDEX IF NOT EXISTS orders_parent_idx              ON orders (parent_id);
+CREATE INDEX IF NOT EXISTS orders_customer_idx            ON orders (customer_id);
+CREATE INDEX IF NOT EXISTS orders_shop_idx                ON orders (shop_id);
+CREATE INDEX IF NOT EXISTS orders_coupon_idx              ON orders (coupon_id);
+CREATE INDEX IF NOT EXISTS order_products_producto_idx    ON order_products (product_id);
 
 
 -- ---------------------------------------------------------------------

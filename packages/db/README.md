@@ -125,7 +125,10 @@ No usar `prisma migrate dev` ni `prisma db push` contra esta base.
   `abusive_reports_message_check`, y desde US-55 `questions_question_check` y
   los dos `questions_*_feedbacks_count_check`, y desde US-56
   `messages_body_check`, y desde US-57 `order_statuses_serial_check` y
-  `order_statuses_color_check`) no existen
+  `order_statuses_color_check`, y desde US-58 los de `orders` (tracking de
+  14 dígitos, dinero ≥ 0, los tres enums, direcciones `object|array` y
+  `orders_padre_o_hija`) y los de `order_products` (`line_no`,
+  `order_quantity`, `unit_price`, `subtotal`)) no existen
   para Prisma. Los repositorios los validan antes de escribir (tipos +
   guard de `salePrice < price`) y traducen la violación que llegue de
   Postgres a errores de dominio: `InvalidSalePriceError`,
@@ -409,6 +412,26 @@ la API).
   now()`. Inexistente: `RecordNotFoundError`.
 - **`deleteOrderStatus`**: devuelve el snapshot previo. Sin dependientes que
   contar: `orders` no tiene FK hacia esta tabla.
+
+### Órdenes (US-58, Épico 46) — `orders.repository.ts`
+
+Solo lectura; las escrituras son de US-59. `OrderRecord` y
+`OrderProductRecord` son las filas planas: el dinero sale como `number` y
+los snapshots y las direcciones como `Prisma.JsonValue`. Como son columnas
+`json`, Prisma devuelve el objeto con las claves en el orden del texto, y
+el integration test lo fija para las 76 líneas.
+
+`OrderDetailRecord` es la orden con `lines` (por `lineNo`), `shop` (solo
+las hijas, con el `productsCount` de `toShopDto`, vía el `COUNT_PRODUCTS`
+de `shops.repository.ts`) y `children` (por `id`, vacío en las hijas).
+
+- **`listOrders`**: paginado (`limit` 15) en `id DESC`. Sin `shopId` ni
+  `trackingNumber`, solo padres; con `shopId`, las hijas de esa tienda;
+  con `trackingNumber`, la orden exacta (padre o hija). `customerId` filtra
+  siempre que llegue; el aislamiento por cliente lo decide la API.
+- **`findOrderByIdOrTracking(number | string)`**: un `number` busca por
+  `id` y un `string` por `tracking_number`. `null` si no existe; no
+  mira de quién es.
 
 ### Identidad (US-21, Épico 19) — `users.repository.ts`
 

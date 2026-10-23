@@ -28,6 +28,8 @@ import type {
   Faq,
   Manufacturer,
   Message,
+  Order,
+  OrderProduct,
   OrderStatus,
   Permission,
   Prisma,
@@ -362,6 +364,61 @@ export interface MessageRecord {
   conversationId: number;
   userId: number;
   body: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/**
+ * Orden (US-58), fila plana. Padre (`parentId`/`shopId` null) o hija de una
+ * tienda. Los snapshots y las direcciones salen de columnas `json`: conservan
+ * el orden de claves del mock. El dinero, `numeric` → number.
+ */
+export interface OrderRecord {
+  id: number;
+  trackingNumber: string;
+  parentId: number | null;
+  customerId: number | null;
+  customerContact: string | null;
+  customerName: string | null;
+  customerSnapshot: Prisma.JsonValue | null;
+  shopId: number | null;
+  amount: number;
+  salesTax: number;
+  paidTotal: number;
+  total: number;
+  discount: number;
+  deliveryFee: number;
+  cancelledAmount: number;
+  cancelledTax: number;
+  cancelledDeliveryFee: number;
+  note: string | null;
+  alteredPaymentGateway: string | null;
+  logisticsProvider: string | null;
+  deliveryTime: string | null;
+  language: string;
+  couponId: number | null;
+  paymentGateway: string;
+  orderStatus: string;
+  paymentStatus: string;
+  shippingAddress: Prisma.JsonValue | null;
+  billingAddress: Prisma.JsonValue | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/**
+ * Línea de una orden (US-58). `productSnapshot` es el producto en el momento
+ * de la compra, sin su `pivot`; las columnas son el `pivot`.
+ */
+export interface OrderProductRecord {
+  orderId: number;
+  lineNo: number;
+  productId: number | null;
+  variationOptionId: number | null;
+  orderQuantity: number;
+  unitPrice: number;
+  subtotal: number;
+  productSnapshot: Prisma.JsonValue;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -845,6 +902,56 @@ export function _toOrderStatusRecord(row: OrderStatus): OrderStatusRecord {
     serial: row.serial,
     color: row.color,
     language: row.language,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+export function _toOrderRecord(row: Order): OrderRecord {
+  return {
+    id: _id(row.id),
+    trackingNumber: row.trackingNumber,
+    parentId: _id(row.parentId),
+    customerId: _id(row.customerId),
+    customerContact: row.customerContact,
+    customerName: row.customerName,
+    customerSnapshot: row.customerSnapshot,
+    shopId: _id(row.shopId),
+    amount: _dec(row.amount),
+    salesTax: _dec(row.salesTax),
+    paidTotal: _dec(row.paidTotal),
+    total: _dec(row.total),
+    discount: _dec(row.discount),
+    deliveryFee: _dec(row.deliveryFee),
+    cancelledAmount: _dec(row.cancelledAmount),
+    cancelledTax: _dec(row.cancelledTax),
+    cancelledDeliveryFee: _dec(row.cancelledDeliveryFee),
+    note: row.note,
+    alteredPaymentGateway: row.alteredPaymentGateway,
+    logisticsProvider: row.logisticsProvider,
+    deliveryTime: row.deliveryTime,
+    language: row.language,
+    couponId: _id(row.couponId),
+    paymentGateway: row.paymentGateway,
+    orderStatus: row.orderStatus,
+    paymentStatus: row.paymentStatus,
+    shippingAddress: row.shippingAddress,
+    billingAddress: row.billingAddress,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+export function _toOrderProductRecord(row: OrderProduct): OrderProductRecord {
+  return {
+    orderId: _id(row.orderId),
+    lineNo: row.lineNo,
+    productId: _id(row.productId),
+    variationOptionId: _id(row.variationOptionId),
+    orderQuantity: row.orderQuantity,
+    unitPrice: _dec(row.unitPrice),
+    subtotal: _dec(row.subtotal),
+    productSnapshot: row.productSnapshot,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };

@@ -39,6 +39,8 @@ export type {
   FaqRecord,
   ManufacturerRecord,
   MessageRecord,
+  OrderProductRecord,
+  OrderRecord,
   OrderStatusRecord,
   PermissionRecord,
   ProfileRecord,
@@ -256,6 +258,11 @@ export {
   listAbusiveReportsByUser,
   updateAbusiveReport,
 } from './src/repositories/abusive-reports.repository';
+export type {
+  ListOrdersInput,
+  OrderDetailRecord,
+} from './src/repositories/orders.repository';
+export { findOrderByIdOrTracking, listOrders } from './src/repositories/orders.repository';
 export type {
   CreateOrderStatusInput,
   ListOrderStatusesInput,

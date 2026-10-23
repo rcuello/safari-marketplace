@@ -28,7 +28,7 @@ SQL inaplicable.
 · 5 refund_policies · 8 refund_reasons · 1 taxes · 1 shippings
 · 8 attributes · 27 attribute_values · 3 store_notices (6 destinatarios,
 6 lecturas) · 10 coupons · 10 wishlists · 85 reviews · 3 abusive_reports · 68 questions · 2 conversations · 5 messages
-· 10 order_statuses
+· 10 order_statuses · 40 orders (20 padres + 20 hijas) · 76 order_products
 ```
 
 **Los ids del mock se preservan** para no romper las relaciones, y al final se
@@ -374,6 +374,43 @@ Desde US-57. 10 filas con los ids, los seriales y las fechas del mock.
   este catálogo usa otros slugs (`order-received`, `delivered`…). No hay
   FK entre las dos, y borrar un estado no afecta a ninguna orden.
 - `translated_languages` no es columna: la API lo emite como `['en']`.
+
+## Órdenes: `orders` y `order_products`
+
+Desde US-58. Es el núcleo transaccional.
+
+- **Padre e hija en la misma tabla**, como en Pickbazar. El padre agrupa la
+  compra y no tiene tienda; cada hija es la parte de una tienda.
+  `CHECK orders_padre_o_hija`: sin `parent_id` ⇔ sin `shop_id`. El seed
+  trae 20 padres con 1 hija cada uno (ids 5..49) y `parent_id` en
+  `CASCADE`: borrar el padre arrastra las hijas.
+- **Snapshots en `json`, no en `jsonb`.** `customer_snapshot` (el
+  `customer` embebido, verbatim: la orden 41 conserva `id: 6` aunque su
+  `customer_id` sea 3) y `order_products.product_snapshot` (el producto en
+  el momento de la compra, sin su `pivot`). `jsonb` reordena las claves y
+  el contrato emite las 43 del producto y las 9 del cliente en el orden del
+  mock. Las direcciones también son `json`: en 8 órdenes son `[]`
+  (pedidos digitales).
+- **Dinero en `numeric` sin escala**: el mock trae 3 decimales (`sales_tax
+  0.044`, `total 52.244`). `cancelled_*` son `numeric(12,2)` porque el
+  contrato los emite como string `"0.00"`.
+- **Estados**: `order_status`, `payment_status` y `payment_gateway` llevan
+  CHECK con los enums de la API (`orders/entities/order.entity.ts`), no el
+  catálogo `order_statuses`.
+- **`order_products`**: PK `(order_id, line_no)`, con `line_no` = posición en
+  el `products[]` del mock. `variation_option_id` sin FK (no hay tabla de
+  variaciones).
+- **FK y borrados**: cliente `SET NULL` (la orden es histórica, y `NULL` es
+  también el invitado); tienda `RESTRICT` (no hay `deleteShop`); cupón
+  `SET NULL`; producto de una línea `SET NULL`, para que `DELETE
+  /products/:id` siga funcionando con productos vendidos.
+- **`reviews.order_id` ya tiene FK** (`reviews_order_id_fkey`, `SET NULL`).
+  Se añade con un bloque `DO $$ … IF NOT EXISTS` después de `CREATE TABLE
+  orders`, para no tocar el `CREATE TABLE reviews` y que el archivo siga
+  siendo idempotente. Ojo: si el autor ya tiene una reseña **sin orden** del
+  mismo producto, borrar la orden falla, porque el `SET NULL` choca con
+  `reviews_autor_producto_orden_key`. Ninguna ruta borra órdenes todavía
+  (US-59).
 
 ## Cómo se adapta el scraper
 

@@ -30,7 +30,8 @@ const PUBLISHED_PRODUCT: Prisma.ProductWhereInput = {
   status: 'publish',
   visibility: 'visibility_public',
 };
-const COUNT_PRODUCTS = {
+/** Exportado para la tienda de las órdenes hijas (US-58); fuera del barrel. */
+export const COUNT_PRODUCTS = {
   _count: { select: { products: { where: PUBLISHED_PRODUCT } } },
 } satisfies Prisma.ShopInclude;
 

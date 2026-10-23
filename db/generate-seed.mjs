@@ -49,6 +49,7 @@ const questions = leer('questions');
 const conversations = leer('conversations');
 const messages = leer('messages');
 const orderStatuses = leer('order-statuses');
+const orders = leer('orders');
 
 // ── Literales SQL ────────────────────────────────────────────────────────
 const txt = (v) =>
@@ -504,6 +505,59 @@ for (const o of orderStatuses) {
   if (!o.created_at || !o.updated_at) problemas.push(`order_statuses ${o.id}: sin created_at/updated_at`);
 }
 
+// ── Órdenes (US-58) ──────────────────────────────────────────────────────
+// orders.json trae 20 padres con sus hijas en children[]. Se aplanan: cada
+// padre y después su hija. El cliente se resuelve por el email del
+// `customer` embebido (el 6 del mock es admin@demo.com = 3); el snapshot va
+// verbatim. Esta US no siembra usuarios.
+const PAYMENT_GATEWAYS = ['STRIPE', 'CASH_ON_DELIVERY', 'CASH', 'FULL_WALLET_PAYMENT', 'PAYPAL', 'RAZORPAY'];
+const ORDER_STATUSES = [
+  'order-pending', 'order-processing', 'order-completed', 'order-cancelled',
+  'order-refunded', 'order-failed', 'order-at-local-facility', 'order-out-for-delivery',
+];
+const PAYMENT_STATUSES = [
+  'payment-pending', 'payment-processing', 'payment-success', 'payment-failed', 'payment-reversal',
+  'payment-cash-on-delivery', 'payment-cash', 'payment-wallet', 'payment-awaiting-for-approval',
+];
+const sembradosAntesDeOrdenes = usuariosSembrados.length;
+const ordenes = [];
+for (const padre of orders) {
+  ordenes.push(padre);
+  for (const hija of padre.children ?? []) ordenes.push(hija);
+}
+for (const o of ordenes) o._customer_id = o.customer ? resolverUsuarioPorEmail(o.customer, `orders ${o.id}.customer`) : null;
+for (const s of usuariosSembrados.slice(sembradosAntesDeOrdenes))
+  problemas.push(`orders: '${s.email}' no existía; esta US no siembra usuarios`);
+const idsOrdenes = new Set(ordenes.map((o) => o.id));
+if (idsOrdenes.size !== ordenes.length) problemas.push('orders: id duplicado');
+if (new Set(ordenes.map((o) => o.tracking_number)).size !== ordenes.length)
+  problemas.push('orders: tracking_number duplicado');
+for (const o of ordenes) {
+  const esHija = o.parent_id != null;
+  if (!/^[0-9]{14}$/.test(o.tracking_number ?? '')) problemas.push(`orders ${o.id}: tracking_number '${o.tracking_number}' no es de 14 dígitos`);
+  if (esHija && !idsOrdenes.has(o.parent_id)) problemas.push(`orders ${o.id}: parent_id ${o.parent_id} inexistente`);
+  if (esHija && o.children?.length) problemas.push(`orders ${o.id}: una hija no puede tener children`);
+  if (esHija !== (o.shop_id != null)) problemas.push(`orders ${o.id}: viola orders_padre_o_hija (parent_id ${o.parent_id}, shop_id ${o.shop_id})`);
+  if (o.shop_id != null && !idsFinalesShops.has(o.shop_id)) problemas.push(`orders ${o.id}: shop_id ${o.shop_id} inexistente`);
+  if (o.coupon_id != null) problemas.push(`orders ${o.id}: trae coupon_id y el generador no lo resuelve`);
+  if (!PAYMENT_GATEWAYS.includes(o.payment_gateway)) problemas.push(`orders ${o.id}: payment_gateway '${o.payment_gateway}' fuera del CHECK`);
+  if (!ORDER_STATUSES.includes(o.order_status)) problemas.push(`orders ${o.id}: order_status '${o.order_status}' fuera del CHECK`);
+  if (!PAYMENT_STATUSES.includes(o.payment_status)) problemas.push(`orders ${o.id}: payment_status '${o.payment_status}' fuera del CHECK`);
+  for (const k of ['amount', 'sales_tax', 'paid_total', 'total', 'discount', 'delivery_fee'])
+    if (!(typeof o[k] === 'number' && o[k] >= 0)) problemas.push(`orders ${o.id}: ${k} '${o[k]}' no es un número >= 0`);
+  if (Math.abs(o.total - (o.amount + o.sales_tax + o.delivery_fee - o.discount)) > 1e-9)
+    problemas.push(`orders ${o.id}: total ${o.total} ≠ amount + sales_tax + delivery_fee − discount`);
+  const vistos = new Set();
+  for (const p of o.products ?? []) {
+    if (!idsProductos.has(p.id)) problemas.push(`orders ${o.id}: producto ${p.id} inexistente`);
+    if (p.pivot?.order_id !== o.id) problemas.push(`orders ${o.id}: pivot.order_id ${p.pivot?.order_id} distinto`);
+    if (!(Number(p.pivot?.order_quantity) > 0)) problemas.push(`orders ${o.id}: order_quantity '${p.pivot?.order_quantity}' fuera del CHECK`);
+    const clave = `${p.id}:${p.pivot?.variation_option_id ?? ''}`;
+    if (vistos.has(clave)) problemas.push(`orders ${o.id}: producto ${p.id} repetido`);
+    vistos.add(clave);
+  }
+}
+
 if (problemas.length) {
   console.error(`\nEl mock viola ${problemas.length} restriccion(es) del esquema:`);
   problemas.slice(0, 20).forEach((p) => console.error('  - ' + p));
@@ -538,7 +592,8 @@ L.push(
     `${avisos.length} store_notices · ${coupons.length} coupons · ${wishlists.length} wishlists · ` +
     `${resenas.length} reviews · ${reportes.length} abusive_reports · ${preguntas.length} questions · ` +
     `${conversaciones.length} conversations · ${mensajes.length} messages · ` +
-    `${orderStatuses.length} order_statuses`,
+    `${orderStatuses.length} order_statuses · ${ordenes.length} orders · ` +
+    `${ordenes.reduce((n, o) => n + o.products.length, 0)} order_products`,
   '-- =====================================================================',
   '',
   'BEGIN;'
@@ -1115,6 +1170,54 @@ L.push(
     .join(',\n') + '\nON CONFLICT (id) DO NOTHING;'
 );
 
+// orders / order_products (US-58; tras users, shops, products y coupons) ---
+const lineas = ordenes.flatMap((o) => o.products.map((p, i) => ({ orden: o, producto: p, lineNo: i + 1 })));
+bloque(`orders — ${ordenes.length} (${orders.length} padres + ${ordenes.length - orders.length} hijas) · order_products — ${lineas.length}`);
+L.push(
+  '-- Padre y después su hija. customer_id resuelto por email (D-4); el customer',
+  '-- embebido va verbatim a customer_snapshot. Dinero tal cual (hay 3',
+  '-- decimales). updated_at = created_at: el mock no lo trae.',
+  'INSERT INTO orders (id, tracking_number, parent_id, customer_id, customer_contact, customer_name,',
+  '                    customer_snapshot, shop_id, amount, sales_tax, paid_total, total, discount,',
+  '                    delivery_fee, cancelled_amount, cancelled_tax, cancelled_delivery_fee, note,',
+  '                    altered_payment_gateway, logistics_provider, delivery_time, language, coupon_id,',
+  '                    payment_gateway, order_status, payment_status, shipping_address, billing_address,',
+  '                    created_at, updated_at) VALUES'
+);
+L.push(
+  ordenes
+    .map(
+      (o) =>
+        `  (${o.id}, ${txt(o.tracking_number)}, ${num(o.parent_id)}, ${num(o._customer_id)}, ` +
+        `${txt(o.customer_contact)}, ${txt(o.customer_name)}, ${jsonTal(o.customer)}, ${num(o.shop_id)}, ` +
+        `${num(o.amount)}, ${num(o.sales_tax)}, ${num(o.paid_total)}, ${num(o.total)}, ${num(o.discount)}, ` +
+        `${num(o.delivery_fee)}, ${num(o.cancelled_amount)}, ${num(o.cancelled_tax)}, ${num(o.cancelled_delivery_fee)}, ` +
+        `${txt(o.note)}, ${txt(o.altered_payment_gateway)}, ${txt(o.logistics_provider)}, ${txt(o.delivery_time)}, ` +
+        `${txt(o.language)}, ${num(o.coupon_id)}, ${txt(o.payment_gateway)}, ${txt(o.order_status)}, ` +
+        `${txt(o.payment_status)}, ${jsonTal(o.shipping_address)}, ${jsonTal(o.billing_address)}, ` +
+        `${ts(o.created_at)}, ${ts(o.created_at)})`
+    )
+    .join(',\n') + '\nON CONFLICT (id) DO NOTHING;'
+);
+L.push(
+  '-- line_no = posición en products[]. El snapshot es el producto sin pivot,',
+  '-- con su orden de claves; las columnas salen del pivot.',
+  'INSERT INTO order_products (order_id, line_no, product_id, variation_option_id, order_quantity,',
+  '                            unit_price, subtotal, product_snapshot, created_at, updated_at) VALUES'
+);
+L.push(
+  lineas
+    .map(({ orden, producto, lineNo }) => {
+      const { pivot, ...snapshot } = producto;
+      return (
+        `  (${orden.id}, ${lineNo}, ${producto.id}, ${num(pivot.variation_option_id)}, ${num(pivot.order_quantity)}, ` +
+        `${num(pivot.unit_price)}, ${num(pivot.subtotal)}, ${jsonTal(snapshot)}, ` +
+        `${ts(pivot.created_at)}, ${ts(pivot.updated_at)})`
+      );
+    })
+    .join(',\n') + '\nON CONFLICT (order_id, line_no) DO NOTHING;'
+);
+
 // category_product -------------------------------------------------------
 bloque('category_product — deliberadamente VACÍA');
 L.push(
@@ -1134,7 +1237,7 @@ L.push(
   '-- mock, así que hay que adelantar las secuencias o el primer INSERT nuevo',
   '-- chocaría con una clave existente.'
 );
-for (const t of ['types', 'users', 'permissions', 'shops', 'categories', 'manufacturers', 'tags', 'products', 'faqs', 'terms_and_conditions', 'refund_policies', 'refund_reasons', 'taxes', 'shippings', 'attributes', 'attribute_values', 'store_notices', 'coupons', 'reviews', 'abusive_reports', 'questions', 'conversations', 'messages', 'order_statuses']) {
+for (const t of ['types', 'users', 'permissions', 'shops', 'categories', 'manufacturers', 'tags', 'products', 'faqs', 'terms_and_conditions', 'refund_policies', 'refund_reasons', 'taxes', 'shippings', 'attributes', 'attribute_values', 'store_notices', 'coupons', 'reviews', 'abusive_reports', 'questions', 'conversations', 'messages', 'order_statuses', 'orders']) {
   L.push(`SELECT setval('${t}_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM ${t}), 1));`);
 }
 
@@ -1157,5 +1260,6 @@ console.log(
     `${avisos.length} store_notices · ${coupons.length} coupons · ${wishlists.length} wishlists · ` +
     `${resenas.length} reviews · ${reportes.length} abusive_reports · ${preguntas.length} questions · ` +
     `${conversaciones.length} conversations · ${mensajes.length} messages · ` +
-    `${orderStatuses.length} order_statuses`
+    `${orderStatuses.length} order_statuses · ${ordenes.length} orders · ` +
+    `${ordenes.reduce((n, o) => n + o.products.length, 0)} order_products`
 );

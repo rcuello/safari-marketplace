@@ -30,9 +30,14 @@
 //     (length > 0), questions_question_check (length > 0),
 //     questions_positive_/negative_feedbacks_count_check (≥ 0),
 //     messages_body_check (length(btrim(body)) > 0), order_statuses_serial_
-//     check (serial > 0), order_statuses_color_check (#rrggbb). Los
-//     repositorios los validan antes de escribir y traducen la violación a
-//     errores de dominio.
+//     check (serial > 0), order_statuses_color_check (#rrggbb), y desde
+//     US-58 orders_tracking_number_check (14 dígitos), los *_check de dinero
+//     de orders (≥ 0), orders_payment_gateway_check, orders_order_status_
+//     check, orders_payment_status_check, orders_shipping_/billing_address_
+//     check (json object|array), orders_padre_o_hija (sin padre ⇔ sin
+//     tienda) y order_products_line_no_/order_quantity_/unit_price_/
+//     subtotal_check. Los repositorios los validan antes de escribir y
+//     traducen la violación a errores de dominio.
 //   · El índice de expresión products_nombre_trgm_idx
 //     (gin (lower(name) gin_trgm_ops)) que acelera la búsqueda por
 //     nombre con `contains/insensitive`. Igual questions_question_trgm_idx
@@ -119,6 +124,7 @@ model Shop {
   reviews            Review[]
   questions          Question[]
   conversations      Conversation[]
+  orders             Order[]
 
   @@map("shops")
 }
@@ -219,14 +225,15 @@ model Product {
   createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt           DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
 
-  manufacturer Manufacturer? @relation(fields: [manufacturerId], references: [id], onUpdate: NoAction)
-  shop         Shop          @relation(fields: [shopId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  type         Type          @relation(fields: [typeId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  manufacturer Manufacturer?     @relation(fields: [manufacturerId], references: [id], onUpdate: NoAction)
+  shop         Shop              @relation(fields: [shopId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  type         Type              @relation(fields: [typeId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   categories   CategoryProduct[]
   tags         ProductTag[]
   wishlists    Wishlist[]
   reviews      Review[]
   questions    Question[]
+  orderLines   OrderProduct[]
 
   @@unique([sourceStore, sourceProductId], map: "products_procedencia_key", where: raw("(source_store IS NOT NULL)"))
   @@index([manufacturerId], map: "products_manufacturer_idx")
@@ -286,8 +293,8 @@ model User {
   staffShops          ShopStaff[]
   faqs                Faq[]
   termsAndConditions  TermsAndConditions[]
-  createdStoreNotices StoreNotice[]         @relation("StoreNoticeCreator")
-  updatedStoreNotices StoreNotice[]         @relation("StoreNoticeUpdater")
+  createdStoreNotices StoreNotice[]        @relation("StoreNoticeCreator")
+  updatedStoreNotices StoreNotice[]        @relation("StoreNoticeUpdater")
   storeNotices        StoreNoticeUser[]
   storeNoticeReads    StoreNoticeRead[]
   coupons             Coupon[]
@@ -297,6 +304,7 @@ model User {
   questions           Question[]
   conversations       Conversation[]
   messages            Message[]
+  orders              Order[]
 
   @@map("users")
 }
@@ -638,8 +646,9 @@ model Coupon {
   createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt         DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
 
-  shop Shop? @relation(fields: [shopId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  user User? @relation(fields: [userId], references: [id], onUpdate: NoAction)
+  shop   Shop?   @relation(fields: [shopId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user   User?   @relation(fields: [userId], references: [id], onUpdate: NoAction)
+  orders Order[]
 
   @@index([shopId], map: "coupons_shop_idx")
   @@index([userId], map: "coupons_user_idx")
@@ -682,6 +691,7 @@ model Review {
   createdAt              DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt              DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
 
+  order   Order?  @relation(fields: [orderId], references: [id], onUpdate: NoAction)
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   shop    Shop    @relation(fields: [shopId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
@@ -786,4 +796,76 @@ model OrderStatus {
   updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
 
   @@map("order_statuses")
+}
+
+// =====================================================================
+// Órdenes (US-58, Épico 46) — padre/hija en la misma tabla + líneas
+// =====================================================================
+
+model Order {
+  id                    BigInt   @id @default(autoincrement())
+  trackingNumber        String   @unique @map("tracking_number")
+  parentId              BigInt?  @map("parent_id")
+  customerId            BigInt?  @map("customer_id")
+  customerContact       String?  @map("customer_contact")
+  customerName          String?  @map("customer_name")
+  customerSnapshot      Json?    @map("customer_snapshot") @db.Json
+  shopId                BigInt?  @map("shop_id")
+  amount                Decimal  @default(0) @db.Decimal
+  salesTax              Decimal  @default(0) @map("sales_tax") @db.Decimal
+  paidTotal             Decimal  @default(0) @map("paid_total") @db.Decimal
+  total                 Decimal  @default(0) @db.Decimal
+  discount              Decimal  @default(0) @db.Decimal
+  deliveryFee           Decimal  @default(0) @map("delivery_fee") @db.Decimal
+  cancelledAmount       Decimal  @default(0) @map("cancelled_amount") @db.Decimal(12, 2)
+  cancelledTax          Decimal  @default(0) @map("cancelled_tax") @db.Decimal(12, 2)
+  cancelledDeliveryFee  Decimal  @default(0) @map("cancelled_delivery_fee") @db.Decimal(12, 2)
+  note                  String?
+  alteredPaymentGateway String?  @map("altered_payment_gateway")
+  logisticsProvider     String?  @map("logistics_provider")
+  deliveryTime          String?  @map("delivery_time")
+  language              String   @default("es")
+  couponId              BigInt?  @map("coupon_id")
+  paymentGateway        String   @map("payment_gateway")
+  orderStatus           String   @map("order_status")
+  paymentStatus         String   @map("payment_status")
+  shippingAddress       Json?    @map("shipping_address") @db.Json
+  billingAddress        Json?    @map("billing_address") @db.Json
+  createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  parent   Order?         @relation("OrderChildren", fields: [parentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  children Order[]        @relation("OrderChildren")
+  customer User?          @relation(fields: [customerId], references: [id], onUpdate: NoAction)
+  shop     Shop?          @relation(fields: [shopId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  coupon   Coupon?        @relation(fields: [couponId], references: [id], onUpdate: NoAction)
+  lines    OrderProduct[]
+  reviews  Review[]
+
+  @@index([couponId], map: "orders_coupon_idx")
+  @@index([customerId], map: "orders_customer_idx")
+  @@index([parentId], map: "orders_parent_idx")
+  @@index([shopId], map: "orders_shop_idx")
+  @@map("orders")
+}
+
+model OrderProduct {
+  orderId           BigInt   @map("order_id")
+  lineNo            Int      @map("line_no") @db.SmallInt
+  productId         BigInt?  @map("product_id")
+  variationOptionId BigInt?  @map("variation_option_id")
+  orderQuantity     Int      @map("order_quantity")
+  unitPrice         Decimal  @map("unit_price") @db.Decimal
+  subtotal          Decimal  @db.Decimal
+  productSnapshot   Json     @map("product_snapshot") @db.Json
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  product Product? @relation(fields: [productId], references: [id], onUpdate: NoAction)
+
+  @@id([orderId, lineNo])
+  @@unique([orderId, productId, variationOptionId])
+  @@index([productId], map: "order_products_producto_idx")
+  @@map("order_products")
 }

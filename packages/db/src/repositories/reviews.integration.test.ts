@@ -90,16 +90,17 @@ describe('createReview', () => {
     await expect(
       createReview({ userId: ADMIN, productId: 2, shopId, rating: 5, comment: 'zz-review-2' })
     ).rejects.toBeInstanceOf(SlugConflictError);
-    // Con orden distinta sí se admite (una reseña por compra).
+    // Con orden distinta sí se admite (una reseña por compra). Desde US-58
+    // order_id tiene FK: la 41 es una orden sembrada del admin con el producto 2.
     const conOrden = await createReview({
       userId: ADMIN,
       productId: 2,
       shopId,
       rating: 5,
       comment: 'zz-review-3',
-      orderId: 77,
+      orderId: 41,
     });
-    expect(conOrden.orderId).toBe(77);
+    expect(conOrden.orderId).toBe(41);
   });
 
   it('producto inexistente ⇒ RecordNotFoundError; tienda ajena o rating fuera de rango ⇒ InvalidFieldValueError', async () => {
