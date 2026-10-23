@@ -467,6 +467,41 @@ siempre de un cliente: no hay función que liste las descargas de todos.
   primera por `id` del cliente con ese `digital_file_id` (se repite entre
   filas), o `null`.
 
+### Dashboard (US-61, Épico 46) — `analytics.repository.ts`
+
+Solo lectura y sin tabla propia. Todo en UTC; «ahora» es el `Date` que
+recibe `getDashboardAnalytics` (el servicio pasa `now()` de `clock.ts`).
+Solo cuentan órdenes padre (`parent_id IS NULL`). Usa `$queryRaw`
+parametrizado porque las ventanas son `count(*) FILTER (...)` y el mes UTC
+no se expresa con `groupBy`; los importes salen del `numeric` como texto y
+se convierten con `Number`.
+
+- **`getDashboardAnalytics(at)`** → `DashboardAnalyticsRecord`:
+  - M-1 `totalRevenue`: Σ `total` de padres `order-completed` con
+    `created_at <= at`. M-5 `todaysRevenue`: lo mismo en el día UTC de `at`.
+  - M-3 `totalShops` = `count(*)` de `shops`; M-4 `totalVendors` = dueños
+    distintos.
+  - M-6 `totalOrders`: padres con `created_at <= at`.
+  - M-7 `newCustomers`: usuarios con `customer` y sin `super_admin` ni
+    `store_owner`, creados en `(at - 30d, at]`.
+  - M-8 `ordersByStatus.{today, weekly, monthly, yearly}`: conteo por
+    `order_status` en el día UTC, `(at - 7d, at]`, el mes UTC y el año UTC.
+    Solo trae los estados con órdenes; la API rellena sus 8 claves.
+  - M-9 `salesByMonth`: 12 importes (enero en `[0]`) de M-1 por mes del año
+    UTC de `at`.
+- **`listCategoryWiseProductCounts({limit})`** (M-10): `category_product ⋈
+  products ⋈ categories ⋈ shops` por (categoría, tienda), `product_count
+  DESC, category_id ASC, shop_id ASC`. Con el seed da `[]`
+  (`category_product` está vacía).
+- **`listLowStockProducts({limit, shopId})`** (M-11): `ProductRecord[]` con
+  `quantity < 10` en `id ASC`.
+- **`listTopRatedProducts({limit, shopId})`** (M-12): `TopRatedProductRecord`
+  = producto + `totalRating`, `ratingCount` y `actualRating`
+  (`round(avg, 2)`), en `actualRating DESC, ratingCount DESC, id ASC`.
+
+`limit` es 10 por defecto en las tres listas; `shopId` filtra por la tienda
+del producto.
+
 ### Identidad (US-21, Épico 19) — `users.repository.ts`
 
 Mismo agregado por introspección que el catálogo: `users`, `profiles`,

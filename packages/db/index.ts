@@ -299,6 +299,19 @@ export {
   listOrderStatuses,
   updateOrderStatus,
 } from './src/repositories/order-statuses.repository';
+export type {
+  AnalyticsListInput,
+  CategoryProductCountRecord,
+  DashboardAnalyticsRecord,
+  OrderStatusCounts,
+  TopRatedProductRecord,
+} from './src/repositories/analytics.repository';
+export {
+  getDashboardAnalytics,
+  listCategoryWiseProductCounts,
+  listLowStockProducts,
+  listTopRatedProducts,
+} from './src/repositories/analytics.repository';
 export type { ListWishlistProductsInput } from './src/repositories/wishlists.repository';
 export {
   addToWishlist,

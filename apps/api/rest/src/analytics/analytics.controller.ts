@@ -1,5 +1,6 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
 import { AnalyticsService } from './analytics.service';
+import { GetAnalyticsListDto } from './dto/get-analytics-list.dto';
 import { ADMIN_ONLY, Permissions } from 'src/auth/decorators/permissions.decorator';
 
 @Permissions(...ADMIN_ONLY)
@@ -19,8 +20,8 @@ export class CategoryWiseProductController {
   constructor(private readonly analyticsService: AnalyticsService) {}
 
   @Get()
-  analytics() {
-    return this.analyticsService.findAllCategoryWiseProduct();
+  analytics(@Query() query: GetAnalyticsListDto) {
+    return this.analyticsService.findAllCategoryWiseProduct(query);
   }
 }
 
@@ -30,8 +31,8 @@ export class LowStockProductsController {
   constructor(private readonly analyticsService: AnalyticsService) {}
 
   @Get()
-  analytics() {
-    return this.analyticsService.findAllLowStockProducts();
+  analytics(@Query() query: GetAnalyticsListDto) {
+    return this.analyticsService.findAllLowStockProducts(query);
   }
 }
 
@@ -41,7 +42,7 @@ export class TopRateProductController {
   constructor(private readonly analyticsService: AnalyticsService) {}
 
   @Get()
-  analytics() {
-    return this.analyticsService.findAllTopRateProduct();
+  analytics(@Query() query: GetAnalyticsListDto) {
+    return this.analyticsService.findAllTopRateProduct(query);
   }
 }

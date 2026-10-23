@@ -8,7 +8,7 @@
 
 **Épico:** [Épico 46](./README.md)
 **Fecha:** 2026-10-20
-**Status:** Listo para ejecución
+**Status:** ✅ Implementada (2026-10-23)
 **Depende de:** [US-60](./60-downloads-export-invoice.md). Es secuencial por
 archivos compartidos (R-2). Por datos depende de US-58 (`orders`), US-54
 (`reviews`) y el catálogo ya migrado.
@@ -345,3 +345,159 @@ Protocolo del [README del épico](./README.md), pasos 1, 2 y 7-10. Los pasos
 - **Zona horaria.** Se eligió UTC por determinismo (el contenedor corre en
   UTC). Si el dueño quiere `America/Bogota`, es un cambio de definición
   aparte y no se adelanta aquí.
+
+## Evidencia (2026-10-23)
+
+**Pasos 3-6 del Protocolo: no aplican.** Esta US no crea tablas, no siembra
+nada, no hace `db-reset` y no re-introspecciona. Los nombres de columnas de
+`orders` (`parent_id`, `total`, `order_status`, `created_at`) son los que
+asume la US.
+
+**Línea base y después** (API recién arrancada sobre `main` `9678bc1` para
+el antes; tras el cambio para el después):
+
+```
+ruta                    antes          después        dueño (antes/después)
+analytics               200   1080B    200   1078B    403 / 403
+category-wise-product   200    928B    200      3B    403 / 403
+low-stock-products      200  39672B    200  24996B    403 / 403
+top-rate-product        200   7111B    200   4700B    403 / 403
+```
+
+**CA-1** (`node` sobre los cuerpos: claves, orden y tipo JSON, recursivo,
+primer elemento de cada array):
+
+```
+analytics: forma idéntica
+top-rate-product: forma idéntica
+category-wise-product: len 10 -> 0          (V-2: no hay primer elemento que comparar)
+low-stock-products, mismo producto (1014) antes y después:
+  1014.image: claves [thumbnail,original,id,file_name] -> [id,original,file_name,thumbnail]
+  1014.manufacturer_id: number -> null
+  1014.shop.cover_image / shop.logo: mismo reorden que image
+  1014.shop.address: [country,city,state,zip,street_address] -> [zip,city,state,country,street_address]
+  1014.shop.settings: [notifications,contact,website,location,socials] -> [contact,socials,website,location,notifications]
+claves top-level (45, en orden) iguales en los 10 productos: true
+```
+
+Las 45 claves, las 10 de `type` y las 13 de `shop` salen en el orden del
+mock. Las dos diferencias que quedan son **heredadas del catálogo**, no de
+esta US:
+
+- `image`, `logo`, `cover_image`, `address` y `settings` son columnas
+  `jsonb` (`pg_typeof` = `jsonb`), que reordenan las claves. Los tipos de
+  cada clave anidada coinciden.
+- `manufacturer_id` sale `null` porque el seed no enlaza fabricantes a
+  productos: `SELECT count(manufacturer_id) FROM products` = 0 de 1200.
+
+`type.promotional_sliders` sale `[]` (el tipo del mock), no el `null` que
+emite `toTypeDto` de `/api/types`: la US pide proyectar con el DTO de types
+y a la vez conservar el tipo (CA-1); se priorizó CA-1.
+
+**V-1 — Mock vs calculado** (después, con el reloj real del 2026-10-23):
+
+| Campo | Mock | Calculado |
+|---|---|---|
+| `totalRevenue` | 1818.8 | 3538.01 |
+| `totalRefunds` | 0 | 0 |
+| `totalShops` | 14 | 12 |
+| `totalVendors` | 11 | 1 |
+| `todaysRevenue` | 0 | 0 |
+| `totalOrders` | 14 | 20 |
+| `newCustomers` | 10 | 1 (`customer@demo.com`, creado por el `db-reset` de hoy) |
+| `today/weekly/monthly/yearlyTotalOrderByStatus` | ver mock | las 8 claves en 0 (V-6) |
+| `totalYearSaleByMonth` | ene-ago no nulos | los 12 en 0 (V-6) |
+
+**V-2:** `category-wise-product` → `[]`; `SELECT count(*) FROM
+category_product` = 0.
+
+**V-3 / V-4:**
+
+```
+low-stock antes   1014,1015,1017,1018,1021,1022,1023,1024,1028
+low-stock después 2,190,1014,1015,1017,1018,1021,1022,1023,1024
+top-rate antes    4,7,8,12,16,17,20,492,19,468
+top-rate después  4,7,8,12,16,17,19,20,21,24
+top-rate (id:Σ/n/media) 4:15/3/5 7:15/3/5 8:15/3/5 12:10/2/5 16:10/2/5 17:10/2/5 19:10/2/5 20:5/1/5 21:5/1/5 24:5/1/5
+```
+
+**V-5** (admin):
+
+```
+low-stock-products?limit=3                     → 200 ids=2,190,1014
+low-stock-products?search=shop_id:9&limit=50   → 200 ids=1014,1015,1017,1018,1021,1022,1023,1024,1028
+top-rate-product?limit=3                       → 200 ids=4,7,8
+top-rate-product?search=shop_id:6              → 200 ids=4,7,8,12,16,17,19,20,1,3
+category-wise-product?limit=3                  → 200 []
+```
+
+Un `limit` que no sea entero positivo cae al default 10; un `shop_id` no
+entero se ignora (spec de Jest).
+
+**CA-2 / CA-3 / CA-4** (`analytics.integration.test.ts`, 6 casos). Las
+cifras de CA-2 se recalcularon con `psql` sobre la base actual antes de
+escribir el test y coinciden con las de la US, sin ajustes:
+
+```
+total_orders 16 · revenue 3473.22 · today 2305.32
+order-completed m 7 y 12 w 6 · order-pending m 1 y 1 · order-processing m 3 y 3
+meses: 04 984.3 · 10 2488.92 · shops 12 · vendors 1
+```
+
+- 2026-10-20T12:00:00Z: las 4 ventanas vacías y los 12 meses en 0.
+- CA-3: 6 centinelas `zz-analytics-*` con `now` = 2031-01-15 (lejos del
+  `created_at` del seed): cuentan 2 (a 1 y a 29 días); no cuentan el de 31
+  días, el del futuro, el `store_owner` ni el `super_admin`.
+- CA-4: low-stock y top-rated con limit y tienda; agregados de top-rated
+  contra `prisma.review.groupBy`; `category-wise` con una categoría
+  centinela y 2 productos centinela da `product_count: 2`.
+- Centinelas limpios al terminar: `users 0 · products 0 · categories 0 ·
+  category_product 0`.
+
+**CA-5:** las 4 rutas, 200 al admin y 403 a `store_owner@demo.com` (tabla
+de arriba).
+
+**CA-6:**
+
+```
+$ just db-check
+ Test Files  30 passed (30)
+      Tests  386 passed (386)
+$ cd apps/api/rest && npx jest
+Test Suites: 32 passed, 32 total
+Tests:       516 passed, 516 total
+$ npx tsc --noEmit -p tsconfig.json   → exit 0
+$ just build-api                      → Done in 106.20s.
+$ just verify
+OK   API    :9001/api/settings  200  5503B  557ms
+OK   Shop   :3003/en  200  190788B  251ms  cards:30
+OK   Admin  :3002/en/login  200  72821B  49ms  cards:1
+$ grep -n "@db/" apps/api/rest/src/analytics/analytics.service.ts
+(sin salida, exit=1)
+```
+
+Antes: 29 archivos / 380 tests y 31 suites / 509. Se suman el integration
+test (6 casos) y `analytics.service.spec.ts` (7 casos).
+
+**Decisiones de implementación:**
+
+- `$queryRaw` parametrizado para los agregados (ventanas `FILTER` y mes
+  UTC); Prisma con `PRODUCT_INCLUDE` para los productos.
+- M-10 desempata además por `shop_id ASC` (la misma categoría en dos
+  tiendas con el mismo conteo).
+- Los records del dashboard viven en `analytics.repository.ts`, como
+  `OrderDetailRecord` en `orders.repository.ts`: `TopRatedProductRecord`
+  depende de `ProductRecord`, que no está en `records.ts`.
+- El servicio declara sus DTO de retorno (`AnalyticsDto`,
+  `CategoryWiseProductDto`, `TopRateProductDto`): el build de Nest emite
+  declaraciones y no admite tipos inferidos que nombran el runtime de
+  Prisma (TS2742). Las entidades de `analytics/entities/` no encajan con la
+  forma real y no se usan.
+
+**Notas para el reporte:**
+
+- `category-wise-product-sale` sigue en 404 (NO incluye).
+- `owner.tsx` sigue recibiendo 403 (R-6).
+- `isPrismaConnectionError` clasifica cualquier
+  `PrismaClientKnownRequestError` como error de conexión (503). Es el helper
+  existente; no se tocó.
