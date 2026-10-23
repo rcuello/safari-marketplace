@@ -8,44 +8,48 @@ import {
   Put,
   Query,
 } from '@nestjs/common';
+import {
+  CurrentUser,
+  CurrentUserPayload,
+} from 'src/auth/decorators/current-user.decorator';
 import { CreateWishlistDto } from './dto/create-wishlists.dto';
 import { GetWishlistDto } from './dto/get-wishlists.dto';
-import { UpdateWishlistDto } from './dto/update-wishlists.dto';
 import { MyWishlistService } from './my-wishlists.service';
 
+// Misma lista por usuario que `wishlists` (US-53); `:id` es un id de producto.
 @Controller('my-wishlists')
 export class MyWishlistsController {
   constructor(private myWishlistService: MyWishlistService) {}
 
   // Get All
   @Get()
-  findAll(@Query() query: GetWishlistDto) {
-    return this.myWishlistService.findAMyWishlists(query);
+  findAll(@Query() query: GetWishlistDto, @CurrentUser() user: CurrentUserPayload) {
+    return this.myWishlistService.findAll(user.sub, query);
   }
   // Get single
   @Get(':id')
-  find(@Param('id') id: string) {
-    return this.myWishlistService.findAMyWishlist(+id);
+  find(@Param('id') id: string, @CurrentUser() user: CurrentUserPayload) {
+    return this.myWishlistService.findOne(user.sub, id);
   }
 
   // create
   @Post()
-  create(@Body() createWishlistDto: CreateWishlistDto) {
-    return this.myWishlistService.create(createWishlistDto);
+  create(
+    @Body() createWishlistDto: CreateWishlistDto,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
+    return this.myWishlistService.add(user.sub, createWishlistDto.product_id);
   }
 
-  // update
+  // update: upsert del producto `:id`; el body se ignora.
   @Put(':id')
-  update(
-    @Param('id') id: string,
-    @Body() updateWishlistDto: UpdateWishlistDto,
-  ) {
-    return this.myWishlistService.update(+id, updateWishlistDto);
+  update(@Param('id') id: string, @CurrentUser() user: CurrentUserPayload) {
+    return this.myWishlistService.add(user.sub, id);
   }
 
   // delete
   @Delete(':id')
-  delete(@Param('id') id: string) {
-    return this.myWishlistService.delete(+id);
+  delete(@Param('id') id: string, @CurrentUser() user: CurrentUserPayload) {
+    return this.myWishlistService.remove(user.sub, id);
   }
 }

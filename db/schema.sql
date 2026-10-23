@@ -773,6 +773,25 @@ CREATE TABLE IF NOT EXISTS coupons (
 
 
 -- =====================================================================
+-- Lista de deseos (US-53, Épico 46) — wishlists, pivote usuario ↔ producto.
+--
+-- Calco de permission_user/product_tag: PK compuesta y las dos FK en
+-- CASCADE, porque un favorito no sobrevive a su usuario ni a su producto.
+-- Sin updated_at: la fila no se edita, se crea o se borra. created_at ordena
+-- la lista (más reciente primero).
+--
+-- El mock (wishlists.json) trae 10 productos sin dueño; el seed se los da a
+-- customer@demo.com, el único cliente del seed.
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS wishlists (
+    user_id     bigint       NOT NULL REFERENCES users(id)    ON DELETE CASCADE,
+    product_id  bigint       NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    created_at  timestamptz  NOT NULL DEFAULT now(),
+    PRIMARY KEY (user_id, product_id)
+);
+
+
+-- =====================================================================
 -- Índices.
 --
 -- No son decorativos: cada uno responde a un filtro que el frontend
@@ -841,6 +860,10 @@ CREATE INDEX IF NOT EXISTS store_notice_read_usuario_idx  ON store_notice_read (
 -- Cupones (US-52): el shop filtra por shop_id en /shops/[slug]/offers.
 CREATE INDEX IF NOT EXISTS coupons_shop_idx               ON coupons (shop_id);
 CREATE INDEX IF NOT EXISTS coupons_user_idx               ON coupons (user_id);
+
+-- Lista de deseos (US-53): el inverso del pivote, para la cascada desde
+-- products y para saber quién marcó un producto.
+CREATE INDEX IF NOT EXISTS wishlists_producto_idx         ON wishlists (product_id);
 
 
 -- ---------------------------------------------------------------------

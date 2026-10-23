@@ -45,10 +45,12 @@ import { type ExistingSlugLookup, generateSlug, normalizeSlug } from '../slug';
 // ---------------------------------------------------------------------------
 // Include compartido — todo listado/detalle carga las mismas relaciones,
 // porque el frontend de Pickbazar espera el producto "hidratado" (type,
-// shop, categories, tags, manufacturer embebidos).
+// shop, categories, tags, manufacturer embebidos). Exportado solo para otros
+// repositorios que devuelven `ProductRecord` (wishlists, US-53); no está en
+// el barrel.
 // ---------------------------------------------------------------------------
 
-const PRODUCT_INCLUDE = {
+export const PRODUCT_INCLUDE = {
   type: true,
   shop: true,
   manufacturer: true,

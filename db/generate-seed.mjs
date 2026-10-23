@@ -42,6 +42,7 @@ const shippings = leer('shippings');
 const attributes = leer('attributes');
 const storeNotices = leer('store-notices');
 const coupons = leer('coupons');
+const wishlists = leer('wishlists');
 
 // ── Literales SQL ────────────────────────────────────────────────────────
 const txt = (v) =>
@@ -336,6 +337,21 @@ for (const c of coupons) {
     problemas.push(`coupons ${c.id}: trae user_id y no hay snapshot para resolverlo por email`);
 }
 
+// ── Lista de deseos (US-53) ──────────────────────────────────────────────
+// Las filas de wishlists.json son PRODUCTOS sin dueño (no hay user_id ni
+// pivote). El seed se las da al único cliente, resuelto por email (D-4). El
+// orden del archivo (id DESC) se fija con un created_at determinista: la
+// fila i recibe base + (N - i) minutos, así ORDER BY created_at DESC lo
+// reproduce.
+const DUENO_WISHLIST = 'customer@demo.com';
+const duenoWishlist = resolverUsuarioPorEmail({ email: DUENO_WISHLIST }, 'wishlists');
+const idsProductos = new Set(products.map((p) => p.id));
+for (const w of wishlists) {
+  if (!idsProductos.has(w.id)) problemas.push(`wishlists: producto ${w.id} inexistente`);
+}
+if (new Set(wishlists.map((w) => w.id)).size !== wishlists.length)
+  problemas.push('wishlists: producto repetido para el mismo usuario');
+
 if (problemas.length) {
   console.error(`\nEl mock viola ${problemas.length} restriccion(es) del esquema:`);
   problemas.slice(0, 20).forEach((p) => console.error('  - ' + p));
@@ -367,7 +383,7 @@ L.push(
     `${refundPolicies.length} refund_policies · ${refundReasons.length} refund_reasons · ` +
     `${taxes.length} taxes · ${shippings.length} shippings · ` +
     `${attributes.length} attributes · ${valoresAtributo.length} attribute_values · ` +
-    `${avisos.length} store_notices · ${coupons.length} coupons`,
+    `${avisos.length} store_notices · ${coupons.length} coupons · ${wishlists.length} wishlists`,
   '-- =====================================================================',
   '',
   'BEGIN;'
@@ -807,6 +823,23 @@ L.push(
     .join(',\n') + '\nON CONFLICT (id) DO NOTHING;'
 );
 
+// wishlists (US-53; tras products y users: las FK lo exigen) -----------------
+bloque(`wishlists — ${wishlists.length} (todas de ${DUENO_WISHLIST}, id ${duenoWishlist})`);
+L.push(
+  '-- El mock no trae dueño: se eligió al único cliente del seed. created_at',
+  '-- determinista para que ORDER BY created_at DESC reproduzca el orden del',
+  '-- archivo (945 primero).',
+  'INSERT INTO wishlists (user_id, product_id, created_at) VALUES'
+);
+L.push(
+  wishlists
+    .map(
+      (w, i) =>
+        `  (${duenoWishlist}, ${w.id}, '2024-01-01T00:00:00Z'::timestamptz + ${wishlists.length - i} * interval '1 minute')`
+    )
+    .join(',\n') + '\nON CONFLICT (user_id, product_id) DO NOTHING;'
+);
+
 // category_product -------------------------------------------------------
 bloque('category_product — deliberadamente VACÍA');
 L.push(
@@ -846,5 +879,5 @@ console.log(
     `${refundPolicies.length} refund_policies · ${refundReasons.length} refund_reasons · ` +
     `${taxes.length} taxes · ${shippings.length} shippings · ` +
     `${attributes.length} attributes · ${valoresAtributo.length} attribute_values · ` +
-    `${avisos.length} store_notices · ${coupons.length} coupons`
+    `${avisos.length} store_notices · ${coupons.length} coupons · ${wishlists.length} wishlists`
 );

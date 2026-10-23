@@ -194,6 +194,15 @@ export {
   setCouponApproval,
   updateCoupon,
 } from './src/repositories/coupons.repository';
+export type { ListWishlistProductsInput } from './src/repositories/wishlists.repository';
+export {
+  addToWishlist,
+  findWishlistProduct,
+  isInWishlist,
+  listWishlistProducts,
+  removeFromWishlist,
+  toggleWishlist,
+} from './src/repositories/wishlists.repository';
 export type {
   CategoryAncestor,
   CategoryDescendant,

@@ -7,7 +7,7 @@
 
 **Épico:** [Épico 46](./README.md)
 **Fecha:** 2026-10-20
-**Status:** Listo para ejecución
+**Status:** Implementada (2026-10-22, rama `us-53-wishlists-postgres`)
 **Depende de:** US-52 (secuencialidad de archivos compartidos, R-2 del épico; sin dependencia de datos)
 **LOC est.:** ~1300
 
@@ -289,16 +289,99 @@ devuelven `ProductRecord`.
 
 Sigue el **Protocolo de ejecución** del README del épico. Lo específico:
 
-- [ ] Línea base pegada: los 2 cuerpos y el `in_wishlist` vacío (status y
+- [x] Línea base pegada: los 2 cuerpos y el `in_wishlist` vacío (status y
   bytes).
-- [ ] `just db-reset` y `psql` con el conteo, el orden de CA-1 y 0
+- [x] `just db-reset` y `psql` con el conteo, el orden de CA-1 y 0
   huérfanas.
-- [ ] `prisma validate`, `migrate diff` en `EXIT=0` y `just db-build`.
-- [ ] CA-2: `node -e` con el deep-equal producto a producto contra las 20
+- [x] `prisma validate`, `migrate diff` en `EXIT=0` y `just db-build`.
+- [x] CA-2: `node -e` con el deep-equal producto a producto contra las 20
   claves de `/products/:slug`.
-- [ ] CA-3 y CA-4: los `curl` con tokens de cliente y admin, status exacto.
-- [ ] CA-5: `grep` vacío y las 4 suites o comandos en verde con recuentos.
-- [ ] Status actualizado aquí y en el épico.
+- [x] CA-3 y CA-4: los `curl` con tokens de cliente y admin, status exacto.
+- [x] CA-5: `grep` vacío y las 4 suites o comandos en verde con recuentos.
+- [x] Status actualizado aquí y en el épico.
+
+## Evidencia (2026-10-22)
+
+**Dos commits**, como piden las notas: `fec13d4` mueve `toProductDto` tal
+cual a `products/product-dto.mapper.ts` (refactor; products 59/59 sin tocar
+su spec). El siguiente commit contiene la feature.
+
+**Línea base**, con la API recién arrancada sobre `main` (`bf0feab`) y el
+token del cliente:
+
+```
+in_wishlist/945: 200 0B
+ 5994 base-my-wishlists.json   (productos 2..7, 20 claves, total 6)
+27294 base-wishlists.json      (945…104, 42 claves, total 10)
+```
+
+**Seed.** `just db-seed-generate` termina con `… · 10 coupons · 10
+wishlists`. Con el producto 999999 inyectado en `wishlists.json` (y el JSON
+restaurado, sin diff):
+
+```
+El mock viola 1 restriccion(es) del esquema:
+  - wishlists: producto 999999 inexistente
+EXIT=1
+```
+
+**CA-1** (`just db-reset` + `psql`): 10 filas, las 10 con `user_id = 2`, 0
+huérfanas. `ORDER BY created_at DESC` da
+`945,941,755,569,400,313,155,111,110,104`. Conteos previos intactos:
+products 1200 · shops 12 · users 3 · coupons 10 · store_notices 3 ·
+attributes 8 · faqs 19.
+
+**Prisma.** `validate` correcto y `migrate diff --exit-code` con `EXIT=0`.
+`just db-build` limpio.
+
+**CA-2:** con el token del cliente, `GET /my-wishlists?with=shop&…` devuelve
+`945,941,755,569,400,313,155,111,110,104`. Cada elemento tiene las mismas 20
+claves, en el mismo orden, que la línea base. Los 10 son **deep-equal** a
+esas 20 claves de `GET /products/<slug>`. Del paginador solo cambian `total
+6→10`, `count 6→10` y `lastItem 5→9` (V-1); la url fija es idéntica.
+
+**CA-3:**
+
+| Llamada | Status | Cuerpo |
+|---|---|---|
+| `GET /my-wishlists` como admin | 200 | `total: 0` |
+| `toggle {945}` como admin | 201 | `true` |
+| `in_wishlist/945` admin / cliente | 200 / 200 | `true` / `true` |
+| `GET /my-wishlists` como cliente | 200 | `total: 10`, sin cambios |
+| `toggle {945}` como admin otra vez → `in_wishlist/945` admin | 201 → 200 | `false` → `false` |
+
+**CA-4** (como cliente):
+
+| Llamada | Status | Resultado |
+|---|---|---|
+| `toggle {2}` dos veces | 201 / 201 | `true` / `false` |
+| `POST /my-wishlists {3}` dos veces | 201 / 201 | el producto 3 (`blueberries`); en `psql`, 1 fila |
+| `DELETE /wishlists/3` dos veces | 200 / 404 | el producto / `No existe un registro de wishlists con id 3.` |
+| `toggle {999999}` | 404 | |
+| `GET /wishlists/abc` | 400 | `` `product_id` no admite `abc`. `` |
+| `GET /wishlists/945` cliente · `GET /my-wishlists/945` admin | 200 · 404 | |
+| `PUT /wishlists/104` | 200 | el producto (ya estaba: no-op) |
+| Sin token | 401 | |
+
+Al final, la lista del cliente vuelve a 10 filas y la del admin a 0.
+
+**El booleano viaja como `text/html`, no como `application/json`.** La nota
+de abajo suponía lo contrario. Nest envía un primitivo con `res.send` y el
+`toggle` del mock hacía lo mismo. El shop usa axios, que lo parsea igual
+(`"true"` → `true`). No se cambia (D-1).
+
+**CA-5:**
+
+- El `grep` no devuelve nada (`exit=1`).
+- `just db-check`: 22 archivos y 325 tests (antes 21/318; +7).
+- `npx jest`: 21 suites y 407 tests (antes 19/389; +18).
+  `products.service.spec.ts` no se tocó.
+- `just build-api`: `Done in 84.46s`.
+- `just verify`: API `5503B`, Shop `cards:30`, Admin `cards:1`. La página
+  `/wishlists` del shop responde 200.
+
+**Fuera de alcance, para el reporte:** `UpdateWishlistDto` queda sin uso,
+porque el `PUT` ignora el body. No se borró.
 
 ## Notas para el agente ejecutor
 

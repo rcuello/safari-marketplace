@@ -269,6 +269,26 @@ Los cuatro CHECK se validan antes de escribir con `InvalidFieldValueError`
 (`NaN` y fechas inválidas incluidos). Los tipos admitidos se exportan como
 `COUPON_TYPES`. `image: null` se trata como ausente (DD-5, como `tags`).
 
+### Lista de deseos (US-53, Épico 46) — `wishlists.repository.ts`
+
+No hay `WishlistRecord`: el pivote no se expone. Las lecturas devuelven
+`ProductRecord` con el mismo include (`PRODUCT_INCLUDE`, exportado desde
+`products.repository.ts` solo para uso interno del paquete) y el mismo
+`_toProductRecord`, así que la API proyecta el contrato de `/products` sin
+duplicarlo. Todo va por usuario.
+
+- **`listWishlistProducts(userId, {page, limit})`**: `created_at DESC`,
+  desempate `product_id DESC`; `limit` 30 por defecto. `{items, total}`.
+- **`isInWishlist`** (booleano) y **`findWishlistProduct`** (el producto o
+  `null` si no está en la lista).
+- **`addToWishlist`**: idempotente (`skipDuplicates`); devuelve el producto.
+- **`removeFromWishlist`**: devuelve el producto; si no estaba,
+  `RecordNotFoundError('wishlists', id)`.
+- **`toggleWishlist`**: devuelve el estado nuevo (`true` = ahora está).
+
+Un producto inexistente da `RecordNotFoundError('products', id)` en las tres
+escrituras.
+
 ### Identidad (US-21, Épico 19) — `users.repository.ts`
 
 Mismo agregado por introspección que el catálogo: `users`, `profiles`,

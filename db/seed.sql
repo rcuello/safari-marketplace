@@ -9,7 +9,7 @@
 -- ya existen, y creando en tiempo de ejecución únicamente lo que es suyo
 -- (los retailers como shops, las marcas como manufacturers).
 --
--- 10 types · 12 shops · 198 categorías · 14 manufacturers · 10 tags · 1200 productos · 3 usuarios · 4 permisos · 1 become_seller · 3 shop_staff · 19 faqs · 5 terms_and_conditions · 5 refund_policies · 8 refund_reasons · 1 taxes · 1 shippings · 8 attributes · 27 attribute_values · 3 store_notices · 10 coupons
+-- 10 types · 12 shops · 198 categorías · 14 manufacturers · 10 tags · 1200 productos · 3 usuarios · 4 permisos · 1 become_seller · 3 shop_staff · 19 faqs · 5 terms_and_conditions · 5 refund_policies · 8 refund_reasons · 1 taxes · 1 shippings · 8 attributes · 27 attribute_values · 3 store_notices · 10 coupons · 10 wishlists
 -- =====================================================================
 
 BEGIN;
@@ -1897,6 +1897,25 @@ INSERT INTO products (
   (1258, 'Gula Aromatic Brown Sugar', 'gula-aromatic-brown-sugar-2', 1, 12, 'simple', 6, 4.5, 6, 6, 50, true, 0, '1993', '4lb', 'publish', 'visibility_public', '{"id":"347","original":"https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/347/gula_aromatic_brown_sugar.jpg","thumbnail":"https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/347/conversions/gula_aromatic_brown_sugar-thumbnail.jpg"}'::jsonb, 0, 0, 'en', ARRAY['en']::text[]),
   (1259, 'The Pantry Icing Sugar', 'the-pantry-icing-sugar-2', 1, 12, 'simple', 8, 0, 8, 8, 50, true, 0, '1994', '4lb', 'publish', 'visibility_public', '{"id":"348","original":"https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/348/the_pantry_icing_Sugar.jpg","thumbnail":"https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/348/conversions/the_pantry_icing_Sugar-thumbnail.jpg"}'::jsonb, 0, 0, 'en', ARRAY['en']::text[])
 ON CONFLICT (id) DO NOTHING;
+
+-- ────────────────────────────────────────────────────────────────────
+-- wishlists — 10 (todas de customer@demo.com, id 2)
+-- ────────────────────────────────────────────────────────────────────
+-- El mock no trae dueño: se eligió al único cliente del seed. created_at
+-- determinista para que ORDER BY created_at DESC reproduzca el orden del
+-- archivo (945 primero).
+INSERT INTO wishlists (user_id, product_id, created_at) VALUES
+  (2, 945, '2024-01-01T00:00:00Z'::timestamptz + 10 * interval '1 minute'),
+  (2, 941, '2024-01-01T00:00:00Z'::timestamptz + 9 * interval '1 minute'),
+  (2, 755, '2024-01-01T00:00:00Z'::timestamptz + 8 * interval '1 minute'),
+  (2, 569, '2024-01-01T00:00:00Z'::timestamptz + 7 * interval '1 minute'),
+  (2, 400, '2024-01-01T00:00:00Z'::timestamptz + 6 * interval '1 minute'),
+  (2, 313, '2024-01-01T00:00:00Z'::timestamptz + 5 * interval '1 minute'),
+  (2, 155, '2024-01-01T00:00:00Z'::timestamptz + 4 * interval '1 minute'),
+  (2, 111, '2024-01-01T00:00:00Z'::timestamptz + 3 * interval '1 minute'),
+  (2, 110, '2024-01-01T00:00:00Z'::timestamptz + 2 * interval '1 minute'),
+  (2, 104, '2024-01-01T00:00:00Z'::timestamptz + 1 * interval '1 minute')
+ON CONFLICT (user_id, product_id) DO NOTHING;
 
 -- ────────────────────────────────────────────────────────────────────
 -- category_product — deliberadamente VACÍA

@@ -206,6 +206,7 @@ model Product {
   type         Type          @relation(fields: [typeId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   categories   CategoryProduct[]
   tags         ProductTag[]
+  wishlists    Wishlist[]
 
   @@unique([sourceStore, sourceProductId], map: "products_procedencia_key", where: raw("(source_store IS NOT NULL)"))
   @@index([manufacturerId], map: "products_manufacturer_idx")
@@ -270,6 +271,7 @@ model User {
   storeNotices        StoreNoticeUser[]
   storeNoticeReads    StoreNoticeRead[]
   coupons             Coupon[]
+  wishlists           Wishlist[]
 
   @@map("users")
 }
@@ -617,4 +619,21 @@ model Coupon {
   @@index([shopId], map: "coupons_shop_idx")
   @@index([userId], map: "coupons_user_idx")
   @@map("coupons")
+}
+
+// =====================================================================
+// Lista de deseos (US-53, Épico 46) — pivote usuario ↔ producto
+// =====================================================================
+
+model Wishlist {
+  userId    BigInt   @map("user_id")
+  productId BigInt   @map("product_id")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([userId, productId])
+  @@index([productId], map: "wishlists_producto_idx")
+  @@map("wishlists")
 }

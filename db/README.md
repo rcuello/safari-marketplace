@@ -27,7 +27,7 @@ SQL inaplicable.
 · 1 become_seller · 3 shop_staff · 19 faqs · 5 terms_and_conditions
 · 5 refund_policies · 8 refund_reasons · 1 taxes · 1 shippings
 · 8 attributes · 27 attribute_values · 3 store_notices (6 destinatarios,
-6 lecturas) · 10 coupons
+6 lecturas) · 10 coupons · 10 wishlists
 ```
 
 **Los ids del mock se preservan** para no romper las relaciones, y al final se
@@ -252,6 +252,23 @@ una (`4OFF`) con `target`.
 - **FK**: `shop_id` en CASCADE (como `products.shop_id`; `NULL` = cupón
   global de super_admin) y `user_id` en SET NULL. `orders.coupon_id`
   todavía no existe (US-58).
+
+## Lista de deseos: `wishlists`
+
+Desde US-53, un pivote puro usuario ↔ producto: PK `(user_id, product_id)`,
+las dos FK en CASCADE (un favorito no sobrevive a su usuario ni a su
+producto) y solo `created_at`, que ordena la lista (más reciente primero).
+Calco de `permission_user`/`product_tag`.
+
+- **Dueño elegido del seed.** `wishlists.json` trae 10 productos sin dueño
+  (no hay `user_id` ni pivote). El generador se los da a
+  `customer@demo.com` (id 2), el único cliente, resuelto por email (D-4).
+  El admin y el dueño de tienda empiezan con la lista vacía.
+- **Orden determinista.** La fila *i* del archivo recibe `2024-01-01 +
+  (10 − i)` minutos, así `ORDER BY created_at DESC` reproduce el orden del
+  mock: 945, 941, 755, 569, 400, 313, 155, 111, 110, 104.
+- El generador valida que cada producto exista y que no haya pares
+  repetidos.
 
 ## Cómo se adapta el scraper
 
