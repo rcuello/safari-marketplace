@@ -30,6 +30,7 @@ import type {
   Message,
   Order,
   OrderFile,
+  Withdraw,
   OrderProduct,
   OrderStatus,
   Permission,
@@ -451,6 +452,23 @@ export interface OrderStatusRecord {
   serial: number;
   color: string;
   language: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/**
+ * Retiro de una tienda (US-62). `amount` es `numeric(12,2)` → number
+ * (`_dec`): el contrato emite `10`, no `"10.00"`. `status` es la minúscula
+ * del dato (`on_hold` con guion bajo).
+ */
+export interface WithdrawRecord {
+  id: number;
+  shopId: number;
+  amount: number;
+  paymentMethod: string;
+  status: string;
+  details: string | null;
+  note: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -969,6 +987,20 @@ export function _toOrderProductRecord(row: OrderProduct): OrderProductRecord {
     unitPrice: _dec(row.unitPrice),
     subtotal: _dec(row.subtotal),
     productSnapshot: row.productSnapshot,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+export function _toWithdrawRecord(row: Withdraw): WithdrawRecord {
+  return {
+    id: _id(row.id),
+    shopId: _id(row.shopId),
+    amount: _dec(row.amount),
+    paymentMethod: row.paymentMethod,
+    status: row.status,
+    details: row.details,
+    note: row.note,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };

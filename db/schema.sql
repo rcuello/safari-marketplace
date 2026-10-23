@@ -1069,6 +1069,33 @@ CREATE TABLE IF NOT EXISTS order_files (
 
 
 -- =====================================================================
+-- Retiros de tienda (US-62, Épico 46) — withdraws.
+--
+-- Sembrada desde withdraws.json (2 solicitudes de la tienda 3). Un retiro
+-- es lo que una tienda pide cobrar; el super admin le cambia el estado. El
+-- vocabulario de status es la minúscula del dato y del admin (on_hold con
+-- guion bajo), no el TitleCase del enum de la entidad Nest.
+--
+-- No hay columna ni tabla de balance: aprobar no descuenta nada (decisión 4
+-- del épico). Sin deleted_at: se borra de verdad y la API emite null. Un
+-- retiro muere con su tienda (CASCADE, como products.shop_id). Sin trigger
+-- (reloj único, ver abajo).
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS withdraws (
+    id              bigserial      PRIMARY KEY,
+    shop_id         bigint         NOT NULL REFERENCES shops(id) ON DELETE CASCADE,
+    amount          numeric(12,2)  NOT NULL CHECK (amount > 0),
+    payment_method  text           NOT NULL,
+    status          text           NOT NULL DEFAULT 'pending'
+                                   CHECK (status IN ('pending', 'approved', 'on_hold', 'rejected', 'processing')),
+    details         text,
+    note            text,
+    created_at      timestamptz    NOT NULL DEFAULT now(),
+    updated_at      timestamptz    NOT NULL DEFAULT now()
+);
+
+
+-- =====================================================================
 -- Índices.
 --
 -- No son decorativos: cada uno responde a un filtro que el frontend
@@ -1180,6 +1207,9 @@ CREATE INDEX IF NOT EXISTS order_products_producto_idx    ON order_products (pro
 CREATE INDEX IF NOT EXISTS order_files_customer_idx       ON order_files (customer_id);
 CREATE INDEX IF NOT EXISTS order_files_digital_file_idx   ON order_files (digital_file_id);
 CREATE INDEX IF NOT EXISTS order_files_order_idx          ON order_files (order_id);
+
+-- Retiros (US-62): la lista filtra por tienda (la del dueño o la de la query).
+CREATE INDEX IF NOT EXISTS withdraws_shop_idx             ON withdraws (shop_id);
 
 
 -- ---------------------------------------------------------------------

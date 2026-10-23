@@ -10,5 +10,8 @@ export class GetWithdrawsDto extends PaginationArgs {
   orderBy?: string;
   sortedBy?: string;
   status?: string;
-  shop_id?: number;
+  /** Llega como string: no hay `transform` en el `ValidationPipe`. */
+  shop_id?: string;
+  /** Solo se entiende `shop_id:N`; el `shop_id` de la query gana. */
+  search?: string;
 }

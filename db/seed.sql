@@ -9,7 +9,7 @@
 -- ya existen, y creando en tiempo de ejecución únicamente lo que es suyo
 -- (los retailers como shops, las marcas como manufacturers).
 --
--- 10 types · 12 shops · 198 categorías · 14 manufacturers · 10 tags · 1200 productos · 5 usuarios · 4 permisos · 1 become_seller · 3 shop_staff · 19 faqs · 5 terms_and_conditions · 5 refund_policies · 8 refund_reasons · 1 taxes · 1 shippings · 8 attributes · 27 attribute_values · 3 store_notices · 10 coupons · 10 wishlists · 85 reviews · 3 abusive_reports · 68 questions · 2 conversations · 5 messages · 10 order_statuses · 40 orders · 76 order_products · 10 order_files
+-- 10 types · 12 shops · 198 categorías · 14 manufacturers · 10 tags · 1200 productos · 5 usuarios · 4 permisos · 1 become_seller · 3 shop_staff · 19 faqs · 5 terms_and_conditions · 5 refund_policies · 8 refund_reasons · 1 taxes · 1 shippings · 8 attributes · 27 attribute_values · 3 store_notices · 10 coupons · 10 wishlists · 85 reviews · 3 abusive_reports · 68 questions · 2 conversations · 5 messages · 10 order_statuses · 40 orders · 76 order_products · 10 order_files · 2 withdraws
 -- =====================================================================
 
 BEGIN;
@@ -2330,6 +2330,16 @@ INSERT INTO order_files (id, purchase_key, digital_file_id, order_id, customer_i
 ON CONFLICT (id) DO NOTHING;
 
 -- ────────────────────────────────────────────────────────────────────
+-- withdraws — 2
+-- ────────────────────────────────────────────────────────────────────
+-- Ids y fechas del mock. Sin el snapshot shop ni deleted_at: la API los emite.
+INSERT INTO withdraws (id, shop_id, amount, payment_method, status, details, note, created_at, updated_at) VALUES
+  (2, 3, 10, 'cash', 'pending', 'iojiojio', 'joijo', '2023-11-07T23:13:08.000000Z', '2023-11-07T23:13:08.000000Z'),
+  (1, 3, 300, 'Bkash', 'approved', '01679373064
+Bkash Personal', 'Kinldy Send My Balance before next week.', '2023-11-06T17:49:43.000000Z', '2023-11-06T17:51:11.000000Z')
+ON CONFLICT (id) DO NOTHING;
+
+-- ────────────────────────────────────────────────────────────────────
 -- category_product — deliberadamente VACÍA
 -- ────────────────────────────────────────────────────────────────────
 -- Ninguno de los 1200 productos del mock trae la relación con
@@ -2372,5 +2382,6 @@ SELECT setval('messages_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM mess
 SELECT setval('order_statuses_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM order_statuses), 1));
 SELECT setval('orders_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM orders), 1));
 SELECT setval('order_files_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM order_files), 1));
+SELECT setval('withdraws_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM withdraws), 1));
 
 COMMIT;

@@ -467,6 +467,23 @@ siempre de un cliente: no hay función que liste las descargas de todos.
   primera por `id` del cliente con ese `digital_file_id` (se repite entre
   filas), o `null`.
 
+### Retiros (US-62, Épico 46) — `withdraws.repository.ts`
+
+`WithdrawRecord` es la fila plana (`amount` con `_dec`: `10`, no `"10.00"`);
+`WithdrawDetailRecord` le añade su `shop: ShopRecord`. Quién ve qué es regla
+de la API, que llega aquí como el filtro `ownerId`.
+
+- **`listWithdraws({shopId, ownerId, status, page, limit})`**: paginado
+  (`limit` 10) en `id DESC`.
+- **`findWithdrawById(id)`**: con su tienda, o `null`.
+- **`createWithdraw({shopId, amount, paymentMethod, details, note})`**: nace
+  `pending`. `amount` fuera de `(0, 1e10)` da `InvalidFieldValueError`
+  (400) y un `shopId` inexistente, `InvalidReferenceError` (400).
+- **`updateWithdrawStatus(id, status)`**: `status` fuera de
+  `WITHDRAW_STATUSES` da `InvalidFieldValueError`; fija `updatedAt: now()`.
+  Inexistente: `RecordNotFoundError`.
+- **`deleteWithdraw(id)`**: borra y devuelve la fila borrada.
+
 ### Dashboard (US-61, Épico 46) — `analytics.repository.ts`
 
 Solo lectura y sin tabla propia. Todo en UTC; «ahora» es el `Date` que

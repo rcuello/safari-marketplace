@@ -29,7 +29,7 @@ SQL inaplicable.
 · 8 attributes · 27 attribute_values · 3 store_notices (6 destinatarios,
 6 lecturas) · 10 coupons · 10 wishlists · 85 reviews · 3 abusive_reports · 68 questions · 2 conversations · 5 messages
 · 10 order_statuses · 40 orders (20 padres + 20 hijas) · 76 order_products
-· 10 order_files
+· 10 order_files · 2 withdraws
 ```
 
 **Los ids del mock se preservan** para no romper las relaciones, y al final se
@@ -460,6 +460,22 @@ Desde US-60. 10 filas con los ids y las fechas del mock, todas de
   contrato. Sus fechas anidadas conservan los 6 decimales del mock.
 - FK: el cliente es `CASCADE` (la descarga es suya); la orden, `SET NULL`.
 - Esta US no crea filas al completar una orden: eso queda fuera.
+
+## Retiros de tienda: `withdraws`
+
+Desde US-62. 2 filas con los ids y las fechas del mock, las dos de la tienda
+3 (Bags Shop): la 1 `approved` (300) y la 2 `pending` (10).
+
+- Un retiro es lo que una tienda pide cobrar. El super admin ve todos y les
+  cambia el estado; el dueño solo ve y pide los de sus tiendas, y solo borra
+  los `pending`.
+- **`status` en minúscula**: `pending`, `approved`, `on_hold`, `rejected`
+  o `processing` (CHECK). Es el vocabulario del dato y del admin, no el
+  TitleCase del enum de la entidad Nest. El generador falla con `'Pending'`.
+- `amount` es `numeric(12,2)` con `CHECK (amount > 0)`.
+- **Sin balance**: no hay tabla de balances, así que aprobar no descuenta
+  nada (decisión 4 del épico).
+- Sin `deleted_at`: se borra de verdad. La tienda es `CASCADE`.
 
 ## Cómo se adapta el scraper
 

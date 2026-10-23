@@ -51,6 +51,7 @@ const messages = leer('messages');
 const orderStatuses = leer('order-statuses');
 const orders = leer('orders');
 const orderFiles = leer('order-files');
+const withdraws = leer('withdraws');
 
 // ── Literales SQL ────────────────────────────────────────────────────────
 const txt = (v) =>
@@ -574,6 +575,19 @@ for (const f of orderFiles) {
   if (!f.file || typeof f.file !== 'object') problemas.push(`order_files ${f.id}: sin file`);
 }
 
+// ── Retiros (US-62) ──────────────────────────────────────────────────────
+// status es la minúscula del dato: 'Pending' (el TitleCase de la entidad) no
+// pasa el CHECK. El snapshot `shop` no se siembra: la API lo proyecta.
+const ESTADOS_RETIRO = ['pending', 'approved', 'on_hold', 'rejected', 'processing'];
+for (const w of withdraws) {
+  if (!idsFinalesShops.has(w.shop_id))
+    problemas.push(`withdraws ${w.id}: shop_id ${w.shop_id} inexistente`);
+  if (!ESTADOS_RETIRO.includes(w.status))
+    problemas.push(`withdraws ${w.id}: status '${w.status}' fuera del CHECK`);
+  if (!(Number(w.amount) > 0)) problemas.push(`withdraws ${w.id}: amount ${w.amount} no es > 0`);
+  if (!w.payment_method) problemas.push(`withdraws ${w.id}: sin payment_method`);
+}
+
 if (problemas.length) {
   console.error(`\nEl mock viola ${problemas.length} restriccion(es) del esquema:`);
   problemas.slice(0, 20).forEach((p) => console.error('  - ' + p));
@@ -609,7 +623,8 @@ L.push(
     `${resenas.length} reviews · ${reportes.length} abusive_reports · ${preguntas.length} questions · ` +
     `${conversaciones.length} conversations · ${mensajes.length} messages · ` +
     `${orderStatuses.length} order_statuses · ${ordenes.length} orders · ` +
-    `${ordenes.reduce((n, o) => n + o.products.length, 0)} order_products · ${orderFiles.length} order_files`,
+    `${ordenes.reduce((n, o) => n + o.products.length, 0)} order_products · ${orderFiles.length} order_files · ` +
+    `${withdraws.length} withdraws`,
   '-- =====================================================================',
   '',
   'BEGIN;'
@@ -1251,6 +1266,22 @@ L.push(
     .join(',\n') + '\nON CONFLICT (id) DO NOTHING;'
 );
 
+// withdraws (US-62; tras shops) ---------------------------------------------
+bloque(`withdraws — ${withdraws.length}`);
+L.push(
+  '-- Ids y fechas del mock. Sin el snapshot shop ni deleted_at: la API los emite.',
+  'INSERT INTO withdraws (id, shop_id, amount, payment_method, status, details, note, created_at, updated_at) VALUES'
+);
+L.push(
+  withdraws
+    .map(
+      (w) =>
+        `  (${w.id}, ${num(w.shop_id)}, ${num(w.amount)}, ${txt(w.payment_method)}, ${txt(w.status)}, ` +
+        `${txt(w.details)}, ${txt(w.note)}, ${ts(w.created_at)}, ${ts(w.updated_at)})`
+    )
+    .join(',\n') + '\nON CONFLICT (id) DO NOTHING;'
+);
+
 // category_product -------------------------------------------------------
 bloque('category_product — deliberadamente VACÍA');
 L.push(
@@ -1270,7 +1301,7 @@ L.push(
   '-- mock, así que hay que adelantar las secuencias o el primer INSERT nuevo',
   '-- chocaría con una clave existente.'
 );
-for (const t of ['types', 'users', 'permissions', 'shops', 'categories', 'manufacturers', 'tags', 'products', 'faqs', 'terms_and_conditions', 'refund_policies', 'refund_reasons', 'taxes', 'shippings', 'attributes', 'attribute_values', 'store_notices', 'coupons', 'reviews', 'abusive_reports', 'questions', 'conversations', 'messages', 'order_statuses', 'orders', 'order_files']) {
+for (const t of ['types', 'users', 'permissions', 'shops', 'categories', 'manufacturers', 'tags', 'products', 'faqs', 'terms_and_conditions', 'refund_policies', 'refund_reasons', 'taxes', 'shippings', 'attributes', 'attribute_values', 'store_notices', 'coupons', 'reviews', 'abusive_reports', 'questions', 'conversations', 'messages', 'order_statuses', 'orders', 'order_files', 'withdraws']) {
   L.push(`SELECT setval('${t}_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM ${t}), 1));`);
 }
 
@@ -1294,5 +1325,6 @@ console.log(
     `${resenas.length} reviews · ${reportes.length} abusive_reports · ${preguntas.length} questions · ` +
     `${conversaciones.length} conversations · ${mensajes.length} messages · ` +
     `${orderStatuses.length} order_statuses · ${ordenes.length} orders · ` +
-    `${ordenes.reduce((n, o) => n + o.products.length, 0)} order_products · ${orderFiles.length} order_files`
+    `${ordenes.reduce((n, o) => n + o.products.length, 0)} order_products · ${orderFiles.length} order_files · ` +
+    `${withdraws.length} withdraws`
 );

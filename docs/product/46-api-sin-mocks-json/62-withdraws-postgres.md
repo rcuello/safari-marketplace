@@ -8,7 +8,7 @@
 
 **Épico:** [Épico 46](./README.md)
 **Fecha:** 2026-10-20
-**Status:** Listo para ejecución
+**Status:** ✅ Implementada (2026-10-23)
 **Depende de:** [US-61](./61-analytics-calculado.md). La dependencia es solo
 por los archivos compartidos (R-2). En datos solo necesita `shops`, que ya
 está migrada.
@@ -327,3 +327,175 @@ Seguir los pasos 1-10 del **Protocolo de ejecución** del [README del
   contrato existente no se borra.
 - No añadir el débito de balance «porque es fácil»: no hay dónde
   guardarlo. Mencionarlo en el reporte.
+
+## Evidencia (2026-10-23)
+
+**Línea base y después** (API recién arrancada; el antes, con el servicio
+del mock):
+
+```
+archivo            antes                         después
+list-admin         200 3481B  ids 2,1            200 3469B  ids 2,1 (CA-2)
+list-nolimit       200  301B  data [] total 2    200 3481B  data 2 total 2, per_page 10 (V-1)
+list-shop3 (dueño) 200  295B  data [] total 0    200 3469B  data 2 total 2 (V-2)
+get-1              200   34B  "This action returns a #1 withdraw"   200 1619B la fila 1 (V-4)
+approve-withdraw   404   85B  Cannot POST                           201 1563B la fila 2 approved (V-4)
+cliente GET /withdraws: 403 antes y después
+```
+
+La captura del después aprueba la fila 2; se restauró al final (ver abajo).
+
+**Seed:**
+
+```
+$ node db/generate-seed.mjs
+  … · 40 orders · 76 order_products · 10 order_files · 2 withdraws
+
+# corrida fallida: status de la fila 2 cambiado a "Pending" en withdraws.json (con copia de respaldo)
+El mock viola 1 restriccion(es) del esquema:
+  - withdraws 2: status 'Pending' fuera del CHECK
+exit=1
+# JSON restaurado desde la copia: git diff vacío; seed.sql intacto (cmp)
+```
+
+**CA-1** (`just db-reset` sin errores + `psql`):
+
+```
+ id | shop_id | amount |  status  |       created_at       |       updated_at
+  1 |       3 | 300.00 | approved | 2023-11-06 17:49:43+00 | 2023-11-06 17:51:11+00
+  2 |       3 |  10.00 | pending  | 2023-11-07 23:13:08+00 | 2023-11-07 23:13:08+00
+ huerfanas = 0
+ orders 40 · order_files 10 · products 1200 · users 5 · coupons 10 · withdraws_id_seq 2
+```
+
+```
+$ npx prisma validate
+The schema at prisma\schema.prisma is valid 🚀
+$ npx prisma migrate diff --from-config-datasource --to-schema ./prisma/schema.prisma --exit-code
+EXIT=0
+```
+
+Modelo `Withdraw` (`amount Decimal @db.Decimal(12, 2)`) con su inversa
+`withdraws` en `Shop`. Los dos CHECK nuevos se añadieron a la cabecera «lo
+que Prisma no modela».
+
+**CA-2** (`node`, deep-equal de `GET /withdraws?limit=10&page=1` contra la
+línea base, sin `shop.created_at`/`shop.updated_at`):
+
+```
+CA-2 (sin shop.created_at/updated_at): DIFIERE
+  data[0].shop.address: claves [country,city,state,zip,street_address] -> [zip,city,state,country,street_address]
+  data[0].shop.settings: claves [notifications,contact,website,socials,location] -> [contact,socials,website,location,notifications]
+  data[0].shop.settings.socials[0]: claves [icon,url] -> [url,icon]
+  (lo mismo en data[1])
+ids 2,1 · amount 10,300 · per_page "10"
+shop.created_at antes/después 2021-06-27T03:47:23.000000Z 2026-10-23T19:30:08.435Z
+```
+
+Todos los valores coinciden, incluidos los de `shop`. Las únicas
+diferencias son de **orden de claves** dentro de `shop.address` y
+`shop.settings`. Son columnas `jsonb` de `shops` (Épico 1), así que es una
+divergencia heredada: la misma que muestra `/api/shops`.
+
+- Las 11 claves de la fila y las 13 del `shop` salen en el orden del mock.
+- `deleted_at` sale `null`.
+- Los `created_at`/`updated_at` de nivel superior son idénticos (3
+  decimales).
+
+**CA-3:**
+
+```
+200 GET withdraws?search=shop_id:3&limit=10 (admin)              → 2,1 total 2
+200 GET withdraws?status=pending&limit=10 (admin)                → 2 total 1   (con la fila 2 restaurada)
+200 GET withdraws?limit=10 (dueño)                               → 2,1 total 2
+200 GET withdraws?shop_id=3&search=shop_id:999&limit=10 (dueño)  → 2,1 total 2 (gana la query)
+400 GET withdraws?shop_id=abc&limit=10                           → `abc` no es un shop_id.
+dueño lista shop_id=<tienda ajena>                               → 0 filas
+```
+
+El dueño centinela `zz-withdraws-owner` y su tienda están en
+`withdraws.integration.test.ts`: ve solo sus retiros, y con `shopId 3`
+recibe `{items: [], total: 0}`.
+
+**CA-4:**
+
+```
+201 POST withdraws (dueño, "status":"approved" en el body) → 5 pending 15.5
+200 GET withdraws?limit=10 (dueño)                         → 5:pending,2:approved,1:approved
+201 POST approve-withdraw {"id":"5","status":"on_hold"}    → on_hold, updated_at 19:43:01.885Z → 19:43:05.701Z
+400 POST approve-withdraw {"id":"5","status":"Approved"}   → `withdraws.status` no admite `Approved` — CHECK withdraws_status_check.
+404 POST approve-withdraw {"id":"999999",...}              → No existe un registro de `withdraws` con id 999999.
+201 POST withdraws/5/approve {"status":"processing"}       → processing
+403 DELETE withdraws/5 (dueño)                             → Solo puedes borrar retiros pending; el 5 está processing.
+400 POST withdraws amount 0                                → CHECK withdraws_amount_check
+400 POST withdraws shop_id 999999                          → `withdraws.shop_id` referencia un registro inexistente.
+400 POST withdraws shop_id "x"                             → `x` no es un shop_id.
+200 DELETE withdraws/5 (admin)                             → la fila borrada
+404 GET withdraws/5                                        → No existe un retiro con id 5.
+200 DELETE withdraws/8 (dueño, su pending)                 → la fila borrada
+```
+
+**CA-5:**
+
+```
+cliente GET withdraws · GET withdraws/1 · POST withdraws · POST withdraws/1/approve · POST approve-withdraw · DELETE withdraws/1 → 403 ×6
+dueño POST withdraws/2/approve → 403 · dueño POST approve-withdraw → 403 (V-5)
+dueño POST withdraws en una tienda ajena (centinela, dueño 3) → 403 «No tienes permisos sobre la tienda 18.»
+dueño GET retiro de tienda ajena → 404 · dueño DELETE retiro de tienda ajena → 403
+```
+
+La tienda ajena (`zz-withdraws-ajena`, dueño 3) se creó por `psql`, porque
+las 12 tiendas del seed son del usuario 1, y se borró después.
+
+**Estado final de la base:**
+
+- La fila 2 se restauró con `UPDATE withdraws SET status='pending',
+  updated_at='2023-11-07T23:13:08Z' WHERE id=2`.
+- Lo creado se borró: quedan 2 filas en `withdraws` y 12 en `shops`.
+- La secuencia `withdraws_id_seq` quedó adelantada por los tests y los
+  `curl`.
+
+**CA-6:**
+
+```
+$ just db-check
+ Test Files  31 passed (31)
+      Tests  390 passed (390)
+$ cd apps/api/rest && npx jest
+Test Suites: 33 passed, 33 total
+Tests:       524 passed, 524 total
+$ npx tsc --noEmit -p tsconfig.json   → exit 0
+$ just build-api                      → Done in 64.61s.
+$ just verify
+OK   API    :9001/api/settings  200  5503B  643ms
+OK   Shop   :3003/en  200  190788B  2194ms  cards:30
+OK   Admin  :3002/en/login  200  72821B  1272ms  cards:1
+$ grep -rn "@db/" apps/api/rest/src/withdraws/
+(sin salida, exit=1)
+```
+
+Antes (US-61): 30 archivos / 386 tests en `db-check` y 32 suites / 516
+tests en jest. Se suman el integration test (4 casos) y
+`withdraws.service.spec.ts` (8 casos).
+
+**Decisiones de implementación:**
+
+- Un id de ruta o de body que no es entero positivo da 404 sin tocar la
+  base (precedente `coupons.service.ts`).
+- `DELETE` del dueño sobre un retiro de una tienda ajena da **403**, como
+  dice la tabla de rutas («403 si no»). `GET /:id` del mismo retiro da 404.
+- `payment_method` vacío o ausente da 400 en el servicio, porque la columna
+  es `NOT NULL`.
+- Un `limit` inválido cae a 10 para la consulta. La url y `paginate()`
+  reciben el `limit` crudo, como el mock: sin `limit`, la url sigue diciendo
+  `limit=undefined`.
+- `amount` debe ser menor que 1e10 (`numeric(12,2)`); sin esa guarda, el
+  desbordamiento llegaría como 500.
+
+**Notas para el reporte:**
+
+- **Sin balance:** aprobar no descuenta nada ni valida `amount <=
+  current_balance` (decisión 4). Queda como trabajo futuro.
+- El enum `WithdrawStatus` de la entidad sigue en TitleCase, y ningún dato
+  lo usa.
+- `orderBy`/`sortedBy` siguen ignorados (orden `id DESC`).

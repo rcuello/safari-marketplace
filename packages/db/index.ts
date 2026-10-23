@@ -64,6 +64,7 @@ export type {
   TermsAndConditionsRecord,
   TypeRecord,
   UserRecord,
+  WithdrawRecord,
 } from './src/records';
 export type {
   CreateOtpCodeInput,
@@ -312,6 +313,19 @@ export {
   listLowStockProducts,
   listTopRatedProducts,
 } from './src/repositories/analytics.repository';
+export type {
+  CreateWithdrawInput,
+  ListWithdrawsInput,
+  WithdrawDetailRecord,
+} from './src/repositories/withdraws.repository';
+export {
+  WITHDRAW_STATUSES,
+  createWithdraw,
+  deleteWithdraw,
+  findWithdrawById,
+  listWithdraws,
+  updateWithdrawStatus,
+} from './src/repositories/withdraws.repository';
 export type { ListWishlistProductsInput } from './src/repositories/wishlists.repository';
 export {
   addToWishlist,
