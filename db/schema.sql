@@ -1043,6 +1043,32 @@ END $$;
 
 
 -- =====================================================================
+-- Descargas digitales (US-60, Épico 46) — order_files.
+--
+-- Sembradas desde order-files.json (10 filas, todas de customer@demo.com
+-- y sin orden). Una fila es el derecho de un cliente a descargar un archivo
+-- digital comprado; la API solo le muestra las suyas.
+--
+-- digital_file_id NO es UNIQUE: el mock lo repite (42 en 4 filas) y la
+-- descarga toma la primera por id. No hay tabla digital_files: ningún mock
+-- la respalda. `file` es el snapshot del archivo con su `fileable`
+-- (producto o variación), en json y no en jsonb, porque el orden de sus
+-- claves es contrato. El cliente es CASCADE (la descarga es suya); la orden,
+-- SET NULL. Sin trigger (reloj único, ver abajo).
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS order_files (
+    id               bigserial    PRIMARY KEY,
+    purchase_key     text         NOT NULL UNIQUE,
+    digital_file_id  bigint       NOT NULL,
+    order_id         bigint       REFERENCES orders(id) ON DELETE SET NULL,
+    customer_id      bigint       NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    file             json         NOT NULL,
+    created_at       timestamptz  NOT NULL DEFAULT now(),
+    updated_at       timestamptz  NOT NULL DEFAULT now()
+);
+
+
+-- =====================================================================
 -- Índices.
 --
 -- No son decorativos: cada uno responde a un filtro que el frontend
@@ -1148,6 +1174,12 @@ CREATE INDEX IF NOT EXISTS orders_customer_idx            ON orders (customer_id
 CREATE INDEX IF NOT EXISTS orders_shop_idx                ON orders (shop_id);
 CREATE INDEX IF NOT EXISTS orders_coupon_idx              ON orders (coupon_id);
 CREATE INDEX IF NOT EXISTS order_products_producto_idx    ON order_products (product_id);
+
+-- Descargas (US-60): la lista y la descarga filtran por cliente y por
+-- digital_file_id; order_id sirve a su FK.
+CREATE INDEX IF NOT EXISTS order_files_customer_idx       ON order_files (customer_id);
+CREATE INDEX IF NOT EXISTS order_files_digital_file_idx   ON order_files (digital_file_id);
+CREATE INDEX IF NOT EXISTS order_files_order_idx          ON order_files (order_id);
 
 
 -- ---------------------------------------------------------------------

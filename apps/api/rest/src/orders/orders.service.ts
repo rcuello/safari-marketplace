@@ -1,6 +1,3 @@
-import exportOrderJson from '@db/order-export.json';
-import orderFilesJson from '@db/order-files.json';
-import orderInvoiceJson from '@db/order-invoice.json';
 import paymentGatewayJson from '@db/payment-gateway.json';
 import paymentIntentJson from '@db/payment-intent.json';
 import {
@@ -16,6 +13,7 @@ import {
   createOrderWithChildren,
   deleteOrder,
   findCouponById,
+  findFirstOrderFileByDigitalFileId,
   findOrderByIdOrTracking,
   findProductsForOrder,
   findShippingById,
@@ -24,6 +22,7 @@ import {
   getSettings,
   getUserFriendlyMessage,
   isPrismaConnectionError,
+  listOrderFilesByCustomer,
   listOrders,
   markOrderPaid,
   setOrderStatus,
@@ -31,6 +30,7 @@ import {
   type CouponRecord,
   type ListOrdersInput,
   type OrderDetailRecord,
+  type OrderFileRecord,
   type OrderLineInput,
   type Prisma,
   type ProductRecord,
@@ -47,7 +47,7 @@ import { PaymentGateWay } from 'src/payment-method/entities/payment-gateway.enti
 import { PaypalPaymentService } from 'src/payment/paypal-payment.service';
 import { StripePaymentService } from 'src/payment/stripe-payment.service';
 import { CreateOrderDto } from './dto/create-order.dto';
-import { GetOrderFilesDto } from './dto/get-downloads.dto';
+import { GetOrderFilesDto, OrderFilesPaginator } from './dto/get-downloads.dto';
 import { GetOrdersDto, OrderPaginator } from './dto/get-orders.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import {
@@ -69,7 +69,6 @@ import { toReviewUserDto } from 'src/reviews/review-dto.mapper';
 // pasarela (decisión 2 del Épico 46): siguen aquí a propósito.
 const paymentIntents = plainToClass(PaymentIntent, paymentIntentJson);
 const paymentGateways = plainToClass(PaymentGateWay, paymentGatewayJson);
-const orderFiles = plainToClass(OrderFiles, orderFilesJson);
 
 const TRACKING_NUMBER = /^[0-9]{14}$/;
 
@@ -179,6 +178,33 @@ function unprocessable(message: string, extra: Record<string, unknown> = {}): Un
 
 const money = (value: Decimal): string => value.toString();
 
+/**
+ * Mock permanente declarado (US-60): export e invoice devuelven las URLs S3
+ * de la demo de Pickbazar. No se genera ningún Excel ni PDF; antes salían de
+ * los JSON del mock y ahora son constantes, con el mismo valor.
+ */
+export const ORDER_EXPORT_URL = 'https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/100/orders.xlsx';
+export const ORDER_INVOICE_URL =
+  'https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/100/invoice-order.pdf';
+
+/**
+ * `OrderFileRecord` → las 8 claves del mock de descargas, en su orden. `file`
+ * sale tal cual de la columna `json`, con su orden de claves y sus fechas
+ * de 6 decimales (V-3): no pasa por ningún objeto intermedio.
+ */
+function toOrderFileDto(record: OrderFileRecord): OrderFiles {
+  return {
+    id: record.id,
+    purchase_key: record.purchaseKey,
+    digital_file_id: record.digitalFileId,
+    order_id: record.orderId,
+    customer_id: record.customerId,
+    created_at: record.createdAt,
+    updated_at: record.updatedAt,
+    file: record.file,
+  } as unknown as OrderFiles;
+}
+
 function readError(error: unknown): never {
   if (isPrismaConnectionError(error)) {
     throw new ServiceUnavailableException(getUserFriendlyMessage(error));
@@ -189,7 +215,6 @@ function readError(error: unknown): never {
 @Injectable()
 export class OrdersService {
   private readonly logger = new Logger(OrdersService.name);
-  private orderFiles: OrderFiles[] = orderFiles;
 
   constructor(
     private readonly authService: AuthService,
@@ -544,35 +569,57 @@ export class OrdersService {
     }
   }
 
-  async getOrderFileItems({ page, limit }: GetOrderFilesDto) {
+  /**
+   * Las descargas del usuario del token (V-1), también para el admin: es la
+   * página «mis descargas» del shop. `orderBy`/`sortedBy` se ignoran, como
+   * en el mock. La url conserva el literal `?&limit=`.
+   */
+  async getOrderFileItems({ page, limit }: GetOrderFilesDto, customerId: number): Promise<OrderFilesPaginator> {
     if (!page) page = 1;
     if (!limit) limit = 30;
-    const startIndex = (page - 1) * limit;
-    const endIndex = page * limit;
-
-    const results = orderFiles.slice(startIndex, endIndex);
-
     const url = `/downloads?&limit=${limit}`;
-    return {
-      data: results,
-      ...paginate(orderFiles.length, page, limit, results.length, url),
-    };
+
+    let result: { items: OrderFileRecord[]; total: number };
+    try {
+      result = await listOrderFilesByCustomer(customerId, {
+        page: Number(page) || 1,
+        limit: Number(limit) || 30,
+      });
+    } catch (error) {
+      readError(error);
+    }
+    const data = result.items.map(toOrderFileDto);
+    return { data, ...paginate(result.total, page, limit, data.length, url) };
   }
 
-  async getDigitalFileDownloadUrl(digitalFileId: number) {
-    const item: OrderFiles = this.orderFiles.find(
-      (singleItem) => singleItem.digital_file_id === digitalFileId,
-    );
-
-    return item.file.url;
+  /**
+   * URL del archivo como string desnudo: la primera descarga (por id) del
+   * usuario del token con ese `digital_file_id`. Inexistente o ajena ⇒ 404
+   * (V-2; el mock daba 500).
+   */
+  async getDigitalFileDownloadUrl(digitalFileId: number, customerId: number): Promise<string> {
+    if (!Number.isSafeInteger(digitalFileId) || digitalFileId <= 0) {
+      throw new NotFoundException(`No tienes una descarga con digital_file_id ${digitalFileId}.`);
+    }
+    let record: OrderFileRecord | null;
+    try {
+      record = await findFirstOrderFileByDigitalFileId(digitalFileId, customerId);
+    } catch (error) {
+      readError(error);
+    }
+    const url = (record?.file as { url?: unknown } | undefined)?.url;
+    if (typeof url !== 'string') {
+      throw new NotFoundException(`No tienes una descarga con digital_file_id ${digitalFileId}.`);
+    }
+    return url;
   }
 
   async exportOrder(shop_id: string) {
-    return exportOrderJson.url;
+    return ORDER_EXPORT_URL;
   }
 
   async downloadInvoiceUrl(shop_id: string) {
-    return orderInvoiceJson[0].url;
+    return ORDER_INVOICE_URL;
   }
 
   /**

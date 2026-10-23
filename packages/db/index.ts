@@ -41,6 +41,7 @@ export type {
   FaqRecord,
   ManufacturerRecord,
   MessageRecord,
+  OrderFileRecord,
   OrderProductRecord,
   OrderRecord,
   OrderStatusRecord,
@@ -260,6 +261,11 @@ export {
   listAbusiveReportsByUser,
   updateAbusiveReport,
 } from './src/repositories/abusive-reports.repository';
+export type { ListOrderFilesInput } from './src/repositories/order-files.repository';
+export {
+  findFirstOrderFileByDigitalFileId,
+  listOrderFilesByCustomer,
+} from './src/repositories/order-files.repository';
 export type {
   CreateOrderChildInput,
   CreateOrderInput,

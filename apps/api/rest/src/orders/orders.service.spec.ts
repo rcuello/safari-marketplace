@@ -4,7 +4,8 @@
  * `types: ["node","express","multer"]` y deja fuera los globals de jest.
  */
 /**
- * Tests unitarios de `OrdersService`: lectura (US-58) y escritura (US-59).
+ * Tests unitarios de `OrdersService`: lectura (US-58), escritura (US-59) y
+ * descargas, export e invoice (US-60).
  * Solo se mockea el acceso a datos; las dependencias de pago se proveen
  * vacías salvo `verifyOrder` de PayPal, que es la pasarela. El cálculo de
  * precios es el real (`orders-pricing.ts`, con su propio spec).
@@ -22,6 +23,7 @@ import {
   createOrderWithChildren,
   deleteOrder,
   findCouponById,
+  findFirstOrderFileByDigitalFileId,
   findOrderByIdOrTracking,
   findProductsForOrder,
   findShippingById,
@@ -29,11 +31,13 @@ import {
   findUserById,
   getSettings,
   InsufficientStockError,
+  listOrderFilesByCustomer,
   listOrders,
   markOrderPaid,
   RecordNotFoundError,
   setOrderStatus,
   type CouponRecord,
+  type OrderFileRecord,
   type OrderDetailRecord,
   type ProductRecord,
   type ShopRecord,
@@ -46,7 +50,10 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { GetOrdersDto } from './dto/get-orders.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { CheckoutVerificationDto } from './dto/verify-checkout.dto';
-import { OrdersService } from './orders.service';
+import { JwtService } from '@nestjs/jwt';
+import { GetOrderFilesDto } from './dto/get-downloads.dto';
+import { OrderFilesController } from './orders.controller';
+import { ORDER_EXPORT_URL, ORDER_INVOICE_URL, OrdersService } from './orders.service';
 
 jest.mock('@safari/db', () => ({
   ...jest.requireActual<typeof import('@safari/db')>('@safari/db'),
@@ -62,6 +69,8 @@ jest.mock('@safari/db', () => ({
   setOrderStatus: jest.fn(),
   deleteOrder: jest.fn(),
   markOrderPaid: jest.fn(),
+  listOrderFilesByCustomer: jest.fn(),
+  findFirstOrderFileByDigitalFileId: jest.fn(),
 }));
 
 const listMock = jest.mocked(listOrders);
@@ -577,5 +586,95 @@ describe('OrdersService — escritura', () => {
       await service.pay('20240207303639');
       expect(paidMock).not.toHaveBeenCalled();
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Descargas, export e invoice (US-60)
+// ---------------------------------------------------------------------------
+
+const filesMock = jest.mocked(listOrderFilesByCustomer);
+const firstFileMock = jest.mocked(findFirstOrderFileByDigitalFileId);
+
+const FILE = {
+  id: 42,
+  attachment_id: 1512,
+  url: 'https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/1512/DOCUMENTATION.pdf',
+  fileable_type: 'Marvel\\Database\\Models\\Product',
+  fileable_id: 888,
+  created_at: '2021-12-18T13:58:54.000000Z',
+  updated_at: '2021-12-18T13:58:54.000000Z',
+  fileable: { id: 888 },
+};
+
+function makeOrderFile(overrides: Partial<OrderFileRecord> = {}): OrderFileRecord {
+  return {
+    id: 4,
+    purchaseKey: 'abcdefghijklmnop',
+    digitalFileId: 42,
+    orderId: null,
+    customerId: 2,
+    file: FILE,
+    createdAt: CREATED,
+    updatedAt: CREATED,
+    ...overrides,
+  };
+}
+
+describe('OrdersService — descargas, export e invoice', () => {
+  let service: OrdersService;
+  let controller: OrderFilesController;
+
+  beforeEach(async () => {
+    jest.resetAllMocks();
+    const moduleRef = await Test.createTestingModule({
+      controllers: [OrderFilesController],
+      providers: [
+        OrdersService,
+        { provide: AuthService, useValue: {} },
+        { provide: StripePaymentService, useValue: {} },
+        { provide: PaypalPaymentService, useValue: {} },
+        { provide: JwtService, useValue: {} },
+      ],
+    }).compile();
+    service = moduleRef.get(OrdersService);
+    controller = moduleRef.get(OrderFilesController);
+  });
+
+  it('GET /downloads: las 8 claves del mock en orden, file tal cual, default limit 30 y url ?&limit=', async () => {
+    filesMock.mockResolvedValue({ items: [makeOrderFile()], total: 1 });
+    const page = await service.getOrderFileItems({} as GetOrderFilesDto, 2);
+    expect(filesMock).toHaveBeenCalledWith(2, { page: 1, limit: 30 });
+    expect(Object.keys(page.data[0])).toEqual([
+      'id', 'purchase_key', 'digital_file_id', 'order_id', 'customer_id', 'created_at', 'updated_at', 'file',
+    ]);
+    expect(page.data[0].file).toBe(FILE);
+    expect(page.first_page_url).toContain('/downloads?&limit=30&page=1');
+  });
+
+  it('CA-3: el controlador pasa el sub del token, nunca un customer_id de la query', async () => {
+    filesMock.mockResolvedValue({ items: [], total: 0 });
+    const query = { limit: '10', customer_id: '2' } as unknown as GetOrderFilesDto;
+    const page = await controller.getOrderFileItems(query, ADMIN_USER);
+    expect(filesMock).toHaveBeenCalledWith(ADMIN_USER.sub, { page: 1, limit: 10 });
+    expect(page).toMatchObject({ data: [], total: 0, per_page: '10' });
+  });
+
+  it('digital_file: la url del primer match del usuario como string; inexistente, ajeno o id inválido ⇒ 404', async () => {
+    firstFileMock.mockResolvedValueOnce(makeOrderFile());
+    expect(await controller.getDigitalFileDownloadUrl(42, CUSTOMER_USER)).toBe(FILE.url);
+    expect(firstFileMock).toHaveBeenCalledWith(42, CUSTOMER_USER.sub);
+
+    firstFileMock.mockResolvedValueOnce(null);
+    await expect(service.getDigitalFileDownloadUrl(999, 2)).rejects.toBeInstanceOf(NotFoundException);
+    await expect(service.getDigitalFileDownloadUrl(1e21, 2)).rejects.toBeInstanceOf(NotFoundException);
+    expect(firstFileMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('export e invoice devuelven las URLs constantes del mock permanente', async () => {
+    expect(await service.exportOrder('1')).toBe(ORDER_EXPORT_URL);
+    expect(await service.downloadInvoiceUrl('1')).toBe(ORDER_INVOICE_URL);
+    expect(ORDER_EXPORT_URL).toBe('https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/100/orders.xlsx');
+    expect(ORDER_INVOICE_URL).toBe('https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/100/invoice-order.pdf');
   });
 });

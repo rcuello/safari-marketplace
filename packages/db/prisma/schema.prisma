@@ -305,6 +305,7 @@ model User {
   conversations       Conversation[]
   messages            Message[]
   orders              Order[]
+  orderFiles          OrderFile[]
 
   @@map("users")
 }
@@ -841,6 +842,7 @@ model Order {
   coupon   Coupon?        @relation(fields: [couponId], references: [id], onUpdate: NoAction)
   lines    OrderProduct[]
   reviews  Review[]
+  files    OrderFile[]
 
   @@index([couponId], map: "orders_coupon_idx")
   @@index([customerId], map: "orders_customer_idx")
@@ -868,4 +870,27 @@ model OrderProduct {
   @@unique([orderId, productId, variationOptionId])
   @@index([productId], map: "order_products_producto_idx")
   @@map("order_products")
+}
+
+// =====================================================================
+// Descargas digitales (US-60, Épico 46)
+// =====================================================================
+
+model OrderFile {
+  id            BigInt   @id @default(autoincrement())
+  purchaseKey   String   @unique @map("purchase_key")
+  digitalFileId BigInt   @map("digital_file_id")
+  orderId       BigInt?  @map("order_id")
+  customerId    BigInt   @map("customer_id")
+  file          Json     @db.Json
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  customer User   @relation(fields: [customerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  order    Order? @relation(fields: [orderId], references: [id], onUpdate: NoAction)
+
+  @@index([customerId], map: "order_files_customer_idx")
+  @@index([digitalFileId], map: "order_files_digital_file_idx")
+  @@index([orderId], map: "order_files_order_idx")
+  @@map("order_files")
 }

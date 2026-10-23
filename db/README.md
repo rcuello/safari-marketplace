@@ -29,6 +29,7 @@ SQL inaplicable.
 · 8 attributes · 27 attribute_values · 3 store_notices (6 destinatarios,
 6 lecturas) · 10 coupons · 10 wishlists · 85 reviews · 3 abusive_reports · 68 questions · 2 conversations · 5 messages
 · 10 order_statuses · 40 orders (20 padres + 20 hijas) · 76 order_products
+· 10 order_files
 ```
 
 **Los ids del mock se preservan** para no romper las relaciones, y al final se
@@ -443,6 +444,22 @@ estas mismas tablas.
   **no** repone stock.
 - **Número de seguimiento**: `YYYYMMDD` (UTC) + 6 dígitos al azar, único;
   hasta 5 intentos.
+
+## Descargas digitales: `order_files`
+
+Desde US-60. 10 filas con los ids y las fechas del mock, todas de
+`customer@demo.com` (2) y sin orden.
+
+- Una fila es el derecho de un cliente a descargar un archivo comprado. La
+  API solo le muestra las suyas, también al admin.
+- **`digital_file_id` no es UNIQUE**: el mock repite el 42 (filas 4, 5, 9 y
+  10) y el 2 (filas 2 y 8). La descarga toma la primera por `id`. No hay
+  tabla `digital_files`: ningún mock la respalda.
+- **`file` en `json`, no en `jsonb`**: es el snapshot del archivo con su
+  `fileable` (un producto o una variación), y el orden de sus claves es
+  contrato. Sus fechas anidadas conservan los 6 decimales del mock.
+- FK: el cliente es `CASCADE` (la descarga es suya); la orden, `SET NULL`.
+- Esta US no crea filas al completar una orden: eso queda fuera.
 
 ## Cómo se adapta el scraper
 

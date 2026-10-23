@@ -29,6 +29,7 @@ import type {
   Manufacturer,
   Message,
   Order,
+  OrderFile,
   OrderProduct,
   OrderStatus,
   Permission,
@@ -419,6 +420,22 @@ export interface OrderProductRecord {
   unitPrice: number;
   subtotal: number;
   productSnapshot: Prisma.JsonValue;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/**
+ * Descarga digital de un cliente (US-60). `file` sale de una columna `json`:
+ * el snapshot del archivo con su `fileable`, con las claves en el orden del
+ * mock. `digitalFileId` se repite entre filas.
+ */
+export interface OrderFileRecord {
+  id: number;
+  purchaseKey: string;
+  digitalFileId: number;
+  orderId: number | null;
+  customerId: number;
+  file: Prisma.JsonValue;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -952,6 +969,19 @@ export function _toOrderProductRecord(row: OrderProduct): OrderProductRecord {
     unitPrice: _dec(row.unitPrice),
     subtotal: _dec(row.subtotal),
     productSnapshot: row.productSnapshot,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+export function _toOrderFileRecord(row: OrderFile): OrderFileRecord {
+  return {
+    id: _id(row.id),
+    purchaseKey: row.purchaseKey,
+    digitalFileId: _id(row.digitalFileId),
+    orderId: _id(row.orderId),
+    customerId: _id(row.customerId),
+    file: row.file,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };

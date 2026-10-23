@@ -50,6 +50,7 @@ const conversations = leer('conversations');
 const messages = leer('messages');
 const orderStatuses = leer('order-statuses');
 const orders = leer('orders');
+const orderFiles = leer('order-files');
 
 // ── Literales SQL ────────────────────────────────────────────────────────
 const txt = (v) =>
@@ -558,6 +559,21 @@ for (const o of ordenes) {
   }
 }
 
+// ── Descargas digitales (US-60) ──────────────────────────────────────────
+// order-files.json solo trae el id del cliente (2), sin snapshot con email:
+// tiene que ser un usuario ya sembrado. order_id es null en las 10 filas.
+const idsUsuariosSembrados = new Set([...emailPorId.keys()]);
+if (new Set(orderFiles.map((f) => f.purchase_key)).size !== orderFiles.length)
+  problemas.push('order_files: purchase_key duplicado');
+for (const f of orderFiles) {
+  if (!idsUsuariosSembrados.has(f.customer_id))
+    problemas.push(`order_files ${f.id}: customer_id ${f.customer_id} inexistente entre los usuarios`);
+  if (f.order_id != null && !idsOrdenes.has(f.order_id))
+    problemas.push(`order_files ${f.id}: order_id ${f.order_id} inexistente entre las órdenes`);
+  if (!Number.isSafeInteger(f.digital_file_id)) problemas.push(`order_files ${f.id}: digital_file_id '${f.digital_file_id}' no es entero`);
+  if (!f.file || typeof f.file !== 'object') problemas.push(`order_files ${f.id}: sin file`);
+}
+
 if (problemas.length) {
   console.error(`\nEl mock viola ${problemas.length} restriccion(es) del esquema:`);
   problemas.slice(0, 20).forEach((p) => console.error('  - ' + p));
@@ -593,7 +609,7 @@ L.push(
     `${resenas.length} reviews · ${reportes.length} abusive_reports · ${preguntas.length} questions · ` +
     `${conversaciones.length} conversations · ${mensajes.length} messages · ` +
     `${orderStatuses.length} order_statuses · ${ordenes.length} orders · ` +
-    `${ordenes.reduce((n, o) => n + o.products.length, 0)} order_products`,
+    `${ordenes.reduce((n, o) => n + o.products.length, 0)} order_products · ${orderFiles.length} order_files`,
   '-- =====================================================================',
   '',
   'BEGIN;'
@@ -1218,6 +1234,23 @@ L.push(
     .join(',\n') + '\nON CONFLICT (order_id, line_no) DO NOTHING;'
 );
 
+// order_files (US-60; tras users y orders) ----------------------------------
+bloque(`order_files — ${orderFiles.length}`);
+L.push(
+  '-- Ids y fechas del mock. file va verbatim en json (no jsonb): conserva el',
+  '-- orden de claves del archivo y de su fileable.',
+  'INSERT INTO order_files (id, purchase_key, digital_file_id, order_id, customer_id, file, created_at, updated_at) VALUES'
+);
+L.push(
+  orderFiles
+    .map(
+      (f) =>
+        `  (${f.id}, ${txt(f.purchase_key)}, ${num(f.digital_file_id)}, ${num(f.order_id)}, ${num(f.customer_id)}, ` +
+        `${jsonTal(f.file)}, ${ts(f.created_at)}, ${ts(f.updated_at)})`
+    )
+    .join(',\n') + '\nON CONFLICT (id) DO NOTHING;'
+);
+
 // category_product -------------------------------------------------------
 bloque('category_product — deliberadamente VACÍA');
 L.push(
@@ -1237,7 +1270,7 @@ L.push(
   '-- mock, así que hay que adelantar las secuencias o el primer INSERT nuevo',
   '-- chocaría con una clave existente.'
 );
-for (const t of ['types', 'users', 'permissions', 'shops', 'categories', 'manufacturers', 'tags', 'products', 'faqs', 'terms_and_conditions', 'refund_policies', 'refund_reasons', 'taxes', 'shippings', 'attributes', 'attribute_values', 'store_notices', 'coupons', 'reviews', 'abusive_reports', 'questions', 'conversations', 'messages', 'order_statuses', 'orders']) {
+for (const t of ['types', 'users', 'permissions', 'shops', 'categories', 'manufacturers', 'tags', 'products', 'faqs', 'terms_and_conditions', 'refund_policies', 'refund_reasons', 'taxes', 'shippings', 'attributes', 'attribute_values', 'store_notices', 'coupons', 'reviews', 'abusive_reports', 'questions', 'conversations', 'messages', 'order_statuses', 'orders', 'order_files']) {
   L.push(`SELECT setval('${t}_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM ${t}), 1));`);
 }
 
@@ -1261,5 +1294,5 @@ console.log(
     `${resenas.length} reviews · ${reportes.length} abusive_reports · ${preguntas.length} questions · ` +
     `${conversaciones.length} conversations · ${mensajes.length} messages · ` +
     `${orderStatuses.length} order_statuses · ${ordenes.length} orders · ` +
-    `${ordenes.reduce((n, o) => n + o.products.length, 0)} order_products`
+    `${ordenes.reduce((n, o) => n + o.products.length, 0)} order_products · ${orderFiles.length} order_files`
 );

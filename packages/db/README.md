@@ -455,6 +455,18 @@ cálculo.
   CASCADE. Si el `SET NULL` de `reviews.order_id` chocaría con otra
   reseña del autor sin orden, `SlugConflictError` (409) y no borra nada.
 
+### Descargas (US-60, Épico 46) — `order-files.repository.ts`
+
+`OrderFileRecord` es la fila plana; `file` sale de una columna `json` como
+`Prisma.JsonValue`, con las claves en el orden del texto. Solo lectura, y
+siempre de un cliente: no hay función que liste las descargas de todos.
+
+- **`listOrderFilesByCustomer(customerId, {page, limit})`**: paginado
+  (`limit` 30) en `id ASC`.
+- **`findFirstOrderFileByDigitalFileId(digitalFileId, customerId)`**: la
+  primera por `id` del cliente con ese `digital_file_id` (se repite entre
+  filas), o `null`.
+
 ### Identidad (US-21, Épico 19) — `users.repository.ts`
 
 Mismo agregado por introspección que el catálogo: `users`, `profiles`,

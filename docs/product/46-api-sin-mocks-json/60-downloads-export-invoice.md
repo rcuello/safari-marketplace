@@ -8,7 +8,7 @@
 
 **Épico:** [Épico 46](./README.md)
 **Fecha:** 2026-10-20
-**Status:** Listo para ejecución
+**Status:** Implementada (2026-10-23, rama `us-60-downloads`)
 **Depende de:** [US-59](./59-orders-escritura-checkout.md) (secuencial por
 archivos compartidos, R-2 del épico; la FK `order_files.order_id → orders`
 exige la tabla `orders` de US-58)
@@ -312,27 +312,27 @@ Feature: Descargas digitales desde Postgres
 Seguir los pasos 1-10 del **Protocolo de ejecución** del [README del
 épico](./README.md) y pegar:
 
-- [ ] La línea base (los 7 archivos) y su repetición después.
-- [ ] `node db/generate-seed.mjs` con los conteos nuevos en consola, y una
+- [x] La línea base (los 7 archivos) y su repetición después.
+- [x] `node db/generate-seed.mjs` con los conteos nuevos en consola, y una
       corrida fallida pegada (con `customer_id` alterado a `999` en una copia
       del JSON, restaurada después).
-- [ ] `just db-reset` sin errores.
-- [ ] `psql` con los conteos de CA-1 y las 0 huérfanas:
+- [x] `just db-reset` sin errores.
+- [x] `psql` con los conteos de CA-1 y las 0 huérfanas:
   ```sql
   SELECT count(*), count(*) FILTER (WHERE customer_id=2), count(*) FILTER (WHERE order_id IS NULL),
          count(DISTINCT digital_file_id) FROM order_files;
   SELECT count(*) FROM order_files f LEFT JOIN users u ON u.id=f.customer_id WHERE u.id IS NULL;
   ```
-- [ ] `npx prisma validate` y `npx prisma migrate diff
+- [x] `npx prisma validate` y `npx prisma migrate diff
       --from-config-datasource --to-schema ./prisma/schema.prisma
       --exit-code` con `EXIT=0`.
-- [ ] `just db-build`, `just db-check` (recuento nuevo) y `npx jest`
+- [x] `just db-build`, `just db-check` (recuento nuevo) y `npx jest`
       (recuento nuevo) verdes.
-- [ ] `just build-api` y `just verify` verdes.
-- [ ] Comparación `node -e` de CA-2 y las divergencias V-1..V-4 con su
+- [x] `just build-api` y `just verify` verdes.
+- [x] Comparación `node -e` de CA-2 y las divergencias V-1..V-4 con su
       evidencia.
-- [ ] Los `curl` de CA-4 y CA-5 con status exacto.
-- [ ] Status de la US y fila del épico actualizados.
+- [x] Los `curl` de CA-4 y CA-5 con status exacto.
+- [x] Status de la US y fila del épico actualizados.
 
 ## Notas para el agente ejecutor
 
@@ -351,3 +351,143 @@ Seguir los pasos 1-10 del **Protocolo de ejecución** del [README del
 - Si al ejecutar `orders.service.ts` ya no existe (US-58/59 pudieron partir
   el servicio), aplicar los cambios donde vivan estos 4 métodos y anotarlo.
 - `just db-test` está roto desde antes (US-6/US-8); no forma parte de la DoD.
+
+## Evidencia (2026-10-23)
+
+**Línea base y después.** Con la API recién arrancada sobre `main`
+(`3f5f774`) para el antes, y sobre esta rama tras el `db-reset` para el
+después. Los 7 archivos de la US más `base-digital-42-admin.txt` (V-2):
+
+```
+archivo                      antes            después          comparación
+base-digital-42.txt          201     80B  ·   201     80B  ·   IDÉNTICO
+base-digital-42-admin.txt    201     80B  ·   404     98B  ·   distinto (V-2)
+base-digital-999.txt         500     53B  ·   404     99B  ·   distinto (V-2)
+base-downloads-admin.txt     200  19669B  ·   200    297B  ·   distinto (V-1)
+base-downloads-cust.txt      200  19669B  ·   200  19669B  ·   IDÉNTICO
+base-downloads-default.txt   200  19667B  ·   200  19667B  ·   IDÉNTICO
+base-export.txt              200     73B  ·   200     73B  ·   IDÉNTICO
+base-invoice.txt             201     79B  ·   201     79B  ·   IDÉNTICO
+
+base-downloads-admin.txt → {"data":[],"total":0,"current_page":0,"count":0,"last_page":0,…,"per_page":"10",…}
+base-digital-999.txt     → {"statusCode":404,"message":"No tienes una descarga con digital_file_id 999.","error":"Not Found"}
+base-digital-42-admin.txt→ {"statusCode":404,"message":"No tienes una descarga con digital_file_id 42.","error":"Not Found"}
+```
+
+Antes, el admin veía las 10 descargas del cliente y `digital_file` 42 le
+devolvía la URL. Los status 201 de `digital_file` e invoice son el default de
+Nest para un `@Post`, igual que en la línea base.
+
+**Seed:**
+
+```
+$ node db/generate-seed.mjs
+  … · 40 orders · 76 order_products · 10 order_files
+
+# corrida fallida: customer_id de la fila 3 cambiado a 999 en order-files.json (con copia de respaldo)
+El mock viola 1 restriccion(es) del esquema:
+  - order_files 3: customer_id 999 inexistente entre los usuarios
+exit=1
+# JSON restaurado desde la copia: git diff vacío; seed.sql intacto (cmp)
+```
+
+El helper `jsonTal()` (cast `::json`) ya existía desde US-52, así que no hizo
+falta crear uno.
+
+**CA-1** (`just db-reset` sin errores + `psql`):
+
+```
+ count | cust2 | sin_orden | distintos | min | max
+    10 |    10 |        10 |         6 |   1 |  10
+ huerfanas_customer = 0 · huerfanas_order = 0
+ orders 40 · order_products 76 · products 1200 · users 5 · order_files_id_seq 10
+ digital_file_id 42 → filas 4, 5, 9, 10 · json_typeof(file) = object
+```
+
+```
+$ npx prisma validate
+The schema at prisma\schema.prisma is valid 🚀
+$ npx prisma migrate diff --from-config-datasource --to-schema ./prisma/schema.prisma --exit-code
+EXIT=0
+```
+
+`file` queda como `Json @db.Json`, no `JsonB`.
+
+**CA-2 / V-3 / V-4** (`customer@demo.com`):
+
+```
+cust: texto idéntico (orden de claves incluido): true · deep-equal: true
+per_page "10" url http://localhost:5000/api/downloads?&limit=10&page=1
+created_at[0] 2022-01-10T15:13:21.000Z  file.created_at[0] 2021-12-18T13:58:54.000000Z
+sin limit: per_page 30 · http://localhost:5000/api/downloads?&limit=30&page=1
+```
+
+El cuerpo es idéntico byte a byte a la línea base: `file` sale verbatim de la
+columna `json` (con las fechas anidadas de 6 decimales) y el `created_at` de
+nivel superior queda en 3 decimales, igual que antes. El integration test
+también compara el texto de `file` de las 10 filas con el mock.
+
+**CA-3:** el admin ve `data: []` y `total: 0` (tabla de arriba). El spec
+`CA-3: el controlador pasa el sub del token, nunca un customer_id de la
+query` llama al controlador con `?customer_id=2` y el token del admin, y
+comprueba que el repositorio recibe `3`.
+
+**CA-4:** `"42"` con el token del cliente devuelve
+`https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/1512/DOCUMENTATION.pdf`
+como string desnudo (201, idéntico a la línea base). Las 4 filas con el 42
+comparten esa URL, así que el `curl` no distingue cuál se usó; lo fija el
+integration test (`findFirstOrderFileByDigitalFileId(42, 2)` devuelve la fila
+4). `"999"` da 404, y `"42"` con el token de admin, también.
+
+**CA-5:** export e invoice devuelven la misma URL y el mismo status que la
+línea base. Los tres imports de JSON de `orders.service.ts` ya no están:
+
+```
+$ grep -n "pickbazar\|@db/" apps/api/rest/src/orders/orders.service.ts
+1:import paymentGatewayJson from '@db/payment-gateway.json';
+2:import paymentIntentJson from '@db/payment-intent.json';
+186:export const ORDER_EXPORT_URL = 'https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/100/orders.xlsx';
+188:  'https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/100/invoice-order.pdf';
+```
+
+Las líneas 1 y 2 son el mock permanente de la pasarela, que US-59 dejó a
+propósito (decisión 2 del épico). Las 186 y 188 son las dos constantes de
+esta US, que contienen «pickbazar» en la URL.
+
+**CA-6:**
+
+```
+$ just db-check
+ Test Files  29 passed (29)
+      Tests  380 passed (380)
+$ cd apps/api/rest && npx jest
+Test Suites: 31 passed, 31 total
+Tests:       509 passed, 509 total
+$ npx tsc --noEmit -p tsconfig.json   → exit 0
+$ just build-api                      → Done in 51.16s.
+$ just verify
+OK   API    :9001/api/settings  200  5503B  626ms
+OK   Shop   :3003/en  200  190788B  841ms  cards:30
+OK   Admin  :3002/en/login  200  72821B  50134ms  cards:1
+```
+
+Antes: 28 archivos / 377 tests en `db-check` y 31 suites / 505 en jest. Se
+suman el integration test de `order_files` (3 casos) y 4 casos en
+`orders.service.spec.ts`.
+
+**Fallo intermitente.** La primera corrida de `just db-check` dio `1 failed |
+379 passed`. No guardé la salida completa, así que no sé qué test fue. Cinco
+corridas seguidas después dieron 380/380. Queda anotado sin identificar.
+
+**Notas para el reporte:**
+
+- **Mock permanente nuevo**: `GET /export-order-url` y `POST
+  /download-invoice-url` devuelven las URLs S3 constantes
+  `ORDER_EXPORT_URL` y `ORDER_INVOICE_URL`. No se genera ningún archivo.
+- **`GET export-order-url/:shop_id`**, la ruta que el admin llama cuando hay
+  tienda, sigue dando 404. No se creó (ver «NO incluye»).
+- **Paginador vacío**: con `total 0`, `paginate()` emite `current_page 0`,
+  `firstItem -10` y `lastItem -1011` (la concatenación de un `limit`
+  string). Es el comportamiento heredado de `paginate()`, el mismo que en
+  cualquier lista vacía; no es de esta US.
+- `orderBy`/`sortedBy` siguen ignorados, como en el mock.

@@ -168,18 +168,21 @@ export class OrderStatusController {
 export class OrderFilesController {
   constructor(private ordersService: OrdersService) {}
 
+  // US-60: siempre del usuario del token, nunca de un customer_id de la query.
   @Get()
   async getOrderFileItems(
     @Query() query: GetOrderFilesDto,
+    @CurrentUser() user: CurrentUserPayload,
   ): Promise<OrderFilesPaginator> {
-    return this.ordersService.getOrderFileItems(query);
+    return this.ordersService.getOrderFileItems(query, user.sub);
   }
 
   @Post('digital_file')
   async getDigitalFileDownloadUrl(
     @Body('digital_file_id', ParseIntPipe) digitalFileId: number,
+    @CurrentUser() user: CurrentUserPayload,
   ) {
-    return this.ordersService.getDigitalFileDownloadUrl(digitalFileId);
+    return this.ordersService.getDigitalFileDownloadUrl(digitalFileId, user.sub);
   }
 }
 
