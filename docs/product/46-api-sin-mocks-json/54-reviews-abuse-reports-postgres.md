@@ -8,7 +8,7 @@
 
 **Épico:** [Épico 46](./README.md)
 **Fecha:** 2026-10-20
-**Status:** Listo para ejecución
+**Status:** Implementada (2026-10-22, rama `us-54-reviews-abuse-reports`)
 **Depende de:** US-53 (deja `toProductDto` en un mapper compartido y es la anterior en la secuencia, R-2). También necesita el helper `resolverUsuarioPorEmail` que crea US-51.
 **LOC est.:** ~2000. Partir en dos PRs si pasa de ~1500 reales (R-1): corte 1 = DDL + seed + capa de datos; corte 2 = servicios Nest.
 
@@ -417,20 +417,156 @@ Feature: Resenas y reportes de abuso desde Postgres
 
 Sigue el **Protocolo de ejecución** del README del épico. Lo específico:
 
-- [ ] Precondición pegada: `product-dto.mapper.ts` existe (US-53) y
+- [x] Precondición pegada: `product-dto.mapper.ts` existe (US-53) y
   `resolverUsuarioPorEmail` existe (US-51).
-- [ ] Línea base: los 7 cuerpos.
-- [ ] `just db-seed-generate` con los conteos, más el fallo pegado de CA-1
+- [x] Línea base: los 7 cuerpos.
+- [x] `just db-seed-generate` con los conteos, más el fallo pegado de CA-1
   (id ocupado por otro email), restaurado después.
-- [ ] `just db-reset` y `psql` con los conteos de las Reglas y las
+- [x] `just db-reset` y `psql` con los conteos de las Reglas y las
   consultas de CA-2.
-- [ ] `prisma validate` y `migrate diff --exit-code` en `EXIT=0` (el índice
+- [x] `prisma validate` y `migrate diff --exit-code` en `EXIT=0` (el índice
   de expresión no debe acusar drift; si lo hace, documentar cómo lo resolvió
   `users_email_lower_idx`). Después, `just db-build`.
-- [ ] CA-3: `node -e` con deep-equal y la lista de claves excluidas.
-- [ ] CA-4 a CA-6: `curl` con Bearer y status exacto.
-- [ ] CA-7: `grep` vacío y los 4 comandos en verde con recuentos.
-- [ ] Status actualizado aquí y en el épico.
+- [x] CA-3: `node -e` con deep-equal y la lista de claves excluidas.
+- [x] CA-4 a CA-6: `curl` con Bearer y status exacto.
+- [x] CA-7: `grep` vacío y los 4 comandos en verde con recuentos.
+- [x] Status actualizado aquí y en el épico.
+
+## Evidencia (2026-10-22)
+
+**Dos commits (R-1).** Sin contar `seed.sql`, la US mide unas 2 050 líneas,
+así que va partida. El corte 1 (`d12e4fa`, unas 1 130) trae el DDL, el seed
+y la capa de datos. El corte 2 (unas 925) trae los servicios, controladores
+y specs de Nest.
+
+**Precondición:** `apps/api/rest/src/products/product-dto.mapper.ts` existe
+(US-53) y `resolverUsuarioPorEmail` está en `db/generate-seed.mjs:284`
+(US-51).
+
+**Línea base**, con la API recién arrancada sobre `main` (`0cd1e64`):
+
+```
+    37 base-abusive.txt               ("this route returns all abusive report")
+  1200 base-my-reports-cust.json      (3 filas, model_type FQCN)
+  2620 base-review-85.json            (18 claves)
+ 33192 base-reviews-admin-shop6.json  (total 13: Fuse busca "6" en product_id)
+ 70100 base-reviews-all.json          (total 85, per_page 30)
+  8934 base-reviews-p1.json           (40, 21, 1; per_page "5")
+   316 base-reviews-p1-r5.json        (total 0: rating:5 busca "5" en product_id)
+```
+
+**Seed.** `just db-seed-generate` termina con `… · 5 usuarios · … · 10
+wishlists · 85 reviews · 3 abusive_reports`. Si a `customer2` se le inyecta
+el id 3 (y el JSON se restaura después, sin diff):
+
+```
+El mock viola 1 restriccion(es) del esquema:
+  - reviews 85.user: 'customer2@demo.com' trae el id 3, que ya es de 'admin@demo.com'
+EXIT=1
+```
+
+**CA-1 y CA-2** (`just db-reset` + `psql`):
+
+| Medida | Valor |
+|---|---|
+| `users` / `permission_user` | 5 / 8 |
+| Sembrados | 4 `customer2@demo.com` y 5 `customer3@demo.com`, con `customer` y el `created_at` del snapshot |
+| `reviews` por usuario | 2 → 20, 4 → 38, 5 → 27 |
+| `reviews` por rating | 12 / 4 / 12 / 10 / 47 |
+| `reviews` de la tienda 6 | 49 |
+| `abusive_reports` | 3, todos `model_type = 'Review'` |
+| Huérfanas (user, shop, product, report.user, report.model_id) | 0 / 0 / 0 / 0 / 0 |
+| `shop_id` ≠ `products.shop_id` | 0 |
+| `photos` de la reseña 1 | `[{"id":1689,"original":…,"thumbnail":…}]` (orden del mock) |
+| Conteos previos | products 1200 · shops 12 · coupons 10 · wishlists 10 · store_notices 3 · faqs 19 |
+
+`POST /api/token` con `customer2@demo.com`/`demodemo` devuelve un token con
+`permissions: ["customer"]`.
+
+**Prisma.** `validate` correcto y `migrate diff --exit-code` con `EXIT=0`
+(`No difference detected`). El índice de expresión no acusa drift, igual que
+`users_email_lower_idx`. `just db-build` limpio.
+
+**CA-3** (`node`, deep-equal con orden de claves):
+
+```
+new-reviews-p1.json: 3 filas (40,21,1); excluido: product (V-2), user.created_at/updated_at (V-3)
+  paginador idéntico, per_page = "5"
+  fila 21: abusive_reports_count 0 vs 1   ← V-4
+  fila 1:  abusive_reports_count 0 vs 1   ← V-4
+new-review-85.json: deep-equal; excluido: product (V-2), user.created_at/updated_at (V-3)
+new-my-reports-cust.json: 3 filas (3,2,1), deep-equal; excluido: user.created_at/updated_at (V-3)
+```
+
+Las dos únicas diferencias fuera de las exclusiones son V-4: las reseñas 21 y
+1 tienen un reporte en `reports.json` y el mock no lo contaba. Los
+timestamps de cada reseña y de cada reporte son idénticos.
+
+**CA-4:**
+
+| Query | Resultado |
+|---|---|
+| `product_id=1&search=rating:5` | `total 2`: 40 y 21, igual que en `psql` |
+| `search=shop_id:6` | `total 49`, todas de la tienda 6 (antes 13) |
+| sin parámetros | `total 85`, `count 30`, empieza en el 85 |
+| `search=rating:5&limit=100` | `total 47`, todas con rating 5 |
+| `search=rating` (token sin `:`) | `total 85`: se ignora |
+| `GET /reviews/999999` | 404 |
+
+**CA-5** (el cliente sobre el producto 21, que no tenía reseña suya):
+
+| Llamada | Status | Resultado |
+|---|---|---|
+| `POST` | 201 | id 98, `user_id 2`, `shop_id 4`, 18 claves; el `GET ?product_id=21` la incluye |
+| repetirlo | 409 | |
+| `shop_id` 999 / `rating` 7 / producto 999999 / sin token | 400 / 400 / 404 / 401 | |
+| `PUT` con el token de `customer2` | 403 | |
+| `PUT` del autor | 200 | `psql`: rating 4 → 2; `updated_at` 02:35:16.161 → 02:35:23.307 |
+| `DELETE` del admin → `GET` | 200 → 404 | |
+
+**CA-6:**
+
+| Llamada | Status | Resultado |
+|---|---|---|
+| `POST /abusive_reports {85, 'Review'}` del cliente | 201 | `model_type` FQCN, `user_id 2` |
+| repetirlo / `'Question'` / reseña 999999 | 409 / 400 / 404 | |
+| `GET /reviews/85` | 200 | `abusive_reports_count: 1` |
+| `GET /abusive_reports` cliente / admin | 403 / 200 | admin: 4 filas (`12,3,2,1`) |
+| `GET` y `PUT /abusive_reports/12` (admin) | 200 / 200 | mensaje editado |
+| `GET /my-reports` admin / cliente | 200 / 200 | `{data: []}` / 4 filas |
+| `DELETE /abusive_reports/12` → `GET` | 200 → 404 | `/reviews/85` vuelve a `abusive_reports_count: 0` |
+| `POST /abusive_reports/reject` | 404 | la ruta no existe (fuera de alcance) |
+
+Al final hay 85 reseñas, 3 reportes y 0 centinelas.
+
+**CA-7:**
+
+- El `grep` no devuelve nada (`exit=1`).
+- `just db-check`: 24 archivos y 337 tests (antes 22/325; +12). Ningún
+  assert sobre usuarios cambió con los 2 nuevos: `users.integration.test.ts`
+  exige `>= 3`.
+- `npx jest`: 24 suites y 431 tests (antes 21/407; +24).
+- `just build-api`: `Done in 70.23s`, y `tsc --noEmit` en 0.
+- `just verify`: API `5503B`, Shop `cards:30`, Admin `cards:1`.
+  `/products/apples` (con reseñas) responde 200.
+
+**Decisiones que no estaban escritas en la US:**
+
+- **Borrar una reseña borra sus reportes** en el mismo `$transaction`. La
+  relación es polimórfica, así que la base no lo hace sola, y un reporte
+  sobre una reseña que no existe no tiene a dónde apuntar.
+- **`assertReportableExists` vive en el repositorio**, no en el servicio. La
+  nota pedía aislarla para que US-55 la cambie en una línea, y así queda. El
+  servicio solo normaliza el FQCN y valida el `model_id`.
+- **Los índices de `user_id`** quedan cubiertos por la izquierda del único
+  de expresión (`reviews`) y del `UNIQUE (user_id, model_type, model_id)`
+  (`abusive_reports`). No se crearon aparte.
+
+**Fuera de alcance, para el reporte:**
+
+- `POST abusive_reports/reject` (el "decline" del admin) sigue dando 404.
+- Los 409 dicen "…con el slug `user_id, product_id, order_id`": es el texto
+  común de `SlugConflictError`, el mismo caso que en US-52.
 
 ## Notas para el agente ejecutor
 

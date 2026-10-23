@@ -47,7 +47,7 @@ barrel.
 | [US-51](./51-store-notices-postgres.md) | `store-notices` (N:M + lectura) | 5 (+1) | `store_notices` + 3 pivotes | US-50 | ~1900 | ✅ Implementada (2026-10-22) |
 | [US-52](./52-coupons-postgres.md) | `coupons` y su verificación | 9 | `coupons` | US-51 | ~1500 | ✅ Implementada (2026-10-22) |
 | [US-53](./53-wishlists-postgres.md) | `wishlists` y `my-wishlists` | 12 | `wishlists` | US-52 | ~1300 | ✅ Implementada (2026-10-22) |
-| [US-54](./54-reviews-abuse-reports-postgres.md) | `reviews`, `abusive_reports` y `my-reports` | 11 | `reviews`, `abusive_reports` | US-53 | ~2000 | |
+| [US-54](./54-reviews-abuse-reports-postgres.md) | `reviews`, `abusive_reports` y `my-reports` | 11 | `reviews`, `abusive_reports` | US-53 | ~2000 | ✅ Implementada (2026-10-22) |
 | [US-55](./55-questions-postgres.md) | `questions` y `my-questions` | 10 | `questions` | US-54 | ~1500 | |
 | [US-56](./56-conversations-messages-postgres.md) | `conversations` y `messages` | 5 | `conversations`, `messages` | US-55 | ~1500 | |
 | [US-57](./57-order-statuses-postgres.md) | `order-status` | 5 | `order_statuses` | US-56 | ~900 | |

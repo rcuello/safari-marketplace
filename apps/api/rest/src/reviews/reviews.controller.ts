@@ -9,10 +9,14 @@ import {
   Delete,
 } from '@nestjs/common';
 import { CreateReviewDto } from './dto/create-review.dto';
-import { GetReviewsDto, ReviewPaginator } from './dto/get-reviews.dto';
+import { GetReviewsDto } from './dto/get-reviews.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
 import { ReviewService } from './reviews.service';
 import { Public } from 'src/auth/decorators/public.decorator';
+import {
+  CurrentUser,
+  CurrentUserPayload,
+} from 'src/auth/decorators/current-user.decorator';
 
 @Controller('reviews')
 export class ReviewController {
@@ -35,20 +39,28 @@ export class ReviewController {
     return this.reviewService.findReview(+id);
   }
 
-  //  create a new review
+  //  create a new review — el autor es quien llama (US-54).
   @Post()
-  create(@Body() createReviewDto: CreateReviewDto) {
-    return this.reviewService.create(createReviewDto);
+  create(
+    @Body() createReviewDto: CreateReviewDto,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
+    return this.reviewService.create(createReviewDto, user);
   }
 
+  // Solo el autor o un super_admin (US-54).
   @Put(':id')
-  update(@Param('id') id: string, @Body() updateReviewDto: UpdateReviewDto) {
-    return this.reviewService.update(+id, updateReviewDto);
+  update(
+    @Param('id') id: string,
+    @Body() updateReviewDto: UpdateReviewDto,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
+    return this.reviewService.update(+id, updateReviewDto, user);
   }
 
-  // delete a review
+  // delete a review — solo el autor o un super_admin (US-54).
   @Delete(':id')
-  delete(@Param('id') id: string) {
-    return this.reviewService.delete(+id);
+  delete(@Param('id') id: string, @CurrentUser() user: CurrentUserPayload) {
+    return this.reviewService.delete(+id, user);
   }
 }

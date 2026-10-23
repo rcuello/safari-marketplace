@@ -1,64 +1,191 @@
-import { Injectable } from '@nestjs/common';
-import { plainToClass } from 'class-transformer';
-import Fuse from 'fuse.js';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
+import {
+  createReview,
+  deleteReview,
+  findReviewById,
+  getUserFriendlyMessage,
+  isPrismaConnectionError,
+  listReviews,
+  updateReview,
+  type Prisma,
+  type ReviewDetailRecord,
+} from '@safari/db';
+import { CurrentUserPayload } from 'src/auth/decorators/current-user.decorator';
 import { paginate } from 'src/common/pagination/paginate';
+import { parseSearch } from 'src/common/search/parse-search';
+import { toWriteHttpException } from 'src/common/errors/domain-error.mapper';
 import { CreateReviewDto } from './dto/create-review.dto';
+import { GetReviewsDto } from './dto/get-reviews.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
-import { GetReviewsDto, ReviewPaginator } from './dto/get-reviews.dto';
-import reviewJSON from '@db/reviews.json';
 import { Review } from './entities/review.entity';
+import { toReviewDto } from './review-dto.mapper';
 
-const reviews = plainToClass(Review, reviewJSON);
-const options = {
-  keys: ['product_id'],
-  threshold: 0.3,
-};
-const fuse = new Fuse(reviews, options);
+function readError(error: unknown): never {
+  if (isPrismaConnectionError(error)) {
+    throw new ServiceUnavailableException(getUserFriendlyMessage(error));
+  }
+  throw new InternalServerErrorException(getUserFriendlyMessage(error));
+}
+
+function assertId(id: number): void {
+  if (!Number.isSafeInteger(id) || id <= 0) {
+    throw new NotFoundException(`No existe una reseña con id ${id}.`);
+  }
+}
+
+/** Entero positivo seguro, o `null` si no lo es. */
+function parsePositiveInt(value: unknown): number | null {
+  const n = Number(value);
+  return Number.isSafeInteger(n) && n > 0 ? n : null;
+}
+
+/** Campo numérico del body: ausente/null ⇒ null; inválido ⇒ 400. */
+function optionalBodyId(value: unknown, field: string): number | null {
+  if (value === undefined || value === null || value === '') return null;
+  const n = parsePositiveInt(value);
+  if (n === null) throw new BadRequestException(`\`${field}\` no admite \`${String(value)}\`.`);
+  return n;
+}
 
 @Injectable()
 export class ReviewService {
-  private reviews: Review[] = reviews;
-
-  findAllReviews({ limit, page, search, product_id }: GetReviewsDto) {
+  /**
+   * Filtros reales combinados con AND (V-1): `product_id` del query y
+   * `rating:N`, `shop_id:N` y `type.slug:<x>` desde `search`. Las demás
+   * claves se ignoran. Un número no válido devuelve la lista vacía (como el
+   * mock con un `product_id` que no casa). Orden `id DESC`, defaults
+   * `page=1`/`limit=30`; `paginate()` recibe el `limit` crudo y la url es la
+   * del mock.
+   */
+  async findAllReviews({ limit, page, search, product_id }: GetReviewsDto) {
     if (!page) page = 1;
     if (!limit) limit = 30;
-    const startIndex = (page - 1) * limit;
-    const endIndex = page * limit;
-    let data: Review[] = this.reviews;
-
-    if (search) {
-      const parseSearchParams = search.split(';');
-      for (const searchParam of parseSearchParams) {
-        const [key, value] = searchParam.split(':');
-        data = fuse.search(value)?.map(({ item }) => item);
-      }
-    }
-
-    if (product_id) {
-      data = data.filter((p) => p.product_id === Number(product_id));
-    }
-
-    const results = data.slice(startIndex, endIndex);
     const url = `/reviews?search=${search}&limit=${limit}`;
-    return {
-      data: results,
-      ...paginate(data.length, page, limit, results.length, url),
+    const tokens = parseSearch(search);
+    const empty = () => ({ data: [], ...paginate(0, page, limit, 0, url) });
+
+    const numeric: Record<'productId' | 'shopId' | 'rating', number | undefined> = {
+      productId: undefined,
+      shopId: undefined,
+      rating: undefined,
     };
+    for (const [key, raw] of [
+      ['productId', product_id],
+      ['shopId', tokens.shop_id],
+      ['rating', tokens.rating],
+    ] as const) {
+      if (raw === undefined || raw === '') continue;
+      const n = parsePositiveInt(raw);
+      if (n === null) return empty();
+      numeric[key] = n;
+    }
+
+    try {
+      const { items, total } = await listReviews({
+        ...numeric,
+        typeSlug: tokens['type.slug'] || undefined,
+        page: Number(page),
+        limit: Number(limit),
+      });
+      return {
+        data: items.map(toReviewDto),
+        ...paginate(total, page, limit, items.length, url),
+      };
+    } catch (error) {
+      readError(error);
+    }
   }
 
-  findReview(id: number) {
-    return this.reviews.find((p) => p.id === id);
+  /** DTO o 404 (V-8). */
+  async findReview(id: number): Promise<Review> {
+    assertId(id);
+    return toReviewDto(await this.findOrFail(id));
   }
 
-  create(createReviewDto: CreateReviewDto) {
-    return this.reviews[0];
+  /**
+   * El autor es quien llama. 404 si el producto no existe; 400 si `shop_id`
+   * no es su tienda o `rating` está fuera de 1..5; 409 si ya reseñó ese
+   * producto con esa orden.
+   */
+  async create(dto: CreateReviewDto, user: CurrentUserPayload): Promise<Review> {
+    const productId = optionalBodyId(dto.product_id, 'product_id');
+    const shopId = optionalBodyId(dto.shop_id, 'shop_id');
+    if (productId === null) throw new BadRequestException('`product_id` es obligatorio.');
+    if (shopId === null) throw new BadRequestException('`shop_id` es obligatorio.');
+    // Fuera del try: `toWriteHttpException` convertiría este 400 en un 500.
+    const orderId = optionalBodyId(dto.order_id, 'order_id');
+    const variationOptionId = optionalBodyId(dto.variation_option_id, 'variation_option_id');
+    try {
+      const record = await createReview({
+        userId: user.sub,
+        productId,
+        shopId,
+        rating: Number(dto.rating),
+        comment: dto.comment,
+        ...(dto.photos !== undefined && {
+          photos: dto.photos as unknown as Prisma.InputJsonValue[],
+        }),
+        orderId,
+        variationOptionId,
+      });
+      return toReviewDto(record);
+    } catch (error) {
+      throw toWriteHttpException(error);
+    }
   }
 
-  update(id: number, updateReviewDto: UpdateReviewDto) {
-    return this.reviews[0];
+  /** Solo el autor o un `super_admin` (403). Edita `rating`, `comment` y `photos`. */
+  async update(id: number, dto: UpdateReviewDto, user: CurrentUserPayload): Promise<Review> {
+    assertId(id);
+    this.assertCanModify(await this.findOrFail(id), user);
+    try {
+      const record = await updateReview(id, {
+        ...(dto.rating !== undefined && { rating: Number(dto.rating) }),
+        ...(dto.comment !== undefined && { comment: dto.comment }),
+        ...(dto.photos !== undefined && {
+          photos: dto.photos as unknown as Prisma.InputJsonValue[],
+        }),
+      });
+      return toReviewDto(record);
+    } catch (error) {
+      throw toWriteHttpException(error);
+    }
   }
 
-  delete(id: number) {
-    return this.reviews[0];
+  /** Solo el autor o un `super_admin`. Devuelve la reseña borrada (V-5). */
+  async delete(id: number, user: CurrentUserPayload): Promise<Review> {
+    assertId(id);
+    this.assertCanModify(await this.findOrFail(id), user);
+    try {
+      return toReviewDto(await deleteReview(id));
+    } catch (error) {
+      throw toWriteHttpException(error);
+    }
+  }
+
+  private assertCanModify(record: ReviewDetailRecord, user: CurrentUserPayload): void {
+    if (record.userId !== user.sub && !user.permissions.includes('super_admin')) {
+      throw new ForbiddenException('Solo el autor puede modificar esta reseña.');
+    }
+  }
+
+  private async findOrFail(id: number): Promise<ReviewDetailRecord> {
+    let record: ReviewDetailRecord | null;
+    try {
+      record = await findReviewById(id);
+    } catch (error) {
+      readError(error);
+    }
+    if (!record) {
+      throw new NotFoundException(`No existe una reseña con id ${id}.`);
+    }
+    return record;
   }
 }
