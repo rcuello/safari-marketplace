@@ -17,7 +17,10 @@
 //     (∈ global|shop), refund_policies_target_check (∈ vendor|customer),
 //     refund_policies_status_check (∈ approved|pending), taxes_rate_check
 //     (rate ≥ 0), shippings_amount_check (amount ≥ 0), shippings_type_check
-//     (∈ fixed|percentage|free). Los repositorios los validan
+//     (∈ fixed|percentage|free), store_notices_priority_check (∈ high|
+//     medium|low), store_notices_type_check (∈ all_vendor|specific_vendor|
+//     all_shop|specific_shop), store_notices_vigencia_valida
+//     (effective_from <= expired_at). Los repositorios los validan
 //     antes de escribir y traducen la violación a errores de dominio.
 //   · El índice de expresión products_nombre_trgm_idx
 //     (gin (lower(name) gin_trgm_ops)) que acelera la búsqueda por
@@ -93,6 +96,7 @@ model Shop {
   termsAndConditions TermsAndConditions[]
   refundPolicies     RefundPolicy[]
   attributes         Attribute[]
+  storeNotices       StoreNoticeShop[]
 
   @@map("shops")
 }
@@ -257,6 +261,10 @@ model User {
   staffShops          ShopStaff[]
   faqs                Faq[]
   termsAndConditions  TermsAndConditions[]
+  createdStoreNotices StoreNotice[]         @relation("StoreNoticeCreator")
+  updatedStoreNotices StoreNotice[]         @relation("StoreNoticeUpdater")
+  storeNotices        StoreNoticeUser[]
+  storeNoticeReads    StoreNoticeRead[]
 
   @@map("users")
 }
@@ -506,4 +514,72 @@ model AttributeValue {
 
   @@unique([attributeId, slug])
   @@map("attribute_values")
+}
+
+// =====================================================================
+// Avisos de tienda (US-51, Épico 46)
+// =====================================================================
+
+model StoreNotice {
+  id            BigInt    @id @default(autoincrement())
+  priority      String
+  notice        String
+  description   String?
+  effectiveFrom DateTime? @map("effective_from") @db.Timestamptz(6)
+  expiredAt     DateTime  @map("expired_at") @db.Timestamptz(6)
+  type          String
+  createdBy     BigInt    @map("created_by")
+  updatedBy     BigInt?   @map("updated_by")
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  creator    User              @relation("StoreNoticeCreator", fields: [createdBy], references: [id], onUpdate: NoAction)
+  updater    User?             @relation("StoreNoticeUpdater", fields: [updatedBy], references: [id], onUpdate: NoAction)
+  recipients StoreNoticeUser[]
+  shops      StoreNoticeShop[]
+  reads      StoreNoticeRead[]
+
+  @@index([createdBy])
+  @@index([updatedBy])
+  @@map("store_notices")
+}
+
+model StoreNoticeUser {
+  storeNoticeId BigInt   @map("store_notice_id")
+  userId        BigInt   @map("user_id")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  storeNotice StoreNotice @relation(fields: [storeNoticeId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([storeNoticeId, userId])
+  @@index([userId], map: "store_notice_user_usuario_idx")
+  @@map("store_notice_user")
+}
+
+model StoreNoticeShop {
+  storeNoticeId BigInt   @map("store_notice_id")
+  shopId        BigInt   @map("shop_id")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  shop        Shop        @relation(fields: [shopId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  storeNotice StoreNotice @relation(fields: [storeNoticeId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([storeNoticeId, shopId])
+  @@index([shopId], map: "store_notice_shop_tienda_idx")
+  @@map("store_notice_shop")
+}
+
+model StoreNoticeRead {
+  storeNoticeId BigInt   @map("store_notice_id")
+  userId        BigInt   @map("user_id")
+  isRead        Boolean  @default(false) @map("is_read")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  storeNotice StoreNotice @relation(fields: [storeNoticeId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([storeNoticeId, userId])
+  @@index([userId], map: "store_notice_read_usuario_idx")
+  @@map("store_notice_read")
 }

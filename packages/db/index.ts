@@ -43,6 +43,10 @@ export type {
   ShippingRecord,
   ShopRecord,
   ShopStaffRecord,
+  StoreNoticeCreatorRecord,
+  StoreNoticeDetailRecord,
+  StoreNoticeReadRecord,
+  StoreNoticeRecord,
   TagRecord,
   TaxRecord,
   TermsAndConditionsRecord,
@@ -157,6 +161,23 @@ export {
   listAttributes,
   updateAttribute,
 } from './src/repositories/attributes.repository';
+export type {
+  CreateStoreNoticeInput,
+  ListStoreNoticesInput,
+  StoreNoticeSortField,
+  UpdateStoreNoticeInput,
+} from './src/repositories/store-notices.repository';
+export {
+  STORE_NOTICE_PRIORITIES,
+  STORE_NOTICE_SORTABLE,
+  STORE_NOTICE_TYPES,
+  createStoreNotice,
+  deleteStoreNotice,
+  findStoreNoticeById,
+  listStoreNotices,
+  markStoreNoticeRead,
+  updateStoreNotice,
+} from './src/repositories/store-notices.repository';
 export type {
   CategoryAncestor,
   CategoryDescendant,

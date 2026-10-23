@@ -40,6 +40,7 @@ const refundReasons = leer('refund-reasons');
 const taxes = leer('taxes');
 const shippings = leer('shippings');
 const attributes = leer('attributes');
+const storeNotices = leer('store-notices');
 
 // ── Literales SQL ────────────────────────────────────────────────────────
 const txt = (v) =>
@@ -262,6 +263,57 @@ for (const v of valoresAtributo) {
 if (new Set(valoresAtributo.map((v) => `${v._padre}:${v.slug}`)).size !== valoresAtributo.length)
   problemas.push('attribute_values: slug duplicado dentro de un atributo');
 
+// ── Identidad referenciada por el mock (D-4 del Épico 46) ────────────────
+// Los mocks que no son users.json apuntan a ids de usuario del Laravel
+// original que el seed no tiene (6 = admin@demo.com, que aquí es el 3).
+// Contrato de resolverUsuarioPorEmail(snapshot, donde):
+//   · recibe cualquier objeto con `email` (el `creator`, un `users[]`, un
+//     `customer` embebido…) y una descripción de dónde salió, para el error;
+//   · busca el email case-insensitive entre los usuarios que el generador
+//     siembra y devuelve SU id, nunca el `id` del snapshot;
+//   · email ausente o desconocido ⇒ anota el problema y devuelve null: la
+//     generación se detiene antes de escribir seed.sql.
+// US-51 solo remapea. US-54 lo extiende para SEMBRAR los usuarios que falten.
+const idPorEmail = new Map(users.map((u) => [String(u.email).toLowerCase(), u.id]));
+function resolverUsuarioPorEmail(snapshot, donde) {
+  const email = snapshot?.email ? String(snapshot.email).toLowerCase() : null;
+  const id = email ? idPorEmail.get(email) : undefined;
+  if (id === undefined) {
+    problemas.push(`${donde}: email '${snapshot?.email}' no casa con ningún usuario del seed`);
+    return null;
+  }
+  return id;
+}
+
+// ── Avisos de tienda (US-51) ─────────────────────────────────────────────
+// created_by/updated_by vienen como el id 6 del mock: se resuelven vía
+// creator.email (updated_by solo existe en el aviso 2, y es el mismo admin).
+const avisos = storeNotices.map((n) => {
+  const creador = resolverUsuarioPorEmail(n.creator, `store_notices ${n.id}.creator`);
+  return {
+    ...n,
+    _created_by: creador,
+    _updated_by: n.updated_by == null ? null : creador,
+    _destinatarios: (n.users ?? []).map((u) =>
+      resolverUsuarioPorEmail(u, `store_notices ${n.id}.users`)
+    ),
+    _lecturas: (n.read_status ?? []).map((u) => ({
+      user_id: resolverUsuarioPorEmail(u, `store_notices ${n.id}.read_status`),
+      is_read: u.pivot?.is_read,
+    })),
+  };
+});
+for (const n of avisos) {
+  if (!['high', 'medium', 'low'].includes(n.priority))
+    problemas.push(`store_notices ${n.id}: priority '${n.priority}' fuera del CHECK`);
+  if (!['all_vendor', 'specific_vendor', 'all_shop', 'specific_shop'].includes(n.type))
+    problemas.push(`store_notices ${n.id}: type '${n.type}' fuera del CHECK`);
+  if (n.updated_by != null && n.updated_by !== n.created_by)
+    problemas.push(`store_notices ${n.id}: updated_by distinto del creador; no hay snapshot para resolverlo`);
+  if ((n.shops ?? []).length)
+    problemas.push(`store_notices ${n.id}: trae shops[] y el generador no los siembra todavía`);
+}
+
 if (problemas.length) {
   console.error(`\nEl mock viola ${problemas.length} restriccion(es) del esquema:`);
   problemas.slice(0, 20).forEach((p) => console.error('  - ' + p));
@@ -292,7 +344,8 @@ L.push(
     `${faqsFilas.length} faqs · ${termsFilas.length} terms_and_conditions · ` +
     `${refundPolicies.length} refund_policies · ${refundReasons.length} refund_reasons · ` +
     `${taxes.length} taxes · ${shippings.length} shippings · ` +
-    `${attributes.length} attributes · ${valoresAtributo.length} attribute_values`,
+    `${attributes.length} attributes · ${valoresAtributo.length} attribute_values · ` +
+    `${avisos.length} store_notices`,
   '-- =====================================================================',
   '',
   'BEGIN;'
@@ -556,6 +609,46 @@ L.push(
     .join(',\n') + '\nON CONFLICT (id) DO NOTHING;'
 );
 
+// store_notices + pivotes (US-51; tras users y shops: las FK lo exigen) ------
+const lecturas = avisos.flatMap((n) => n._lecturas.map((l) => ({ ...l, notice: n.id })));
+bloque(
+  `store_notices — ${avisos.length} · store_notice_user — ${avisos.reduce((s, n) => s + n._destinatarios.length, 0)} · ` +
+    `store_notice_read — ${lecturas.length}`
+);
+L.push(
+  '-- created_by/updated_by y los usuarios de los pivotes resueltos POR EMAIL',
+  '-- (resolverUsuarioPorEmail): el 6 del mock es admin@demo.com = 3 aquí.',
+  '-- effective_from/expired_at son literales sin zona: Postgres los toma en la',
+  '-- zona del servidor (UTC en la imagen) y la API los reformatea igual.',
+  'INSERT INTO store_notices (id, priority, notice, description, effective_from, expired_at, type, created_by, updated_by, created_at, updated_at) VALUES'
+);
+L.push(
+  avisos
+    .map(
+      (n) =>
+        `  (${n.id}, ${txt(n.priority)}, ${txt(n.notice)}, ${txt(n.description)}, ` +
+        `${txt(n.effective_from)}, ${txt(n.expired_at)}, ${txt(n.type)}, ` +
+        `${n._created_by}, ${num(n._updated_by)}, ${ts(n.created_at)}, ${ts(n.updated_at)})`
+    )
+    .join(',\n') + '\nON CONFLICT (id) DO NOTHING;'
+);
+L.push('INSERT INTO store_notice_user (store_notice_id, user_id) VALUES');
+L.push(
+  avisos
+    .flatMap((n) => n._destinatarios.map((u) => `  (${n.id}, ${u})`))
+    .join(',\n') + '\nON CONFLICT (store_notice_id, user_id) DO NOTHING;'
+);
+L.push(
+  '-- store_notice_shop queda vacía: los 3 avisos del mock traen shops: [].',
+  '-- pivot.is_read llega como entero 1/0 -> bool().',
+  'INSERT INTO store_notice_read (store_notice_id, user_id, is_read) VALUES'
+);
+L.push(
+  lecturas
+    .map((l) => `  (${l.notice}, ${l.user_id}, ${bool(l.is_read)})`)
+    .join(',\n') + '\nON CONFLICT (store_notice_id, user_id) DO NOTHING;'
+);
+
 // categories -------------------------------------------------------------
 const raices = categories.filter((c) => !c.parent_id).length;
 bloque(`categories — ${categories.length} (${raices} raíces, ${categories.length - raices} hijas)`);
@@ -692,7 +785,7 @@ L.push(
   '-- mock, así que hay que adelantar las secuencias o el primer INSERT nuevo',
   '-- chocaría con una clave existente.'
 );
-for (const t of ['types', 'users', 'permissions', 'shops', 'categories', 'manufacturers', 'tags', 'products', 'faqs', 'terms_and_conditions', 'refund_policies', 'refund_reasons', 'taxes', 'shippings', 'attributes', 'attribute_values']) {
+for (const t of ['types', 'users', 'permissions', 'shops', 'categories', 'manufacturers', 'tags', 'products', 'faqs', 'terms_and_conditions', 'refund_policies', 'refund_reasons', 'taxes', 'shippings', 'attributes', 'attribute_values', 'store_notices']) {
   L.push(`SELECT setval('${t}_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM ${t}), 1));`);
 }
 
@@ -711,5 +804,6 @@ console.log(
     `(${termsDescartados.length} duplicados descartados) · ` +
     `${refundPolicies.length} refund_policies · ${refundReasons.length} refund_reasons · ` +
     `${taxes.length} taxes · ${shippings.length} shippings · ` +
-    `${attributes.length} attributes · ${valoresAtributo.length} attribute_values`
+    `${attributes.length} attributes · ${valoresAtributo.length} attribute_values · ` +
+    `${avisos.length} store_notices`
 );

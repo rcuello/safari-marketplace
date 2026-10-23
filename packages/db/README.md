@@ -116,7 +116,8 @@ No usar `prisma migrate dev` ni `prisma db push` contra esta base.
   US-47 `faqs_faq_type_check` y `terms_and_conditions_type_check`, y desde
   US-48 `refund_policies_target_check` y `refund_policies_status_check`, y
   desde US-49 `taxes_rate_check`, `shippings_amount_check` y
-  `shippings_type_check`) no existen
+  `shippings_type_check`, y desde US-51 `store_notices_priority_check`,
+  `store_notices_type_check` y `store_notices_vigencia_valida`) no existen
   para Prisma. Los repositorios los validan antes de escribir (tipos +
   guard de `salePrice < price`) y traducen la violación que llegue de
   Postgres a errores de dominio: `InvalidSalePriceError`,
@@ -216,6 +217,32 @@ Los slugs de los valores nuevos salen de `generateSlug` con un lookup en
 memoria (los existentes del atributo más los ya asignados en el lote), así
 que el esquema de sufijos (`-2`, `-3`…) es el mismo del resto del paquete y
 se calcula antes de la transacción.
+
+### Avisos de tienda (US-51, Épico 46) — `store-notices.repository.ts`
+
+`StoreNoticeRecord` es la fila plana. `StoreNoticeDetailRecord` le añade lo
+que la API emite: el `creator` con sus `permissions`, los `recipients`
+(usuarios), las `shops` y los `reads` (estado de lectura por usuario). El
+orden de cada relación es fijo: destinatarios y lecturas por `userId DESC`,
+tiendas por `shopId ASC` y permisos por `permissionId ASC`.
+
+- **`listStoreNotices`** filtra por texto, por usuario destinatario
+  (`userId`), por tienda destinataria (`shopId` o `shopSlug`) y acepta
+  `orderBy` (`STORE_NOTICE_SORTABLE`) con desempate por `id DESC`.
+- **`findStoreNoticeById`**, **`deleteStoreNotice`** (devuelve el detalle;
+  los pivotes caen por CASCADE).
+- **`createStoreNotice`**: los destinatarios los decide el `type` (ver
+  `db/README.md`), y cada usuario destinatario recibe una lectura en
+  `false`. Es un único nested write, así que un id de `receivedBy`
+  inexistente da `InvalidReferenceError` sin filas sueltas.
+- **`updateStoreNotice`**: si llegan `type` o `receivedBy`, reconcilia los
+  pivotes en un `$transaction` y conserva la lectura de quien sigue siendo
+  destinatario. Fija `updatedBy` y `updatedAt`.
+- **`markStoreNoticeRead`**: upsert de la lectura del usuario.
+
+Los tres CHECK de `store_notices` se validan antes de escribir con
+`InvalidFieldValueError`. Los valores admitidos se exportan como
+`STORE_NOTICE_PRIORITIES` y `STORE_NOTICE_TYPES`.
 
 ### Identidad (US-21, Épico 19) — `users.repository.ts`
 

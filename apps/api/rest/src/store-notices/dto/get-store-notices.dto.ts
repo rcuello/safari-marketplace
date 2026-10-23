@@ -12,6 +12,8 @@ export class GetStoreNoticesDto extends PaginationArgs {
   sortedBy?: SortOrder;
   search?: string;
   language?: string;
+  /** El shop lo manda como query además de dentro de `search`. */
+  shop_id?: string;
 }
 
 export enum QueryStoreNoticesOrderByColumn {

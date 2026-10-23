@@ -18,7 +18,13 @@ import {
   ADMIN_AND_OWNER,
   Permissions,
 } from 'src/auth/decorators/permissions.decorator';
+import {
+  CurrentUser,
+  CurrentUserPayload,
+} from 'src/auth/decorators/current-user.decorator';
 
+// `is_read` es por usuario (US-51): toda ruta que proyecta un aviso necesita
+// saber quién consulta, por eso @CurrentUser va en lecturas y escrituras.
 @Permissions(...ADMIN_AND_OWNER)
 @Controller('store-notices')
 export class StoreNoticesController {
@@ -28,13 +34,26 @@ export class StoreNoticesController {
   ) {}
 
   @Post()
-  createStoreNotice(@Body() createStoreNoticeDto: CreateStoreNoticeDto) {
-    return this.storeNoticesService.create(createStoreNoticeDto);
+  createStoreNotice(
+    @Body() createStoreNoticeDto: CreateStoreNoticeDto,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
+    return this.storeNoticesService.create(createStoreNoticeDto, user.sub);
+  }
+
+  // Ruta literal antes de las parametrizadas, como `getUsersToNotify`. El
+  // admin la llama desde la barra superior (`useStoreNoticeRead`) con `{id}`.
+  @Post('read')
+  markAsRead(@Body('id') id: unknown, @CurrentUser() user: CurrentUserPayload) {
+    return this.storeNoticesService.markAsRead(id, user.sub);
   }
 
   @Get()
-  getStoreNotices(@Query() query: GetStoreNoticesDto) {
-    return this.storeNoticesService.getStoreNotices(query);
+  getStoreNotices(
+    @Query() query: GetStoreNoticesDto,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
+    return this.storeNoticesService.getStoreNotices(query, user.sub);
   }
 
   @Get('getUsersToNotify')
@@ -45,21 +64,25 @@ export class StoreNoticesController {
   @Get(':param')
   getStoreNotice(
     @Param('param') param: string,
-    @Query('language') language: string,
+    @CurrentUser() user: CurrentUserPayload,
   ) {
-    return this.storeNoticesService.getStoreNotice(param, language);
+    return this.storeNoticesService.getStoreNotice(param, user.sub);
   }
 
   @Put(':id')
   update(
     @Param('id') id: string,
     @Body() updateStoreNoticeDto: UpdateStoreNoticeDto,
+    @CurrentUser() user: CurrentUserPayload,
   ) {
-    return this.storeNoticesService.update(+id, updateStoreNoticeDto);
+    return this.storeNoticesService.update(+id, updateStoreNoticeDto, user.sub);
   }
 
   @Delete(':id')
-  deleteStoreNotice(@Param('id') id: string) {
-    return this.storeNoticesService.remove(+id);
+  deleteStoreNotice(
+    @Param('id') id: string,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
+    return this.storeNoticesService.remove(+id, user.sub);
   }
 }

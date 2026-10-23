@@ -8,7 +8,7 @@
 
 **Épico:** [Épico 46](./README.md)
 **Fecha:** 2026-10-20
-**Status:** Listo para ejecución
+**Status:** Implementada (2026-10-22, rama `us-51-store-notices`)
 **Depende de:** [US-50](./50-attributes-postgres.md) (orden secuencial del
 épico, R-2)
 **LOC est.:** ~1900
@@ -325,23 +325,144 @@ Feature: Avisos de tienda desde Postgres
 Seguir el [Protocolo del épico](./README.md#protocolo-de-ejecución-de-una-us-de-este-épico)
 y pegar:
 
-- [ ] Línea base (5 `curl`, el último con 404) con sus bytes.
-- [ ] Generador (corrida buena y corrida con email desconocido) y `just
+- [x] Línea base (5 `curl`, el último con 404) con sus bytes.
+- [x] Generador (corrida buena y corrida con email desconocido) y `just
       db-reset`.
-- [ ] `psql` con:
+- [x] `psql` con:
   - los conteos;
   - las 0 huérfanas;
   - `SELECT id, created_by, updated_by FROM store_notices`;
   - `SHOW timezone`;
   - los conteos previos.
-- [ ] `prisma validate` y `migrate diff` con `EXIT=0`; `just db-build`.
-- [ ] `just db-check` y `npx jest` con sus recuentos.
-- [ ] `just build-api` y `just verify`.
-- [ ] Deep-equal acotado de CA-3, con la lista de claves excluidas impresa.
-- [ ] Los `curl` de CA-4 y CA-5 con Bearer y status exacto.
-- [ ] `getUsersToNotify` antes y después.
-- [ ] `grep` sin imports de JSON.
-- [ ] Status de la US y fila del épico.
+- [x] `prisma validate` y `migrate diff` con `EXIT=0`; `just db-build`.
+- [x] `just db-check` y `npx jest` con sus recuentos.
+- [x] `just build-api` y `just verify`.
+- [x] Deep-equal acotado de CA-3, con la lista de claves excluidas impresa.
+- [x] Los `curl` de CA-4 y CA-5 con Bearer y status exacto.
+- [x] `getUsersToNotify` antes y después.
+- [x] `grep` sin imports de JSON.
+- [x] Status de la US y fila del épico.
+
+### Evidencia (2026-10-22)
+
+**Línea base** (API mock recién arrancada, Bearer de `admin@demo.com`). Se
+añadió `search=users.id:1` como «antes» de V-4:
+
+```
+sn-2.json            2359 B  id=2
+sn-default.json      7348 B  ids=[3,2,1] total=3 per_page=12
+sn-search.json       2692 B  ids=[3] total=1 per_page="20"
+sn-topbar.json       7347 B  ids=[3,2,1] total=3 per_page="5"
+sn-user1.json         333 B  ids=[] total=0 per_page=12
+users-notify.json   17007 B  array len=3
+POST /read: 404
+```
+
+**Generador:** la corrida buena da `… · 3 store_notices`. La corrida con
+`creator.email = fantasma@demo.com` en el aviso 3 se detiene con
+*store_notices 3.creator: email 'fantasma@demo.com' no casa con ningún
+usuario del seed*, `EXIT=1`, y deja `seed.sql` intacto. El JSON se restauró
+con `git checkout`.
+
+**`psql` tras `just db-reset`:**
+
+- `store_notices` 3 · `store_notice_user` 6 · `store_notice_shop` 0 ·
+  `store_notice_read` 6, de las que 3 están leídas.
+- 0 huérfanas en `created_by`, `updated_by` y los pivotes de usuario.
+- `SHOW timezone` = `UTC`.
+
+```
+ id | created_by | updated_by |     effective_from     |       expired_at
+  1 |          3 |            | 2023-03-15 18:00:00+00 | 2023-04-29 18:00:00+00
+  2 |          3 |          3 | 2023-03-15 12:00:00+00 | 2023-03-30 12:00:00+00
+  3 |          3 |            | 2023-03-15 18:00:00+00 | 2023-03-16 18:00:00+00
+```
+
+Lecturas: el usuario 3 tiene `t` en los 3 avisos y el usuario 1, `f`.
+Conteos previos intactos: 8 attributes, 1 taxes, 8 refund_reasons, 19 faqs,
+12 shops, 1200 products, 3 users y 6 permission_user.
+
+**Prisma:** `prisma validate` dice *valid*. `migrate diff --exit-code` da
+*No difference detected*, `EXIT=0`. Las relaciones quedan con nombre:
+`StoreNotice.creator`/`updater`/`recipients`/`shops`/`reads`, y sus inversas
+en `User` y `Shop`.
+
+**Suites:**
+
+| Comando | Antes (US-50) | Después |
+|---|---|---|
+| `just db-check` | 19 / 296 | **20 / 309** (+13) |
+| `npx jest` | 17 / 348 | **18 / 364** (+16; 4 de ellos al confirmar los textos de `creator_role`) |
+
+`just build-api` (`Done in 53.54s`) y `just verify` en verde: `API 5503B ·
+Shop 190788B cards:30 · Admin 72821B`.
+
+**CA-3** (deep-equal acotado, viewer admin). Claves excluidas:
+`created_by, updated_by, creator, users, read_status`.
+
+```
+sn-default.json  ids antes=[3,2,1] despues=[3,2,1] | elementos deep-equal: true | orden de claves igual: true | paginador que difiere: ninguno
+sn-topbar.json   ids antes=[3,2,1] despues=[3,2,1] | elementos deep-equal: true | orden de claves igual: true | paginador que difiere: ninguno
+sn-search.json   ids antes=[3] despues=[3] | elementos deep-equal: true | orden de claves igual: true | paginador que difiere: ninguno
+sn-2.json        deep-equal acotado: true | orden de claves: true
+effective_from/expired_at antes: 2023-03-15 12:00:00 2023-03-30 12:00:00 | despues: 2023-03-15 12:00:00 2023-03-30 12:00:00
+```
+
+Dentro de los objetos anidados, el **conjunto y el orden de claves** de
+`creator`, `users[0]` y `read_status[0]` son iguales, y `pivot.is_read` sigue
+siendo entero.
+
+**V-1..V-4:**
+
+```
+V-1 created_by/updated_by: 6 6 -> 3 3 | creator.id 6 -> 3 | users ids [6,1] -> [3,1]
+V-2 creator.name: admin -> Jhon Doe
+V-3 creator.created_at: 2023-03-16T09:37:20.000000Z -> 2026-10-23T00:33:56.878Z
+V-4 users.id:1 antes 0 | despues 3 ids=[3,2,1]
+```
+
+**CA-4** (lectura por usuario):
+
+| Paso | Resultado |
+|---|---|
+| `GET /store-notices/3` como `store_owner@demo.com` | `is_read: false` (el admin, `true`) |
+| `POST /store-notices/read {id:3}` como dueño | **201** (Nest da 201 por defecto a un `@Post`). La respuesta trae `is_read: true` y `read_status` con los dos en `is_read: 1` |
+| `GET /store-notices/3` de nuevo | dueño `true` · admin `true` (no cambió) |
+| `POST /store-notices/read {id:999999}` | 404 |
+| `GET /store-notices` como `customer@demo.com` | 403: R-6, el guard no cambia |
+
+Después se devolvió la lectura (3, 1) a `false` por `psql`.
+
+**CA-5** (Bearer de admin, payload con la forma del admin):
+
+| Petición | Status | Resultado |
+|---|---|---|
+| `POST` `specific_vendor` con `received_by:[1]` | 201 | `created_by:3`, `effective_from:"2026-11-01 00:00:00"`, `users:[1]`, `read_status:[{user_id:1,is_read:0}]`. En `psql`, 1 fila en cada pivote |
+| `POST` con `received_by:[999]` | 400 | `store_notices.received_by referencia un registro inexistente (999)`; filas 4 → 4 |
+| `PUT` como `store_owner@demo.com` | 200 | `psql`: `updated_by = 1`, `updated_at > created_at` |
+| `DELETE` | 200 | 0 filas de pivote restantes (cascada) |
+| `GET /store-notices/999999` | 404 | (V-7) |
+
+**CA-6:**
+
+- `getUsersToNotify` mide 17007 B antes y después. No es byte a byte igual
+  porque sus `created_at`/`updated_at` (de `users`, `profiles`,
+  `permissions` y `shops`) toman el `now()` de cada `just db-reset`, y uno de
+  `shops` lo mueve el test de integración de `shops`. Sin los campos `*_at`
+  es **idéntico**. Esta US no toca esa ruta ni `UsersService`.
+- El `grep` no devuelve nada (`exit=1`).
+- `git diff db/schema.sql`: 75 inserciones y 0 eliminaciones.
+
+**`creator_role` de los permisos que el mock no prueba: CONFIRMADO por el
+dueño (2026-10-22).** Solo `"Super admin"` viene del mock. Los otros tres
+textos los propuso esta US y quedan como decisión: `store_owner` →
+`"Store owner"`, `staff` → `"Staff"` y `customer` → `"Customer"`, tomando
+siempre el permiso más alto del creador (y `null` si no tiene ninguno). El
+spec los cubre uno a uno.
+
+**Fuera de alcance, para el reporte:** `GET
+store-notices/getStoreNoticeType` sigue cayendo en `:param` y ahora da 404
+(antes, 200 vacío).
 
 ## Notas para el agente ejecutor
 
@@ -352,8 +473,9 @@ y pegar:
   `toISOString().slice(0,19).replace('T',' ')` sobre el `Date` UTC. Sin
   librerías de fechas.
 - **`creator_role`**: el mapeo no está documentado en ningún frontend.
-  `"Super admin"` es el único valor que el mock prueba; los demás
-  (`"Store owner"`, …) son la propuesta de esta US y van en el reporte.
+  `"Super admin"` es el único valor que el mock prueba. Los demás
+  (`"Store owner"`, `"Staff"`, `"Customer"`) los propuso esta US y el dueño
+  los confirmó el 2026-10-22 (ver la evidencia).
 - **`all_vendor` = usuarios con `store_owner`**: en el seed son el 1 y el 3,
   que es exactamente el `users[]` del mock tras el remapeo. Es la evidencia
   de que la regla es la correcta, no una coincidencia a ignorar.

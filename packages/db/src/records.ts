@@ -33,6 +33,7 @@ import type {
   Shipping,
   Shop,
   ShopStaff,
+  StoreNotice,
   Tag,
   Tax,
   TermsAndConditions,
@@ -301,6 +302,45 @@ export interface AttributeRecord {
   createdAt: Date;
   updatedAt: Date;
   values: AttributeValueRecord[];
+}
+
+/** Aviso de tienda, sin relaciones. `type` decide a quién va dirigido. */
+export interface StoreNoticeRecord {
+  id: number;
+  priority: string;
+  notice: string;
+  description: string | null;
+  effectiveFrom: Date | null;
+  expiredAt: Date;
+  type: string;
+  createdBy: number;
+  updatedBy: number | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/** El autor de un aviso con sus permisos (el contrato los embebe). */
+export interface StoreNoticeCreatorRecord extends UserRecord {
+  permissions: PermissionRecord[];
+}
+
+/** Estado de lectura de un usuario sobre un aviso. */
+export interface StoreNoticeReadRecord {
+  user: UserRecord;
+  isRead: boolean;
+}
+
+/**
+ * Un aviso con todo lo que la API emite: autor con permisos, usuarios y
+ * tiendas destinatarios, y el estado de lectura de cada usuario. Los
+ * destinatarios y las lecturas van por `userId DESC`, las tiendas por
+ * `shopId ASC` y los permisos por `permissionId ASC`.
+ */
+export interface StoreNoticeDetailRecord extends StoreNoticeRecord {
+  creator: StoreNoticeCreatorRecord;
+  recipients: UserRecord[];
+  shops: ShopRecord[];
+  reads: StoreNoticeReadRecord[];
 }
 
 /** Motivo de reembolso. Sus timestamps son contrato: salen del mock. */
@@ -579,5 +619,21 @@ export function _toAttributeRecord(
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
     values: row.values.map(_toAttributeValueRecord),
+  };
+}
+
+export function _toStoreNoticeRecord(row: StoreNotice): StoreNoticeRecord {
+  return {
+    id: _id(row.id),
+    priority: row.priority,
+    notice: row.notice,
+    description: row.description,
+    effectiveFrom: row.effectiveFrom,
+    expiredAt: row.expiredAt,
+    type: row.type,
+    createdBy: _id(row.createdBy),
+    updatedBy: _id(row.updatedBy),
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
   };
 }

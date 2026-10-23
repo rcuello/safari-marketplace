@@ -671,6 +671,73 @@ CREATE TABLE IF NOT EXISTS attribute_values (
 
 
 -- =====================================================================
+-- Avisos de tienda (US-51, Épico 46) — store_notices + 3 pivotes.
+--
+-- Los avisos que el super admin (o un dueño, para su tienda) publica en la
+-- barra superior del panel. Primera tabla del épico que toca identidad: el
+-- autor y los destinatarios son usuarios reales. El mock trae created_by = 6
+-- (admin@demo.com en el Laravel original); el generador lo resuelve POR EMAIL
+-- al id del seed (3), nunca copia el id.
+--
+-- ON DELETE del autor: RESTRICT, como shops.owner_id. Un aviso que otros ya
+-- leyeron no puede quedarse sin autor en silencio. El último editor sí puede
+-- borrarse (SET NULL). Sin trigger de updated_at (reloj único, ver abajo).
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS store_notices (
+    id              bigserial    PRIMARY KEY,
+    priority        text         NOT NULL
+                                 CHECK (priority IN ('high', 'medium', 'low')),
+    notice          text         NOT NULL,
+    description     text,
+    effective_from  timestamptz,
+    expired_at      timestamptz  NOT NULL,
+    type            text         NOT NULL
+                                 CHECK (type IN ('all_vendor', 'specific_vendor', 'all_shop', 'specific_shop')),
+    created_by      bigint       NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    updated_by      bigint       REFERENCES users(id) ON DELETE SET NULL,
+    created_at      timestamptz  NOT NULL DEFAULT now(),
+    updated_at      timestamptz  NOT NULL DEFAULT now(),
+    CONSTRAINT store_notices_vigencia_valida
+        CHECK (effective_from IS NULL OR effective_from <= expired_at)
+);
+
+
+-- ---------------------------------------------------------------------
+-- Destinatarios y estado de lectura. Tres pivotes puros, calco de
+-- permission_user: PK compuesta, las dos FK en CASCADE (borrar el aviso, el
+-- usuario o la tienda se lleva su fila) y solo created_at.
+--
+--   store_notice_user  — usuarios destinatarios (avisos *_vendor).
+--   store_notice_shop  — tiendas destinatarias (avisos *_shop).
+--   store_notice_read  — si cada usuario ya lo leyó; el is_read que emite la
+--                        API es el del usuario que consulta, no uno global.
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS store_notice_user (
+    store_notice_id  bigint       NOT NULL REFERENCES store_notices(id) ON DELETE CASCADE,
+    user_id          bigint       NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at       timestamptz  NOT NULL DEFAULT now(),
+    PRIMARY KEY (store_notice_id, user_id)
+);
+
+
+CREATE TABLE IF NOT EXISTS store_notice_shop (
+    store_notice_id  bigint       NOT NULL REFERENCES store_notices(id) ON DELETE CASCADE,
+    shop_id          bigint       NOT NULL REFERENCES shops(id) ON DELETE CASCADE,
+    created_at       timestamptz  NOT NULL DEFAULT now(),
+    PRIMARY KEY (store_notice_id, shop_id)
+);
+
+
+CREATE TABLE IF NOT EXISTS store_notice_read (
+    store_notice_id  bigint       NOT NULL REFERENCES store_notices(id) ON DELETE CASCADE,
+    user_id          bigint       NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    is_read          boolean      NOT NULL DEFAULT false,
+    created_at       timestamptz  NOT NULL DEFAULT now(),
+    PRIMARY KEY (store_notice_id, user_id)
+);
+
+
+-- =====================================================================
 -- Índices.
 --
 -- No son decorativos: cada uno responde a un filtro que el frontend
@@ -727,6 +794,14 @@ CREATE INDEX IF NOT EXISTS refund_policies_shop_idx       ON refund_policies (sh
 -- formulario de producto variable). attribute_values.attribute_id ya queda
 -- cubierto por la izquierda del UNIQUE (attribute_id, slug).
 CREATE INDEX IF NOT EXISTS attributes_shop_idx            ON attributes (shop_id);
+
+-- Avisos (US-51): cada FK saliente con su índice. Los inversos de los
+-- pivotes responden a los filtros del admin (users.id, shops.slug).
+CREATE INDEX IF NOT EXISTS store_notices_created_by_idx   ON store_notices (created_by);
+CREATE INDEX IF NOT EXISTS store_notices_updated_by_idx   ON store_notices (updated_by);
+CREATE INDEX IF NOT EXISTS store_notice_user_usuario_idx  ON store_notice_user (user_id);
+CREATE INDEX IF NOT EXISTS store_notice_shop_tienda_idx   ON store_notice_shop (shop_id);
+CREATE INDEX IF NOT EXISTS store_notice_read_usuario_idx  ON store_notice_read (user_id);
 
 
 -- ---------------------------------------------------------------------

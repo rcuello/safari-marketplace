@@ -26,7 +26,8 @@ SQL inaplicable.
 10 types · 12 shops · 198 categorías · 14 manufacturers · 10 tags · 1200 productos · 3 usuarios · 4 permisos
 · 1 become_seller · 3 shop_staff · 19 faqs · 5 terms_and_conditions
 · 5 refund_policies · 8 refund_reasons · 1 taxes · 1 shippings
-· 8 attributes · 27 attribute_values
+· 8 attributes · 27 attribute_values · 3 store_notices (6 destinatarios,
+6 lecturas)
 ```
 
 **Los ids del mock se preservan** para no romper las relaciones, y al final se
@@ -190,6 +191,41 @@ las variaciones de producto, que todavía no se persisten (épico aparte).
   no coincide.
 - **Dos órdenes que son contrato**: los atributos van en `id DESC` y los
   valores en `id ASC` dentro de cada padre.
+
+## Identidad referenciada por los mocks: se resuelve por email
+
+Desde US-51, el generador tiene un helper, `resolverUsuarioPorEmail`, que
+usan todos los mocks que apuntan a un usuario (D-4 del Épico 46). Esos mocks
+traen ids del Laravel original que el seed no tiene: el `6` es
+`admin@demo.com`, que aquí es el **3**. El helper recibe cualquier objeto con
+`email` y devuelve el id **del seed**, nunca el del snapshot. Un email que no
+casa detiene la generación sin escribir `seed.sql`. Por ahora solo remapea;
+US-54 lo extiende para sembrar los usuarios que falten. Es la misma trampa
+que ya documentaba `permission_user` (`pivot.model_id = 6`).
+
+## Avisos de tienda: `store_notices` y sus tres pivotes
+
+Desde US-51, los avisos que el super admin (o un dueño, para su tienda)
+publica en la barra superior del panel.
+
+- **`store_notices`**: 3 filas, las tres creadas por el admin (`created_by`
+  6 → 3 por email). Lleva tres CHECK: `priority ∈ {high, medium, low}`,
+  `type ∈ {all_vendor, specific_vendor, all_shop, specific_shop}` y la
+  vigencia `effective_from <= expired_at`. `created_by` es `RESTRICT`: un
+  aviso que otros ya leyeron no se queda sin autor. `updated_by` es `SET
+  NULL`. `effective_from`/`expired_at` se siembran como los literales del
+  mock, sin zona, que Postgres toma en UTC (la zona de la imagen).
+- **`store_notice_user`** (6 filas) y **`store_notice_shop`** (0): los
+  destinatarios. El `type` decide cuáles: `all_vendor` va a todos los
+  usuarios con permiso `store_owner` (en el seed, el 1 y el 3, que es
+  exactamente el `users[]` del mock tras el remapeo); `specific_*` va a los
+  ids que se envían; `all_shop` va a todas las tiendas.
+- **`store_notice_read`** (6 filas, 3 leídas): si cada usuario leyó el
+  aviso. El `is_read` que emite la API es el de **quien consulta**, no uno
+  global. Lo marca la ruta `POST /store-notices/read`.
+
+Los tres pivotes son puros (PK compuesta, FK en CASCADE, solo `created_at`),
+calco de `permission_user`.
 
 ## Cómo se adapta el scraper
 

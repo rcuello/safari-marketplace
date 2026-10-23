@@ -9,7 +9,7 @@
 -- ya existen, y creando en tiempo de ejecución únicamente lo que es suyo
 -- (los retailers como shops, las marcas como manufacturers).
 --
--- 10 types · 12 shops · 198 categorías · 14 manufacturers · 10 tags · 1200 productos · 3 usuarios · 4 permisos · 1 become_seller · 3 shop_staff · 19 faqs · 5 terms_and_conditions · 5 refund_policies · 8 refund_reasons · 1 taxes · 1 shippings · 8 attributes · 27 attribute_values
+-- 10 types · 12 shops · 198 categorías · 14 manufacturers · 10 tags · 1200 productos · 3 usuarios · 4 permisos · 1 become_seller · 3 shop_staff · 19 faqs · 5 terms_and_conditions · 5 refund_policies · 8 refund_reasons · 1 taxes · 1 shippings · 8 attributes · 27 attribute_values · 3 store_notices
 -- =====================================================================
 
 BEGIN;
@@ -258,6 +258,37 @@ INSERT INTO attribute_values (id, attribute_id, value, slug, meta, language) VAL
   (9, 3, 'Blue', 'blue', '#344fa1', 'en'),
   (10, 3, 'White', 'white', '#e1e5ea', 'en')
 ON CONFLICT (id) DO NOTHING;
+
+-- ────────────────────────────────────────────────────────────────────
+-- store_notices — 3 · store_notice_user — 6 · store_notice_read — 6
+-- ────────────────────────────────────────────────────────────────────
+-- created_by/updated_by y los usuarios de los pivotes resueltos POR EMAIL
+-- (resolverUsuarioPorEmail): el 6 del mock es admin@demo.com = 3 aquí.
+-- effective_from/expired_at son literales sin zona: Postgres los toma en la
+-- zona del servidor (UTC en la imagen) y la API los reformatea igual.
+INSERT INTO store_notices (id, priority, notice, description, effective_from, expired_at, type, created_by, updated_by, created_at, updated_at) VALUES
+  (3, 'low', 'Maintance !!!', 'Today from 12:00 AM to 3:00 AM Our website will run at minimal Resources. For that reason, We suggest you avoid transactions.', '2023-03-15 18:00:00', '2023-03-16 18:00:00', 'all_vendor', 3, NULL, '2023-03-16T10:04:24.000000Z', '2023-03-16T10:04:24.000000Z'),
+  (2, 'medium', 'Sorry for Delivery Delay !!!', 'We are very sorry for the temporary disturbance. Currently, we are facing some issues regarding CASH_ON_DELIVERY Service.', '2023-03-15 12:00:00', '2023-03-30 12:00:00', 'all_vendor', 3, 3, '2023-03-16T09:56:57.000000Z', '2023-03-16T09:57:15.000000Z'),
+  (1, 'high', 'Big Sale !!!', 'From 15, April 2023 to 30, April 2023 Every Vendor will 0.5% commission every $1000 Sale', '2023-03-15 18:00:00', '2023-04-29 18:00:00', 'all_vendor', 3, NULL, '2023-03-16T09:54:29.000000Z', '2023-03-16T09:54:29.000000Z')
+ON CONFLICT (id) DO NOTHING;
+INSERT INTO store_notice_user (store_notice_id, user_id) VALUES
+  (3, 3),
+  (3, 1),
+  (2, 3),
+  (2, 1),
+  (1, 3),
+  (1, 1)
+ON CONFLICT (store_notice_id, user_id) DO NOTHING;
+-- store_notice_shop queda vacía: los 3 avisos del mock traen shops: [].
+-- pivot.is_read llega como entero 1/0 -> bool().
+INSERT INTO store_notice_read (store_notice_id, user_id, is_read) VALUES
+  (3, 3, true),
+  (3, 1, false),
+  (2, 3, true),
+  (2, 1, false),
+  (1, 3, true),
+  (1, 1, false)
+ON CONFLICT (store_notice_id, user_id) DO NOTHING;
 
 -- ────────────────────────────────────────────────────────────────────
 -- categories — 198 (83 raíces, 115 hijas)
@@ -1881,5 +1912,6 @@ SELECT setval('taxes_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM taxes),
 SELECT setval('shippings_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM shippings), 1));
 SELECT setval('attributes_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM attributes), 1));
 SELECT setval('attribute_values_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM attribute_values), 1));
+SELECT setval('store_notices_id_seq', GREATEST((SELECT COALESCE(max(id), 1) FROM store_notices), 1));
 
 COMMIT;

@@ -20,8 +20,13 @@ export class StoreNotice extends CoreEntity {
   users?: User[];
   received_by?: string;
   created_by: string;
+  updated_by?: string;
   expire_at: string;
   deleted_at?: string;
   creator?: any;
+  /** Permiso más alto del creador, en texto (`"Super admin"`). */
+  creator_role?: string;
+  /** Estado de lectura de cada destinatario, con `pivot.is_read` entero. */
+  read_status?: User[];
   translated_languages: string[];
 }
