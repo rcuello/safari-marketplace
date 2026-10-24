@@ -1,0 +1,18 @@
+# Fin de línea LF en el repo y en la copia de trabajo (US-72, DA-2 b), aunque
+# la máquina tenga core.autocrlf=true. Sin esto, git sacaba los archivos en
+# CRLF en Windows y el prettier de la API marcaba ~20 000 `Delete ␍`.
+* text=auto eol=lf
+
+# Binarios explícitos (text=auto ya los detecta; esto evita sorpresas).
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.pdf binary
+*.zip binary
