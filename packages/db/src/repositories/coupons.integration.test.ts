@@ -80,7 +80,8 @@ describe('listCoupons / findCouponByCode — seed', () => {
       language: 'en',
     });
     expect(Object.keys(c?.image as object)).toEqual(['thumbnail', 'original', 'id']);
-    expect(c?.expireAt.toISOString()).toBe('2024-03-28T05:46:42.000Z');
+    // US-68: el seed desplaza +5 años las fechas del mock (2024-03-28 en coupons.json).
+    expect(c?.expireAt.toISOString()).toBe('2029-03-28T05:46:42.000Z');
     expect(await findCouponByCode('4off')).toBeNull();
     expect(await findCouponById(999_999)).toBeNull();
   });

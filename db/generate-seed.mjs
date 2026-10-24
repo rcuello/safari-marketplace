@@ -384,6 +384,39 @@ for (const c of coupons) {
     problemas.push(`coupons ${c.id}: trae user_id y no hay snapshot para resolverlo por email`);
 }
 
+// Vigencia desplazada (US-68, decisión del dueño 2026-10-23: opción (b), +5
+// años). Las fechas del mock vencieron entre 2024-03 y 2025-05, así que con
+// is_valid calculado (US-52) el shop no mostraba ofertas. Los registros son
+// los del mock y solo se transforman sus fechas, como el remapeo por email
+// (D-4) o fechaUtc (US-56); duración y orden relativo se conservan. La
+// constante es fija para que seed.sql sea determinista: cuando vuelvan a
+// vencer (desde 2029-03-28), se sube.
+const DESPLAZAMIENTO_CUPONES_ANIOS = 5;
+const desplazarAnios = (iso, donde) => {
+  const d = new Date(iso);
+  const [mes, dia] = [d.getUTCMonth(), d.getUTCDate()];
+  d.setUTCFullYear(d.getUTCFullYear() + DESPLAZAMIENTO_CUPONES_ANIOS);
+  if (d.getUTCMonth() !== mes || d.getUTCDate() !== dia)
+    problemas.push(`${donde}: ${iso} cae en un día que no existe ${DESPLAZAMIENTO_CUPONES_ANIOS} años después`);
+  return d.toISOString();
+};
+const cuponesSembrados = coupons.map((c) => ({
+  ...c,
+  active_from: desplazarAnios(c.active_from, `coupons ${c.id} active_from`),
+  expire_at: desplazarAnios(c.expire_at, `coupons ${c.id} expire_at`),
+}));
+// Aviso, no problema: depende del día en que se genera, y fallar volvería no
+// determinista el resultado (el mismo mock pasaría hoy y fallaría en 2029).
+const ahoraGeneracion = new Date();
+const fueraDeVigencia = cuponesSembrados.filter(
+  (c) => !(new Date(c.active_from) <= ahoraGeneracion && ahoraGeneracion < new Date(c.expire_at))
+);
+if (fueraDeVigencia.length)
+  console.warn(
+    `AVISO coupons: fuera de vigencia hoy: ${fueraDeVigencia.map((c) => c.code).join(', ')}; ` +
+      'sube DESPLAZAMIENTO_CUPONES_ANIOS (US-68).'
+  );
+
 // ── Lista de deseos (US-53) ──────────────────────────────────────────────
 // Las filas de wishlists.json son PRODUCTOS sin dueño (no hay user_id ni
 // pivote). El seed se las da al único cliente, resuelto por email (D-4). El
@@ -999,15 +1032,17 @@ L.push(
 );
 
 // coupons (US-52; tras shops: la FK lo exige) --------------------------------
-bloque(`coupons — ${coupons.length} (vigencia del mock; is_valid se calcula en la API)`);
+bloque(
+  `coupons — ${coupons.length} (vigencia del mock + ${DESPLAZAMIENTO_CUPONES_ANIOS} años, US-68; is_valid se calcula en la API)`
+);
 L.push(
   '-- target/is_approve llegan como entero 1/0 -> bool(). image va a una columna',
   '-- json (no jsonb) para conservar el orden de claves. Sin timestamps: el mock',
-  '-- no los trae.',
+  '-- no los trae. active_from/expire_at desplazados (DESPLAZAMIENTO_CUPONES_ANIOS).',
   'INSERT INTO coupons (id, code, description, image, type, amount, minimum_cart_amount, active_from, expire_at, target, is_approve, shop_id, user_id, language) VALUES'
 );
 L.push(
-  coupons
+  cuponesSembrados
     .map(
       (c) =>
         `  (${c.id}, ${txt(c.code)}, ${txt(c.description)}, ${jsonTal(c.image)}, ${txt(c.type)}, ` +

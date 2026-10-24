@@ -267,11 +267,14 @@ una (`4OFF`) con `target`.
   vigente ⇔ `active_from <= now() < expire_at`, con el reloj de
   `packages/db/src/clock.ts`. `POST /coupons/verify` exige además
   `is_approve` y `sub_total >= minimum_cart_amount`.
-- **El seed está vencido.** Todos los `expire_at` del mock son anteriores
-  a 2025-06, así que las 10 filas salen con `is_valid: false` y las
-  páginas `/offers` y `/shops/[slug]/offers` del shop, que filtran en
-  cliente por `is_valid`, quedan vacías. Es correcto; renovar las fechas
-  sería otra US.
+- **El seed desplaza la vigencia +5 años** (US-68, decisión del dueño). Los
+  `expire_at` del mock son anteriores a 2025-06, así que sembrados tal cual
+  las 10 filas salían con `is_valid: false` y `/offers` quedaba vacía. El
+  generador suma `DESPLAZAMIENTO_CUPONES_ANIOS` (5) a `active_from` y
+  `expire_at`, y conserva duración, ids y orden. Quedan vigentes hasta el
+  2029-03-28 (`4OFF`, el primero en vencer). La constante es fija para que
+  `seed.sql` sea determinista: si el generador avisa de que alguno ya no
+  está vigente, hay que subirla.
 - **`image` es `json`, no `jsonb`** (D-5 del Épico 46): dos filas traen
   `{thumbnail, original, id}` y `jsonb` reordenaría las claves. Por eso el
   generador la emite con `jsonTal()` (`::json`), no con `json()`, que

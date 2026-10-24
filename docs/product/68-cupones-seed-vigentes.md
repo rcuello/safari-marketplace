@@ -9,7 +9,7 @@
 **Épico:** ninguno (US standalone). Nace de V-1 de
 [US-52](./46-api-sin-mocks-json/52-coupons-postgres.md).
 **Fecha:** 2026-10-22
-**Status:** Listo para ejecución
+**Status:** ✅ Completada (2026-10-23), opción (b) +5 años
 **Depende de:** US-52 (crea `coupons` y el cálculo de `is_valid`). Toca
 `db/generate-seed.mjs` y `db/seed.sql`, compartidos con el Épico 46, así que
 **no puede ir en paralelo** con ninguna US de ese épico (R-2): va entre dos de
@@ -87,6 +87,11 @@ determinista de `wishlists`, `db/generate-seed.mjs:380`).
   cambia.
 
 ## Decisión del dueño — estrategia (bloquea la ejecución)
+
+> **Decidida (2026-10-23): opción (b) con +5 años**, la recomendada. El
+> dueño autorizó también el `just db-reset` de esta US. Los cupones se
+> apartan de la decisión 6 del Épico 46 solo en las fechas: los registros
+> siguen siendo los del mock.
 
 | Opción | Qué hace | Determinista | Respeta la decisión 6 | Contra |
 |---|---|---|---|---|
@@ -213,16 +218,16 @@ Feature: Cupones vigentes en el seed
 
 ## Definición de Done
 
-- [ ] Decisión del dueño registrada (CA-1).
-- [ ] Línea base con el seed actual: `GET /coupons?limit=20` con
+- [x] Decisión del dueño registrada (CA-1).
+- [x] Línea base con el seed actual: `GET /coupons?limit=20` con
   `is_valid: false` en las 10 y `/offers` vacía.
-- [ ] `just db-seed-generate` dos veces y `git diff --quiet db/seed.sql` tras
+- [x] `just db-seed-generate` dos veces y `git diff --quiet db/seed.sql` tras
   la segunda (CA-2), más la comprobación de duraciones con `node -e`.
-- [ ] `just db-reset` y `psql` con 10 cupones y sus fechas desplazadas.
-- [ ] CA-3 y CA-4 con `curl` y la página del shop (status y número de
+- [x] `just db-reset` y `psql` con 10 cupones y sus fechas desplazadas.
+- [x] CA-3 y CA-4 con `curl` y la página del shop (status y número de
   cupones pintados).
-- [ ] CA-5: los cuatro comandos en verde con recuentos.
-- [ ] Status actualizado aquí y en el mapa de `docs/product/README.md`.
+- [x] CA-5: los cuatro comandos en verde con recuentos.
+- [x] Status actualizado aquí y en el mapa de `docs/product/README.md`.
 
 ## Notas para el agente ejecutor
 
@@ -240,3 +245,133 @@ Feature: Cupones vigentes en el seed
   como caso extra si se quiere cubrir el tipo.
 - **La evidencia de US-52 queda histórica.** Sus `curl` mostraban `4OFF`
   vencido. No se reescribe: se añade una nota que enlace a esta US.
+
+## Evidencia (2026-10-23)
+
+**Implementación** (`db/generate-seed.mjs`, bloque de cupones):
+
+- `DESPLAZAMIENTO_CUPONES_ANIOS = 5`.
+- `desplazarAnios` usa `setUTCFullYear`. Si una fecha cae en un día que no
+  existe N años después (un 29 de febrero), lo registra con `problemas.push`
+  y el generador falla, como cualquier validación del mock.
+- `cuponesSembrados` alimenta el `INSERT`.
+- El aviso de vigencia es un `console.warn` y usa la fecha de generación.
+
+**Línea base** (seed anterior, API recién arrancada):
+
+```
+GET /coupons?limit=20 → 10 filas; 4OFF:false 5OFF:false OFF6:false BAZAR10:false BAZAR20:false BAZAR18:false HELLO15:false EID12:false FOO:false EID2:false
+is_valid true: 0
+verify {"code":"BAZAR10","sub_total":10} → 201 is_valid:false message:error-invalid-coupon
+verify {"code":"4OFF","sub_total":200} → 201 is_valid:false message:error-invalid-coupon
+```
+
+La línea base de `/offers` se midió sobre el HTML del servidor (0 cupones).
+Esa medición no prueba nada: la página pide los cupones en el cliente, así
+que el HTML del SSR no los trae nunca. El after se midió en un navegador
+real (Chrome DevTools, abajo). Que la página saliera vacía antes se deduce
+de los 10 `is_valid: false` y del filtro del shop
+(`Boolean(is_approve) && Boolean(is_valid)`).
+
+**CA-2, determinismo:**
+
+```
+just db-seed-generate ×2  →  cmp: seed.sql idéntico
+git diff --stat db/seed.sql  →  1 file changed, 12 insertions(+), 12 deletions(-)   (cabecera del bloque + 10 filas)
+```
+
+Para el «día siguiente» se falseó el reloj del generador (`globalThis.Date`
+con `node --import`):
+
+```
+== reloj 2026-10-24T12:00:00Z
+db/seed.sql generado (880 KB)
+  seed.sql idéntico
+== reloj 2029-04-01T00:00:00Z
+AVISO coupons: fuera de vigencia hoy: 4OFF; sube DESPLAZAMIENTO_CUPONES_ANIOS (US-68).
+db/seed.sql generado (880 KB)
+  seed.sql idéntico
+```
+
+Duraciones, tiendas e imágenes contra `coupons.json` (`node`):
+
+```
+10 4OFF    tienda 1  2026-03-28 → 2029-03-28  duración 1096 d (seed 1096 d)  imagen true  OK
+9 5OFF    tienda 2  2026-03-28 → 2029-06-23  duración 1183 d (seed 1183 d)  imagen true  OK
+8 OFF6    tienda 3  2026-03-28 → 2029-07-14  duración 1204 d (seed 1204 d)  imagen true  OK
+7 BAZAR10 tienda 1  2026-03-28 → 2030-05-26  duración 1520 d (seed 1520 d)  imagen true  OK
+6 BAZAR20 tienda 1  2026-03-27 → 2029-04-26  duración 1126 d (seed 1126 d)  imagen true  OK
+5 BAZAR18 tienda 2  2026-03-27 → 2029-04-15  duración 1115 d (seed 1115 d)  imagen true  OK
+4 HELLO15 tienda 3  2026-03-27 → 2029-04-23  duración 1123 d (seed 1123 d)  imagen true  OK
+3 EID12   tienda 1  2026-03-27 → 2029-05-26  duración 1156 d (seed 1156 d)  imagen true  OK
+2 FOO     tienda 1  2026-03-27 → 2029-05-26  duración 1156 d (seed 1156 d)  imagen true  OK
+1 EID2    tienda 1  2026-03-10 → 2029-07-27  duración 1235 d (seed 1235 d)  imagen true  OK
+CA-2: las 10 conservan duración, tienda e imagen
+```
+
+**`just db-reset`** (autorizado) y `psql`:
+
+```
+ id |  code   | shop_id |      active_from       |       expire_at        | is_approve
+----+---------+---------+------------------------+------------------------+------------
+ 10 | 4OFF    |       1 | 2026-03-28 05:46:42+00 | 2029-03-28 05:46:42+00 | t
+  9 | 5OFF    |       2 | 2026-03-28 05:46:42+00 | 2029-06-23 05:46:42+00 | t
+  8 | OFF6    |       3 | 2026-03-28 05:46:42+00 | 2029-07-14 05:46:42+00 | t
+  7 | BAZAR10 |       1 | 2026-03-28 05:46:42+00 | 2030-05-26 05:46:42+00 | t
+  6 | BAZAR20 |       1 | 2026-03-27 20:55:49+00 | 2029-04-26 20:55:49+00 | t
+  5 | BAZAR18 |       2 | 2026-03-27 20:55:49+00 | 2029-04-15 20:55:49+00 | t
+  4 | HELLO15 |       3 | 2026-03-27 20:48:28+00 | 2029-04-23 20:48:28+00 | t
+  3 | EID12   |       1 | 2026-03-27 20:48:28+00 | 2029-05-26 20:48:28+00 | t
+  2 | FOO     |       1 | 2026-03-27 05:33:22+00 | 2029-05-26 05:33:22+00 | t
+  1 | EID2    |       1 | 2026-03-10 21:48:15+00 | 2029-07-27 21:48:15+00 | t
+```
+
+Conteos de las demás tablas, antes y después del reset (`diff` vacío):
+
+```
+types|10 shops|12 categories|198 products|1200 users|11 permission_user|20 coupons|10 reviews|85 questions|68 orders|40 withdraws|2 ownership_transfers|6
+```
+
+**CA-3:**
+
+```
+GET /coupons?limit=20 → 10 filas; 4OFF:true 5OFF:true OFF6:true BAZAR10:true BAZAR20:true BAZAR18:true HELLO15:true EID12:true FOO:true EID2:true
+is_valid true: 10
+```
+
+En el shop, con Chrome DevTools sobre `http://localhost:3003`:
+
+```
+/en/offers                        → 10 tarjetas con botón «Copy»: 4OFF, 5OFF, OFF6, BAZAR10, BAZAR20, BAZAR18, HELLO15, EID12, FOO, EID2
+/en/shops/furniture-shop/offers   → {"pintados":6,"codigos":["4OFF","BAZAR10","BAZAR20","EID12","FOO","EID2"]}
+```
+
+**CA-4:**
+
+```
+verify {"code":"BAZAR10","sub_total":10} → 201 is_valid:true coupon BAZAR10 (fixed, 10)
+verify {"code":"4OFF","sub_total":100} → 201 is_valid:false message:error-invalid-coupon
+verify {"code":"4OFF","sub_total":200} → 201 is_valid:true coupon 4OFF (fixed, 4)
+verify {"code":"HELLO15","sub_total":150} → 201 is_valid:true coupon HELLO15 (percentage, 15)
+verify {"code":"NOEXISTE"} → 201 is_valid:false message:error-invalid-coupon
+```
+
+**CA-5:**
+
+```
+just db-check                      →  Test Files  32 passed (32) / Tests  410 passed (410)
+npx jest                           →  Test Suites: 34 passed, 34 total / Tests: 565 passed, 565 total
+npx tsc --noEmit -p tsconfig.json  →  EXIT=0
+just build-api                     →  Done in 22.43s.
+just verify
+OK   API    :9001/api/settings  200  5503B  529ms
+OK   Shop   :3003/en  200  190788B  677ms  cards:30
+OK   Admin  :3002/en/login  200  72821B  1802ms  cards:1
+```
+
+El único assert que cambió es `coupons.integration.test.ts:83`: el
+`expire_at` sembrado de `4OFF` pasa de `2024-03-28T05:46:42.000Z` a
+`2029-03-28T05:46:42.000Z`. Es justo lo que la US cambia: la fecha
+sembrada. El mock en disco sigue diciendo 2024. Además se actualizaron el
+`db/README.md` (sección de cupones) y una nota en la evidencia de US-52
+que enlaza aquí.

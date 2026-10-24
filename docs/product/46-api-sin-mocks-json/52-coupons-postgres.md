@@ -433,6 +433,11 @@ default de Nest para un `@Post` y el mock respondía igual. Se mantiene (D-1).
   deshidratado con `is_valid:false` y el filtro de cliente los descarta
   (V-1).
 
+> **Nota (2026-10-23):** desde [US-68](../68-cupones-seed-vigentes.md), el
+> seed desplaza +5 años las fechas de los cupones, así que los 10 salen con
+> `is_valid: true` y `/offers` tiene contenido. La evidencia de arriba, con
+> `4OFF` vencido, queda como registro histórico de V-1.
+
 **Para el reporte, fuera de alcance:**
 
 - El 409 de código duplicado dice "…con el slug `code`": es el texto común
