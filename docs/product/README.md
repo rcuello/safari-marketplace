@@ -195,7 +195,7 @@ Feature: …
 ```
 Épico 1  Catálogo servido desde Postgres      → US-2, US-3, US-4a, US-4b, US-5   (completado)
 Épico 5  Scraper al catálogo compartido       → US-6, US-7, US-8   ← US-6/7 hechas; queda US-8 (`just db-count` aún consulta `productos`)
-Épico 9  Gate de calidad y CI                 → US-10, US-11, US-12
+Épico 9  Gate de calidad y CI                 → US-10, US-11, US-12, US-73, US-74   ← US-10/11 actualizadas tras el escaneo de bingo-flow (2026-10-24); US-73 audit en modo reporte; US-74 tras US-10
 Épico 13 Orquestación local con Docker        → US-14, US-15
 Épico 16 Despliegue y observabilidad          → US-17, US-18   ← Terraform: el README lo promete, hoy no existe
 Épico 19 Autenticación y autorización         → US-20 … US-25  (completado)
@@ -213,6 +213,7 @@ US-68    Cupones del seed vigentes                → standalone ✅ (2026-10-23
 US-69    Índices trigram que el ILIKE no usa      → standalone ✅ (2026-10-23) ← opción (a): trigram sobre la columna + VACUUM ANALYZE en db-migrate
 US-70    Login con Google opcional en el shop     → standalone ✅ (2026-10-24) ← DA-1..DA-3 (a); sin variables no hay proveedor ni botón; el stub D-11 de social-login-token sigue
 US-71    El shop no expulsa por un 401/403        → standalone ✅ (2026-10-24) ← interceptor solo 401 con token; tienda y avisos solo en /shops/[slug]; R-6 intacto
+US-72    Higiene agéntica (hooks .env y node_modules) → standalone (listo) ← DA-1..DA-4 con propuesta por defecto; adapta los hooks de bingo-flow; .editorconfig
 ```
 
 Las US-64 a US-69 salen de los «NO incluye» y hallazgos del Épico 46 (US-52
