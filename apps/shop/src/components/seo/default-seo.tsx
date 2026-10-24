@@ -2,13 +2,17 @@ import { useSettings } from '@/framework/settings';
 import { DefaultSeo as NextDefaultSeo } from 'next-seo';
 
 const DefaultSeo = () => {
-  const { settings } : any = useSettings();
+  const { settings }: any = useSettings();
   return (
     <NextDefaultSeo
       additionalMetaTags={[
         {
           name: 'viewport',
           content: 'width=device-width, initial-scale=1 maximum-scale=1',
+        },
+        {
+          name: 'mobile-web-app-capable',
+          content: 'yes',
         },
         {
           name: 'apple-mobile-web-app-capable',
