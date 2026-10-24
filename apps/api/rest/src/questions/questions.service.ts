@@ -14,6 +14,7 @@ import {
   findShopOwnerById,
   getUserFriendlyMessage,
   isPrismaConnectionError,
+  isShopStaff,
   listQuestions,
   type QuestionDetailRecord,
 } from '@safari/db';
@@ -125,16 +126,16 @@ export class QuestionService {
   }
 
   /**
-   * Responder (V-5). Solo `super_admin` o el dueño de la tienda de la
-   * pregunta; si no, 403. Persiste `answer`, y `question` si llega (el
-   * `ReplyQuestion` del admin envía los dos). El staff no responde: no hay
-   * función de pertenencia a `shop_staff` exportada (fuera de alcance).
+   * Responder (V-5). `super_admin`, el dueño de la tienda de la pregunta o
+   * su staff (fila en `shop_staff`, US-66); si no, 403. El staff se consulta
+   * solo si no es dueño. Persiste `answer`, y `question` si llega (el
+   * `ReplyQuestion` del admin envía los dos).
    */
   async update(id: number, dto: UpdateQuestionDto, user: CurrentUserPayload): Promise<Question> {
     assertQuestionId(id);
     const record = await this.findOrFail(id);
-    if (!(await this.isAdminOrShopOwner(record, user))) {
-      throw new ForbiddenException('Solo el dueño de la tienda puede responder esta pregunta.');
+    if (!(await this.isAdminOrShopOwner(record, user)) && !(await this.isStaff(record, user))) {
+      throw new ForbiddenException('Solo el dueño o el staff de la tienda pueden responder esta pregunta.');
     }
     try {
       const updated = await answerQuestion(id, {
@@ -169,6 +170,15 @@ export class QuestionService {
     if (user.permissions.includes('super_admin')) return true;
     try {
       return (await findShopOwnerById(record.shopId)) === user.sub;
+    } catch (error) {
+      readError(error);
+    }
+  }
+
+  /** Solo para responder: el staff no borra preguntas ajenas (US-66, Decisión 3). */
+  private async isStaff(record: QuestionDetailRecord, user: CurrentUserPayload): Promise<boolean> {
+    try {
+      return await isShopStaff(user.sub, record.shopId);
     } catch (error) {
       readError(error);
     }

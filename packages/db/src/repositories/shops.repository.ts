@@ -182,6 +182,17 @@ export async function findShopOwnerById(id: number): Promise<number | null> {
 }
 
 /**
+ * Si `userId` tiene fila en `shop_staff` para `shopId` (US-66). Ser dueño
+ * no cuenta: el dueño no tiene fila. Ids no válidos ⇒ `false`, con la
+ * misma guarda que `findShopOwnerById`. NUNCA lanza por la entrada.
+ */
+export async function isShopStaff(userId: number, shopId: number): Promise<boolean> {
+  if (![userId, shopId].every((id) => Number.isSafeInteger(id) && id > 0)) return false;
+  const count = await prisma.shopStaff.count({ where: { userId, shopId } });
+  return count > 0;
+}
+
+/**
  * Para el scraper: devuelve la tienda del retailer, creándola si es la
  * primera vez que se le ve. Idempotente por slug.
  */

@@ -420,6 +420,7 @@ export {
   findOrCreateShopBySlug,
   findShopBySlug,
   findShopOwnerById,
+  isShopStaff,
   listShops,
   listShopsNear,
   setShopActive,

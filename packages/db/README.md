@@ -370,6 +370,13 @@ hidratado y `abusiveReportsCount`, igual que las reseñas.
 `question` vacía se rechaza con `InvalidFieldValueError`. No hay UNIQUE: un
 usuario puede preguntar varias veces sobre el mismo producto.
 
+Quién responde lo decide la API: `super_admin`, el dueño
+(`findShopOwnerById`) o el staff de la tienda. Para el staff está
+**`isShopStaff(userId, shopId)`** (US-66, en `shops.repository.ts`), que
+dice si hay fila en `shop_staff`. Ser dueño no cuenta, y con ids no
+válidos devuelve `false` sin lanzar. Es solo la consulta de pertenencia:
+el CRUD de `/staffs` es US-42.
+
 ### Mensajería (US-56, Épico 46) — `conversations.repository.ts`
 
 Un solo repositorio para el agregado. `ConversationRecord` y `MessageRecord`

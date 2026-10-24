@@ -21,6 +21,7 @@ import {
   findQuestionById,
   findShopOwnerById,
   InvalidFieldValueError,
+  isShopStaff,
   listQuestions,
   RecordNotFoundError,
   type ProductRecord,
@@ -40,6 +41,7 @@ jest.mock('@safari/db', () => ({
   answerQuestion: jest.fn(),
   deleteQuestion: jest.fn(),
   findShopOwnerById: jest.fn(),
+  isShopStaff: jest.fn(),
 }));
 
 const listMock = jest.mocked(listQuestions);
@@ -48,6 +50,7 @@ const createMock = jest.mocked(createQuestion);
 const answerMock = jest.mocked(answerQuestion);
 const deleteMock = jest.mocked(deleteQuestion);
 const ownerMock = jest.mocked(findShopOwnerById);
+const staffMock = jest.mocked(isShopStaff);
 
 const AT = new Date('2022-03-18T10:19:46.000Z');
 
@@ -224,6 +227,7 @@ describe('QuestionService', () => {
         OWNER,
       );
       expect(ownerMock).toHaveBeenCalledWith(6);
+      expect(staffMock).not.toHaveBeenCalled();
       expect(answerMock).toHaveBeenCalledWith(68, { answer: 'Nueva', question: '¿Son orgánicas?' });
       expect(result.answer).toBe('Nueva');
     });
@@ -233,15 +237,39 @@ describe('QuestionService', () => {
       answerMock.mockResolvedValue(makeRecord());
       await service.update(68, { answer: 'x' } as UpdateQuestionDto, ADMIN);
       expect(ownerMock).not.toHaveBeenCalled();
+      expect(staffMock).not.toHaveBeenCalled();
       expect(answerMock).toHaveBeenCalledWith(68, { answer: 'x' });
     });
 
-    it('el cliente (aunque sea el autor) ⇒ 403 sin escribir', async () => {
+    it('el staff de la tienda responde (US-66): se consulta solo tras fallar el dueño', async () => {
+      findMock.mockResolvedValue(makeRecord({ shopId: 1 }));
+      ownerMock.mockResolvedValue(1);
+      staffMock.mockResolvedValue(true);
+      answerMock.mockResolvedValue(makeRecord({ answer: 'Del staff' }));
+      const result = await service.update(47, { answer: 'Del staff' } as UpdateQuestionDto, CUSTOMER);
+      expect(staffMock).toHaveBeenCalledWith(2, 1);
+      expect(answerMock).toHaveBeenCalledWith(47, { answer: 'Del staff' });
+      expect(result.answer).toBe('Del staff');
+    });
+
+    it('el cliente sin fila de staff (aunque sea el autor) ⇒ 403 sin escribir', async () => {
       findMock.mockResolvedValue(makeRecord());
       ownerMock.mockResolvedValue(1);
+      staffMock.mockResolvedValue(false);
+      const update = service.update(68, { answer: 'x' } as UpdateQuestionDto, CUSTOMER);
+      await expect(update).rejects.toBeInstanceOf(ForbiddenException);
+      await expect(update).rejects.toThrow('Solo el dueño o el staff de la tienda pueden responder esta pregunta.');
+      expect(staffMock).toHaveBeenCalledWith(2, 6);
+      expect(answerMock).not.toHaveBeenCalled();
+    });
+
+    it('si la consulta de staff pierde la conexión ⇒ 503', async () => {
+      findMock.mockResolvedValue(makeRecord());
+      ownerMock.mockResolvedValue(1);
+      staffMock.mockRejectedValue(Object.assign(new Error('down'), { name: 'PrismaClientKnownRequestError' }));
       await expect(
         service.update(68, { answer: 'x' } as UpdateQuestionDto, CUSTOMER),
-      ).rejects.toBeInstanceOf(ForbiddenException);
+      ).rejects.toBeInstanceOf(ServiceUnavailableException);
       expect(answerMock).not.toHaveBeenCalled();
     });
   });
@@ -256,6 +284,15 @@ describe('QuestionService', () => {
       }
       await expect(service.delete(68, user(5, ['customer']))).rejects.toBeInstanceOf(ForbiddenException);
       expect(deleteMock).toHaveBeenCalledTimes(3);
+    });
+
+    it('el staff no borra preguntas ajenas (US-66, Decisión 3): ni se consulta shop_staff', async () => {
+      findMock.mockResolvedValue(makeRecord({ userId: 4, shopId: 1 }));
+      ownerMock.mockResolvedValue(1);
+      staffMock.mockResolvedValue(true);
+      await expect(service.delete(68, CUSTOMER)).rejects.toBeInstanceOf(ForbiddenException);
+      expect(staffMock).not.toHaveBeenCalled();
+      expect(deleteMock).not.toHaveBeenCalled();
     });
 
     it('pregunta inexistente ⇒ 404', async () => {

@@ -3,7 +3,8 @@
  * `shop_staff` es un pivote puro user<->shop (US-41): sin repositorio de
  * funciones planas en esta capability (llega en US-42), así que la suite
  * consulta Prisma directo, mismo patrón que `permission_user` en
- * `users.integration.test.ts`.
+ * `users.integration.test.ts`. La única función que sí existe es la
+ * consulta de pertenencia `isShopStaff` (US-66, en `shops.repository.ts`).
  *
  * Tiendas centinela con prefijo `zz-tiendas-staff-` (empieza por
  * `zz-tiendas-`, así que el `beforeAll(cleanupSentinel)` de
@@ -19,6 +20,7 @@ import 'dotenv/config';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { prisma } from '../client';
 import { _toShopStaffRecord } from '../records';
+import { isShopStaff } from './shops.repository';
 
 const SHOP_SENTINEL_PREFIX = 'zz-tiendas-staff-';
 const USER_DOMAIN = '@shop-staff-integration.test';
@@ -222,6 +224,26 @@ describe('_toShopStaffRecord (mapper, extended-identity-data-layer)', () => {
     expect(record.shopId).toBe(1);
     expect(record).not.toHaveProperty('updatedAt');
     expect(() => JSON.stringify(record)).not.toThrow();
+  });
+});
+
+describe('isShopStaff (US-66, CA-1)', () => {
+  it.each([
+    [2, 1, true],
+    [2, 2, true],
+    [3, 1, true],
+    [2, 5, false],
+    [1, 1, false], // dueño de las 12 tiendas, sin fila: ser dueño no es ser staff
+    [999999, 1, false],
+    [2, 999999, false],
+  ])('usuario %i, tienda %i ⇒ %s', async (userId, shopId, esperado) => {
+    expect(await isShopStaff(userId, shopId)).toBe(esperado);
+  });
+
+  it('ids no válidos ⇒ false sin lanzar', async () => {
+    for (const [u, s] of [[0, 1], [-1, 1], [Number.NaN, 1], [1.5, 1], [2, Number.NaN]]) {
+      await expect(isShopStaff(u, s)).resolves.toBe(false);
+    }
   });
 });
 
