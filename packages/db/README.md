@@ -664,7 +664,7 @@ De ahí tres detalles del `package.json` que no son decorativos:
   resolución `node10` los `exports` se ignoran; sin `main`/`types` la API
   volvería a leer el `.ts` fuente.
 - **Solo formato CJS.** El paquete exporta un singleton con estado (el cliente
-  de Prisma): emitir CJS y ESM a la vez abre el *dual package hazard*, con dos
+  de Prisma): emitir CJS y ESM a la vez abre el _dual package hazard_, con dos
   clientes y dos pools de conexiones. Añadir `'esm'` es una línea en
   `tsup.config.ts` si algún día Next.js consume el paquete directamente.
 - **`shims: true` en tsup.** El cliente generado por Prisma 7 arranca con
