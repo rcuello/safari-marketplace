@@ -9,8 +9,7 @@
 **Épico:** ninguno (US standalone). Nace del escaneo de `bingo-flow`
 (2026-10-24).
 **Fecha:** 2026-10-24
-**Status:** Listo para ejecución — con propuesta por defecto en DA-1..DA-4;
-el ejecutor las confirma con el dueño **antes** de tocar nada.
+**Status:** ✅ Completada (2026-10-24), DA-1..DA-4 en su opción (a)
 **Depende de:** ninguna. No toca el `justfile`, `packages/db` ni la API.
 **LOC est.:** ~200 (dos hooks de ~100 y ~60 líneas, `settings.json` y
 `.editorconfig`)
@@ -108,6 +107,11 @@ en silencio.
 ## Decisiones abiertas para el dueño
 
 > **Confirmadas por el dueño (2026-10-24):** DA-1..DA-4 en su propuesta por defecto.
+> **Cambio posterior del mismo día:** el dueño pidió no abrir una US aparte y
+> aplicar ya la DA-2 **(b)**: `.gitattributes` con `* text=auto eol=lf`,
+> `end_of_line = lf` en `.editorconfig` y la copia de trabajo pasada a LF. Va
+> en su propio commit, separado del de los hooks. Ver «Ampliación: fin de
+> línea LF» al final.
 
 | # | Tema | Opciones | Propuesta por defecto |
 |---|---|---|---|
@@ -220,12 +224,12 @@ Feature: Higiene agentica
 
 ## Definición de Done
 
-- [ ] DA-1..DA-4 confirmadas por el dueño y anotadas aquí.
-- [ ] CA-1 y CA-2: cada fila con el comando `echo '<json>' | node <hook>` y
+- [x] DA-1..DA-4 confirmadas por el dueño y anotadas aquí.
+- [x] CA-1 y CA-2: cada fila con el comando `echo '<json>' | node <hook>` y
   su salida pegada.
-- [ ] CA-3: la respuesta real de la sesión a los tres pedidos.
-- [ ] CA-4: los tres conteos de lint antes y después, y `git status`.
-- [ ] Status actualizado aquí y en el mapa de `docs/product/README.md`.
+- [x] CA-3: la respuesta real de la sesión a los tres pedidos.
+- [x] CA-4: los tres conteos de lint antes y después, y `git status`.
+- [x] Status actualizado aquí y en el mapa de `docs/product/README.md`.
 
 ## Notas para el agente ejecutor
 
@@ -245,3 +249,156 @@ Feature: Higiene agentica
   igual que el resto.
 - Menciona en el reporte la candidata a US aparte: `.gitattributes` +
   renormalización (DA-2 b).
+
+## Evidencia (2026-10-24)
+
+**Implementación:**
+
+- `.claude/hooks/pre-tool-use/block-env-reads.cjs`: es el de bingo-flow con
+  dos cambios. El `TOKEN_RE` pasa a `/(?<![\w$])\.env(?:\.[\w-]+)?/gi`
+  (DA-1 a), y los mensajes están en español neutral y apuntan a las
+  plantillas. El resto es igual: las plantillas permitidas, `GLOB_RE`, el
+  esquema de deny y que falla abierto.
+- `.claude/hooks/pre-tool-use/block-node-modules-writes.cjs`: el mensaje de
+  DA-4 (a) menciona `yarn install`/`npm install` y `patch-package` en una
+  US, sin `pnpm`.
+- `.claude/settings.json`: los dos matchers de bingo
+  (`settings.json:3-21`), sin cambios.
+- `.editorconfig`: `[*]`, `[*.py]`, `[*.md]` y `[justfile]`, sin
+  `end_of_line` (DA-2 a).
+- DA-3 (a): no se creó `AGENTS.md`.
+
+**CA-1 y CA-2**, con los hooks alimentados por stdin antes de crear
+`settings.json` (un script de prueba en el scratchpad de la sesión lanza
+`node <hook>` con cada evento):
+
+```
+CA-1 | Read apps/api/rest/.env                                        → exit 0 · deny: Bloqueado: 'apps/api/rest/.env' es un archivo de secretos protegido. …
+CA-1 | Read apps/api/rest/.env.example                                → exit 0 · sin salida
+CA-1 | Read apps/shop/.env.template                                   → exit 0 · sin salida
+CA-1 | Read C:\…\packages\db\.env (Windows)                           → exit 0 · deny: Bloqueado: 'C:\DevOps\MyGitHub\safari-marketplace\packages\db\.env' es un archivo de secretos protegido. …
+CA-1 | Bash cat apps/shop/.env                                        → exit 0 · deny: Bloqueado: el comando menciona un archivo de secretos protegido …
+CA-1 | Bash cp packages/db/.env /tmp/x                                → exit 0 · deny
+CA-1 | Bash cat .env                                                  → exit 0 · deny
+CA-1 | Bash grep -rn "process.env" apps/api/rest/src                  → exit 0 · sin salida
+CA-1 | Bash node -e "console.log(process.env.PORT)"                   → exit 0 · sin salida
+CA-1 | Bash cat apps/shop/.env.template                               → exit 0 · sin salida
+CA-1 | Bash cat apps/shop/.e* (glob ofuscado)                         → exit 0 · deny
+CA-1 | Bash grep -n "\.env" justfile (falso positivo aceptado)        → exit 0 · deny
+CA-1 | Grep path services/scraper-worker/.env                         → exit 0 · deny: Bloqueado: buscar dentro de un archivo de secretos expone su contenido. …
+CA-1 | Grep pattern "process.env" path src                            → exit 0 · sin salida
+CA-1 | Glob **/.env                                                   → exit 0 · deny: Bloqueado: buscar archivos de secretos protegidos. …
+CA-1 | stdin vacío                                                    → exit 0 · sin salida
+CA-1 | JSON inválido                                                  → exit 0 · sin salida
+CA-2 | Edit apps/node_modules/next-auth/react/index.js                → exit 0 · deny: Bloqueado (US-72): escribir a mano bajo node_modules/. …
+CA-2 | Edit C:\…\apps\node_modules\next-auth\react\index.js (Windows) → exit 0 · deny
+CA-2 | Read apps/node_modules/next-auth/react/index.js                → exit 0 · sin salida
+CA-2 | Write apps/shop/src/x.ts                                       → exit 0 · sin salida
+CA-2 | JSON inválido                                                  → exit 0 · sin salida
+```
+
+**CA-3**, en la misma sesión de Claude Code, con `settings.json` ya creado.
+Los hooks se aplicaron sin reiniciar:
+
+```
+Read apps/api/rest/.env
+  → PreToolUse:Read hook error: Bloqueado: 'C:\DevOps\MyGitHub\safari-marketplace\apps\api\rest\.env' es un archivo de secretos protegido. El hook de seguridad del proyecto (US-72) bloquea leer, editar, copiar o cargar un .env real. Para configuración sin secretos usa la plantilla (.env.example o .env.template); si hace falta un valor real, pídeselo al dueño.
+Read apps/api/rest/.env.example
+  → 1 APP_NAME=Marvel / 2 PORT=9000 / 3 DEFAULT_CURRENCY=USD
+grep -rn "process.env" packages/db/src
+  → packages/db/src/client.ts:8:  const connectionString = process.env.DATABASE_URL; …
+ls -l apps/shop/.env   (vía Bash, comando inocuo a propósito)
+  → PreToolUse:Bash hook error: Bloqueado: el comando menciona un archivo de secretos protegido …
+```
+
+**CA-4**, antes y después del `.editorconfig`:
+
+```
+apps/shop       yarn lint                                          → ✔ No ESLint warnings or errors   /   ✔ No ESLint warnings or errors
+packages/db     npx biome check .                                  → Checked 77 files · Found 97 errors · Found 1 info   /   idéntico
+apps/api/rest   npx eslint "{src,apps,libs,test}/**/*.ts" (sin --fix) → ✖ 21175 problems (21123 errors, 52 warnings)   /   idéntico (diff vacío)
+git status --short  →  ?? .claude/hooks/   ?? .editorconfig   (y luego ?? .claude/settings.json)
+```
+
+`packages/db` ya tenía 97 errores de `biome`. En la salida se ven
+sobre todo diferencias de fin de línea (`␍`) y de formato; no los causa
+esta US y no se tocan. Es la misma familia que los 20 203 `Delete ␍` de la
+API.
+
+**Efecto para quien trabaje con agentes desde ahora:**
+
+- Un comando de Bash que mencione `.env` como ruta queda negado. Eso incluye
+  un `sed` o un heredoc que solo escribe ese texto en un documento: para
+  esos casos se usan las herramientas de edición, que solo miran la ruta.
+- Las verificaciones que necesiten un valor real se le piden al dueño. Por
+  ejemplo, la marca de tiempo del `.env` del shop que usó US-70 ya no puede
+  sacarla el agente.
+
+La candidata a US aparte que anotaba aquí (DA-2 b) se ejecutó en esta misma
+US a petición del dueño: ver la sección siguiente.
+
+## Ampliación: fin de línea LF (DA-2 b, 2026-10-24)
+
+**Qué cambió:**
+
+- `.gitattributes` nuevo en la raíz: `* text=auto eol=lf` y los binarios
+  habituales (imágenes, fuentes, pdf, zip) marcados como `binary`.
+- En `.editorconfig`, `end_of_line = lf`.
+- La copia de trabajo pasó a LF sin `git reset` ni `checkout`, porque había
+  cambios sin commit de esta US. Un script en el scratchpad de la sesión
+  convierte en el sitio solo los archivos que `git ls-files --eol` marca
+  `i/lf w/crlf`; no toca binarios ni archivos sin versionar.
+
+**Antes:** el contenido del repo ya estaba todo en LF. No había ningún
+`i/crlf`: `core.autocrlf=true` lo normalizaba al hacer commit. El problema
+estaba solo en la copia de trabajo de Windows:
+
+```
+3891 i/lf w/lf
+ 411 i/lf w/crlf      ← 137 apps/api, 111 openspec/changes, 62 packages/db, 52 docs/product, 14 openspec/specs, 13 apps/shop, 6 apps/admin, …
+  91 i/-text w/-text  (binarios)
+  43 i/none w/none
+```
+
+**Conversión:**
+
+```
+411 archivos i/lf w/crlf convertidos; 126152 bytes \r quitados
+```
+
+**Después:**
+
+```
+git ls-files --eol   →  4302 i/lf w/lf · 91 i/-text w/-text · 43 i/none w/none   (ningún w/crlf)
+git add --renormalize .  →  no cambia nada del contenido versionado (solo quedan los cambios reales de esta US)
+git status --short   →  M docs/product/72-higiene-agentica.md · M docs/product/README.md · ?? .claude/hooks/ · ?? .claude/settings.json · ?? .editorconfig · ?? .gitattributes
+```
+
+El primer `git status` tras la conversión listó los 411 archivos como `M`:
+era el caché de estado de git, que se refrescó con el `--renormalize`. El
+contenido versionado de esos archivos no cambió.
+
+**Efecto en el lint y en los tests:**
+
+```
+apps/api/rest   npx eslint (sin --fix)  →  21175 problems (21123 errors, 52 warnings)  ⇒  972 problems (920 errors, 52 warnings)
+packages/db     npx biome check .       →  97 errors · 1 info                          ⇒  93 errors · 1 info
+apps/shop       yarn lint               →  ✔ No ESLint warnings or errors (sin cambios)
+cd apps/api/rest && npx jest            →  Test Suites: 34 passed, 34 total / Tests: 565 passed, 565 total
+just db-check                           →  Test Files  32 passed (32) / Tests  412 passed (412)
+```
+
+Los 972 problemas que quedan en la API y los 93 de `biome` ya no son de fin
+de línea: son formato y reglas del código heredado. Arreglarlos es un
+refactor que no entra aquí.
+
+**Incidencia:** al terminar, la API (9001) y el admin (3002) del dueño, que
+corrían en modo dev, ya no estaban vivos. La causa probable, aunque no
+confirmada, es la recompilación en caliente tras reescribirse 137 archivos
+de la API y 6 del admin. Se relanzan con `just api-dev` y `just admin-dev`.
+
+**Para quien clone o actualice:** como el contenido versionado no cambia,
+un `git pull` no trae diferencias de fin de línea. Una copia de trabajo
+existente en CRLF se queda así hasta que se vuelva a sacar cada archivo. Se
+normaliza de una vez con `git rm --cached -r . && git reset --hard`, que
+solo es seguro con el árbol limpio.

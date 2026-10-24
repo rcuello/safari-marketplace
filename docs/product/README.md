@@ -213,7 +213,7 @@ US-68    Cupones del seed vigentes                → standalone ✅ (2026-10-23
 US-69    Índices trigram que el ILIKE no usa      → standalone ✅ (2026-10-23) ← opción (a): trigram sobre la columna + VACUUM ANALYZE en db-migrate
 US-70    Login con Google opcional en el shop     → standalone ✅ (2026-10-24) ← DA-1..DA-3 (a); sin variables no hay proveedor ni botón; el stub D-11 de social-login-token sigue
 US-71    El shop no expulsa por un 401/403        → standalone ✅ (2026-10-24) ← interceptor solo 401 con token; tienda y avisos solo en /shops/[slug]; R-6 intacto
-US-72    Higiene agéntica (hooks .env y node_modules) → standalone (listo) ← DA-1..DA-4 con propuesta por defecto; adapta los hooks de bingo-flow; .editorconfig
+US-72    Higiene agéntica (hooks .env y node_modules) → standalone ✅ (2026-10-24) ← DA-1..DA-4 (a); hooks PreToolUse activos en .claude/settings.json; .editorconfig sin end_of_line
 ```
 
 Las US-64 a US-69 salen de los «NO incluye» y hallazgos del Épico 46 (US-52

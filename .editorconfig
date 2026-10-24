@@ -1,0 +1,21 @@
+root = true
+
+# Sin end_of_line a propósito (US-72, DA-2): el fin de línea lo decide git
+# (core.autocrlf). Normalizarlo a LF es una US aparte (.gitattributes y
+# renormalización).
+[*]
+charset = utf-8
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.py]
+indent_size = 4
+
+# Dos espacios al final de una línea son un salto de línea duro en Markdown.
+[*.md]
+trim_trailing_whitespace = false
+
+[justfile]
+indent_size = 4
