@@ -9,7 +9,7 @@
 
 **Épico:** ninguno (US standalone). Nace de los reportes de US-52 y US-54.
 **Fecha:** 2026-10-22
-**Status:** Listo para ejecución
+**Status:** ✅ Completada (2026-10-23), opción (c)
 **Depende de:** ninguna dura. Toca `packages/db`, que comparte con el Épico
 46 (`domain-errors.ts` y varios repositorios), así que **no puede ir en
 paralelo** con ninguna US de ese épico (R-2): va entre dos de ellas.
@@ -205,15 +205,15 @@ Feature: Mensaje del 409 por clave unica
 
 ## Definición de Done
 
-- [ ] Línea base con la API recién arrancada: el `message` de los tres 409
+- [x] Línea base con la API recién arrancada: el `message` de los tres 409
   de CA-1, pegado, con la palabra «slug».
-- [ ] El cambio en `domain-errors.ts` (`git diff` pegado, corto).
-- [ ] CA-1 con `curl`, Bearer y status exacto, antes y después.
-- [ ] CA-2 y CA-3 cubiertos por tests nuevos o ajustados, con su salida.
-- [ ] CA-4: `just db-check`, `npx jest`, `just build-api` y `just verify` con
+- [x] El cambio en `domain-errors.ts` (`git diff` pegado, corto).
+- [x] CA-1 con `curl`, Bearer y status exacto, antes y después.
+- [x] CA-2 y CA-3 cubiertos por tests nuevos o ajustados, con su salida.
+- [x] CA-4: `just db-check`, `npx jest`, `just build-api` y `just verify` con
   recuentos.
-- [ ] Filas de prueba borradas tras la evidencia, o `just db-reset`.
-- [ ] Status actualizado aquí y en el mapa de `docs/product/README.md`.
+- [x] Filas de prueba borradas tras la evidencia, o `just db-reset`.
+- [x] Status actualizado aquí y en el mapa de `docs/product/README.md`.
 
 ## Notas para el agente ejecutor
 
@@ -232,3 +232,126 @@ Feature: Mensaje del 409 por clave unica
 - Mencionar en el reporte, como candidata a US aparte, la separación de
   `uniqueField` en campo único y FK, que eliminaría el hack de
   `coupons.repository.ts:127`.
+
+## Evidencia (2026-10-23)
+
+**Opción aplicada: (c).** Se mantienen la clase y el code
+(`SlugConflictError`, `CATALOG_SLUG_CONFLICT`). El parámetro pasa a
+llamarse `field` y el mensaje nombra el campo. Con una lista de varias
+columnas usa el plural: «con los mismos valores en `a, b, c`».
+
+**`meta` observado bajo Prisma 7 + adapter-pg.** Es un P2002 provocado a
+propósito sobre `types_slug_key`:
+
+```
+PrismaClientKnownRequestError P2002 {"driverAdapterError":{"name":"DriverAdapterError","cause":{"originalCode":"23505","originalMessage":"duplicate key value violates unique constraint \"types_slug_key\"","kind":"UniqueConstraintViolation","constraint":{"index":"types_slug_key"},"table":"types"}},"modelName":"Type"}
+```
+
+`meta.target` **no llega**, así que la rama del array del traductor nunca se
+ejecuta: el campo sale de `uniqueField` o del default `'slug'`. El nombre
+del constraint sí viene, en `driverAdapterError.cause.constraint.index`, y
+podría usarse para reportar el campo real. Queda como candidata a US aparte,
+junto a la separación de `uniqueField` de abajo.
+
+**El cambio** (`git diff packages/db/src/domain-errors.ts`):
+
+```diff
+-/** El slug calculado ya existe (P2002 — solo alcanzable por carrera). */
++/**
++ * Clave única repetida (P2002). Pese al nombre, no es solo el slug: también
++ * `code` de cupones o los uniques de varias columnas de reseñas y reportes,
++ * que se violan de forma normal, no solo por carrera (US-67). `field` es el
++ * NOMBRE del campo (o la lista `a, b, c`), nunca el valor: el traductor no
++ * lo tiene.
++ */
+ export class SlugConflictError extends CatalogWriteError {
+   readonly code = CATALOG_ERROR_CODES.SlugConflict;
+-  constructor(aggregate: string, slug: string) {
++  constructor(aggregate: string, field: string) {
+     super(
+-      `Ya existe un registro de \`${aggregate}\` con el slug \`${slug}\`.`,
++      field.includes(',')
++        ? `Ya existe un registro de \`${aggregate}\` con los mismos valores en \`${field}\`.`
++        : `Ya existe un registro de \`${aggregate}\` con el mismo valor en \`${field}\`.`,
+       aggregate
+     );
+```
+
+**CA-1.** Los tres 409 se provocan con filas del seed, sin crear nada: el
+cupón `4OFF` (tienda 1, como `store_owner`), la reseña del usuario 2 sobre el
+producto 1 sin orden y su reporte sobre la reseña 1.
+
+Antes:
+
+```
+POST /coupons      → {"statusCode":409,"message":"Ya existe un registro de `coupons` con el slug `code`.","error":"Conflict"}  HTTP 409
+POST /reviews      → {"statusCode":409,"message":"Ya existe un registro de `reviews` con el slug `user_id, product_id, order_id`.","error":"Conflict"}  HTTP 409
+POST /abusive_reports → {"statusCode":409,"message":"Ya existe un registro de `abusive_reports` con el slug `user_id, model_type, model_id`.","error":"Conflict"}  HTTP 409
+coupons|reviews|abusive_reports → 10|85|3
+```
+
+Después:
+
+```
+POST /coupons      → {"statusCode":409,"message":"Ya existe un registro de `coupons` con el mismo valor en `code`.","error":"Conflict"}  HTTP 409
+POST /reviews      → {"statusCode":409,"message":"Ya existe un registro de `reviews` con los mismos valores en `user_id, product_id, order_id`.","error":"Conflict"}  HTTP 409
+POST /abusive_reports → {"statusCode":409,"message":"Ya existe un registro de `abusive_reports` con los mismos valores en `user_id, model_type, model_id`.","error":"Conflict"}  HTTP 409
+coupons|reviews|abusive_reports → 10|85|3
+```
+
+**CA-2 y CA-3**, con los tests ajustados:
+
+- **`domain-error.mapper.spec.ts`:**
+  - El caso existente ahora pasa un nombre de campo (`'slug'`, antes el
+    valor `'gadget-2'`).
+  - Asserta el cuerpo `{statusCode: 409, message, error: 'Conflict'}` y que
+    «slug» sale una sola vez.
+  - Hay un caso nuevo de varias columnas, sin «slug».
+- **`coupons.integration.test.ts`:** el `4OFF` repetido asserta el texto
+  real «…`coupons` con el mismo valor en `code`.».
+- **`shops.integration.test.ts`:** el perdedor de la carrera de slug
+  asserta «…`shops` con el mismo valor en `slug`.».
+
+```
+√ SlugConflict → 409; el mensaje nombra el campo y dice «slug» una sola vez (US-67)
+√ SlugConflict de varias columnas → 409 con la lista de campos y sin «slug» (US-67)
+✓ coupons.integration.test.ts > createCoupon > código duplicado ⇒ SlugConflictError; tienda inexistente ⇒ InvalidReferenceError
+✓ shops.integration.test.ts > 409 de slug duplicado ... > dos createShop concurrentes con el mismo name: uno gana, el otro → SlugConflictError
+```
+
+`CATALOG_ERROR_CODES` sigue con 5 valores y el mapper no se tocó. En
+`products` no cambia qué campo se reporta: no pasa `uniqueField`
+(`products.repository.ts:742,874,900`). Un P2002 de
+`products_procedencia_key` seguiría diciendo `slug`, como antes de esta US;
+solo cambia la frase. Queda anotado, no se arregla aquí (nota de US-29).
+
+**CA-4:**
+
+```
+just db-check                      →  Test Files  32 passed (32) / Tests  410 passed (410)
+npx jest                           →  Test Suites: 34 passed, 34 total / Tests: 565 passed, 565 total
+npx tsc --noEmit -p tsconfig.json  →  EXIT=0
+just build-api                     →  Done in 19.46s.
+just verify
+OK   API    :9001/api/settings  200  5503B  453ms
+OK   Shop   :3003/en  200  190788B  659ms  cards:30
+OK   Admin  :3002/en/login  200  72821B  1472ms  cards:1
+```
+
+Los recuentos de tests:
+
+- `db-check` sigue en 410: los asserts nuevos van dentro de tests que ya
+  existían.
+- `jest` pasa de 564 a 565, por el caso nuevo de varias columnas.
+- El resto de los 13 archivos de test que usan la clase pasa sin cambios.
+
+**Filas de prueba:** ninguna. Los tres 409 no escriben, y los conteos se
+mantuvieron en `10|85|3`. Solo avanzó la secuencia de `coupons`.
+
+**Candidatas a US aparte:**
+
+- separar `uniqueField` en dos parámetros (campo único y FK), lo que quita
+  el hack de `coupons.repository.ts:127`;
+- derivar el campo de `driverAdapterError.cause.constraint.index`, lo que
+  resolvería también el caso de `products_procedencia_key`;
+- renombrar la clase y el code (opción (b)).

@@ -138,6 +138,12 @@ No usar `prisma migrate dev` ni `prisma db push` contra esta base.
   constraint)` de `domain-errors.ts`, con `code = InvalidReference` (400).
   Un agregado nuevo no necesita su propia clase. Las tres de `products` se
   quedan aparte porque sus reglas cruzan varios campos.
+- **El 409 por clave única** es `SlugConflictError` para cualquier P2002,
+  sea slug o no (`code` de cupones, el único de tres columnas de reseñas o
+  de reportes). Su mensaje nombra el campo, no el valor: «Ya existe un
+  registro de `coupons` con el mismo valor en `code`.» (US-67). Bajo
+  adapter-pg, `meta.target` no llega, así que el campo sale del
+  `uniqueField` del repositorio o, si falta, de `'slug'`.
 - **El índice trgm** `products_nombre_trgm_idx` (expresión) tampoco: la
   búsqueda por nombre usa `contains` + `mode: 'insensitive'`, que Postgres
   resuelve con ese índice.

@@ -293,6 +293,12 @@ describe('409 de slug duplicado (P2002, solo por carrera) y 400 de owner_id inex
     expect(winner).not.toBeNull();
     expect(loser).not.toBeNull();
     if (loser) expect(loser.reason).toBeInstanceOf(SlugConflictError);
+    // US-67: con slug, la palabra sale una sola vez (antes «con el slug `slug`»).
+    if (loser) {
+      expect((loser.reason as Error).message).toBe(
+        'Ya existe un registro de `shops` con el mismo valor en `slug`.'
+      );
+    }
     if (winner) await prisma.shop.delete({ where: { id: winner.value.id } });
   });
 

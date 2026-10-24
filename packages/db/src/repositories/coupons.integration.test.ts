@@ -110,6 +110,10 @@ describe('createCoupon', () => {
   it('código duplicado ⇒ SlugConflictError; tienda inexistente ⇒ InvalidReferenceError', async () => {
     const base = { type: 'fixed', amount: 1, activeFrom: FROM, expireAt: TO };
     await expect(createCoupon({ ...base, code: '4OFF' })).rejects.toBeInstanceOf(SlugConflictError);
+    // US-67: el texto nombra el campo real, no un slug.
+    await expect(createCoupon({ ...base, code: '4OFF' })).rejects.toThrow(
+      'Ya existe un registro de `coupons` con el mismo valor en `code`.'
+    );
     await expect(
       createCoupon({ ...base, code: `${SENTINEL_PREFIX}huerfano`, shopId: 999 })
     ).rejects.toBeInstanceOf(InvalidReferenceError);

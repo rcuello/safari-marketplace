@@ -73,11 +73,29 @@ describe('mapDomainError — tabla cerrada de 5 códigos (CA-4, CA-7)', () => {
     expect(result?.getStatus()).toBe(409);
   });
 
-  it('SlugConflict → 409 (solo alcanzable por carrera, pero probado directo)', () => {
-    const result = mapDomainError(new SlugConflictError('types', 'gadget-2'));
+  it('SlugConflict → 409; el mensaje nombra el campo y dice «slug» una sola vez (US-67)', () => {
+    const result = mapDomainError(new SlugConflictError('types', 'slug'));
 
     expect(result).toBeInstanceOf(ConflictException);
     expect(result?.getStatus()).toBe(409);
+    expect(result?.getResponse()).toEqual({
+      statusCode: 409,
+      message: 'Ya existe un registro de `types` con el mismo valor en `slug`.',
+      error: 'Conflict',
+    });
+    expect(result?.message.match(/slug/g)).toHaveLength(1);
+  });
+
+  it('SlugConflict de varias columnas → 409 con la lista de campos y sin «slug» (US-67)', () => {
+    const result = mapDomainError(
+      new SlugConflictError('reviews', 'user_id, product_id, order_id'),
+    );
+
+    expect(result?.getStatus()).toBe(409);
+    expect(result?.message).toBe(
+      'Ya existe un registro de `reviews` con los mismos valores en `user_id, product_id, order_id`.',
+    );
+    expect(result?.message).not.toMatch(/slug/);
   });
 
   it('un error que no es de catálogo devuelve null (deja la cadena seguir)', () => {

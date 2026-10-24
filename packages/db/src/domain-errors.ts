@@ -117,12 +117,20 @@ export class DependentRowsError extends CatalogWriteError {
   }
 }
 
-/** El slug calculado ya existe (P2002 — solo alcanzable por carrera). */
+/**
+ * Clave única repetida (P2002). Pese al nombre, no es solo el slug: también
+ * `code` de cupones o los uniques de varias columnas de reseñas y reportes,
+ * que se violan de forma normal, no solo por carrera (US-67). `field` es el
+ * NOMBRE del campo (o la lista `a, b, c`), nunca el valor: el traductor no
+ * lo tiene.
+ */
 export class SlugConflictError extends CatalogWriteError {
   readonly code = CATALOG_ERROR_CODES.SlugConflict;
-  constructor(aggregate: string, slug: string) {
+  constructor(aggregate: string, field: string) {
     super(
-      `Ya existe un registro de \`${aggregate}\` con el slug \`${slug}\`.`,
+      field.includes(',')
+        ? `Ya existe un registro de \`${aggregate}\` con los mismos valores en \`${field}\`.`
+        : `Ya existe un registro de \`${aggregate}\` con el mismo valor en \`${field}\`.`,
       aggregate
     );
     this.name = 'SlugConflictError';
