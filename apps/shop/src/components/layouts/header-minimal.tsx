@@ -32,6 +32,7 @@ import { useWindowSize } from 'react-use';
 import GroupsDropdownMenu from './menu/groups-menu';
 import StaticMenu from './menu/static-menu';
 import { useRouter } from 'next/router';
+import { useIsShopPage } from '@/lib/use-is-shop-page';
 const CartCounterIconButton = dynamic(
   () => import('@/components/cart/cart-counter-icon-button'),
   { ssr: false },
@@ -61,9 +62,11 @@ const HeaderMinimal = ({ layout }: { layout: string }) => {
   const {
     query: { slug },
   } = router;
+  // Solo en páginas de tienda: en un producto el slug es del producto (US-71).
+  const isShopPage = useIsShopPage();
   const { data: shopData, isLoading } = useShop({
     slug: slug as string,
-    enabled: Boolean(slug),
+    enabled: Boolean(slug) && isShopPage,
   });
 
   function handleSidebar(view: string) {

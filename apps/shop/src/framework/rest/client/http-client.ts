@@ -197,11 +197,15 @@ Axios.interceptors.response.use(
       }
     }
 
-    // Limpieza de sesión: solo en el navegador (Router no existe en SSR).
+    // Limpieza de sesión: solo en el navegador (Router no existe en SSR) y
+    // solo si la petición llevaba token y la API lo rechaza: la sesión caducó
+    // o no vale (US-71). Un 403 es un usuario autenticado sin permiso para
+    // ESA ruta y un 401 sin token es un anónimo: ninguno de los dos cierra la
+    // sesión ni saca al usuario de la página.
     if (
       typeof window !== 'undefined' &&
+      Cookies.get(AUTH_TOKEN_KEY) &&
       (error.response?.status === 401 ||
-        error.response?.status === 403 ||
         mensajeDe(error.response?.data) === 'PICKBAZAR_ERROR.NOT_AUTHORIZED')
     ) {
       Cookies.remove(AUTH_TOKEN_KEY);

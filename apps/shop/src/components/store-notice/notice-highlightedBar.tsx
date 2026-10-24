@@ -1,6 +1,13 @@
 import { useRouter } from 'next/router';
 import { useShop } from '@/framework/shop';
 import { useStoreNotices } from '@/framework/store-notices';
+import {
+  adminAndOwnerOnly,
+  getAuthCredentials,
+  hasAccess,
+} from '@/framework/utils/auth-utils';
+import { authorizationAtom } from '@/store/authorization-atom';
+import { useAtom } from 'jotai';
 import { StoreNotice } from '@/types';
 import NoticeCountdown from '@/components/ui/countdown';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -59,7 +66,7 @@ const HighlightedBar = ({ notice }: { notice: StoreNotice }) => {
 
 // TODO : render multiple times with infinite loop
 
-const NoticeHighlightedBar = () => {
+const ShopNotices = () => {
   const {
     query: { slug },
   } = useRouter();
@@ -84,6 +91,17 @@ const NoticeHighlightedBar = () => {
       )}
     </>
   );
+};
+
+// Los avisos son mensajes del admin a los vendedores y `GET /store-notices`
+// es solo de admin y dueño (R-6 del Épico 46). Para clientes y anónimos no se
+// piden: la barra no aparece y no hay un 401/403 en cada página de tienda
+// (US-71).
+const NoticeHighlightedBar = () => {
+  const [isAuthorize] = useAtom(authorizationAtom);
+  const { permissions } = getAuthCredentials();
+  if (!isAuthorize || !hasAccess(adminAndOwnerOnly, permissions)) return null;
+  return <ShopNotices />;
 };
 
 export default NoticeHighlightedBar;

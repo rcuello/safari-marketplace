@@ -212,6 +212,7 @@ US-67    Mensaje del 409 por clave única          → standalone ✅ (2026-10-2
 US-68    Cupones del seed vigentes                → standalone ✅ (2026-10-23) ← opción (b) +5 años, decidida por el dueño; se aparta de la decisión 6 solo en las fechas
 US-69    Índices trigram que el ILIKE no usa      → standalone ✅ (2026-10-23) ← opción (a): trigram sobre la columna + VACUUM ANALYZE en db-migrate
 US-70    Login con Google opcional en el shop     → standalone ✅ (2026-10-24) ← DA-1..DA-3 (a); sin variables no hay proveedor ni botón; el stub D-11 de social-login-token sigue
+US-71    El shop no expulsa por un 401/403        → standalone ✅ (2026-10-24) ← interceptor solo 401 con token; tienda y avisos solo en /shops/[slug]; R-6 intacto
 ```
 
 Las US-64 a US-69 salen de los «NO incluye» y hallazgos del Épico 46 (US-52

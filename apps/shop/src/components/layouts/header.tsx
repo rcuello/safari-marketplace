@@ -23,6 +23,7 @@ import {
 } from '@/lib/constants';
 import { useActiveScroll } from '@/lib/use-active-scroll';
 import { useIsHomePage } from '@/lib/use-is-homepage';
+import { useIsShopPage } from '@/lib/use-is-shop-page';
 import { authorizationAtom } from '@/store/authorization-atom';
 import { displayMobileHeaderSearchAtom } from '@/store/display-mobile-header-search-atom';
 import { drawerAtom } from '@/store/drawer-atom';
@@ -57,9 +58,11 @@ const Header = ({ layout }: { layout?: string }) => {
   const {
     query: { slug },
   } = router;
+  // Solo en páginas de tienda: en un producto el slug es del producto (US-71).
+  const isShopPage = useIsShopPage();
   const { data: shopData, isLoading } = useShop({
     slug: slug as string,
-    enabled: Boolean(slug),
+    enabled: Boolean(slug) && isShopPage,
   });
   const { createShopMaintenanceEventRequest } = useShopMaintenanceEvent();
   const [_, setDrawerView] = useAtom(drawerAtom);
