@@ -10,8 +10,8 @@
 
 import 'dotenv/config';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { _setNowProvider } from '../clock';
 import { prisma } from '../client';
+import { _setNowProvider } from '../clock';
 import {
   EmptySlugError,
   InvalidReferenceError,
@@ -31,7 +31,10 @@ const createdIds: number[] = [];
 const cleanup = async () => {
   await prisma.attribute.deleteMany({
     where: {
-      OR: [{ slug: { startsWith: SENTINEL_PREFIX } }, { id: { in: createdIds } }],
+      OR: [
+        { slug: { startsWith: SENTINEL_PREFIX } },
+        { id: { in: createdIds } },
+      ],
     },
   });
 };
@@ -59,11 +62,15 @@ describe('listAttributes — seed', () => {
   });
 
   it('filtra por tienda: la 11 tiene los atributos 10 y 9', async () => {
-    expect((await listAttributes({ shopId: 11 })).map((a) => a.id)).toEqual([10, 9]);
+    expect((await listAttributes({ shopId: 11 })).map((a) => a.id)).toEqual([
+      10, 9,
+    ]);
   });
 
   it('filtra por nombre case-insensitive: "color" → 10, 8 y 3', async () => {
-    expect((await listAttributes({ name: 'COLOR' })).map((a) => a.id)).toEqual([10, 8, 3]);
+    expect((await listAttributes({ name: 'COLOR' })).map((a) => a.id)).toEqual([
+      10, 8, 3,
+    ]);
   });
 });
 
@@ -105,7 +112,11 @@ describe('createAttribute', () => {
   });
 
   it('un nombre que ya existe ("Color") recibe sufijo con el esquema de generateSlug', async () => {
-    const created = await createAttribute({ name: 'Color', shopId: 2, values: [] });
+    const created = await createAttribute({
+      name: 'Color',
+      shopId: 2,
+      values: [],
+    });
     createdIds.push(created.id);
     expect(created.slug).toBe('color-2');
   });
@@ -121,7 +132,10 @@ describe('createAttribute', () => {
     await expect(failure).rejects.toBeInstanceOf(InvalidReferenceError);
     await expect(failure).rejects.toThrow('`attributes.shop_id`');
     await expect(
-      createAttribute({ name: `${SENTINEL_PREFIX}Huerfano`, shopId: Number.NaN })
+      createAttribute({
+        name: `${SENTINEL_PREFIX}Huerfano`,
+        shopId: Number.NaN,
+      })
     ).rejects.toBeInstanceOf(InvalidReferenceError);
     expect(await prisma.attribute.count()).toBe(beforeAttrs);
     expect(await prisma.attributeValue.count()).toBe(beforeValues);
@@ -186,17 +200,19 @@ describe('updateAttribute — reconciliación', () => {
       shopId: 2,
       values: [{ value: 'Uno' }],
     });
-    const updated = await updateAttribute(created.id, { name: `${SENTINEL_PREFIX}Renombrado` });
+    const updated = await updateAttribute(created.id, {
+      name: `${SENTINEL_PREFIX}Renombrado`,
+    });
     expect(updated.values.map((v) => v.value)).toEqual(['Uno']);
-    await expect(updateAttribute(created.id, { name: '???' })).rejects.toBeInstanceOf(
-      EmptySlugError
-    );
+    await expect(
+      updateAttribute(created.id, { name: '???' })
+    ).rejects.toBeInstanceOf(EmptySlugError);
   });
 
   it('id inexistente ⇒ RecordNotFoundError', async () => {
-    await expect(updateAttribute(999_999, { name: 'x' })).rejects.toBeInstanceOf(
-      RecordNotFoundError
-    );
+    await expect(
+      updateAttribute(999_999, { name: 'x' })
+    ).rejects.toBeInstanceOf(RecordNotFoundError);
   });
 });
 
@@ -209,7 +225,11 @@ describe('deleteAttribute', () => {
     });
     const deleted = await deleteAttribute(created.id);
     expect(deleted.values).toHaveLength(2);
-    expect(await prisma.attributeValue.count({ where: { attributeId: created.id } })).toBe(0);
-    await expect(deleteAttribute(created.id)).rejects.toBeInstanceOf(RecordNotFoundError);
+    expect(
+      await prisma.attributeValue.count({ where: { attributeId: created.id } })
+    ).toBe(0);
+    await expect(deleteAttribute(created.id)).rejects.toBeInstanceOf(
+      RecordNotFoundError
+    );
   });
 });

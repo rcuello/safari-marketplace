@@ -43,7 +43,12 @@ import {
 } from '../records';
 
 /** El CHECK `ownership_transfers_status_check`, en minúscula (el vocabulario del admin). */
-export const OWNERSHIP_TRANSFER_STATUSES = ['pending', 'processing', 'approved', 'rejected'] as const;
+export const OWNERSHIP_TRANSFER_STATUSES = [
+  'pending',
+  'processing',
+  'approved',
+  'rejected',
+] as const;
 
 const IDENTIFIER_ATTEMPTS = 5;
 
@@ -51,7 +56,10 @@ const IDENTIFIER_ATTEMPTS = 5;
 export class SameOwnerError extends CatalogWriteError {
   readonly code = CATALOG_ERROR_CODES.SlugConflict;
   constructor(shopId: number, ownerId: number) {
-    super(`El usuario ${ownerId} ya es el dueño de la tienda ${shopId}.`, 'ownership_transfers');
+    super(
+      `El usuario ${ownerId} ya es el dueño de la tienda ${shopId}.`,
+      'ownership_transfers'
+    );
     this.name = 'SameOwnerError';
   }
 }
@@ -109,11 +117,18 @@ const DETAIL_INCLUDE = {
   currentOwner: { include: { profile: true } },
 } satisfies Prisma.OwnershipTransferInclude;
 
-type TransferWithOwners = Prisma.OwnershipTransferGetPayload<{ include: typeof DETAIL_INCLUDE }>;
+type TransferWithOwners = Prisma.OwnershipTransferGetPayload<{
+  include: typeof DETAIL_INCLUDE;
+}>;
 type Tx = Prisma.TransactionClient;
 
-function _toOwner(row: TransferWithOwners['previousOwner']): OwnershipTransferOwnerRecord {
-  return { ..._toUserRecord(row), profile: row.profile ? _toProfileRecord(row.profile) : null };
+function _toOwner(
+  row: TransferWithOwners['previousOwner']
+): OwnershipTransferOwnerRecord {
+  return {
+    ..._toUserRecord(row),
+    profile: row.profile ? _toProfileRecord(row.profile) : null,
+  };
 }
 
 function _toDetail(row: TransferWithOwners): OwnershipTransferDetailRecord {
@@ -125,12 +140,21 @@ function _toDetail(row: TransferWithOwners): OwnershipTransferDetailRecord {
 }
 
 function _translate(error: unknown, id?: number): unknown {
-  return translateCatalogWriteError(error, { aggregate: 'ownership_transfers', id, uniqueField: 'transaction_identifier' });
+  return translateCatalogWriteError(error, {
+    aggregate: 'ownership_transfers',
+    id,
+    uniqueField: 'transaction_identifier',
+  });
 }
 
 function _assertStatus(status: string): void {
   if (!(OWNERSHIP_TRANSFER_STATUSES as readonly string[]).includes(status)) {
-    throw new InvalidFieldValueError('ownership_transfers', 'status', status, 'ownership_transfers_status_check');
+    throw new InvalidFieldValueError(
+      'ownership_transfers',
+      'status',
+      status,
+      'ownership_transfers_status_check'
+    );
   }
 }
 
@@ -158,7 +182,9 @@ async function _lockShopOwner(tx: Tx, shopId: number): Promise<number | null> {
 }
 
 /** Reintenta la transacción entera si otra se adelantó con el mismo identificador (P2002). */
-async function _withFreeIdentifier<T>(work: (tx: Tx) => Promise<T>): Promise<T> {
+async function _withFreeIdentifier<T>(
+  work: (tx: Tx) => Promise<T>
+): Promise<T> {
   for (let attempt = 1; ; attempt++) {
     try {
       return await prisma.$transaction(work);
@@ -176,10 +202,15 @@ export async function listOwnershipTransfers(
   const page = Math.max(1, input.page ?? 1);
   const limit = input.limit ?? 10;
   const where: Prisma.OwnershipTransferWhereInput = {
-    ...(input.transactionIdentifier !== undefined && { transactionIdentifier: input.transactionIdentifier }),
+    ...(input.transactionIdentifier !== undefined && {
+      transactionIdentifier: input.transactionIdentifier,
+    }),
     ...(input.shopId !== undefined && { shopId: input.shopId }),
     ...(input.participantId !== undefined && {
-      OR: [{ previousOwnerId: input.participantId }, { currentOwnerId: input.participantId }],
+      OR: [
+        { previousOwnerId: input.participantId },
+        { currentOwnerId: input.participantId },
+      ],
     }),
   };
   const [rows, total] = await Promise.all([
@@ -217,8 +248,14 @@ export async function createOwnershipTransfer(
   try {
     return await _withFreeIdentifier(async (tx) => {
       const ownerId = await _lockShopOwner(tx, input.shopId);
-      if (ownerId === null) throw new InvalidReferenceError('ownership_transfers', 'shop_id', input.shopId);
-      if (ownerId === input.currentOwnerId) throw new SameOwnerError(input.shopId, ownerId);
+      if (ownerId === null)
+        throw new InvalidReferenceError(
+          'ownership_transfers',
+          'shop_id',
+          input.shopId
+        );
+      if (ownerId === input.currentOwnerId)
+        throw new SameOwnerError(input.shopId, ownerId);
       const row = await tx.ownershipTransfer.create({
         data: {
           transactionIdentifier: await _nextIdentifier(tx),
@@ -260,9 +297,16 @@ export async function updateOwnershipTransfer(
 }
 
 /** Borra y devuelve la fila borrada. Nada referencia a `ownership_transfers`. */
-export async function deleteOwnershipTransfer(id: number): Promise<OwnershipTransferDetailRecord> {
+export async function deleteOwnershipTransfer(
+  id: number
+): Promise<OwnershipTransferDetailRecord> {
   try {
-    return _toDetail(await prisma.ownershipTransfer.delete({ where: { id }, include: DETAIL_INCLUDE }));
+    return _toDetail(
+      await prisma.ownershipTransfer.delete({
+        where: { id },
+        include: DETAIL_INCLUDE,
+      })
+    );
   } catch (error) {
     throw _translate(error, id);
   }
@@ -277,21 +321,39 @@ export async function deleteOwnershipTransfer(id: number): Promise<OwnershipTran
  * Tienda inexistente ⇒ `RecordNotFoundError` (404); vendedor inexistente o
  * sin `store_owner` ⇒ 400; el vendedor ya es el dueño ⇒ `SameOwnerError` (409).
  */
-export async function transferShopOwnership(input: TransferShopOwnershipInput): Promise<ShopTransferResult> {
+export async function transferShopOwnership(
+  input: TransferShopOwnershipInput
+): Promise<ShopTransferResult> {
   try {
     return await _withFreeIdentifier(async (tx) => {
       const ownerId = await _lockShopOwner(tx, input.shopId);
-      if (ownerId === null) throw new RecordNotFoundError('shops', input.shopId);
+      if (ownerId === null)
+        throw new RecordNotFoundError('shops', input.shopId);
 
       const vendor = await tx.user.findUnique({
         where: { id: input.vendorId },
         include: { permissions: { include: { permission: true } } },
       });
-      if (!vendor) throw new InvalidReferenceError('ownership_transfers', 'vendor_id', input.vendorId);
-      if (!vendor.permissions.some((link) => link.permission.name === 'store_owner')) {
-        throw new InvalidFieldValueError('ownership_transfers', 'vendor_id', input.vendorId, 'store_owner');
+      if (!vendor)
+        throw new InvalidReferenceError(
+          'ownership_transfers',
+          'vendor_id',
+          input.vendorId
+        );
+      if (
+        !vendor.permissions.some(
+          (link) => link.permission.name === 'store_owner'
+        )
+      ) {
+        throw new InvalidFieldValueError(
+          'ownership_transfers',
+          'vendor_id',
+          input.vendorId,
+          'store_owner'
+        );
       }
-      if (ownerId === input.vendorId) throw new SameOwnerError(input.shopId, ownerId);
+      if (ownerId === input.vendorId)
+        throw new SameOwnerError(input.shopId, ownerId);
 
       const shop = await tx.shop.update({
         where: { id: input.shopId },

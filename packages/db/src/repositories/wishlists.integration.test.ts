@@ -25,7 +25,8 @@ const CUSTOMER = 2;
 const ADMIN = 3;
 const SEED_ORDER = [945, 941, 755, 569, 400, 313, 155, 111, 110, 104];
 
-const cleanup = () => prisma.wishlist.deleteMany({ where: { userId: { in: [OWNER, ADMIN] } } });
+const cleanup = () =>
+  prisma.wishlist.deleteMany({ where: { userId: { in: [OWNER, ADMIN] } } });
 
 beforeAll(cleanup);
 
@@ -76,7 +77,9 @@ describe('toggleWishlist', () => {
   });
 
   it('producto inexistente ⇒ RecordNotFoundError', async () => {
-    await expect(toggleWishlist(ADMIN, 999_999)).rejects.toBeInstanceOf(RecordNotFoundError);
+    await expect(toggleWishlist(ADMIN, 999_999)).rejects.toBeInstanceOf(
+      RecordNotFoundError
+    );
   });
 });
 
@@ -93,8 +96,14 @@ describe('addToWishlist / removeFromWishlist', () => {
 
   it('quitar devuelve el producto; repetirlo o un producto inexistente ⇒ RecordNotFoundError', async () => {
     expect((await removeFromWishlist(OWNER, 3)).id).toBe(3);
-    await expect(removeFromWishlist(OWNER, 3)).rejects.toBeInstanceOf(RecordNotFoundError);
-    await expect(addToWishlist(OWNER, 999_999)).rejects.toBeInstanceOf(RecordNotFoundError);
-    expect((await listWishlistProducts(OWNER)).items.map((p) => p.id)).toEqual([2]);
+    await expect(removeFromWishlist(OWNER, 3)).rejects.toBeInstanceOf(
+      RecordNotFoundError
+    );
+    await expect(addToWishlist(OWNER, 999_999)).rejects.toBeInstanceOf(
+      RecordNotFoundError
+    );
+    expect((await listWishlistProducts(OWNER)).items.map((p) => p.id)).toEqual([
+      2,
+    ]);
   });
 });

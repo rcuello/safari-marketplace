@@ -37,8 +37,12 @@ export async function updateBecomeSeller(
     const row = await prisma.becomeSeller.update({
       where: { id: 1 },
       data: {
-        ...(input.pageOptions !== undefined && { pageOptions: input.pageOptions }),
-        ...(input.commissions !== undefined && { commissions: input.commissions }),
+        ...(input.pageOptions !== undefined && {
+          pageOptions: input.pageOptions,
+        }),
+        ...(input.commissions !== undefined && {
+          commissions: input.commissions,
+        }),
         ...(input.language !== undefined && { language: input.language }),
         updatedAt: now(),
       },

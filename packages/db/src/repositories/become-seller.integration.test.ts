@@ -25,7 +25,10 @@ import type { Prisma } from '../../generated/prisma/client/client';
 import { prisma } from '../client';
 import { _setNowProvider } from '../clock';
 import { _toBecomeSellerRecord } from '../records';
-import { getBecomeSeller, updateBecomeSeller } from './become-seller.repository';
+import {
+  getBecomeSeller,
+  updateBecomeSeller,
+} from './become-seller.repository';
 
 let originalPageOptions: Prisma.InputJsonValue;
 let originalCommissions: Prisma.InputJsonValue;
@@ -64,7 +67,9 @@ afterAll(async () => {
 describe('singleton de become_seller', () => {
   it('hay exactamente una fila, con id = 1', async () => {
     expect(await prisma.becomeSeller.count()).toBe(1);
-    const row = await prisma.becomeSeller.findUniqueOrThrow({ where: { id: 1 } });
+    const row = await prisma.becomeSeller.findUniqueOrThrow({
+      where: { id: 1 },
+    });
     expect(row.id).toBe(1);
   });
 });
@@ -79,7 +84,9 @@ describe('CHECK become_seller_fila_unica', () => {
 
 describe('las dos columnas jsonb conservan ambas colecciones sin fusionarlas (CA-2)', () => {
   it('pageOptions tiene 24 claves (incl. defaultCommissionRate) y commissions un array de 2, sin anidarse', async () => {
-    const row = await prisma.becomeSeller.findUniqueOrThrow({ where: { id: 1 } });
+    const row = await prisma.becomeSeller.findUniqueOrThrow({
+      where: { id: 1 },
+    });
 
     const pageOptions = row.pageOptions as Record<string, unknown>;
     const commissions = row.commissions as unknown[];
@@ -100,7 +107,8 @@ describe('las dos columnas jsonb conservan ambas colecciones sin fusionarlas (CA
 describe('getBecomeSeller devuelve la fila (US-44, D-1)', () => {
   it('id === 1, pageOptions con 24 claves, commissions de longitud 2, language === "en"', async () => {
     const record = await getBecomeSeller();
-    if (!record) throw new Error('become_seller sin fila (deriva previa a esta suite)');
+    if (!record)
+      throw new Error('become_seller sin fila (deriva previa a esta suite)');
 
     expect(record.id).toBe(1);
     const pageOptions = record.pageOptions as Record<string, unknown>;
@@ -126,10 +134,13 @@ describe('updateBecomeSeller persiste y fija el reloj (US-44, D-1)', () => {
       commissions: originalCommissions,
       language: originalLanguage,
     });
-    if (!updated) throw new Error('become_seller sin fila (deriva previa a esta suite)');
+    if (!updated)
+      throw new Error('become_seller sin fila (deriva previa a esta suite)');
 
     expect(updated.updatedAt.getTime()).toBe(fija.getTime());
-    expect(updated.updatedAt.getTime()).toBeGreaterThan(updated.createdAt.getTime());
+    expect(updated.updatedAt.getTime()).toBeGreaterThan(
+      updated.createdAt.getTime()
+    );
 
     const reread = await getBecomeSeller();
     expect(reread?.updatedAt.getTime()).toBe(fija.getTime());
@@ -144,7 +155,8 @@ describe('updateBecomeSeller no crea una segunda fila (CA-3, US-44)', () => {
 
   it('prisma.becomeSeller.count() sigue en 1 tras el update', async () => {
     const updated = await updateBecomeSeller({ language: originalLanguage });
-    if (!updated) throw new Error('become_seller sin fila (deriva previa a esta suite)');
+    if (!updated)
+      throw new Error('become_seller sin fila (deriva previa a esta suite)');
 
     expect(await prisma.becomeSeller.count()).toBe(1);
   });
@@ -169,7 +181,9 @@ describe('updateBecomeSeller no crea una segunda fila (CA-3, US-44)', () => {
 // ---------------------------------------------------------------------------
 describe('reloj en reposo: updatedAt === createdAt (data-layer-clock-policy, tripwire)', () => {
   it('la fila queda en reposo tras las escrituras de la suite (afterEach)', async () => {
-    const row = await prisma.becomeSeller.findUniqueOrThrow({ where: { id: 1 } });
+    const row = await prisma.becomeSeller.findUniqueOrThrow({
+      where: { id: 1 },
+    });
     expect(row.updatedAt.getTime()).toBe(row.createdAt.getTime());
   });
 });
@@ -186,7 +200,9 @@ describe('sin trigger BEFORE UPDATE (CA-3)', () => {
 
 describe('_toBecomeSellerRecord (mapper, extended-identity-data-layer)', () => {
   it('pageOptions y commissions cruzan como valores sueltos, ninguno anidado en el otro', async () => {
-    const row = await prisma.becomeSeller.findUniqueOrThrow({ where: { id: 1 } });
+    const row = await prisma.becomeSeller.findUniqueOrThrow({
+      where: { id: 1 },
+    });
     const record = _toBecomeSellerRecord(row);
 
     expect(record.id).toBe(1);

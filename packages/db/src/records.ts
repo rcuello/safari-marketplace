@@ -30,10 +30,9 @@ import type {
   Message,
   Order,
   OrderFile,
-  Withdraw,
-  OwnershipTransfer,
   OrderProduct,
   OrderStatus,
+  OwnershipTransfer,
   Permission,
   Prisma,
   Profile,
@@ -51,6 +50,7 @@ import type {
   TermsAndConditions,
   Type,
   User,
+  Withdraw,
 } from '../generated/prisma/client/client';
 
 // ---------------------------------------------------------------------------
@@ -821,7 +821,9 @@ export function _toShippingRecord(row: Shipping): ShippingRecord {
   };
 }
 
-export function _toAttributeValueRecord(row: AttributeValue): AttributeValueRecord {
+export function _toAttributeValueRecord(
+  row: AttributeValue
+): AttributeValueRecord {
   return {
     id: _id(row.id),
     attributeId: _id(row.attributeId),
@@ -905,7 +907,9 @@ export function _toReviewRecord(row: Review): ReviewRecord {
   };
 }
 
-export function _toAbusiveReportRecord(row: AbusiveReport): AbusiveReportRecord {
+export function _toAbusiveReportRecord(
+  row: AbusiveReport
+): AbusiveReportRecord {
   return {
     id: _id(row.id),
     userId: _id(row.userId),
@@ -1016,7 +1020,9 @@ export function _toOrderProductRecord(row: OrderProduct): OrderProductRecord {
   };
 }
 
-export function _toOwnershipTransferRecord(row: OwnershipTransfer): OwnershipTransferRecord {
+export function _toOwnershipTransferRecord(
+  row: OwnershipTransfer
+): OwnershipTransferRecord {
   return {
     id: _id(row.id),
     transactionIdentifier: row.transactionIdentifier,

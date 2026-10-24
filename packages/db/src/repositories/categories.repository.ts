@@ -171,7 +171,8 @@ function _assembleTree(rows: CategoryPayload[]): Map<number, CategoryTreeNode> {
     if (!rec) continue;
     const type = types.get(id);
     if (!type) continue;
-    const parent = rec.parentId === null ? null : ascend(rec.parentId, new Set());
+    const parent =
+      rec.parentId === null ? null : ascend(rec.parentId, new Set());
     const children = (kids.get(id) ?? []).map((k) => descend(k, new Set([id])));
     nodes.set(id, { ...rec, type, parent, children });
   }
@@ -326,7 +327,10 @@ const MAX_ANCESTOR_HOPS = 32;
  * ENTERA, no rango de negocio); se deja fuera para no expandir el alcance
  * de esta corrección más allá del defecto reportado.
  */
-function _assertIntegerRef(value: number | null | undefined, field: string): void {
+function _assertIntegerRef(
+  value: number | null | undefined,
+  field: string
+): void {
   if (value != null && !Number.isSafeInteger(value)) {
     throw new InvalidReferenceError('categories', field, value);
   }
@@ -415,7 +419,10 @@ async function _assertNoAncestorCycle(
  * declarada: en un nodo CON hijas, cualquier cambio de type da 400 siempre;
  * `type_id` solo es mutable de hecho en una categoría hoja.
  */
-async function _assertChildrenShareType(id: number, typeId: number): Promise<void> {
+async function _assertChildrenShareType(
+  id: number,
+  typeId: number
+): Promise<void> {
   const mismatched = await prisma.category.count({
     where: { parentId: id, typeId: { not: typeId } },
   });

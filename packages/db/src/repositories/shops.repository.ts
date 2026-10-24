@@ -44,7 +44,9 @@ export async function listShops(input: ListShopsInput = {}): Promise<{
   const limit = input.limit ?? 30;
   const where: Prisma.ShopWhereInput = {
     isActive: input.isActive ?? true,
-    ...(input.name && { name: { contains: input.name, mode: 'insensitive' as const } }),
+    ...(input.name && {
+      name: { contains: input.name, mode: 'insensitive' as const },
+    }),
   };
 
   const [rows, total] = await Promise.all([
@@ -98,23 +100,18 @@ export interface ShopNearRecord extends ShopRecord {
 function _parseLocation(
   settings: Prisma.JsonValue
 ): { lat: number; lng: number } | null {
-  if (
-    !settings ||
-    typeof settings !== 'object' ||
-    Array.isArray(settings)
-  ) {
+  if (!settings || typeof settings !== 'object' || Array.isArray(settings)) {
     return null;
   }
   const location = (settings as Record<string, unknown>).location;
-  if (
-    !location ||
-    typeof location !== 'object' ||
-    Array.isArray(location)
-  ) {
+  if (!location || typeof location !== 'object' || Array.isArray(location)) {
     return null;
   }
   const { lat, lng } = location as Record<string, unknown>;
-  return typeof lat === 'number' && typeof lng === 'number' && Number.isFinite(lat) && Number.isFinite(lng)
+  return typeof lat === 'number' &&
+    typeof lng === 'number' &&
+    Number.isFinite(lat) &&
+    Number.isFinite(lng)
     ? { lat, lng }
     : null;
 }
@@ -131,7 +128,9 @@ function _haversineKm(
   const dLng = toRad(target.lng - origin.lng);
   const a =
     Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(origin.lat)) * Math.cos(toRad(target.lat)) * Math.sin(dLng / 2) ** 2;
+    Math.cos(toRad(origin.lat)) *
+      Math.cos(toRad(target.lat)) *
+      Math.sin(dLng / 2) ** 2;
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return EARTH_RADIUS_KM * c;
 }
@@ -177,7 +176,10 @@ export async function listShopsNear(
  */
 export async function findShopOwnerById(id: number): Promise<number | null> {
   if (!Number.isSafeInteger(id) || id <= 0) return null;
-  const row = await prisma.shop.findUnique({ where: { id }, select: { ownerId: true } });
+  const row = await prisma.shop.findUnique({
+    where: { id },
+    select: { ownerId: true },
+  });
   return row ? _id(row.ownerId) : null;
 }
 
@@ -186,8 +188,12 @@ export async function findShopOwnerById(id: number): Promise<number | null> {
  * no cuenta: el dueño no tiene fila. Ids no válidos ⇒ `false`, con la
  * misma guarda que `findShopOwnerById`. NUNCA lanza por la entrada.
  */
-export async function isShopStaff(userId: number, shopId: number): Promise<boolean> {
-  if (![userId, shopId].every((id) => Number.isSafeInteger(id) && id > 0)) return false;
+export async function isShopStaff(
+  userId: number,
+  shopId: number
+): Promise<boolean> {
+  if (![userId, shopId].every((id) => Number.isSafeInteger(id) && id > 0))
+    return false;
   const count = await prisma.shopStaff.count({ where: { userId, shopId } });
   return count > 0;
 }
@@ -265,7 +271,9 @@ export interface CreateShopInput {
  * `isActive` fuera editable aquí, un `store_owner` se auto-aprobaría por
  * `PUT /shops/:propio`, esquivando `approve-shop` (`ADMIN_ONLY`).
  */
-export type UpdateShopInput = Partial<Omit<CreateShopInput, 'ownerId' | 'isActive'>>;
+export type UpdateShopInput = Partial<
+  Omit<CreateShopInput, 'ownerId' | 'isActive'>
+>;
 
 /**
  * Crea una tienda del admin. `ownerId`/`isActive` llegan tal cual del

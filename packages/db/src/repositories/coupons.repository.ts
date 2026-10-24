@@ -39,7 +39,9 @@ export async function listCoupons(
   const limit = input.limit ?? 12;
   const where: Prisma.CouponWhereInput = {
     ...(input.shopId !== undefined && { shopId: input.shopId }),
-    ...(input.code && { code: { contains: input.code, mode: 'insensitive' as const } }),
+    ...(input.code && {
+      code: { contains: input.code, mode: 'insensitive' as const },
+    }),
   };
   const [rows, total] = await Promise.all([
     prisma.coupon.findMany({
@@ -54,7 +56,9 @@ export async function listCoupons(
 }
 
 /** Por código exacto (distingue mayúsculas, como el mock). `null` si no existe. */
-export async function findCouponByCode(code: string): Promise<CouponRecord | null> {
+export async function findCouponByCode(
+  code: string
+): Promise<CouponRecord | null> {
   const row = await prisma.coupon.findUnique({ where: { code } });
   return row ? _toCouponRecord(row) : null;
 }
@@ -86,12 +90,24 @@ export type UpdateCouponInput = Partial<
 >;
 
 function _assertValues(input: UpdateCouponInput): void {
-  if (input.type !== undefined && !(COUPON_TYPES as readonly string[]).includes(input.type)) {
-    throw new InvalidFieldValueError('coupons', 'type', input.type, 'coupons_type_check');
+  if (
+    input.type !== undefined &&
+    !(COUPON_TYPES as readonly string[]).includes(input.type)
+  ) {
+    throw new InvalidFieldValueError(
+      'coupons',
+      'type',
+      input.type,
+      'coupons_type_check'
+    );
   }
   for (const [field, value, constraint] of [
     ['amount', input.amount, 'coupons_amount_check'],
-    ['minimum_cart_amount', input.minimumCartAmount, 'coupons_minimum_cart_amount_check'],
+    [
+      'minimum_cart_amount',
+      input.minimumCartAmount,
+      'coupons_minimum_cart_amount_check',
+    ],
   ] as const) {
     if (value !== undefined && !(Number.isFinite(value) && value >= 0)) {
       throw new InvalidFieldValueError('coupons', field, value, constraint);
@@ -102,7 +118,12 @@ function _assertValues(input: UpdateCouponInput): void {
     ['expire_at', input.expireAt],
   ] as const) {
     if (value !== undefined && Number.isNaN(value.getTime())) {
-      throw new InvalidFieldValueError('coupons', field, 'fecha inválida', 'timestamptz');
+      throw new InvalidFieldValueError(
+        'coupons',
+        field,
+        'fecha inválida',
+        'timestamptz'
+      );
     }
   }
 }
@@ -133,14 +154,18 @@ function _optionalData(input: UpdateCouponInput) {
   return {
     ...(input.description !== undefined && { description: input.description }),
     ...(input.image != null && { image: input.image }),
-    ...(input.minimumCartAmount !== undefined && { minimumCartAmount: input.minimumCartAmount }),
+    ...(input.minimumCartAmount !== undefined && {
+      minimumCartAmount: input.minimumCartAmount,
+    }),
     ...(input.target !== undefined && { target: input.target }),
     ...(input.language !== undefined && { language: input.language }),
   };
 }
 
 /** Nace sin aprobar (`is_approve` false, el default del DDL). */
-export async function createCoupon(input: CreateCouponInput): Promise<CouponRecord> {
+export async function createCoupon(
+  input: CreateCouponInput
+): Promise<CouponRecord> {
   _assertValues(input);
   _assertVigencia(input.activeFrom, input.expireAt);
   try {
@@ -163,13 +188,19 @@ export async function createCoupon(input: CreateCouponInput): Promise<CouponReco
 }
 
 /** La vigencia se valida contra la fila: basta con que cambie una de las dos fechas. */
-export async function updateCoupon(id: number, input: UpdateCouponInput): Promise<CouponRecord> {
+export async function updateCoupon(
+  id: number,
+  input: UpdateCouponInput
+): Promise<CouponRecord> {
   _assertValues(input);
   const existing = await prisma.coupon.findUnique({ where: { id } });
   if (!existing) {
     throw new RecordNotFoundError('coupons', id);
   }
-  _assertVigencia(input.activeFrom ?? existing.activeFrom, input.expireAt ?? existing.expireAt);
+  _assertVigencia(
+    input.activeFrom ?? existing.activeFrom,
+    input.expireAt ?? existing.expireAt
+  );
   try {
     const row = await prisma.coupon.update({
       where: { id },
@@ -190,7 +221,10 @@ export async function updateCoupon(id: number, input: UpdateCouponInput): Promis
 }
 
 /** Moderación del admin. `updatedAt: now()` explícito (US-32). */
-export async function setCouponApproval(id: number, isApprove: boolean): Promise<CouponRecord> {
+export async function setCouponApproval(
+  id: number,
+  isApprove: boolean
+): Promise<CouponRecord> {
   try {
     const row = await prisma.coupon.update({
       where: { id },

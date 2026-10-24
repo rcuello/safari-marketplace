@@ -22,7 +22,11 @@
 
 import { prisma } from '../client';
 import { _id } from '../records';
-import { _toProductRecord, PRODUCT_INCLUDE, type ProductRecord } from './products.repository';
+import {
+  _toProductRecord,
+  PRODUCT_INCLUDE,
+  type ProductRecord,
+} from './products.repository';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const COMPLETED = 'order-completed';
@@ -89,13 +93,18 @@ interface OrderStatusRow {
   todays_revenue: string | null;
 }
 
-const money = (value: string | null | undefined): number => (value == null ? 0 : Number(value));
+const money = (value: string | null | undefined): number =>
+  value == null ? 0 : Number(value);
 
 /** M-1..M-9 sobre el instante `at`. */
-export async function getDashboardAnalytics(at: Date): Promise<DashboardAnalyticsRecord> {
+export async function getDashboardAnalytics(
+  at: Date
+): Promise<DashboardAnalyticsRecord> {
   const y = at.getUTCFullYear();
   const nowTs = at.toISOString();
-  const dayStart = new Date(Date.UTC(y, at.getUTCMonth(), at.getUTCDate())).toISOString();
+  const dayStart = new Date(
+    Date.UTC(y, at.getUTCMonth(), at.getUTCDate())
+  ).toISOString();
   const monthStart = new Date(Date.UTC(y, at.getUTCMonth(), 1)).toISOString();
   const yearStart = new Date(Date.UTC(y, 0, 1)).toISOString();
   const weekStart = new Date(at.getTime() - 7 * DAY_MS).toISOString();
@@ -176,7 +185,12 @@ export async function listCategoryWiseProductCounts(
   const limit = input.limit ?? 10;
   // `s.id` desempata la misma categoría en dos tiendas con el mismo conteo.
   const rows = await prisma.$queryRaw<
-    { category_id: bigint; category_name: string; shop_name: string; product_count: number }[]
+    {
+      category_id: bigint;
+      category_name: string;
+      shop_name: string;
+      product_count: number;
+    }[]
   >`
     SELECT c.id AS category_id, c.name AS category_name, s.name AS shop_name,
            count(*)::int AS product_count
@@ -197,22 +211,36 @@ export async function listCategoryWiseProductCounts(
 }
 
 /** M-11: `quantity < 10` en `id ASC`. */
-export async function listLowStockProducts(input: AnalyticsListInput = {}): Promise<ProductRecord[]> {
+export async function listLowStockProducts(
+  input: AnalyticsListInput = {}
+): Promise<ProductRecord[]> {
   const rows = await prisma.product.findMany({
-    where: { quantity: { lt: 10 }, ...(input.shopId !== undefined && { shopId: input.shopId }) },
+    where: {
+      quantity: { lt: 10 },
+      ...(input.shopId !== undefined && { shopId: input.shopId }),
+    },
     orderBy: { id: 'asc' },
     take: input.limit ?? 10,
     include: PRODUCT_INCLUDE,
   });
-  return rows.map(_toProductRecord).filter((p): p is ProductRecord => p !== null);
+  return rows
+    .map(_toProductRecord)
+    .filter((p): p is ProductRecord => p !== null);
 }
 
 /** M-12: productos con reviews, por media, número de reviews e id. */
-export async function listTopRatedProducts(input: AnalyticsListInput = {}): Promise<TopRatedProductRecord[]> {
+export async function listTopRatedProducts(
+  input: AnalyticsListInput = {}
+): Promise<TopRatedProductRecord[]> {
   const limit = input.limit ?? 10;
   const shopId = input.shopId ?? null;
   const rows = await prisma.$queryRaw<
-    { product_id: bigint; total_rating: number; rating_count: number; actual_rating: string }[]
+    {
+      product_id: bigint;
+      total_rating: number;
+      rating_count: number;
+      actual_rating: string;
+    }[]
   >`
     SELECT r.product_id,
            sum(r.rating)::int                AS total_rating,
@@ -240,7 +268,14 @@ export async function listTopRatedProducts(input: AnalyticsListInput = {}): Prom
   return rows.flatMap((row) => {
     const product = byId.get(_id(row.product_id));
     return product
-      ? [{ product, totalRating: row.total_rating, ratingCount: row.rating_count, actualRating: Number(row.actual_rating) }]
+      ? [
+          {
+            product,
+            totalRating: row.total_rating,
+            ratingCount: row.rating_count,
+            actualRating: Number(row.actual_rating),
+          },
+        ]
       : [];
   });
 }

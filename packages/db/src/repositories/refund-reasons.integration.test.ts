@@ -7,8 +7,8 @@
 
 import 'dotenv/config';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { _setNowProvider } from '../clock';
 import { prisma } from '../client';
+import { _setNowProvider } from '../clock';
 import { EmptySlugError, RecordNotFoundError } from '../domain-errors';
 import {
   createRefundReason,
@@ -22,7 +22,9 @@ const SENTINEL_PREFIX = 'zz-rrea-';
 const MOCK_DATE = new Date('2023-11-12T10:58:58.000Z');
 
 const cleanup = () =>
-  prisma.refundReason.deleteMany({ where: { slug: { startsWith: SENTINEL_PREFIX } } });
+  prisma.refundReason.deleteMany({
+    where: { slug: { startsWith: SENTINEL_PREFIX } },
+  });
 
 beforeAll(cleanup);
 
@@ -64,7 +66,9 @@ describe('findRefundReasonBySlug', () => {
 
 describe('createRefundReason', () => {
   it('sin slug lo deriva del nombre', async () => {
-    const created = await createRefundReason({ name: `${SENTINEL_PREFIX}Producto Defectuoso` });
+    const created = await createRefundReason({
+      name: `${SENTINEL_PREFIX}Producto Defectuoso`,
+    });
     expect(created.slug).toBe(`${SENTINEL_PREFIX}producto-defectuoso`);
     expect((await findRefundReasonBySlug(created.slug))?.id).toBe(created.id);
   });
@@ -81,11 +85,15 @@ describe('createRefundReason', () => {
 describe('updateRefundReason / deleteRefundReason', () => {
   it('renombra sin tocar el slug y fija updatedAt desde clock.ts; luego borra', async () => {
     try {
-      const created = await createRefundReason({ name: `${SENTINEL_PREFIX}Original` });
+      const created = await createRefundReason({
+        name: `${SENTINEL_PREFIX}Original`,
+      });
       const future = new Date(Date.now() + 60_000);
       _setNowProvider(() => future);
 
-      const updated = await updateRefundReason(created.id, { name: `${SENTINEL_PREFIX}Renombrado` });
+      const updated = await updateRefundReason(created.id, {
+        name: `${SENTINEL_PREFIX}Renombrado`,
+      });
       expect(updated.name).toBe(`${SENTINEL_PREFIX}Renombrado`);
       expect(updated.slug).toBe(`${SENTINEL_PREFIX}original`);
       expect(updated.updatedAt.getTime()).toBe(future.getTime());
@@ -98,10 +106,14 @@ describe('updateRefundReason / deleteRefundReason', () => {
   });
 
   it('nombre que normaliza a vacío ⇒ EmptySlugError; inexistentes ⇒ RecordNotFoundError', async () => {
-    await expect(updateRefundReason(1, { name: '???' })).rejects.toBeInstanceOf(EmptySlugError);
-    await expect(updateRefundReason(999_999, { name: 'x' })).rejects.toBeInstanceOf(
+    await expect(updateRefundReason(1, { name: '???' })).rejects.toBeInstanceOf(
+      EmptySlugError
+    );
+    await expect(
+      updateRefundReason(999_999, { name: 'x' })
+    ).rejects.toBeInstanceOf(RecordNotFoundError);
+    await expect(deleteRefundReason(999_999)).rejects.toBeInstanceOf(
       RecordNotFoundError
     );
-    await expect(deleteRefundReason(999_999)).rejects.toBeInstanceOf(RecordNotFoundError);
   });
 });

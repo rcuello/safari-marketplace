@@ -21,8 +21,8 @@ import {
   RecordNotFoundError,
   translateCatalogWriteError,
 } from '../domain-errors';
-import { generateSlug, normalizeSlug, type ExistingSlugLookup } from '../slug';
 import { _toTypeRecord, type TypeRecord } from '../records';
+import { type ExistingSlugLookup, generateSlug, normalizeSlug } from '../slug';
 
 /** Filtro de la caja de búsqueda del admin (`pages/groups/index.tsx`). */
 export interface ListTypesInput {
@@ -35,7 +35,9 @@ export async function listTypes(
   input: ListTypesInput = {}
 ): Promise<TypeRecord[]> {
   const where: Prisma.TypeWhereInput = {
-    ...(input.name && { name: { contains: input.name, mode: 'insensitive' as const } }),
+    ...(input.name && {
+      name: { contains: input.name, mode: 'insensitive' as const },
+    }),
   };
   const rows = await prisma.type.findMany({ where, orderBy: { id: 'asc' } });
   return rows.map(_toTypeRecord);

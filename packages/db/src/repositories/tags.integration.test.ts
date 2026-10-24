@@ -17,10 +17,20 @@
 import 'dotenv/config';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Prisma } from '../../generated/prisma/client/client';
-import { _setNowProvider } from '../clock';
 import { prisma } from '../client';
-import { EmptySlugError, InvalidReferenceError, RecordNotFoundError } from '../domain-errors';
-import { createTag, deleteTag, findTagBySlug, listTags, updateTag } from './tags.repository';
+import { _setNowProvider } from '../clock';
+import {
+  EmptySlugError,
+  InvalidReferenceError,
+  RecordNotFoundError,
+} from '../domain-errors';
+import {
+  createTag,
+  deleteTag,
+  findTagBySlug,
+  listTags,
+  updateTag,
+} from './tags.repository';
 
 const SENTINEL_PREFIX = 'zz-tags-';
 
@@ -54,7 +64,10 @@ describe('listTags', () => {
   it('filtra por name case-insensitive: "baby" → 2', async () => {
     const { items, total } = await listTags({ name: 'baby' });
     expect(total).toBe(2);
-    expect(items.map((r) => r.slug).sort()).toEqual(['baby-growth', 'baby-milk']);
+    expect(items.map((r) => r.slug).sort()).toEqual([
+      'baby-growth',
+      'baby-milk',
+    ]);
   });
 });
 
@@ -121,7 +134,9 @@ describe('createTag — CA-1, centinela zz-tags-', () => {
       })
     ).rejects.toBeInstanceOf(InvalidReferenceError);
 
-    expect(await findTagBySlug(`${SENTINEL_PREFIX}type-fuera-de-rango`)).toBeNull();
+    expect(
+      await findTagBySlug(`${SENTINEL_PREFIX}type-fuera-de-rango`)
+    ).toBeNull();
   });
 
   it('typeId negativo (-5) ⇒ InvalidReferenceError por P2003 (FK), NO por la guarda (US-31, D31-2)', async () => {
@@ -163,7 +178,9 @@ describe('updateTag — CA-2, slug inmutable, updatedAt explícito', () => {
       expect(updated.name).toBe(`${SENTINEL_PREFIX}Renombrado`);
       expect(updated.slug).toBe(`${SENTINEL_PREFIX}original`);
       expect(updated.updatedAt.getTime()).toBe(future.getTime());
-      expect(updated.updatedAt.getTime()).toBeGreaterThan(created.updatedAt.getTime());
+      expect(updated.updatedAt.getTime()).toBeGreaterThan(
+        created.updatedAt.getTime()
+      );
 
       await deleteTag(created.id);
     } finally {
@@ -203,7 +220,9 @@ describe('updateTag — CA-2, slug inmutable, updatedAt explícito', () => {
       updateTag(created.id, { typeId: Number.NaN })
     ).rejects.toBeInstanceOf(InvalidReferenceError);
 
-    const reread = await findTagBySlug(`${SENTINEL_PREFIX}type-update-invalido`);
+    const reread = await findTagBySlug(
+      `${SENTINEL_PREFIX}type-update-invalido`
+    );
     expect(reread?.typeId).toBeNull();
 
     await deleteTag(created.id);
@@ -268,7 +287,11 @@ describe('image: null se trata como ausente (DD-5) — RV-1 de US-27b', () => {
     original: 'https://cdn.test/zz-tags.png',
     thumbnail: 'https://cdn.test/zz-tags-thumb.png',
   };
-  const OTHER_IMAGE = { ...IMAGE, id: 8, original: 'https://cdn.test/zz-tags-2.png' };
+  const OTHER_IMAGE = {
+    ...IMAGE,
+    id: 8,
+    original: 'https://cdn.test/zz-tags-2.png',
+  };
 
   it('createTag con image: null persiste sin error y la columna queda NULL', async () => {
     const created = await createTag({

@@ -10,9 +10,12 @@
 import type { Prisma } from '../../generated/prisma/client/client';
 import { prisma } from '../client';
 import { now } from '../clock';
-import { RecordNotFoundError, translateCatalogWriteError } from '../domain-errors';
-import { generateSlug, normalizeSlug, type ExistingSlugLookup } from '../slug';
+import {
+  RecordNotFoundError,
+  translateCatalogWriteError,
+} from '../domain-errors';
 import { _toRefundReasonRecord, type RefundReasonRecord } from '../records';
+import { type ExistingSlugLookup, generateSlug, normalizeSlug } from '../slug';
 
 export interface ListRefundReasonsInput {
   /** Búsqueda parcial por nombre, case-insensitive. */
@@ -76,7 +79,9 @@ export interface CreateRefundReasonInput {
 }
 
 /** El `slug` es inmutable tras crear. */
-export type UpdateRefundReasonInput = Partial<Omit<CreateRefundReasonInput, 'slug'>>;
+export type UpdateRefundReasonInput = Partial<
+  Omit<CreateRefundReasonInput, 'slug'>
+>;
 
 export async function createRefundReason(
   input: CreateRefundReasonInput
@@ -120,12 +125,17 @@ export async function updateRefundReason(
     });
     return _toRefundReasonRecord(row);
   } catch (error) {
-    throw translateCatalogWriteError(error, { aggregate: 'refund_reasons', id });
+    throw translateCatalogWriteError(error, {
+      aggregate: 'refund_reasons',
+      id,
+    });
   }
 }
 
 /** Borra un motivo y devuelve la fila borrada. Nada lo referencia. */
-export async function deleteRefundReason(id: number): Promise<RefundReasonRecord> {
+export async function deleteRefundReason(
+  id: number
+): Promise<RefundReasonRecord> {
   const existing = await prisma.refundReason.findUnique({ where: { id } });
   if (!existing) {
     throw new RecordNotFoundError('refund_reasons', id);
@@ -135,6 +145,9 @@ export async function deleteRefundReason(id: number): Promise<RefundReasonRecord
     await prisma.refundReason.delete({ where: { id } });
     return _toRefundReasonRecord(existing);
   } catch (error) {
-    throw translateCatalogWriteError(error, { aggregate: 'refund_reasons', id });
+    throw translateCatalogWriteError(error, {
+      aggregate: 'refund_reasons',
+      id,
+    });
   }
 }

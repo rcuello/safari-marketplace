@@ -55,7 +55,10 @@ export type StoreNoticeSortField = (typeof STORE_NOTICE_SORTABLE)[number];
 const DETAIL = {
   creator: {
     include: {
-      permissions: { include: { permission: true }, orderBy: { permissionId: 'asc' as const } },
+      permissions: {
+        include: { permission: true },
+        orderBy: { permissionId: 'asc' as const },
+      },
     },
   },
   recipients: { include: { user: true }, orderBy: { userId: 'desc' as const } },
@@ -63,18 +66,25 @@ const DETAIL = {
   reads: { include: { user: true }, orderBy: { userId: 'desc' as const } },
 } satisfies Prisma.StoreNoticeInclude;
 
-type StoreNoticeWithDetail = Prisma.StoreNoticeGetPayload<{ include: typeof DETAIL }>;
+type StoreNoticeWithDetail = Prisma.StoreNoticeGetPayload<{
+  include: typeof DETAIL;
+}>;
 
 function _toDetail(row: StoreNoticeWithDetail): StoreNoticeDetailRecord {
   return {
     ..._toStoreNoticeRecord(row),
     creator: {
       ..._toUserRecord(row.creator),
-      permissions: row.creator.permissions.map((p) => _toPermissionRecord(p.permission)),
+      permissions: row.creator.permissions.map((p) =>
+        _toPermissionRecord(p.permission)
+      ),
     },
     recipients: row.recipients.map((r) => _toUserRecord(r.user)),
     shops: row.shops.map((s) => _toShopRecord(s.shop)),
-    reads: row.reads.map((r) => ({ user: _toUserRecord(r.user), isRead: r.isRead })),
+    reads: row.reads.map((r) => ({
+      user: _toUserRecord(r.user),
+      isRead: r.isRead,
+    })),
   };
 }
 
@@ -117,8 +127,12 @@ export async function listStoreNotices(
         }
       : {};
   const where: Prisma.StoreNoticeWhereInput = {
-    ...(input.notice && { notice: { contains: input.notice, mode: 'insensitive' as const } }),
-    ...(input.userId !== undefined && { recipients: { some: { userId: input.userId } } }),
+    ...(input.notice && {
+      notice: { contains: input.notice, mode: 'insensitive' as const },
+    }),
+    ...(input.userId !== undefined && {
+      recipients: { some: { userId: input.userId } },
+    }),
     ...shopFilter,
   };
   const orderBy: Prisma.StoreNoticeOrderByWithRelationInput[] = input.orderBy
@@ -139,8 +153,13 @@ export async function listStoreNotices(
 }
 
 /** Un aviso por id con todo su detalle. `null` si no existe. */
-export async function findStoreNoticeById(id: number): Promise<StoreNoticeDetailRecord | null> {
-  const row = await prisma.storeNotice.findUnique({ where: { id }, include: DETAIL });
+export async function findStoreNoticeById(
+  id: number
+): Promise<StoreNoticeDetailRecord | null> {
+  const row = await prisma.storeNotice.findUnique({
+    where: { id },
+    include: DETAIL,
+  });
   return row ? _toDetail(row) : null;
 }
 
@@ -191,20 +210,36 @@ function _assertValues(input: {
       'store_notices_priority_check'
     );
   }
-  if (input.type !== undefined && !(STORE_NOTICE_TYPES as readonly string[]).includes(input.type)) {
-    throw new InvalidFieldValueError('store_notices', 'type', input.type, 'store_notices_type_check');
+  if (
+    input.type !== undefined &&
+    !(STORE_NOTICE_TYPES as readonly string[]).includes(input.type)
+  ) {
+    throw new InvalidFieldValueError(
+      'store_notices',
+      'type',
+      input.type,
+      'store_notices_type_check'
+    );
   }
   for (const [field, value] of [
     ['effective_from', input.effectiveFrom],
     ['expired_at', input.expiredAt],
   ] as const) {
     if (value != null && Number.isNaN(value.getTime())) {
-      throw new InvalidFieldValueError('store_notices', field, 'fecha inválida', 'timestamptz');
+      throw new InvalidFieldValueError(
+        'store_notices',
+        field,
+        'fecha inválida',
+        'timestamptz'
+      );
     }
   }
 }
 
-function _assertVigencia(effectiveFrom: Date | null | undefined, expiredAt: Date): void {
+function _assertVigencia(
+  effectiveFrom: Date | null | undefined,
+  expiredAt: Date
+): void {
   if (effectiveFrom != null && effectiveFrom.getTime() > expiredAt.getTime()) {
     throw new InvalidFieldValueError(
       'store_notices',
@@ -246,14 +281,22 @@ async function _resolveRecipients(
   const ids = _ids(receivedBy);
   const found =
     type === 'specific_vendor'
-      ? await prisma.user.findMany({ where: { id: { in: ids } }, select: { id: true } })
-      : await prisma.shop.findMany({ where: { id: { in: ids } }, select: { id: true } });
+      ? await prisma.user.findMany({
+          where: { id: { in: ids } },
+          select: { id: true },
+        })
+      : await prisma.shop.findMany({
+          where: { id: { in: ids } },
+          select: { id: true },
+        });
   const existing = new Set(found.map((r) => Number(r.id)));
   const missing = ids.find((id) => !existing.has(id));
   if (missing !== undefined) {
     throw new InvalidReferenceError('store_notices', 'received_by', missing);
   }
-  return type === 'specific_vendor' ? { userIds: ids, shopIds: [] } : { userIds: [], shopIds: ids };
+  return type === 'specific_vendor'
+    ? { userIds: ids, shopIds: [] }
+    : { userIds: [], shopIds: ids };
 }
 
 export async function createStoreNotice(
@@ -261,7 +304,10 @@ export async function createStoreNotice(
 ): Promise<StoreNoticeDetailRecord> {
   _assertValues(input);
   _assertVigencia(input.effectiveFrom, input.expiredAt);
-  const { userIds, shopIds } = await _resolveRecipients(input.type, input.receivedBy);
+  const { userIds, shopIds } = await _resolveRecipients(
+    input.type,
+    input.receivedBy
+  );
 
   try {
     const row = await prisma.storeNotice.create({
@@ -298,16 +344,23 @@ export async function updateStoreNotice(
     throw new RecordNotFoundError('store_notices', id);
   }
   _assertVigencia(
-    input.effectiveFrom !== undefined ? input.effectiveFrom : existing.effectiveFrom,
+    input.effectiveFrom !== undefined
+      ? input.effectiveFrom
+      : existing.effectiveFrom,
     input.expiredAt ?? existing.expiredAt
   );
 
   const operations: Prisma.PrismaPromise<unknown>[] = [];
   if (input.type !== undefined || input.receivedBy !== undefined) {
     const type = input.type ?? existing.type;
-    const { userIds, shopIds } = await _resolveRecipients(type, input.receivedBy);
+    const { userIds, shopIds } = await _resolveRecipients(
+      type,
+      input.receivedBy
+    );
     const alreadyRead = new Set(
-      existing.reads.filter((r) => userIds.includes(Number(r.userId))).map((r) => Number(r.userId))
+      existing.reads
+        .filter((r) => userIds.includes(Number(r.userId)))
+        .map((r) => Number(r.userId))
     );
     operations.push(
       prisma.storeNoticeUser.deleteMany({ where: { storeNoticeId: id } }),
@@ -334,8 +387,12 @@ export async function updateStoreNotice(
       data: {
         ...(input.priority !== undefined && { priority: input.priority }),
         ...(input.notice !== undefined && { notice: input.notice }),
-        ...(input.description !== undefined && { description: input.description }),
-        ...(input.effectiveFrom !== undefined && { effectiveFrom: input.effectiveFrom }),
+        ...(input.description !== undefined && {
+          description: input.description,
+        }),
+        ...(input.effectiveFrom !== undefined && {
+          effectiveFrom: input.effectiveFrom,
+        }),
         ...(input.expiredAt !== undefined && { expiredAt: input.expiredAt }),
         ...(input.type !== undefined && { type: input.type }),
         updatedBy: input.updatedBy,
@@ -357,7 +414,9 @@ export async function updateStoreNotice(
 }
 
 /** Borra el aviso (los pivotes caen por CASCADE) y lo devuelve con su detalle. */
-export async function deleteStoreNotice(id: number): Promise<StoreNoticeDetailRecord> {
+export async function deleteStoreNotice(
+  id: number
+): Promise<StoreNoticeDetailRecord> {
   const existing = await findStoreNoticeById(id);
   if (!existing) {
     throw new RecordNotFoundError('store_notices', id);
@@ -378,7 +437,10 @@ export async function markStoreNoticeRead(
   id: number,
   userId: number
 ): Promise<StoreNoticeDetailRecord> {
-  const exists = await prisma.storeNotice.findUnique({ where: { id }, select: { id: true } });
+  const exists = await prisma.storeNotice.findUnique({
+    where: { id },
+    select: { id: true },
+  });
   if (!exists) {
     throw new RecordNotFoundError('store_notices', id);
   }
@@ -389,7 +451,10 @@ export async function markStoreNoticeRead(
       update: { isRead: true },
     });
   } catch (error) {
-    throw translateCatalogWriteError(error, { aggregate: 'store_notice_read', id });
+    throw translateCatalogWriteError(error, {
+      aggregate: 'store_notice_read',
+      id,
+    });
   }
   const row = await findStoreNoticeById(id);
   if (!row) {

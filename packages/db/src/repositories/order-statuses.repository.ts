@@ -22,10 +22,15 @@ import {
   translateCatalogWriteError,
 } from '../domain-errors';
 import { _toOrderStatusRecord, type OrderStatusRecord } from '../records';
-import { generateSlug, type ExistingSlugLookup } from '../slug';
+import { type ExistingSlugLookup, generateSlug } from '../slug';
 
 /** Columnas por las que el listado puede ordenar (enum `orderBy` del DTO). */
-export const ORDER_STATUS_SORTABLE = ['name', 'serial', 'createdAt', 'updatedAt'] as const;
+export const ORDER_STATUS_SORTABLE = [
+  'name',
+  'serial',
+  'createdAt',
+  'updatedAt',
+] as const;
 export type OrderStatusSortField = (typeof ORDER_STATUS_SORTABLE)[number];
 
 const COLOR_HEX = /^#[0-9a-fA-F]{6}$/;
@@ -51,21 +56,30 @@ export async function listOrderStatuses(
   const page = Math.max(1, input.page ?? 1);
   const limit = input.limit ?? 30;
   const where: Prisma.OrderStatusWhereInput = {
-    ...(input.name && { name: { contains: input.name, mode: 'insensitive' as const } }),
+    ...(input.name && {
+      name: { contains: input.name, mode: 'insensitive' as const },
+    }),
   };
   const orderBy: Prisma.OrderStatusOrderByWithRelationInput[] = [
     { [input.orderBy ?? 'serial']: input.sortedBy ?? 'asc' },
     { id: 'asc' },
   ];
   const [rows, total] = await Promise.all([
-    prisma.orderStatus.findMany({ where, orderBy, skip: (page - 1) * limit, take: limit }),
+    prisma.orderStatus.findMany({
+      where,
+      orderBy,
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
     prisma.orderStatus.count({ where }),
   ]);
   return { items: rows.map(_toOrderStatusRecord), total };
 }
 
 /** Un estado por slug. `null` si no existe. */
-export async function findOrderStatusBySlug(slug: string): Promise<OrderStatusRecord | null> {
+export async function findOrderStatusBySlug(
+  slug: string
+): Promise<OrderStatusRecord | null> {
   const row = await prisma.orderStatus.findUnique({ where: { slug } });
   return row ? _toOrderStatusRecord(row) : null;
 }
@@ -95,18 +109,43 @@ export interface CreateOrderStatusInput {
 export type UpdateOrderStatusInput = Partial<CreateOrderStatusInput>;
 
 function _assertValues(input: UpdateOrderStatusInput): void {
-  if (input.serial !== undefined && !(Number.isSafeInteger(input.serial) && input.serial > 0)) {
-    throw new InvalidFieldValueError('order_statuses', 'serial', input.serial, 'order_statuses_serial_check');
+  if (
+    input.serial !== undefined &&
+    !(Number.isSafeInteger(input.serial) && input.serial > 0)
+  ) {
+    throw new InvalidFieldValueError(
+      'order_statuses',
+      'serial',
+      input.serial,
+      'order_statuses_serial_check'
+    );
   }
-  if (input.color !== undefined && !(typeof input.color === 'string' && COLOR_HEX.test(input.color))) {
-    throw new InvalidFieldValueError('order_statuses', 'color', input.color, 'order_statuses_color_check');
+  if (
+    input.color !== undefined &&
+    !(typeof input.color === 'string' && COLOR_HEX.test(input.color))
+  ) {
+    throw new InvalidFieldValueError(
+      'order_statuses',
+      'color',
+      input.color,
+      'order_statuses_color_check'
+    );
   }
 }
 
 /** Crea un estado. El slug sale de `name` vía `generateSlug`. */
-export async function createOrderStatus(input: CreateOrderStatusInput): Promise<OrderStatusRecord> {
-  _assertValues({ serial: input.serial ?? Number.NaN, color: input.color ?? '' });
-  const slug = await generateSlug({ name: input.name }, orderStatusSlugs(), 'order_statuses');
+export async function createOrderStatus(
+  input: CreateOrderStatusInput
+): Promise<OrderStatusRecord> {
+  _assertValues({
+    serial: input.serial ?? Number.NaN,
+    color: input.color ?? '',
+  });
+  const slug = await generateSlug(
+    { name: input.name },
+    orderStatusSlugs(),
+    'order_statuses'
+  );
 
   try {
     const row = await prisma.orderStatus.create({
@@ -137,7 +176,11 @@ export async function updateOrderStatus(
   _assertValues(input);
   const slug =
     input.name !== undefined
-      ? await generateSlug({ name: input.name }, orderStatusSlugs(id), 'order_statuses')
+      ? await generateSlug(
+          { name: input.name },
+          orderStatusSlugs(id),
+          'order_statuses'
+        )
       : undefined;
 
   try {
@@ -153,12 +196,17 @@ export async function updateOrderStatus(
     });
     return _toOrderStatusRecord(row);
   } catch (error) {
-    throw translateCatalogWriteError(error, { aggregate: 'order_statuses', id });
+    throw translateCatalogWriteError(error, {
+      aggregate: 'order_statuses',
+      id,
+    });
   }
 }
 
 /** Borra un estado y devuelve su snapshot previo (precedente `deleteTag`). */
-export async function deleteOrderStatus(id: number): Promise<OrderStatusRecord> {
+export async function deleteOrderStatus(
+  id: number
+): Promise<OrderStatusRecord> {
   const existing = await prisma.orderStatus.findUnique({ where: { id } });
   if (!existing) {
     throw new RecordNotFoundError('order_statuses', id);
@@ -168,6 +216,9 @@ export async function deleteOrderStatus(id: number): Promise<OrderStatusRecord> 
     await prisma.orderStatus.delete({ where: { id } });
     return _toOrderStatusRecord(existing);
   } catch (error) {
-    throw translateCatalogWriteError(error, { aggregate: 'order_statuses', id });
+    throw translateCatalogWriteError(error, {
+      aggregate: 'order_statuses',
+      id,
+    });
   }
 }

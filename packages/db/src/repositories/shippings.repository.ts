@@ -30,14 +30,21 @@ export async function listShippings(
   input: ListShippingsInput = {}
 ): Promise<ShippingRecord[]> {
   const where: Prisma.ShippingWhereInput = {
-    ...(input.name && { name: { contains: input.name, mode: 'insensitive' as const } }),
+    ...(input.name && {
+      name: { contains: input.name, mode: 'insensitive' as const },
+    }),
   };
-  const rows = await prisma.shipping.findMany({ where, orderBy: { id: 'asc' } });
+  const rows = await prisma.shipping.findMany({
+    where,
+    orderBy: { id: 'asc' },
+  });
   return rows.map(_toShippingRecord);
 }
 
 /** Una clase por id. `null` si no existe. */
-export async function findShippingById(id: number): Promise<ShippingRecord | null> {
+export async function findShippingById(
+  id: number
+): Promise<ShippingRecord | null> {
   const row = await prisma.shipping.findUnique({ where: { id } });
   return row ? _toShippingRecord(row) : null;
 }
@@ -52,7 +59,10 @@ export interface CreateShippingInput {
 export type UpdateShippingInput = Partial<CreateShippingInput>;
 
 function _assertValues(input: UpdateShippingInput): void {
-  if (input.amount !== undefined && !(Number.isFinite(input.amount) && input.amount >= 0)) {
+  if (
+    input.amount !== undefined &&
+    !(Number.isFinite(input.amount) && input.amount >= 0)
+  ) {
     throw new InvalidFieldValueError(
       'shippings',
       'amount',
@@ -64,11 +74,18 @@ function _assertValues(input: UpdateShippingInput): void {
     input.type !== undefined &&
     !(SHIPPING_TYPES as readonly string[]).includes(input.type)
   ) {
-    throw new InvalidFieldValueError('shippings', 'type', input.type, 'shippings_type_check');
+    throw new InvalidFieldValueError(
+      'shippings',
+      'type',
+      input.type,
+      'shippings_type_check'
+    );
   }
 }
 
-export async function createShipping(input: CreateShippingInput): Promise<ShippingRecord> {
+export async function createShipping(
+  input: CreateShippingInput
+): Promise<ShippingRecord> {
   _assertValues(input);
   try {
     const row = await prisma.shipping.create({

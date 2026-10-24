@@ -31,8 +31,8 @@ import {
   RecordNotFoundError,
   translateCatalogWriteError,
 } from '../domain-errors';
-import { generateSlug, normalizeSlug, type ExistingSlugLookup } from '../slug';
 import { _toAttributeRecord, type AttributeRecord } from '../records';
+import { type ExistingSlugLookup, generateSlug, normalizeSlug } from '../slug';
 
 /** Los valores siempre en `id ASC` dentro de su atributo. */
 const WITH_VALUES = { values: { orderBy: { id: 'asc' as const } } };
@@ -49,7 +49,9 @@ export async function listAttributes(
 ): Promise<AttributeRecord[]> {
   const where: Prisma.AttributeWhereInput = {
     ...(input.shopId !== undefined && { shopId: input.shopId }),
-    ...(input.name && { name: { contains: input.name, mode: 'insensitive' as const } }),
+    ...(input.name && {
+      name: { contains: input.name, mode: 'insensitive' as const },
+    }),
   };
   const rows = await prisma.attribute.findMany({
     where,
@@ -69,8 +71,14 @@ export async function findAttributeByIdOrSlug(
   const asId = Number(param);
   const row =
     Number.isSafeInteger(asId) && asId > 0
-      ? await prisma.attribute.findUnique({ where: { id: asId }, include: WITH_VALUES })
-      : await prisma.attribute.findUnique({ where: { slug: param }, include: WITH_VALUES });
+      ? await prisma.attribute.findUnique({
+          where: { id: asId },
+          include: WITH_VALUES,
+        })
+      : await prisma.attribute.findUnique({
+          where: { slug: param },
+          include: WITH_VALUES,
+        });
   return row ? _toAttributeRecord(row) : null;
 }
 
@@ -129,7 +137,11 @@ async function _slugsForNewValues(
     [...taken].filter((s) => s.startsWith(prefix));
   const slugs: string[] = [];
   for (const v of values) {
-    const slug = await generateSlug({ name: v.value }, lookup, 'attribute_values');
+    const slug = await generateSlug(
+      { name: v.value },
+      lookup,
+      'attribute_values'
+    );
     taken.add(slug);
     slugs.push(slug);
   }
@@ -245,7 +257,9 @@ export async function updateAttribute(
           data: {
             value: k.input.value,
             meta: k.input.meta ?? null,
-            ...(k.input.language !== undefined && { language: k.input.language }),
+            ...(k.input.language !== undefined && {
+              language: k.input.language,
+            }),
             updatedAt: stamp,
           },
         })
@@ -281,7 +295,10 @@ export async function updateAttribute(
     throw translateCatalogWriteError(error, { aggregate: 'attributes', id });
   }
 
-  const row = await prisma.attribute.findUnique({ where: { id }, include: WITH_VALUES });
+  const row = await prisma.attribute.findUnique({
+    where: { id },
+    include: WITH_VALUES,
+  });
   if (!row) {
     throw new RecordNotFoundError('attributes', id);
   }

@@ -143,7 +143,9 @@ export class SlugConflictError extends CatalogWriteError {
  * producir identidades de clase distintas para lo que semánticamente es el
  * mismo error. Comparar por `code` sobrevive a eso.
  */
-export function isCatalogWriteError(error: unknown): error is CatalogWriteError {
+export function isCatalogWriteError(
+  error: unknown
+): error is CatalogWriteError {
   if (!error || typeof error !== 'object') return false;
   const code = (error as { code?: unknown }).code;
   return typeof code === 'string' && CATALOG_ERROR_CODE_VALUES.includes(code);
@@ -190,7 +192,10 @@ export function translateCatalogWriteError(
   }
 
   if (prismaError.code === 'P2025') {
-    return new RecordNotFoundError(context.aggregate, context.id ?? 'desconocido');
+    return new RecordNotFoundError(
+      context.aggregate,
+      context.id ?? 'desconocido'
+    );
   }
 
   return error;

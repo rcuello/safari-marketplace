@@ -34,8 +34,12 @@ afterEach(() => {
 
 afterAll(async () => {
   await prisma.user.deleteMany({ where: { email: { startsWith: SENTINEL } } });
-  await prisma.product.deleteMany({ where: { slug: { startsWith: SENTINEL } } });
-  await prisma.category.deleteMany({ where: { slug: { startsWith: SENTINEL } } });
+  await prisma.product.deleteMany({
+    where: { slug: { startsWith: SENTINEL } },
+  });
+  await prisma.category.deleteMany({
+    where: { slug: { startsWith: SENTINEL } },
+  });
   await prisma.$disconnect();
 });
 
@@ -111,7 +115,9 @@ describe('getDashboardAnalytics — CA-3 newCustomers con centinelas', () => {
           email: `${SENTINEL}${u.tag}@demo.com`,
           passwordHash: 'x',
           createdAt: new Date(at - u.daysAgo * DAY_MS),
-          permissions: { create: u.roles.map((name) => ({ permissionId: idOf(name) })) },
+          permissions: {
+            create: u.roles.map((name) => ({ permissionId: idOf(name) })),
+          },
         },
       });
     }
@@ -128,15 +134,21 @@ describe('listas — CA-4 sobre el seed', () => {
     expect((await listLowStockProducts()).map((p) => p.id)).toEqual([
       2, 190, 1014, 1015, 1017, 1018, 1021, 1022, 1023, 1024,
     ]);
-    expect((await listLowStockProducts({ limit: 3 })).map((p) => p.id)).toEqual([2, 190, 1014]);
+    expect((await listLowStockProducts({ limit: 3 })).map((p) => p.id)).toEqual(
+      [2, 190, 1014]
+    );
     const shop9 = await listLowStockProducts({ shopId: 9, limit: 50 });
-    expect(shop9.map((p) => p.id)).toEqual([1014, 1015, 1017, 1018, 1021, 1022, 1023, 1024, 1028]);
+    expect(shop9.map((p) => p.id)).toEqual([
+      1014, 1015, 1017, 1018, 1021, 1022, 1023, 1024, 1028,
+    ]);
     expect(shop9.every((p) => p.quantity < 10 && p.shop.id === 9)).toBe(true);
   });
 
   it('top-rated: orden por media, número e id; agregados iguales a los de reviews', async () => {
     const top = await listTopRatedProducts();
-    expect(top.map((t) => t.product.id)).toEqual([4, 7, 8, 12, 16, 17, 19, 20, 21, 24]);
+    expect(top.map((t) => t.product.id)).toEqual([
+      4, 7, 8, 12, 16, 17, 19, 20, 21, 24,
+    ]);
 
     const groups = await prisma.review.groupBy({
       by: ['productId'],
@@ -149,10 +161,14 @@ describe('listas — CA-4 sobre el seed', () => {
       const g = groups.find((row) => Number(row.productId) === t.product.id);
       expect(t.totalRating).toBe(g?._sum.rating);
       expect(t.ratingCount).toBe(g?._count._all);
-      expect(t.actualRating).toBe(Math.round((g?._avg.rating ?? 0) * 100) / 100);
+      expect(t.actualRating).toBe(
+        Math.round((g?._avg.rating ?? 0) * 100) / 100
+      );
     }
 
-    expect((await listTopRatedProducts({ limit: 3 })).map((t) => t.product.id)).toEqual([4, 7, 8]);
+    expect(
+      (await listTopRatedProducts({ limit: 3 })).map((t) => t.product.id)
+    ).toEqual([4, 7, 8]);
     const shopId = top[0].product.shopId;
     const byShop = await listTopRatedProducts({ shopId, limit: 50 });
     expect(byShop.length).toBeGreaterThan(0);
@@ -163,9 +179,16 @@ describe('listas — CA-4 sobre el seed', () => {
     expect(await prisma.categoryProduct.count()).toBe(0);
     expect(await listCategoryWiseProductCounts()).toEqual([]);
 
-    const base = await prisma.product.findFirstOrThrow({ where: { id: 4 }, include: { shop: true } });
+    const base = await prisma.product.findFirstOrThrow({
+      where: { id: 4 },
+      include: { shop: true },
+    });
     const category = await prisma.category.create({
-      data: { name: `${SENTINEL}cat`, slug: `${SENTINEL}cat`, typeId: base.typeId },
+      data: {
+        name: `${SENTINEL}cat`,
+        slug: `${SENTINEL}cat`,
+        typeId: base.typeId,
+      },
     });
     for (const n of [1, 2]) {
       await prisma.product.create({

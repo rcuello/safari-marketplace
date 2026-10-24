@@ -10,7 +10,10 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { prisma } from '../client';
-import { findFirstOrderFileByDigitalFileId, listOrderFilesByCustomer } from './order-files.repository';
+import {
+  findFirstOrderFileByDigitalFileId,
+  listOrderFilesByCustomer,
+} from './order-files.repository';
 
 const CUSTOMER = 2;
 const ADMIN = 3;
@@ -24,15 +27,29 @@ describe('order_files — seed', () => {
     const { items, total } = await listOrderFilesByCustomer(CUSTOMER);
     expect(total).toBe(10);
     expect(items.map((f) => f.id)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
-    expect(items.every((f) => f.customerId === CUSTOMER && f.orderId === null)).toBe(true);
-    const page2 = await listOrderFilesByCustomer(CUSTOMER, { page: 2, limit: 4 });
+    expect(
+      items.every((f) => f.customerId === CUSTOMER && f.orderId === null)
+    ).toBe(true);
+    const page2 = await listOrderFilesByCustomer(CUSTOMER, {
+      page: 2,
+      limit: 4,
+    });
     expect(page2.items.map((f) => f.id)).toEqual([5, 6, 7, 8]);
-    expect(await listOrderFilesByCustomer(ADMIN)).toEqual({ items: [], total: 0 });
+    expect(await listOrderFilesByCustomer(ADMIN)).toEqual({
+      items: [],
+      total: 0,
+    });
   });
 
   it('file conserva verbatim el texto del mock (json, no jsonb): mismas claves, mismo orden', async () => {
     const mock = JSON.parse(
-      readFileSync(join(__dirname, '../../../../apps/api/rest/src/db/pickbazar/order-files.json'), 'utf8')
+      readFileSync(
+        join(
+          __dirname,
+          '../../../../apps/api/rest/src/db/pickbazar/order-files.json'
+        ),
+        'utf8'
+      )
     ) as { id: number; file: unknown }[];
     const { items } = await listOrderFilesByCustomer(CUSTOMER);
     for (const record of items) {

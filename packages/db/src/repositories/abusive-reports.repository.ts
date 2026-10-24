@@ -33,14 +33,18 @@ export interface AbusiveReportDetailRecord extends AbusiveReportRecord {
 
 const REPORT_INCLUDE = { user: true } satisfies Prisma.AbusiveReportInclude;
 
-type ReportPayload = Prisma.AbusiveReportGetPayload<{ include: typeof REPORT_INCLUDE }>;
+type ReportPayload = Prisma.AbusiveReportGetPayload<{
+  include: typeof REPORT_INCLUDE;
+}>;
 
 function _toDetail(row: ReportPayload): AbusiveReportDetailRecord {
   return { ..._toAbusiveReportRecord(row), user: _toUserRecord(row.user) };
 }
 
 /** Todos los reportes, `id DESC` (moderación del admin). */
-export async function listAbusiveReports(): Promise<AbusiveReportDetailRecord[]> {
+export async function listAbusiveReports(): Promise<
+  AbusiveReportDetailRecord[]
+> {
   const rows = await prisma.abusiveReport.findMany({
     orderBy: { id: 'desc' },
     include: REPORT_INCLUDE,
@@ -49,7 +53,9 @@ export async function listAbusiveReports(): Promise<AbusiveReportDetailRecord[]>
 }
 
 /** Los reportes de un usuario, más recientes primero (`/my-reports`). */
-export async function listAbusiveReportsByUser(userId: number): Promise<AbusiveReportDetailRecord[]> {
+export async function listAbusiveReportsByUser(
+  userId: number
+): Promise<AbusiveReportDetailRecord[]> {
   const rows = await prisma.abusiveReport.findMany({
     where: { userId },
     orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
@@ -58,8 +64,13 @@ export async function listAbusiveReportsByUser(userId: number): Promise<AbusiveR
   return rows.map(_toDetail);
 }
 
-export async function findAbusiveReportById(id: number): Promise<AbusiveReportDetailRecord | null> {
-  const row = await prisma.abusiveReport.findUnique({ where: { id }, include: REPORT_INCLUDE });
+export async function findAbusiveReportById(
+  id: number
+): Promise<AbusiveReportDetailRecord | null> {
+  const row = await prisma.abusiveReport.findUnique({
+    where: { id },
+    include: REPORT_INCLUDE,
+  });
   return row ? _toDetail(row) : null;
 }
 
@@ -82,15 +93,24 @@ export async function _countReports(
 }
 
 /** El objeto reportado debe existir: una reseña (US-54) o una pregunta (US-55). */
-export async function assertReportableExists(modelType: string, modelId: number): Promise<void> {
+export async function assertReportableExists(
+  modelType: string,
+  modelId: number
+): Promise<void> {
   switch (modelType) {
     case 'Review': {
-      const review = await prisma.review.findUnique({ where: { id: modelId }, select: { id: true } });
+      const review = await prisma.review.findUnique({
+        where: { id: modelId },
+        select: { id: true },
+      });
       if (!review) throw new RecordNotFoundError('reviews', modelId);
       return;
     }
     case 'Question': {
-      const question = await prisma.question.findUnique({ where: { id: modelId }, select: { id: true } });
+      const question = await prisma.question.findUnique({
+        where: { id: modelId },
+        select: { id: true },
+      });
       if (!question) throw new RecordNotFoundError('questions', modelId);
       return;
     }
@@ -105,7 +125,10 @@ export async function assertReportableExists(modelType: string, modelId: number)
 }
 
 function _assertMessage(message: string | undefined): void {
-  if (message !== undefined && !(typeof message === 'string' && message.length > 0)) {
+  if (
+    message !== undefined &&
+    !(typeof message === 'string' && message.length > 0)
+  ) {
     throw new InvalidFieldValueError(
       'abusive_reports',
       'message',
@@ -173,9 +196,16 @@ export async function updateAbusiveReport(
   }
 }
 
-export async function deleteAbusiveReport(id: number): Promise<AbusiveReportDetailRecord> {
+export async function deleteAbusiveReport(
+  id: number
+): Promise<AbusiveReportDetailRecord> {
   try {
-    return _toDetail(await prisma.abusiveReport.delete({ where: { id }, include: REPORT_INCLUDE }));
+    return _toDetail(
+      await prisma.abusiveReport.delete({
+        where: { id },
+        include: REPORT_INCLUDE,
+      })
+    );
   } catch (error) {
     throw _translate(error, id);
   }
@@ -188,8 +218,13 @@ export async function deleteAbusiveReport(id: number): Promise<AbusiveReportDeta
  * debe existir; si no, `RecordNotFoundError` sin borrar nada. Como la fila
  * desaparece, el UNIQUE deja volver a reportarlo (DD-2).
  */
-export async function rejectAbusiveReports(modelType: string, modelId: number): Promise<number> {
+export async function rejectAbusiveReports(
+  modelType: string,
+  modelId: number
+): Promise<number> {
   await assertReportableExists(modelType, modelId);
-  const { count } = await prisma.abusiveReport.deleteMany({ where: { modelType, modelId } });
+  const { count } = await prisma.abusiveReport.deleteMany({
+    where: { modelType, modelId },
+  });
   return count;
 }

@@ -10,8 +10,8 @@
 import 'dotenv/config';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Prisma } from '../../generated/prisma/client/client';
-import { _setNowProvider } from '../clock';
 import { prisma } from '../client';
+import { _setNowProvider } from '../clock';
 import {
   InvalidFieldValueError,
   InvalidReferenceError,
@@ -33,7 +33,10 @@ const ADMIN = 3;
 const FROM = new Date('2026-01-01T00:00:00.000Z');
 const TO = new Date('2030-01-01T00:00:00.000Z');
 
-const cleanup = () => prisma.coupon.deleteMany({ where: { code: { startsWith: SENTINEL_PREFIX } } });
+const cleanup = () =>
+  prisma.coupon.deleteMany({
+    where: { code: { startsWith: SENTINEL_PREFIX } },
+  });
 
 beforeAll(cleanup);
 
@@ -55,15 +58,15 @@ describe('listCoupons / findCouponByCode — seed', () => {
   });
 
   it('filtra por tienda y por código, combinados con AND', async () => {
-    expect((await listCoupons({ shopId: 1 })).items.map((c) => c.id)).toEqual([10, 7, 6, 3, 2, 1]);
-    expect((await listCoupons({ code: 'bazar' })).items.map((c) => c.code)).toEqual([
-      'BAZAR10',
-      'BAZAR20',
-      'BAZAR18',
+    expect((await listCoupons({ shopId: 1 })).items.map((c) => c.id)).toEqual([
+      10, 7, 6, 3, 2, 1,
     ]);
-    expect((await listCoupons({ shopId: 2, code: 'BAZAR' })).items.map((c) => c.code)).toEqual([
-      'BAZAR18',
-    ]);
+    expect(
+      (await listCoupons({ code: 'bazar' })).items.map((c) => c.code)
+    ).toEqual(['BAZAR10', 'BAZAR20', 'BAZAR18']);
+    expect(
+      (await listCoupons({ shopId: 2, code: 'BAZAR' })).items.map((c) => c.code)
+    ).toEqual(['BAZAR18']);
   });
 
   it('el record trae números, booleanos y la imagen con su orden de claves', async () => {
@@ -79,7 +82,11 @@ describe('listCoupons / findCouponByCode — seed', () => {
       userId: null,
       language: 'en',
     });
-    expect(Object.keys(c?.image as object)).toEqual(['thumbnail', 'original', 'id']);
+    expect(Object.keys(c?.image as object)).toEqual([
+      'thumbnail',
+      'original',
+      'id',
+    ]);
     // US-68: el seed desplaza +5 años las fechas del mock (2024-03-28 en coupons.json).
     expect(c?.expireAt.toISOString()).toBe('2029-03-28T05:46:42.000Z');
     expect(await findCouponByCode('4off')).toBeNull();
@@ -104,13 +111,24 @@ describe('createCoupon', () => {
       shopId: 2,
       userId: ADMIN,
     });
-    expect(created).toMatchObject({ isApprove: false, target: false, shopId: 2, userId: ADMIN });
-    expect(Object.keys(created.image as object)).toEqual(['thumbnail', 'original', 'id']);
+    expect(created).toMatchObject({
+      isApprove: false,
+      target: false,
+      shopId: 2,
+      userId: ADMIN,
+    });
+    expect(Object.keys(created.image as object)).toEqual([
+      'thumbnail',
+      'original',
+      'id',
+    ]);
   });
 
   it('código duplicado ⇒ SlugConflictError; tienda inexistente ⇒ InvalidReferenceError', async () => {
     const base = { type: 'fixed', amount: 1, activeFrom: FROM, expireAt: TO };
-    await expect(createCoupon({ ...base, code: '4OFF' })).rejects.toBeInstanceOf(SlugConflictError);
+    await expect(
+      createCoupon({ ...base, code: '4OFF' })
+    ).rejects.toBeInstanceOf(SlugConflictError);
     // US-67: el texto nombra el campo real, no un slug.
     await expect(createCoupon({ ...base, code: '4OFF' })).rejects.toThrow(
       'Ya existe un registro de `coupons` con el mismo valor en `code`.'
@@ -121,7 +139,13 @@ describe('createCoupon', () => {
   });
 
   it('type, importes o vigencia fuera de su CHECK ⇒ InvalidFieldValueError', async () => {
-    const base = { code: `${SENTINEL_PREFIX}malo`, type: 'fixed', amount: 1, activeFrom: FROM, expireAt: TO };
+    const base = {
+      code: `${SENTINEL_PREFIX}malo`,
+      type: 'fixed',
+      amount: 1,
+      activeFrom: FROM,
+      expireAt: TO,
+    };
     for (const bad of [
       { type: 'gift' },
       { amount: -1 },
@@ -130,7 +154,9 @@ describe('createCoupon', () => {
       { expireAt: FROM },
       { activeFrom: new Date('x') },
     ]) {
-      await expect(createCoupon({ ...base, ...bad })).rejects.toBeInstanceOf(InvalidFieldValueError);
+      await expect(createCoupon({ ...base, ...bad })).rejects.toBeInstanceOf(
+        InvalidFieldValueError
+      );
     }
     expect(await findCouponByCode(`${SENTINEL_PREFIX}malo`)).toBeNull();
   });
@@ -162,16 +188,24 @@ describe('updateCoupon / setCouponApproval / deleteCoupon', () => {
       await expect(
         updateCoupon(created.id, { expireAt: new Date('2025-01-01T00:00:00Z') })
       ).rejects.toBeInstanceOf(InvalidFieldValueError);
-      await expect(updateCoupon(created.id, { code: '5OFF' })).rejects.toBeInstanceOf(SlugConflictError);
+      await expect(
+        updateCoupon(created.id, { code: '5OFF' })
+      ).rejects.toBeInstanceOf(SlugConflictError);
     } finally {
       _setNowProvider(() => new Date());
     }
   });
 
   it('id inexistente ⇒ RecordNotFoundError en update, aprobación y borrado', async () => {
-    await expect(updateCoupon(999_999, { amount: 1 })).rejects.toBeInstanceOf(RecordNotFoundError);
-    await expect(setCouponApproval(999_999, true)).rejects.toBeInstanceOf(RecordNotFoundError);
-    await expect(deleteCoupon(999_999)).rejects.toBeInstanceOf(RecordNotFoundError);
+    await expect(updateCoupon(999_999, { amount: 1 })).rejects.toBeInstanceOf(
+      RecordNotFoundError
+    );
+    await expect(setCouponApproval(999_999, true)).rejects.toBeInstanceOf(
+      RecordNotFoundError
+    );
+    await expect(deleteCoupon(999_999)).rejects.toBeInstanceOf(
+      RecordNotFoundError
+    );
   });
 
   it('la aprobación persiste y el borrado devuelve la fila', async () => {

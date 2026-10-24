@@ -20,8 +20,8 @@ import {
   RecordNotFoundError,
   translateCatalogWriteError,
 } from '../domain-errors';
-import { generateSlug, normalizeSlug, type ExistingSlugLookup } from '../slug';
 import { _toFaqRecord, type FaqRecord } from '../records';
+import { type ExistingSlugLookup, generateSlug, normalizeSlug } from '../slug';
 
 /** Emisor de todo contenido global: el único rol que pasa el guard de escritura. */
 export const GLOBAL_CONTENT_ISSUER = 'Super Admin';
@@ -114,7 +114,11 @@ export type UpdateFaqInput = Partial<
 export async function resolveContentIssuer(
   aggregate: string,
   shopId: number | null | undefined
-): Promise<{ type: 'global' | 'shop'; issuedBy: string; shopId: number | null }> {
+): Promise<{
+  type: 'global' | 'shop';
+  issuedBy: string;
+  shopId: number | null;
+}> {
   if (shopId == null) {
     return { type: 'global', issuedBy: GLOBAL_CONTENT_ISSUER, shopId: null };
   }

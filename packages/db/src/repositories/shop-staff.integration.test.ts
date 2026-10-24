@@ -26,7 +26,9 @@ const SHOP_SENTINEL_PREFIX = 'zz-tiendas-staff-';
 const USER_DOMAIN = '@shop-staff-integration.test';
 
 const cleanupShops = () =>
-  prisma.shop.deleteMany({ where: { slug: { startsWith: SHOP_SENTINEL_PREFIX } } });
+  prisma.shop.deleteMany({
+    where: { slug: { startsWith: SHOP_SENTINEL_PREFIX } },
+  });
 const cleanupUsers = () =>
   prisma.user.deleteMany({ where: { email: { endsWith: USER_DOMAIN } } });
 
@@ -129,7 +131,9 @@ describe('un usuario es staff de dos tiendas', () => {
       ],
     });
 
-    const filas = await prisma.shopStaff.findMany({ where: { userId: user.id } });
+    const filas = await prisma.shopStaff.findMany({
+      where: { userId: user.id },
+    });
     expect(filas).toHaveLength(2);
     const idsEsperados = [Number(tiendaA.id), Number(tiendaB.id)].sort(
       (a, b) => a - b
@@ -156,14 +160,18 @@ describe('cascadas del pivote staff<->tienda', () => {
         passwordHash: 'hash-de-prueba',
       },
     });
-    await prisma.shopStaff.create({ data: { userId: user.id, shopId: shop.id } });
+    await prisma.shopStaff.create({
+      data: { userId: user.id, shopId: shop.id },
+    });
 
     await prisma.shop.delete({ where: { id: shop.id } });
 
+    expect(await prisma.shopStaff.count({ where: { userId: user.id } })).toBe(
+      0
+    );
     expect(
-      await prisma.shopStaff.count({ where: { userId: user.id } })
-    ).toBe(0);
-    expect(await prisma.user.findUnique({ where: { id: user.id } })).not.toBeNull();
+      await prisma.user.findUnique({ where: { id: user.id } })
+    ).not.toBeNull();
   });
 
   it('borrar el usuario arrastra sus filas de staff y la tienda sigue existiendo', async () => {
@@ -181,14 +189,18 @@ describe('cascadas del pivote staff<->tienda', () => {
         passwordHash: 'hash-de-prueba',
       },
     });
-    await prisma.shopStaff.create({ data: { userId: user.id, shopId: shop.id } });
+    await prisma.shopStaff.create({
+      data: { userId: user.id, shopId: shop.id },
+    });
 
     await prisma.user.delete({ where: { id: user.id } });
 
+    expect(await prisma.shopStaff.count({ where: { shopId: shop.id } })).toBe(
+      0
+    );
     expect(
-      await prisma.shopStaff.count({ where: { shopId: shop.id } })
-    ).toBe(0);
-    expect(await prisma.shop.findUnique({ where: { id: shop.id } })).not.toBeNull();
+      await prisma.shop.findUnique({ where: { id: shop.id } })
+    ).not.toBeNull();
   });
 });
 
@@ -241,7 +253,13 @@ describe('isShopStaff (US-66, CA-1)', () => {
   });
 
   it('ids no válidos ⇒ false sin lanzar', async () => {
-    for (const [u, s] of [[0, 1], [-1, 1], [Number.NaN, 1], [1.5, 1], [2, Number.NaN]]) {
+    for (const [u, s] of [
+      [0, 1],
+      [-1, 1],
+      [Number.NaN, 1],
+      [1.5, 1],
+      [2, Number.NaN],
+    ]) {
       await expect(isShopStaff(u, s)).resolves.toBe(false);
     }
   });

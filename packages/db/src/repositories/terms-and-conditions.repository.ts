@@ -10,12 +10,15 @@
 import type { Prisma } from '../../generated/prisma/client/client';
 import { prisma } from '../client';
 import { now } from '../clock';
-import { RecordNotFoundError, translateCatalogWriteError } from '../domain-errors';
-import { generateSlug, normalizeSlug, type ExistingSlugLookup } from '../slug';
+import {
+  RecordNotFoundError,
+  translateCatalogWriteError,
+} from '../domain-errors';
 import {
   _toTermsAndConditionsRecord,
   type TermsAndConditionsRecord,
 } from '../records';
+import { type ExistingSlugLookup, generateSlug, normalizeSlug } from '../slug';
 import { resolveContentIssuer } from './faqs.repository';
 
 export interface ListTermsAndConditionsInput {
@@ -104,7 +107,10 @@ export type UpdateTermsAndConditionsInput = Partial<
 export async function createTermsAndConditions(
   input: CreateTermsAndConditionsInput
 ): Promise<TermsAndConditionsRecord> {
-  const issuer = await resolveContentIssuer('terms_and_conditions', input.shopId);
+  const issuer = await resolveContentIssuer(
+    'terms_and_conditions',
+    input.shopId
+  );
   const slug = await generateSlug(
     { name: input.title, slug: input.slug },
     termsSlugs,
@@ -127,7 +133,9 @@ export async function createTermsAndConditions(
     });
     return _toTermsAndConditionsRecord(row);
   } catch (error) {
-    throw translateCatalogWriteError(error, { aggregate: 'terms_and_conditions' });
+    throw translateCatalogWriteError(error, {
+      aggregate: 'terms_and_conditions',
+    });
   }
 }
 
@@ -154,7 +162,10 @@ export async function updateTermsAndConditions(
     });
     return _toTermsAndConditionsRecord(row);
   } catch (error) {
-    throw translateCatalogWriteError(error, { aggregate: 'terms_and_conditions', id });
+    throw translateCatalogWriteError(error, {
+      aggregate: 'terms_and_conditions',
+      id,
+    });
   }
 }
 
@@ -170,7 +181,10 @@ export async function setTermsApproval(
     });
     return _toTermsAndConditionsRecord(row);
   } catch (error) {
-    throw translateCatalogWriteError(error, { aggregate: 'terms_and_conditions', id });
+    throw translateCatalogWriteError(error, {
+      aggregate: 'terms_and_conditions',
+      id,
+    });
   }
 }
 
@@ -178,7 +192,9 @@ export async function setTermsApproval(
 export async function deleteTermsAndConditions(
   id: number
 ): Promise<TermsAndConditionsRecord> {
-  const existing = await prisma.termsAndConditions.findUnique({ where: { id } });
+  const existing = await prisma.termsAndConditions.findUnique({
+    where: { id },
+  });
   if (!existing) {
     throw new RecordNotFoundError('terms_and_conditions', id);
   }
@@ -187,6 +203,9 @@ export async function deleteTermsAndConditions(
     await prisma.termsAndConditions.delete({ where: { id } });
     return _toTermsAndConditionsRecord(existing);
   } catch (error) {
-    throw translateCatalogWriteError(error, { aggregate: 'terms_and_conditions', id });
+    throw translateCatalogWriteError(error, {
+      aggregate: 'terms_and_conditions',
+      id,
+    });
   }
 }

@@ -240,7 +240,9 @@ function buildWhere(input: ListProductsInput): Prisma.ProductWhereInput {
  */
 function buildOrderBy(
   orderBy: ListProductsInput['orderBy']
-): Prisma.ProductOrderByWithRelationInput | Prisma.ProductOrderByWithRelationInput[] {
+):
+  | Prisma.ProductOrderByWithRelationInput
+  | Prisma.ProductOrderByWithRelationInput[] {
   switch (orderBy) {
     case 'ratings':
       return [{ ratings: 'desc' }, { id: 'asc' }];
@@ -485,7 +487,10 @@ function uniq<T>(values: T[]): T[] {
  * representable como `bigint` y ya resuelve en 400 vía `P2003`/la sonda de
  * existencia (mismo rationale que `categories.repository.ts:319-326`).
  */
-function _assertIntegerRef(value: number | null | undefined, field: string): void {
+function _assertIntegerRef(
+  value: number | null | undefined,
+  field: string
+): void {
   if (value != null && !Number.isSafeInteger(value)) {
     throw new InvalidReferenceError('products', field, value);
   }
@@ -501,10 +506,17 @@ function _assertIntegerRef(value: number | null | undefined, field: string): voi
  * ni se ensancha (su contrato es descartar en silencio para el query-string,
  * lo opuesto del 400 que hace falta aquí).
  */
-function _assertFiniteNumber(value: number | null | undefined, field: string): void {
+function _assertFiniteNumber(
+  value: number | null | undefined,
+  field: string
+): void {
   if (value == null) return;
   if (!Number.isFinite(value) || Math.abs(value) >= 1e10) {
-    throw new InvalidReferenceError('products', `${field} (no es un número finito)`, value);
+    throw new InvalidReferenceError(
+      'products',
+      `${field} (no es un número finito)`,
+      value
+    );
   }
 }
 
@@ -512,7 +524,11 @@ function _assertFiniteNumber(value: number | null | undefined, field: string): v
 function _assertIntegerCount(value: number | undefined, field: string): void {
   if (value === undefined) return;
   if (!Number.isInteger(value)) {
-    throw new InvalidReferenceError('products', `${field} (no es un entero)`, value);
+    throw new InvalidReferenceError(
+      'products',
+      `${field} (no es un entero)`,
+      value
+    );
   }
 }
 
@@ -606,12 +622,24 @@ async function _assertPivotIdsExist(
  */
 function _deriveProductPrices(
   productType: string,
-  effective: { price: number | null; minPrice: number | null; maxPrice: number | null }
+  effective: {
+    price: number | null;
+    minPrice: number | null;
+    maxPrice: number | null;
+  }
 ): { price: number | null; minPrice: number | null; maxPrice: number | null } {
   if (productType === 'simple') {
-    return { price: effective.price, minPrice: effective.price, maxPrice: effective.price };
+    return {
+      price: effective.price,
+      minPrice: effective.price,
+      maxPrice: effective.price,
+    };
   }
-  return { price: null, minPrice: effective.minPrice, maxPrice: effective.maxPrice };
+  return {
+    price: null,
+    minPrice: effective.minPrice,
+    maxPrice: effective.maxPrice,
+  };
 }
 
 export interface CreateProductInput {
@@ -647,7 +675,9 @@ export interface CreateProductInput {
 export type UpdateProductInput = Partial<Omit<CreateProductInput, 'slug'>>;
 
 /** Crea un producto del admin, con pivotes y las 5 guardas de DD29-2/DD29-3 pre-validadas. */
-export async function createProduct(input: CreateProductInput): Promise<ProductRecord> {
+export async function createProduct(
+  input: CreateProductInput
+): Promise<ProductRecord> {
   _assertIntegerRef(input.typeId, 'type_id');
   _assertIntegerRef(input.shopId, 'shop_id');
   _assertIntegerRef(input.manufacturerId, 'manufacturer_id');
@@ -694,7 +724,9 @@ export async function createProduct(input: CreateProductInput): Promise<ProductR
     'products'
   );
 
-  const categoryLinks = uniq(input.categoryIds ?? []).map((categoryId) => ({ categoryId }));
+  const categoryLinks = uniq(input.categoryIds ?? []).map((categoryId) => ({
+    categoryId,
+  }));
   const tagLinks = uniq(input.tagIds ?? []).map((tagId) => ({ tagId }));
 
   try {
@@ -757,7 +789,10 @@ export async function updateProduct(
   id: number,
   input: UpdateProductInput
 ): Promise<ProductRecord> {
-  const current = await prisma.product.findUnique({ where: { id }, include: PRODUCT_INCLUDE });
+  const current = await prisma.product.findUnique({
+    where: { id },
+    include: PRODUCT_INCLUDE,
+  });
   if (!current) {
     throw new RecordNotFoundError('products', id);
   }
@@ -766,13 +801,18 @@ export async function updateProduct(
     await normalizeSlug(input.name, 'products');
   }
 
-  const effectiveTypeId = input.typeId !== undefined ? input.typeId : _id(current.typeId);
-  const effectiveShopId = input.shopId !== undefined ? input.shopId : _id(current.shopId);
+  const effectiveTypeId =
+    input.typeId !== undefined ? input.typeId : _id(current.typeId);
+  const effectiveShopId =
+    input.shopId !== undefined ? input.shopId : _id(current.shopId);
   const effectiveManufacturerId =
-    input.manufacturerId !== undefined ? input.manufacturerId : _id(current.manufacturerId);
+    input.manufacturerId !== undefined
+      ? input.manufacturerId
+      : _id(current.manufacturerId);
   const effectiveProductType =
     input.productType !== undefined ? input.productType : current.productType;
-  const effectivePrice = input.price !== undefined ? input.price : _dec(current.price);
+  const effectivePrice =
+    input.price !== undefined ? input.price : _dec(current.price);
   const effectiveSalePrice =
     input.salePrice !== undefined ? input.salePrice : _dec(current.salePrice);
   const effectiveMinPrice =
@@ -821,11 +861,17 @@ export async function updateProduct(
       where: { id },
       data: {
         ...(input.name !== undefined && { name: input.name }),
-        ...(input.description !== undefined && { description: input.description }),
+        ...(input.description !== undefined && {
+          description: input.description,
+        }),
         ...(input.typeId !== undefined && { typeId: input.typeId }),
         ...(input.shopId !== undefined && { shopId: input.shopId }),
-        ...(input.manufacturerId !== undefined && { manufacturerId: input.manufacturerId }),
-        ...(input.productType !== undefined && { productType: input.productType }),
+        ...(input.manufacturerId !== undefined && {
+          manufacturerId: input.manufacturerId,
+        }),
+        ...(input.productType !== undefined && {
+          productType: input.productType,
+        }),
         price: derivedPrices.price,
         ...(input.salePrice !== undefined && { salePrice: input.salePrice }),
         minPrice: derivedPrices.minPrice,
@@ -848,7 +894,9 @@ export async function updateProduct(
         ...(input.categoryIds !== undefined && {
           categories: {
             deleteMany: {},
-            create: uniq(input.categoryIds).map((categoryId) => ({ categoryId })),
+            create: uniq(input.categoryIds).map((categoryId) => ({
+              categoryId,
+            })),
           },
         }),
         ...(input.tagIds !== undefined && {
@@ -884,7 +932,10 @@ export async function updateProduct(
  * divergir.
  */
 export async function deleteProduct(id: number): Promise<ProductRecord> {
-  const row = await prisma.product.findUnique({ where: { id }, include: PRODUCT_INCLUDE });
+  const row = await prisma.product.findUnique({
+    where: { id },
+    include: PRODUCT_INCLUDE,
+  });
   if (!row) {
     throw new RecordNotFoundError('products', id);
   }

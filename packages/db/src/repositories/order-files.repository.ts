@@ -26,7 +26,12 @@ export async function listOrderFilesByCustomer(
   const limit = input.limit ?? 30;
   const where = { customerId };
   const [rows, total] = await Promise.all([
-    prisma.orderFile.findMany({ where, orderBy: { id: 'asc' }, skip: (page - 1) * limit, take: limit }),
+    prisma.orderFile.findMany({
+      where,
+      orderBy: { id: 'asc' },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
     prisma.orderFile.count({ where }),
   ]);
   return { items: rows.map(_toOrderFileRecord), total };

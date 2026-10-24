@@ -13,9 +13,13 @@
 
 import 'dotenv/config';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { _setNowProvider } from '../clock';
 import { prisma } from '../client';
-import { EmptySlugError, InvalidReferenceError, RecordNotFoundError } from '../domain-errors';
+import { _setNowProvider } from '../clock';
+import {
+  EmptySlugError,
+  InvalidReferenceError,
+  RecordNotFoundError,
+} from '../domain-errors';
 import { _id } from '../records';
 import {
   createCategory,
@@ -29,7 +33,9 @@ import {
 const SENTINEL_PREFIX = 'zz-categories-';
 
 const cleanup = () =>
-  prisma.category.deleteMany({ where: { slug: { startsWith: SENTINEL_PREFIX } } });
+  prisma.category.deleteMany({
+    where: { slug: { startsWith: SENTINEL_PREFIX } },
+  });
 
 /** `daily-needs` y `gadget` — dos types reales y distintos del seed, para
  * las reglas 4/7 (madre/hija de otro `type_id`). Resueltos por slug en vez
@@ -347,9 +353,9 @@ describe('updateCategory — CA-2, slug inmutable, updatedAt explícito', () => 
       typeId: TYPE_A,
     });
 
-    await expect(updateCategory(created.id, { name: '' })).rejects.toBeInstanceOf(
-      EmptySlugError
-    );
+    await expect(
+      updateCategory(created.id, { name: '' })
+    ).rejects.toBeInstanceOf(EmptySlugError);
 
     const reread = await findCategoryByIdOrSlug(`${SENTINEL_PREFIX}intacta`);
     expect(reread?.name).toBe(`${SENTINEL_PREFIX}Intacta`);
@@ -648,7 +654,9 @@ describe('deleteCategory — CA-3, snapshot pre-borrado y re-enraizado por la ba
   });
 
   it('id inexistente ⇒ RecordNotFoundError', async () => {
-    await expect(deleteCategory(999999)).rejects.toBeInstanceOf(RecordNotFoundError);
+    await expect(deleteCategory(999999)).rejects.toBeInstanceOf(
+      RecordNotFoundError
+    );
   });
 });
 

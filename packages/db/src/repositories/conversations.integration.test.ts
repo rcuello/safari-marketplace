@@ -11,8 +11,8 @@
 
 import 'dotenv/config';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { _setNowProvider } from '../clock';
 import { prisma } from '../client';
+import { _setNowProvider } from '../clock';
 import {
   InvalidFieldValueError,
   InvalidReferenceError,
@@ -36,7 +36,10 @@ const cleanup = async () => {
   await prisma.conversationRead.deleteMany({});
   await prisma.message.deleteMany({ where: { id: { gt: 5 } } });
   await prisma.conversation.deleteMany({ where: { id: { notIn: [1, 6] } } });
-  await prisma.conversation.update({ where: { id: 1 }, data: { updatedAt: SEEDED_UPDATED_AT } });
+  await prisma.conversation.update({
+    where: { id: 1 },
+    data: { updatedAt: SEEDED_UPDATED_AT },
+  });
 };
 
 beforeAll(cleanup);
@@ -55,26 +58,51 @@ describe('lecturas — seed', () => {
     expect(total).toBe(2);
     expect(items.map((c) => c.id)).toEqual([1, 6]);
     expect(items[0]).toMatchObject({ userId: ADMIN, shopId: 7 });
-    expect(items[0].latestMessage).toMatchObject({ id: 5, body: 'New test', userId: ADMIN });
+    expect(items[0].latestMessage).toMatchObject({
+      id: 5,
+      body: 'New test',
+      userId: ADMIN,
+    });
     expect(items[1].latestMessage).toBeNull();
     expect(items[0].user.email).toBe('admin@demo.com');
     expect(items[0].shop.id).toBe(7);
   });
 
   it('respeta orderBy=updated_at desc y filtra por nombre de tienda', async () => {
-    const byUpdated = await listConversations({ orderBy: 'updated_at', sortedBy: 'desc' });
+    const byUpdated = await listConversations({
+      orderBy: 'updated_at',
+      sortedBy: 'desc',
+    });
     expect(byUpdated.items.map((c) => c.id)).toEqual([6, 1]);
-    const shop7 = await prisma.shop.findUniqueOrThrow({ where: { id: 7 }, select: { name: true } });
-    const found = await listConversations({ shopName: shop7.name.slice(0, 4).toLowerCase() });
+    const shop7 = await prisma.shop.findUniqueOrThrow({
+      where: { id: 7 },
+      select: { name: true },
+    });
+    const found = await listConversations({
+      shopName: shop7.name.slice(0, 4).toLowerCase(),
+    });
     expect(found.items.map((c) => c.id)).toContain(1);
   });
 
   it('visibilidad: super_admin todo, el dueño de las tiendas todo, un cliente nada', async () => {
-    expect((await listConversations({ viewer: { userId: ADMIN, seeAll: true } })).total).toBe(2);
-    expect((await listConversations({ viewer: { userId: OWNER, seeAll: false } })).total).toBe(2);
-    expect((await listConversations({ viewer: { userId: CUSTOMER, seeAll: false } })).total).toBe(0);
-    expect(await findConversationById(1, { userId: CUSTOMER, seeAll: false })).toBeNull();
-    expect((await findConversationById(1, { userId: ADMIN, seeAll: false }))?.id).toBe(1);
+    expect(
+      (await listConversations({ viewer: { userId: ADMIN, seeAll: true } }))
+        .total
+    ).toBe(2);
+    expect(
+      (await listConversations({ viewer: { userId: OWNER, seeAll: false } }))
+        .total
+    ).toBe(2);
+    expect(
+      (await listConversations({ viewer: { userId: CUSTOMER, seeAll: false } }))
+        .total
+    ).toBe(0);
+    expect(
+      await findConversationById(1, { userId: CUSTOMER, seeAll: false })
+    ).toBeNull();
+    expect(
+      (await findConversationById(1, { userId: ADMIN, seeAll: false }))?.id
+    ).toBe(1);
     expect(await findConversationById(999)).toBeNull();
   });
 
@@ -84,7 +112,9 @@ describe('lecturas — seed', () => {
     expect(items.map((m) => m.id)).toEqual([5, 4, 3, 2, 1]);
     expect(items.map((m) => m.userId)).toEqual([3, 1, 3, 3, 3]);
     expect(items[0].conversation.shopId).toBe(7);
-    expect((await listMessages(1, { page: 2, limit: 2 })).items.map((m) => m.id)).toEqual([3, 2]);
+    expect(
+      (await listMessages(1, { page: 2, limit: 2 })).items.map((m) => m.id)
+    ).toEqual([3, 2]);
     expect(await listMessages(6)).toMatchObject({ items: [], total: 0 });
     await expect(listMessages(999)).rejects.toBeInstanceOf(RecordNotFoundError);
   });
@@ -99,12 +129,18 @@ describe('findOrCreateConversation', () => {
     expect((await findOrCreateConversation(ADMIN, 7)).id).toBe(1);
     expect(await prisma.conversation.count()).toBe(2);
     const created = await findOrCreateConversation(CUSTOMER, 1);
-    expect(created).toMatchObject({ userId: CUSTOMER, shopId: 1, latestMessage: null });
+    expect(created).toMatchObject({
+      userId: CUSTOMER,
+      shopId: 1,
+      latestMessage: null,
+    });
     expect((await findOrCreateConversation(CUSTOMER, 1)).id).toBe(created.id);
   });
 
   it('tienda inexistente ⇒ InvalidReferenceError', async () => {
-    await expect(findOrCreateConversation(CUSTOMER, 999_999)).rejects.toBeInstanceOf(InvalidReferenceError);
+    await expect(
+      findOrCreateConversation(CUSTOMER, 999_999)
+    ).rejects.toBeInstanceOf(InvalidReferenceError);
   });
 });
 
@@ -113,8 +149,16 @@ describe('createMessage', () => {
     const stamp = new Date(Date.now() + 60_000);
     try {
       _setNowProvider(() => stamp);
-      const message = await createMessage({ conversationId: 1, userId: ADMIN, body: 'zz-msg' });
-      expect(message).toMatchObject({ conversationId: 1, userId: ADMIN, body: 'zz-msg' });
+      const message = await createMessage({
+        conversationId: 1,
+        userId: ADMIN,
+        body: 'zz-msg',
+      });
+      expect(message).toMatchObject({
+        conversationId: 1,
+        userId: ADMIN,
+        body: 'zz-msg',
+      });
       expect(message.createdAt.getTime()).toBe(stamp.getTime());
       expect(message.conversation.updatedAt.getTime()).toBe(stamp.getTime());
       expect(message.conversation.latestMessage?.id).toBe(message.id);
@@ -125,12 +169,12 @@ describe('createMessage', () => {
   });
 
   it('cuerpo vacío ⇒ InvalidFieldValueError; conversación inexistente ⇒ RecordNotFoundError', async () => {
-    await expect(createMessage({ conversationId: 1, userId: ADMIN, body: '   ' })).rejects.toBeInstanceOf(
-      InvalidFieldValueError
-    );
-    await expect(createMessage({ conversationId: 999, userId: ADMIN, body: 'x' })).rejects.toBeInstanceOf(
-      RecordNotFoundError
-    );
+    await expect(
+      createMessage({ conversationId: 1, userId: ADMIN, body: '   ' })
+    ).rejects.toBeInstanceOf(InvalidFieldValueError);
+    await expect(
+      createMessage({ conversationId: 999, userId: ADMIN, body: 'x' })
+    ).rejects.toBeInstanceOf(RecordNotFoundError);
   });
 });
 
@@ -145,7 +189,10 @@ describe('markConversationSeen — US-64', () => {
     const { items } = await listConversations({ viewer: OWNER_VIEW });
     expect(items.map((c) => c.lastSeenAt)).toEqual([null, null]);
     expect((await findConversationById(1, OWNER_VIEW))?.lastSeenAt).toBeNull();
-    expect((await listMessages(1, { readerId: OWNER })).items[0].conversation.lastSeenAt).toBeNull();
+    expect(
+      (await listMessages(1, { readerId: OWNER })).items[0].conversation
+        .lastSeenAt
+    ).toBeNull();
   });
 
   it('upsert de last_seen_at con el reloj: repetir mueve la marca, no duplica la fila', async () => {
@@ -153,7 +200,9 @@ describe('markConversationSeen — US-64', () => {
     const second = new Date('2030-01-02T00:00:00.000Z');
     try {
       _setNowProvider(() => first);
-      expect((await markConversationSeen(1, OWNER_VIEW))?.lastSeenAt?.toISOString()).toBe(first.toISOString());
+      expect(
+        (await markConversationSeen(1, OWNER_VIEW))?.lastSeenAt?.toISOString()
+      ).toBe(first.toISOString());
       _setNowProvider(() => second);
       const again = await markConversationSeen(1, OWNER_VIEW);
       expect(again?.lastSeenAt?.toISOString()).toBe(second.toISOString());
@@ -162,23 +211,35 @@ describe('markConversationSeen — US-64', () => {
       _setNowProvider(() => new Date());
     }
     const rows = await prisma.conversationRead.findMany();
-    expect(rows.map((r) => [Number(r.conversationId), Number(r.userId)])).toEqual([[1, OWNER]]);
+    expect(
+      rows.map((r) => [Number(r.conversationId), Number(r.userId)])
+    ).toEqual([[1, OWNER]]);
 
     // Cada lector ve solo su marca, en las tres lecturas.
-    expect((await listConversations({ viewer: OWNER_VIEW })).items.map((c) => c.lastSeenAt?.toISOString() ?? null)).toEqual([
-      second.toISOString(),
-      null,
-    ]);
-    expect((await findConversationById(1, { userId: ADMIN, seeAll: true }))?.lastSeenAt).toBeNull();
-    expect((await listMessages(1, { readerId: OWNER })).items[0].conversation.lastSeenAt?.toISOString()).toBe(
-      second.toISOString()
-    );
+    expect(
+      (await listConversations({ viewer: OWNER_VIEW })).items.map(
+        (c) => c.lastSeenAt?.toISOString() ?? null
+      )
+    ).toEqual([second.toISOString(), null]);
+    expect(
+      (await findConversationById(1, { userId: ADMIN, seeAll: true }))
+        ?.lastSeenAt
+    ).toBeNull();
+    expect(
+      (
+        await listMessages(1, { readerId: OWNER })
+      ).items[0].conversation.lastSeenAt?.toISOString()
+    ).toBe(second.toISOString());
   });
 
   it('ajena o inexistente ⇒ null y no escribe nada', async () => {
     await prisma.conversationRead.deleteMany({});
-    expect(await markConversationSeen(1, { userId: CUSTOMER, seeAll: false })).toBeNull();
-    expect(await markConversationSeen(999, { userId: ADMIN, seeAll: true })).toBeNull();
+    expect(
+      await markConversationSeen(1, { userId: CUSTOMER, seeAll: false })
+    ).toBeNull();
+    expect(
+      await markConversationSeen(999, { userId: ADMIN, seeAll: true })
+    ).toBeNull();
     expect(await prisma.conversationRead.count()).toBe(0);
   });
 });

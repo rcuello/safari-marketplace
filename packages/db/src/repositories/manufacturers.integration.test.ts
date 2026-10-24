@@ -21,9 +21,13 @@
 import 'dotenv/config';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Prisma } from '../../generated/prisma/client/client';
-import { _setNowProvider } from '../clock';
 import { prisma } from '../client';
-import { EmptySlugError, InvalidReferenceError, RecordNotFoundError } from '../domain-errors';
+import { _setNowProvider } from '../clock';
+import {
+  EmptySlugError,
+  InvalidReferenceError,
+  RecordNotFoundError,
+} from '../domain-errors';
 import {
   createManufacturer,
   deleteManufacturer,
@@ -35,7 +39,9 @@ import {
 const SENTINEL_PREFIX = 'zz-manu-';
 
 const cleanup = () =>
-  prisma.manufacturer.deleteMany({ where: { slug: { startsWith: SENTINEL_PREFIX } } });
+  prisma.manufacturer.deleteMany({
+    where: { slug: { startsWith: SENTINEL_PREFIX } },
+  });
 
 beforeAll(cleanup); // corrida abortada previa
 
@@ -120,7 +126,9 @@ describe('createManufacturer — CA-1, centinela zz-manu-', () => {
       })
     ).rejects.toBeInstanceOf(InvalidReferenceError);
 
-    expect(await findManufacturerBySlug(`${SENTINEL_PREFIX}type-invalido`)).toBeNull();
+    expect(
+      await findManufacturerBySlug(`${SENTINEL_PREFIX}type-invalido`)
+    ).toBeNull();
   });
 
   it('typeId fuera del rango seguro de bigint (1e21) ⇒ InvalidReferenceError, sin tocar Postgres (US-31, antirregresión)', async () => {
@@ -135,7 +143,9 @@ describe('createManufacturer — CA-1, centinela zz-manu-', () => {
       })
     ).rejects.toBeInstanceOf(InvalidReferenceError);
 
-    expect(await findManufacturerBySlug(`${SENTINEL_PREFIX}type-fuera-de-rango`)).toBeNull();
+    expect(
+      await findManufacturerBySlug(`${SENTINEL_PREFIX}type-fuera-de-rango`)
+    ).toBeNull();
   });
 
   it('typeId negativo (-5) ⇒ InvalidReferenceError por P2003 (FK), NO por la guarda (US-31, D31-2)', async () => {
@@ -155,7 +165,9 @@ describe('createManufacturer — CA-1, centinela zz-manu-', () => {
       expect((error as InvalidReferenceError).message).not.toContain('-5');
     }
 
-    expect(await findManufacturerBySlug(`${SENTINEL_PREFIX}type-negativo`)).toBeNull();
+    expect(
+      await findManufacturerBySlug(`${SENTINEL_PREFIX}type-negativo`)
+    ).toBeNull();
   });
 });
 
@@ -177,7 +189,9 @@ describe('updateManufacturer — CA-2, slug inmutable, updatedAt explícito', ()
       expect(updated.name).toBe(`${SENTINEL_PREFIX}Renombrada`);
       expect(updated.slug).toBe(`${SENTINEL_PREFIX}original`);
       expect(updated.updatedAt.getTime()).toBe(future.getTime());
-      expect(updated.updatedAt.getTime()).toBeGreaterThan(created.updatedAt.getTime());
+      expect(updated.updatedAt.getTime()).toBeGreaterThan(
+        created.updatedAt.getTime()
+      );
 
       await deleteManufacturer(created.id);
     } finally {
@@ -191,9 +205,9 @@ describe('updateManufacturer — CA-2, slug inmutable, updatedAt explícito', ()
       slug: `${SENTINEL_PREFIX}intacta`,
     });
 
-    await expect(updateManufacturer(created.id, { name: '' })).rejects.toBeInstanceOf(
-      EmptySlugError
-    );
+    await expect(
+      updateManufacturer(created.id, { name: '' })
+    ).rejects.toBeInstanceOf(EmptySlugError);
 
     const reread = await findManufacturerBySlug(`${SENTINEL_PREFIX}intacta`);
     expect(reread?.name).toBe(`${SENTINEL_PREFIX}Intacta`);
@@ -217,7 +231,9 @@ describe('updateManufacturer — CA-2, slug inmutable, updatedAt explícito', ()
       updateManufacturer(created.id, { typeId: Number.NaN })
     ).rejects.toBeInstanceOf(InvalidReferenceError);
 
-    const reread = await findManufacturerBySlug(`${SENTINEL_PREFIX}type-update-invalido`);
+    const reread = await findManufacturerBySlug(
+      `${SENTINEL_PREFIX}type-update-invalido`
+    );
     expect(reread?.typeId).toBeNull();
 
     await deleteManufacturer(created.id);
@@ -226,7 +242,9 @@ describe('updateManufacturer — CA-2, slug inmutable, updatedAt explícito', ()
 
 describe('deleteManufacturer — CA-3, sin conteo de dependientes (D27b-3)', () => {
   it('id inexistente ⇒ RecordNotFoundError', async () => {
-    await expect(deleteManufacturer(999999)).rejects.toBeInstanceOf(RecordNotFoundError);
+    await expect(deleteManufacturer(999999)).rejects.toBeInstanceOf(
+      RecordNotFoundError
+    );
   });
 
   it('un centinela se borra: -1 fila, y devuelve la proyección borrada', async () => {
@@ -239,7 +257,9 @@ describe('deleteManufacturer — CA-3, sin conteo de dependientes (D27b-3)', () 
     expect(deleted.id).toBe(created.id);
     expect(deleted.slug).toBe(`${SENTINEL_PREFIX}borrable`);
 
-    expect(await findManufacturerBySlug(`${SENTINEL_PREFIX}borrable`)).toBeNull();
+    expect(
+      await findManufacturerBySlug(`${SENTINEL_PREFIX}borrable`)
+    ).toBeNull();
   });
 
   it('desenlace: borra la marca y `products.manufacturer_id` desenlaza por SET NULL — assert POR FILA, nunca un conteo global (B-2: la fixture de products.integration.test.ts:198-237 mantiene viva otra fila mientras esa suite corre)', async () => {
@@ -256,7 +276,9 @@ describe('deleteManufacturer — CA-3, sin conteo de dependientes (D27b-3)', () 
       where: { id: seededProduct.id },
       data: { manufacturerId: created.id },
     });
-    const linked = await prisma.product.findUnique({ where: { id: seededProduct.id } });
+    const linked = await prisma.product.findUnique({
+      where: { id: seededProduct.id },
+    });
     // `manufacturerId` es `bigint` en la fila cruda de Prisma (bigserial, sin
     // pasar por `_toManufacturerRecord`/`_id`, precedente `records.ts:37-40`);
     // `created.id` ya es `number` — comparar por `Number(...)`.
@@ -264,7 +286,9 @@ describe('deleteManufacturer — CA-3, sin conteo de dependientes (D27b-3)', () 
 
     await deleteManufacturer(created.id);
 
-    const probe = await prisma.product.findUnique({ where: { id: seededProduct.id } });
+    const probe = await prisma.product.findUnique({
+      where: { id: seededProduct.id },
+    });
     expect(probe?.manufacturerId).toBeNull();
 
     // Restaura el estado sembrado si el borrado no lo hubiera hecho ya
@@ -292,7 +316,11 @@ describe('image: null se trata como ausente (DD-5) — RV-1 de US-27b', () => {
     original: 'https://cdn.test/zz-manu.png',
     thumbnail: 'https://cdn.test/zz-manu-thumb.png',
   };
-  const OTHER_IMAGE = { ...IMAGE, id: 8, original: 'https://cdn.test/zz-manu-2.png' };
+  const OTHER_IMAGE = {
+    ...IMAGE,
+    id: 8,
+    original: 'https://cdn.test/zz-manu-2.png',
+  };
 
   it('createManufacturer con image: null persiste sin error y la columna queda NULL', async () => {
     const created = await createManufacturer({
@@ -336,7 +364,9 @@ describe('image: null se trata como ausente (DD-5) — RV-1 de US-27b', () => {
       image: IMAGE,
     });
 
-    const updated = await updateManufacturer(created.id, { image: OTHER_IMAGE });
+    const updated = await updateManufacturer(created.id, {
+      image: OTHER_IMAGE,
+    });
     expect(updated.image).toEqual(OTHER_IMAGE);
 
     const reread = await findManufacturerBySlug(created.slug);

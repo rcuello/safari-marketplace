@@ -10,8 +10,8 @@
 
 import 'dotenv/config';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { _setNowProvider } from '../clock';
 import { prisma } from '../client';
+import { _setNowProvider } from '../clock';
 import {
   InvalidFieldValueError,
   InvalidReferenceError,
@@ -47,7 +47,9 @@ const CUSTOMER = 2;
 const FUTURE = new Date('2030-01-01T00:00:00.000Z');
 
 const cleanup = () =>
-  prisma.storeNotice.deleteMany({ where: { notice: { startsWith: SENTINEL_PREFIX } } });
+  prisma.storeNotice.deleteMany({
+    where: { notice: { startsWith: SENTINEL_PREFIX } },
+  });
 
 beforeAll(cleanup);
 
@@ -68,9 +70,11 @@ describe('listStoreNotices / findStoreNoticeById — seed', () => {
     const { items, total } = await listStoreNotices();
     expect(total).toBe(3);
     expect(items.map((n) => n.id)).toEqual([3, 2, 1]);
-    expect(items.every((n) => n.createdBy === ADMIN && n.creator.email === 'admin@demo.com')).toBe(
-      true
-    );
+    expect(
+      items.every(
+        (n) => n.createdBy === ADMIN && n.creator.email === 'admin@demo.com'
+      )
+    ).toBe(true);
     expect(items.map((n) => n.updatedBy)).toEqual([null, ADMIN, null]);
   });
 
@@ -87,19 +91,28 @@ describe('listStoreNotices / findStoreNoticeById — seed', () => {
       [OWNER, false],
     ]);
     expect(notice?.shops).toEqual([]);
-    expect(notice?.effectiveFrom?.toISOString()).toBe('2023-03-15T12:00:00.000Z');
+    expect(notice?.effectiveFrom?.toISOString()).toBe(
+      '2023-03-15T12:00:00.000Z'
+    );
     expect(await findStoreNoticeById(999_999)).toBeNull();
   });
 
   it('filtra por texto, por destinatario y por tienda', async () => {
-    expect((await listStoreNotices({ notice: 'DELIVERY' })).items.map((n) => n.id)).toEqual([2]);
+    expect(
+      (await listStoreNotices({ notice: 'DELIVERY' })).items.map((n) => n.id)
+    ).toEqual([2]);
     expect((await listStoreNotices({ userId: OWNER })).total).toBe(3);
     expect((await listStoreNotices({ userId: CUSTOMER })).total).toBe(0);
-    expect((await listStoreNotices({ shopSlug: 'furniture-shop' })).total).toBe(0);
+    expect((await listStoreNotices({ shopSlug: 'furniture-shop' })).total).toBe(
+      0
+    );
   });
 
   it('respeta orderBy=updatedAt con desempate por id', async () => {
-    const { items } = await listStoreNotices({ orderBy: 'updatedAt', sortedBy: 'desc' });
+    const { items } = await listStoreNotices({
+      orderBy: 'updatedAt',
+      sortedBy: 'desc',
+    });
     const stamps = items.map((n) => n.updatedAt.getTime());
     expect(stamps).toEqual([...stamps].sort((a, b) => b - a));
   });
@@ -120,7 +133,9 @@ describe('createStoreNotice — destinatarios según type', () => {
       createdBy: ADMIN,
     });
     expect(created.recipients.map((u) => u.id)).toEqual([OWNER]);
-    expect(created.reads.map((r) => [r.user.id, r.isRead])).toEqual([[OWNER, false]]);
+    expect(created.reads.map((r) => [r.user.id, r.isRead])).toEqual([
+      [OWNER, false],
+    ]);
     expect(created.creator.id).toBe(ADMIN);
   });
 
@@ -149,7 +164,9 @@ describe('createStoreNotice — destinatarios según type', () => {
     });
     expect(created.shops.map((s) => s.id)).toEqual([1, 2]);
     expect(created.reads).toEqual([]);
-    expect((await listStoreNotices({ shopId: 2 })).items.map((n) => n.id)).toEqual([created.id]);
+    expect(
+      (await listStoreNotices({ shopId: 2 })).items.map((n) => n.id)
+    ).toEqual([created.id]);
   });
 
   it('un id de received_by inexistente ⇒ InvalidReferenceError sin filas sueltas', async () => {
@@ -224,9 +241,9 @@ describe('updateStoreNotice', () => {
   });
 
   it('id inexistente ⇒ RecordNotFoundError', async () => {
-    await expect(updateStoreNotice(999_999, { notice: 'x', updatedBy: ADMIN })).rejects.toBeInstanceOf(
-      RecordNotFoundError
-    );
+    await expect(
+      updateStoreNotice(999_999, { notice: 'x', updatedBy: ADMIN })
+    ).rejects.toBeInstanceOf(RecordNotFoundError);
   });
 });
 
@@ -237,7 +254,9 @@ describe('markStoreNoticeRead / deleteStoreNotice', () => {
       [ADMIN, true],
       [OWNER, true],
     ]);
-    await expect(markStoreNoticeRead(999_999, OWNER)).rejects.toBeInstanceOf(RecordNotFoundError);
+    await expect(markStoreNoticeRead(999_999, OWNER)).rejects.toBeInstanceOf(
+      RecordNotFoundError
+    );
   });
 
   it('borra en cascada y devuelve el aviso con su detalle', async () => {
@@ -250,8 +269,18 @@ describe('markStoreNoticeRead / deleteStoreNotice', () => {
     });
     const deleted = await deleteStoreNotice(created.id);
     expect(deleted.recipients).toHaveLength((await storeOwnerIds()).length);
-    expect(await prisma.storeNoticeUser.count({ where: { storeNoticeId: created.id } })).toBe(0);
-    expect(await prisma.storeNoticeRead.count({ where: { storeNoticeId: created.id } })).toBe(0);
-    await expect(deleteStoreNotice(created.id)).rejects.toBeInstanceOf(RecordNotFoundError);
+    expect(
+      await prisma.storeNoticeUser.count({
+        where: { storeNoticeId: created.id },
+      })
+    ).toBe(0);
+    expect(
+      await prisma.storeNoticeRead.count({
+        where: { storeNoticeId: created.id },
+      })
+    ).toBe(0);
+    await expect(deleteStoreNotice(created.id)).rejects.toBeInstanceOf(
+      RecordNotFoundError
+    );
   });
 });

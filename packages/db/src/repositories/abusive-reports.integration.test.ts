@@ -11,8 +11,8 @@
 
 import 'dotenv/config';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { _setNowProvider } from '../clock';
 import { prisma } from '../client';
+import { _setNowProvider } from '../clock';
 import {
   InvalidFieldValueError,
   RecordNotFoundError,
@@ -31,7 +31,8 @@ import {
 const CUSTOMER = 2;
 const ADMIN = 3;
 
-const cleanup = () => prisma.abusiveReport.deleteMany({ where: { userId: ADMIN } });
+const cleanup = () =>
+  prisma.abusiveReport.deleteMany({ where: { userId: ADMIN } });
 
 beforeAll(cleanup);
 
@@ -48,14 +49,22 @@ describe('lecturas — seed', () => {
     const all = await listAbusiveReports();
     expect(all.map((r) => r.id)).toEqual([3, 2, 1]);
     expect(all.map((r) => r.modelId)).toEqual([1, 21, 78]);
-    expect(all.every((r) => r.modelType === 'Review' && r.user.email === 'customer@demo.com')).toBe(true);
+    expect(
+      all.every(
+        (r) => r.modelType === 'Review' && r.user.email === 'customer@demo.com'
+      )
+    ).toBe(true);
     expect(all[0].createdAt.toISOString()).toBe('2022-07-26T04:35:51.000Z');
   });
 
   it('por usuario, created_at DESC; un usuario sin reportes recibe []', async () => {
-    expect((await listAbusiveReportsByUser(CUSTOMER)).map((r) => r.id)).toEqual([3, 2, 1]);
+    expect((await listAbusiveReportsByUser(CUSTOMER)).map((r) => r.id)).toEqual(
+      [3, 2, 1]
+    );
     expect(await listAbusiveReportsByUser(ADMIN)).toEqual([]);
-    expect((await findAbusiveReportById(2))?.message).toBe('this is abusive reports');
+    expect((await findAbusiveReportById(2))?.message).toBe(
+      'this is abusive reports'
+    );
     expect(await findAbusiveReportById(999_999)).toBeNull();
   });
 });
@@ -72,10 +81,19 @@ describe('createAbusiveReport', () => {
       modelId: 85,
       message: 'zz-report',
     });
-    expect(created).toMatchObject({ userId: ADMIN, modelType: 'Review', modelId: 85 });
+    expect(created).toMatchObject({
+      userId: ADMIN,
+      modelType: 'Review',
+      modelId: 85,
+    });
     expect(created.user.id).toBe(ADMIN);
     await expect(
-      createAbusiveReport({ userId: ADMIN, modelType: 'Review', modelId: 85, message: 'otra vez' })
+      createAbusiveReport({
+        userId: ADMIN,
+        modelType: 'Review',
+        modelId: 85,
+        message: 'otra vez',
+      })
     ).rejects.toBeInstanceOf(SlugConflictError);
   });
 
@@ -90,7 +108,12 @@ describe('createAbusiveReport', () => {
       createAbusiveReport({ ...base, modelType: 'Product', modelId: 1 })
     ).rejects.toBeInstanceOf(InvalidFieldValueError);
     await expect(
-      createAbusiveReport({ ...base, modelType: 'Review', modelId: 84, message: '' })
+      createAbusiveReport({
+        ...base,
+        modelType: 'Review',
+        modelId: 84,
+        message: '',
+      })
     ).rejects.toBeInstanceOf(InvalidFieldValueError);
   });
 
@@ -116,18 +139,24 @@ describe('updateAbusiveReport / deleteAbusiveReport', () => {
       });
       const future = new Date(Date.now() + 60_000);
       _setNowProvider(() => future);
-      const updated = await updateAbusiveReport(created.id, { message: 'zz-editado' });
+      const updated = await updateAbusiveReport(created.id, {
+        message: 'zz-editado',
+      });
       expect(updated.message).toBe('zz-editado');
       expect(updated.updatedAt.getTime()).toBe(future.getTime());
-      await expect(updateAbusiveReport(created.id, { message: '' })).rejects.toBeInstanceOf(
-        InvalidFieldValueError
-      );
+      await expect(
+        updateAbusiveReport(created.id, { message: '' })
+      ).rejects.toBeInstanceOf(InvalidFieldValueError);
 
-      expect((await deleteAbusiveReport(created.id)).message).toBe('zz-editado');
-      await expect(deleteAbusiveReport(created.id)).rejects.toBeInstanceOf(RecordNotFoundError);
-      await expect(updateAbusiveReport(999_999, { message: 'x' })).rejects.toBeInstanceOf(
+      expect((await deleteAbusiveReport(created.id)).message).toBe(
+        'zz-editado'
+      );
+      await expect(deleteAbusiveReport(created.id)).rejects.toBeInstanceOf(
         RecordNotFoundError
       );
+      await expect(
+        updateAbusiveReport(999_999, { message: 'x' })
+      ).rejects.toBeInstanceOf(RecordNotFoundError);
     } finally {
       _setNowProvider(() => new Date());
     }
@@ -136,32 +165,59 @@ describe('updateAbusiveReport / deleteAbusiveReport', () => {
 
 describe('rejectAbusiveReports — US-65', () => {
   const seeded = () =>
-    prisma.abusiveReport.findMany({ where: { userId: CUSTOMER }, orderBy: { id: 'asc' }, select: { id: true } });
+    prisma.abusiveReport.findMany({
+      where: { userId: CUSTOMER },
+      orderBy: { id: 'asc' },
+      select: { id: true },
+    });
 
   it('borra todos los reportes del objeto, devuelve cuántos y deja intactos los demás; repetir da 0', async () => {
     const before = await seeded();
-    await createAbusiveReport({ userId: ADMIN, modelType: 'Review', modelId: 2, message: 'zz-reject' });
+    await createAbusiveReport({
+      userId: ADMIN,
+      modelType: 'Review',
+      modelId: 2,
+      message: 'zz-reject',
+    });
     expect(await rejectAbusiveReports('Review', 2)).toBe(1);
-    expect(await prisma.abusiveReport.count({ where: { modelType: 'Review', modelId: 2 } })).toBe(0);
+    expect(
+      await prisma.abusiveReport.count({
+        where: { modelType: 'Review', modelId: 2 },
+      })
+    ).toBe(0);
     expect(await prisma.review.count({ where: { id: 2 } })).toBe(1);
     expect(await rejectAbusiveReports('Review', 2)).toBe(0);
     expect(await seeded()).toEqual(before);
 
     // DD-2: rechazado, el mismo usuario puede volver a reportarlo.
     await expect(
-      createAbusiveReport({ userId: ADMIN, modelType: 'Review', modelId: 2, message: 'zz-otra-vez' })
+      createAbusiveReport({
+        userId: ADMIN,
+        modelType: 'Review',
+        modelId: 2,
+        message: 'zz-otra-vez',
+      })
     ).resolves.toMatchObject({ modelId: 2 });
   });
 
   it('también rechaza los de una pregunta', async () => {
-    await createAbusiveReport({ userId: ADMIN, modelType: 'Question', modelId: 67, message: 'zz-reject-q' });
+    await createAbusiveReport({
+      userId: ADMIN,
+      modelType: 'Question',
+      modelId: 67,
+      message: 'zz-reject-q',
+    });
     expect(await rejectAbusiveReports('Question', 67)).toBe(1);
   });
 
   it('objeto inexistente ⇒ RecordNotFoundError; tipo no reportable ⇒ InvalidFieldValueError; no borra nada', async () => {
     const before = await prisma.abusiveReport.count();
-    await expect(rejectAbusiveReports('Review', 999999)).rejects.toBeInstanceOf(RecordNotFoundError);
-    await expect(rejectAbusiveReports('Product', 1)).rejects.toBeInstanceOf(InvalidFieldValueError);
+    await expect(rejectAbusiveReports('Review', 999999)).rejects.toBeInstanceOf(
+      RecordNotFoundError
+    );
+    await expect(rejectAbusiveReports('Product', 1)).rejects.toBeInstanceOf(
+      InvalidFieldValueError
+    );
     expect(await prisma.abusiveReport.count()).toBe(before);
   });
 });

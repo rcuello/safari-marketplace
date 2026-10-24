@@ -28,7 +28,11 @@ import {
   type UserRecord,
 } from '../records';
 import { _countReports } from './abusive-reports.repository';
-import { _toProductRecord, PRODUCT_INCLUDE, type ProductRecord } from './products.repository';
+import {
+  _toProductRecord,
+  PRODUCT_INCLUDE,
+  type ProductRecord,
+} from './products.repository';
 
 export interface ReviewDetailRecord extends ReviewRecord {
   user: UserRecord;
@@ -41,11 +45,18 @@ const REVIEW_INCLUDE = {
   product: { include: PRODUCT_INCLUDE },
 } satisfies Prisma.ReviewInclude;
 
-type ReviewPayload = Prisma.ReviewGetPayload<{ include: typeof REVIEW_INCLUDE }>;
+type ReviewPayload = Prisma.ReviewGetPayload<{
+  include: typeof REVIEW_INCLUDE;
+}>;
 
 /** Un producto que se está borrando en cascada descarta la fila (como `listProducts`). */
-async function _toDetails(rows: ReviewPayload[]): Promise<ReviewDetailRecord[]> {
-  const counts = await _countReports('Review', rows.map((r) => r.id));
+async function _toDetails(
+  rows: ReviewPayload[]
+): Promise<ReviewDetailRecord[]> {
+  const counts = await _countReports(
+    'Review',
+    rows.map((r) => r.id)
+  );
   const details: ReviewDetailRecord[] = [];
   for (const row of rows) {
     const product = _toProductRecord(row.product);
@@ -96,8 +107,13 @@ export async function listReviews(
   return { items: await _toDetails(rows), total };
 }
 
-export async function findReviewById(id: number): Promise<ReviewDetailRecord | null> {
-  const row = await prisma.review.findUnique({ where: { id }, include: REVIEW_INCLUDE });
+export async function findReviewById(
+  id: number
+): Promise<ReviewDetailRecord | null> {
+  const row = await prisma.review.findUnique({
+    where: { id },
+    include: REVIEW_INCLUDE,
+  });
   if (!row) return null;
   return (await _toDetails([row]))[0] ?? null;
 }
@@ -113,17 +129,29 @@ export interface CreateReviewInput {
   variationOptionId?: number | null;
 }
 
-export type UpdateReviewInput = Partial<Pick<CreateReviewInput, 'rating' | 'comment' | 'photos'>>;
+export type UpdateReviewInput = Partial<
+  Pick<CreateReviewInput, 'rating' | 'comment' | 'photos'>
+>;
 
 function _assertValues(input: UpdateReviewInput): void {
   if (
     input.rating !== undefined &&
     !(Number.isInteger(input.rating) && input.rating >= 1 && input.rating <= 5)
   ) {
-    throw new InvalidFieldValueError('reviews', 'rating', input.rating, 'reviews_rating_check');
+    throw new InvalidFieldValueError(
+      'reviews',
+      'rating',
+      input.rating,
+      'reviews_rating_check'
+    );
   }
   if (input.photos !== undefined && !Array.isArray(input.photos)) {
-    throw new InvalidFieldValueError('reviews', 'photos', 'no-array', 'reviews_photos_check');
+    throw new InvalidFieldValueError(
+      'reviews',
+      'photos',
+      'no-array',
+      'reviews_photos_check'
+    );
   }
 }
 
@@ -140,7 +168,9 @@ function _translate(error: unknown, id?: number): unknown {
  * reseña cuenta para la tienda que vende el producto, no para la que diga el
  * body.
  */
-export async function createReview(input: CreateReviewInput): Promise<ReviewDetailRecord> {
+export async function createReview(
+  input: CreateReviewInput
+): Promise<ReviewDetailRecord> {
   _assertValues(input);
   const product = await prisma.product.findUnique({
     where: { id: input.productId },
@@ -178,7 +208,10 @@ export async function createReview(input: CreateReviewInput): Promise<ReviewDeta
 }
 
 /** Solo `rating`, `comment` y `photos`; fija `updatedAt: now()` (US-32). */
-export async function updateReview(id: number, input: UpdateReviewInput): Promise<ReviewDetailRecord> {
+export async function updateReview(
+  id: number,
+  input: UpdateReviewInput
+): Promise<ReviewDetailRecord> {
   _assertValues(input);
   try {
     const row = await prisma.review.update({
@@ -208,7 +241,9 @@ export async function deleteReview(id: number): Promise<ReviewDetailRecord> {
   }
   try {
     await prisma.$transaction([
-      prisma.abusiveReport.deleteMany({ where: { modelType: 'Review', modelId: id } }),
+      prisma.abusiveReport.deleteMany({
+        where: { modelType: 'Review', modelId: id },
+      }),
       prisma.review.delete({ where: { id } }),
     ]);
     return existing;

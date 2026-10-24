@@ -26,9 +26,13 @@ export interface ListTaxesInput {
 }
 
 /** Todas las clases, `id ASC` (el orden del mock). */
-export async function listTaxes(input: ListTaxesInput = {}): Promise<TaxRecord[]> {
+export async function listTaxes(
+  input: ListTaxesInput = {}
+): Promise<TaxRecord[]> {
   const where: Prisma.TaxWhereInput = {
-    ...(input.name && { name: { contains: input.name, mode: 'insensitive' as const } }),
+    ...(input.name && {
+      name: { contains: input.name, mode: 'insensitive' as const },
+    }),
   };
   const rows = await prisma.tax.findMany({ where, orderBy: { id: 'asc' } });
   return rows.map(_toTaxRecord);
@@ -86,7 +90,10 @@ export async function createTax(input: CreateTaxInput): Promise<TaxRecord> {
 }
 
 /** `updatedAt: now()` explícito: ninguna tabla tiene trigger (US-32). */
-export async function updateTax(id: number, input: UpdateTaxInput): Promise<TaxRecord> {
+export async function updateTax(
+  id: number,
+  input: UpdateTaxInput
+): Promise<TaxRecord> {
   _assertRate(input.rate);
   try {
     const row = await prisma.tax.update({

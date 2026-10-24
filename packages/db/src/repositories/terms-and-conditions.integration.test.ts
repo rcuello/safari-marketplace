@@ -9,8 +9,8 @@
 
 import 'dotenv/config';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { _setNowProvider } from '../clock';
 import { prisma } from '../client';
+import { _setNowProvider } from '../clock';
 import { InvalidReferenceError, RecordNotFoundError } from '../domain-errors';
 import {
   createTermsAndConditions,
@@ -124,7 +124,11 @@ describe('createTermsAndConditions', () => {
 
   it('tienda inexistente ⇒ InvalidReferenceError', async () => {
     await expect(
-      createTermsAndConditions({ title: `${SENTINEL_PREFIX}Rota`, description: 'x', shopId: 999_999 })
+      createTermsAndConditions({
+        title: `${SENTINEL_PREFIX}Rota`,
+        description: 'x',
+        shopId: 999_999,
+      })
     ).rejects.toBeInstanceOf(InvalidReferenceError);
   });
 });
@@ -155,9 +159,11 @@ describe('updateTermsAndConditions / deleteTermsAndConditions', () => {
   });
 
   it('ids inexistentes ⇒ RecordNotFoundError', async () => {
-    await expect(updateTermsAndConditions(999_999, { title: 'x' })).rejects.toBeInstanceOf(
+    await expect(
+      updateTermsAndConditions(999_999, { title: 'x' })
+    ).rejects.toBeInstanceOf(RecordNotFoundError);
+    await expect(deleteTermsAndConditions(999_999)).rejects.toBeInstanceOf(
       RecordNotFoundError
     );
-    await expect(deleteTermsAndConditions(999_999)).rejects.toBeInstanceOf(RecordNotFoundError);
   });
 });

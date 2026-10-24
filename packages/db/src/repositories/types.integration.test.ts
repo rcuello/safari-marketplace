@@ -13,10 +13,20 @@
 
 import 'dotenv/config';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { _setNowProvider } from '../clock';
 import { prisma } from '../client';
-import { DependentRowsError, EmptySlugError, RecordNotFoundError } from '../domain-errors';
-import { createType, deleteType, findTypeBySlug, listTypes, updateType } from './types.repository';
+import { _setNowProvider } from '../clock';
+import {
+  DependentRowsError,
+  EmptySlugError,
+  RecordNotFoundError,
+} from '../domain-errors';
+import {
+  createType,
+  deleteType,
+  findTypeBySlug,
+  listTypes,
+  updateType,
+} from './types.repository';
 
 const SENTINEL_PREFIX = 'zz-types-';
 
@@ -110,7 +120,9 @@ describe('updateType — CA-2, slug inmutable, updatedAt explícito', () => {
     expect(updated.name).toBe(`${SENTINEL_PREFIX}Renombrado`);
     expect(updated.slug).toBe(`${SENTINEL_PREFIX}original`);
     expect(updated.updatedAt.getTime()).toBe(future.getTime());
-    expect(updated.updatedAt.getTime()).toBeGreaterThan(created.updatedAt.getTime());
+    expect(updated.updatedAt.getTime()).toBeGreaterThan(
+      created.updatedAt.getTime()
+    );
 
     await deleteType(created.id);
   });
@@ -174,7 +186,9 @@ describe('deleteType — CA-3, R-1 (dos conteos antes de borrar)', () => {
   });
 
   it('id inexistente ⇒ RecordNotFoundError', async () => {
-    await expect(deleteType(999999)).rejects.toBeInstanceOf(RecordNotFoundError);
+    await expect(deleteType(999999)).rejects.toBeInstanceOf(
+      RecordNotFoundError
+    );
   });
 });
 

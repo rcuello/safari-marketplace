@@ -59,22 +59,38 @@ export interface MessageDetailRecord extends MessageRecord {
 }
 
 /** Columnas por las que el admin puede ordenar (`orderBy=updated_at`). */
-export const CONVERSATION_SORTABLE = ['id', 'created_at', 'updated_at'] as const;
+export const CONVERSATION_SORTABLE = [
+  'id',
+  'created_at',
+  'updated_at',
+] as const;
 export type ConversationSortField = (typeof CONVERSATION_SORTABLE)[number];
 
-const SORT_COLUMN: Record<ConversationSortField, 'id' | 'createdAt' | 'updatedAt'> = {
+const SORT_COLUMN: Record<
+  ConversationSortField,
+  'id' | 'createdAt' | 'updatedAt'
+> = {
   id: 'id',
   created_at: 'createdAt',
   updated_at: 'updatedAt',
 };
 
-const CONVERSATION_INCLUDE = { user: true, shop: true } satisfies Prisma.ConversationInclude;
+const CONVERSATION_INCLUDE = {
+  user: true,
+  shop: true,
+} satisfies Prisma.ConversationInclude;
 
-type ConversationPayload = Prisma.ConversationGetPayload<{ include: typeof CONVERSATION_INCLUDE }>;
+type ConversationPayload = Prisma.ConversationGetPayload<{
+  include: typeof CONVERSATION_INCLUDE;
+}>;
 
-function _visibleWhere(viewer?: ConversationViewer): Prisma.ConversationWhereInput {
+function _visibleWhere(
+  viewer?: ConversationViewer
+): Prisma.ConversationWhereInput {
   if (!viewer || viewer.seeAll) return {};
-  return { OR: [{ userId: viewer.userId }, { shop: { ownerId: viewer.userId } }] };
+  return {
+    OR: [{ userId: viewer.userId }, { shop: { ownerId: viewer.userId } }],
+  };
 }
 
 interface LatestRow {
@@ -87,7 +103,9 @@ interface LatestRow {
 }
 
 /** Último mensaje de cada conversación, en una sola consulta. */
-async function _latestMessages(ids: bigint[]): Promise<Map<number, MessageRecord>> {
+async function _latestMessages(
+  ids: bigint[]
+): Promise<Map<number, MessageRecord>> {
   if (ids.length === 0) return new Map();
   const rows = await prisma.$queryRaw<LatestRow[]>`
     SELECT DISTINCT ON (conversation_id)
@@ -111,7 +129,10 @@ async function _latestMessages(ids: bigint[]): Promise<Map<number, MessageRecord
 }
 
 /** Última lectura de `readerId` en cada conversación, en una sola consulta. */
-async function _lastSeen(ids: bigint[], readerId?: number): Promise<Map<number, Date>> {
+async function _lastSeen(
+  ids: bigint[],
+  readerId?: number
+): Promise<Map<number, Date>> {
   if (ids.length === 0 || readerId === undefined) return new Map();
   const rows = await prisma.conversationRead.findMany({
     where: { userId: readerId, conversationId: { in: ids } },
@@ -119,9 +140,15 @@ async function _lastSeen(ids: bigint[], readerId?: number): Promise<Map<number, 
   return new Map(rows.map((r) => [Number(r.conversationId), r.lastSeenAt]));
 }
 
-async function _toDetails(rows: ConversationPayload[], readerId?: number): Promise<ConversationDetailRecord[]> {
+async function _toDetails(
+  rows: ConversationPayload[],
+  readerId?: number
+): Promise<ConversationDetailRecord[]> {
   const ids = rows.map((r) => r.id);
-  const [latest, seen] = await Promise.all([_latestMessages(ids), _lastSeen(ids, readerId)]);
+  const [latest, seen] = await Promise.all([
+    _latestMessages(ids),
+    _lastSeen(ids, readerId),
+  ]);
   return rows.map((row) => {
     const record = _toConversationRecord(row);
     return {
@@ -139,7 +166,10 @@ async function _findDetail(
   where: Prisma.ConversationWhereInput,
   readerId?: number
 ): Promise<ConversationDetailRecord | null> {
-  const row = await prisma.conversation.findFirst({ where, include: CONVERSATION_INCLUDE });
+  const row = await prisma.conversation.findFirst({
+    where,
+    include: CONVERSATION_INCLUDE,
+  });
   if (!row) return null;
   return (await _toDetails([row], readerId))[0];
 }
@@ -165,7 +195,9 @@ export async function listConversations(
   const where: Prisma.ConversationWhereInput = {
     AND: [
       _visibleWhere(input.viewer),
-      input.shopName ? { shop: { name: { contains: input.shopName, mode: 'insensitive' } } } : {},
+      input.shopName
+        ? { shop: { name: { contains: input.shopName, mode: 'insensitive' } } }
+        : {},
     ],
   };
   const direction = input.sortedBy ?? 'asc';
@@ -210,7 +242,9 @@ export async function markConversationSeen(
   if (!row) return null;
   const stamp = now();
   await prisma.conversationRead.upsert({
-    where: { conversationId_userId: { conversationId: id, userId: viewer.userId } },
+    where: {
+      conversationId_userId: { conversationId: id, userId: viewer.userId },
+    },
     create: { conversationId: id, userId: viewer.userId, lastSeenAt: stamp },
     update: { lastSeenAt: stamp },
   });
@@ -234,7 +268,10 @@ export async function findOrCreateConversation(
     });
     return (await _toDetails([row]))[0];
   } catch (error) {
-    throw translateCatalogWriteError(error, { aggregate: 'conversations', uniqueField: 'shop_id' });
+    throw translateCatalogWriteError(error, {
+      aggregate: 'conversations',
+      uniqueField: 'shop_id',
+    });
   }
 }
 
@@ -248,16 +285,27 @@ export async function listMessages(
 ): Promise<{ items: MessageDetailRecord[]; total: number }> {
   const page = Math.max(1, input.page ?? 1);
   const limit = input.limit ?? 15;
-  const conversation = await _findDetail({ id: conversationId }, input.readerId);
+  const conversation = await _findDetail(
+    { id: conversationId },
+    input.readerId
+  );
   if (!conversation) {
     throw new RecordNotFoundError('conversations', conversationId);
   }
   const where = { conversationId };
   const [rows, total] = await Promise.all([
-    prisma.message.findMany({ where, orderBy: { id: 'desc' }, skip: (page - 1) * limit, take: limit }),
+    prisma.message.findMany({
+      where,
+      orderBy: { id: 'desc' },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
     prisma.message.count({ where }),
   ]);
-  return { items: rows.map((row) => ({ ..._toMessageRecord(row), conversation })), total };
+  return {
+    items: rows.map((row) => ({ ..._toMessageRecord(row), conversation })),
+    total,
+  };
 }
 
 /**
@@ -271,12 +319,20 @@ export async function createMessage(input: {
   body: string;
 }): Promise<MessageDetailRecord> {
   if (typeof input.body !== 'string' || input.body.trim().length === 0) {
-    throw new InvalidFieldValueError('messages', 'body', input.body ?? '', 'messages_body_check');
+    throw new InvalidFieldValueError(
+      'messages',
+      'body',
+      input.body ?? '',
+      'messages_body_check'
+    );
   }
   const stamp = now();
   try {
     const [, row] = await prisma.$transaction([
-      prisma.conversation.update({ where: { id: input.conversationId }, data: { updatedAt: stamp } }),
+      prisma.conversation.update({
+        where: { id: input.conversationId },
+        data: { updatedAt: stamp },
+      }),
       prisma.message.create({
         data: {
           conversationId: input.conversationId,
@@ -288,10 +344,17 @@ export async function createMessage(input: {
       }),
     ]);
     // El lector es el autor: su propio mensaje nunca cuenta como sin leer.
-    const conversation = await _findDetail({ id: input.conversationId }, input.userId);
-    if (!conversation) throw new RecordNotFoundError('conversations', input.conversationId);
+    const conversation = await _findDetail(
+      { id: input.conversationId },
+      input.userId
+    );
+    if (!conversation)
+      throw new RecordNotFoundError('conversations', input.conversationId);
     return { ..._toMessageRecord(row), conversation };
   } catch (error) {
-    throw translateCatalogWriteError(error, { aggregate: 'conversations', id: input.conversationId });
+    throw translateCatalogWriteError(error, {
+      aggregate: 'conversations',
+      id: input.conversationId,
+    });
   }
 }

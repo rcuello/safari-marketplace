@@ -19,8 +19,8 @@ import {
   RecordNotFoundError,
   translateCatalogWriteError,
 } from '../domain-errors';
-import { generateSlug, normalizeSlug, type ExistingSlugLookup } from '../slug';
 import { _toTagRecord, type TagRecord } from '../records';
+import { type ExistingSlugLookup, generateSlug, normalizeSlug } from '../slug';
 
 export interface ListTagsInput {
   typeSlug?: string;
@@ -46,7 +46,9 @@ export async function listTags(input: ListTagsInput = {}): Promise<{
   const limit = input.limit ?? 30;
   const where: Prisma.TagWhereInput = {
     ...(input.typeSlug && { type: { slug: input.typeSlug } }),
-    ...(input.name && { name: { contains: input.name, mode: 'insensitive' as const } }),
+    ...(input.name && {
+      name: { contains: input.name, mode: 'insensitive' as const },
+    }),
   };
 
   const [rows, total] = await Promise.all([

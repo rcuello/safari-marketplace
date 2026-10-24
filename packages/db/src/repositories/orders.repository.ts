@@ -31,7 +31,11 @@ import {
   type OrderRecord,
   type ShopRecord,
 } from '../records';
-import { _toProductRecord, PRODUCT_INCLUDE, type ProductRecord } from './products.repository';
+import {
+  _toProductRecord,
+  PRODUCT_INCLUDE,
+  type ProductRecord,
+} from './products.repository';
 import { COUNT_PRODUCTS } from './shops.repository';
 
 /** Orden con sus líneas (por `lineNo`), su tienda y sus hijas (por `id`). */
@@ -43,23 +47,37 @@ export interface OrderDetailRecord extends OrderRecord {
   children: OrderDetailRecord[];
 }
 
-const LINES = { orderBy: { lineNo: 'asc' as const } } satisfies Prisma.Order$linesArgs;
+const LINES = {
+  orderBy: { lineNo: 'asc' as const },
+} satisfies Prisma.Order$linesArgs;
 const SHOP = { include: COUNT_PRODUCTS } satisfies Prisma.ShopDefaultArgs;
 
 const ORDER_INCLUDE = {
   lines: LINES,
   shop: SHOP,
-  children: { orderBy: { id: 'asc' as const }, include: { lines: LINES, shop: SHOP } },
+  children: {
+    orderBy: { id: 'asc' as const },
+    include: { lines: LINES, shop: SHOP },
+  },
 } satisfies Prisma.OrderInclude;
 
-type OrderWithDetail = Prisma.OrderGetPayload<{ include: typeof ORDER_INCLUDE }>;
-type OrderNode = Prisma.OrderGetPayload<{ include: { lines: typeof LINES; shop: typeof SHOP } }>;
+type OrderWithDetail = Prisma.OrderGetPayload<{
+  include: typeof ORDER_INCLUDE;
+}>;
+type OrderNode = Prisma.OrderGetPayload<{
+  include: { lines: typeof LINES; shop: typeof SHOP };
+}>;
 
-function _toNode(row: OrderNode, children: OrderDetailRecord[]): OrderDetailRecord {
+function _toNode(
+  row: OrderNode,
+  children: OrderDetailRecord[]
+): OrderDetailRecord {
   return {
     ..._toOrderRecord(row),
     lines: row.lines.map(_toOrderProductRecord),
-    shop: row.shop ? { ..._toShopRecord(row.shop), productsCount: row.shop._count.products } : null,
+    shop: row.shop
+      ? { ..._toShopRecord(row.shop), productsCount: row.shop._count.products }
+      : null,
     children,
   };
 }
@@ -96,9 +114,12 @@ export async function listOrders(
   const page = Math.max(1, input.page ?? 1);
   const limit = input.limit ?? 15;
   const where: Prisma.OrderWhereInput = {
-    ...(input.shopId === undefined && input.trackingNumber === undefined && { parentId: null }),
+    ...(input.shopId === undefined &&
+      input.trackingNumber === undefined && { parentId: null }),
     ...(input.shopId !== undefined && { shopId: input.shopId }),
-    ...(input.trackingNumber !== undefined && { trackingNumber: input.trackingNumber }),
+    ...(input.trackingNumber !== undefined && {
+      trackingNumber: input.trackingNumber,
+    }),
     ...(input.customerId !== undefined && { customerId: input.customerId }),
   };
   const [rows, total] = await Promise.all([
@@ -122,7 +143,9 @@ export async function findOrderByIdOrTracking(
   idOrTracking: number | string
 ): Promise<OrderDetailRecord | null> {
   const where: Prisma.OrderWhereUniqueInput =
-    typeof idOrTracking === 'number' ? { id: idOrTracking } : { trackingNumber: idOrTracking };
+    typeof idOrTracking === 'number'
+      ? { id: idOrTracking }
+      : { trackingNumber: idOrTracking };
   const row = await prisma.order.findUnique({ where, include: ORDER_INCLUDE });
   return row ? _toDetail(row) : null;
 }
@@ -169,12 +192,16 @@ export class InsufficientStockError extends CatalogWriteError {
 }
 
 /** Productos vivos de un carrito, por id. Los inexistentes no vienen. */
-export async function findProductsForOrder(ids: number[]): Promise<ProductRecord[]> {
+export async function findProductsForOrder(
+  ids: number[]
+): Promise<ProductRecord[]> {
   const rows = await prisma.product.findMany({
     where: { id: { in: ids } },
     include: PRODUCT_INCLUDE,
   });
-  return rows.map(_toProductRecord).filter((r): r is ProductRecord => r !== null);
+  return rows
+    .map(_toProductRecord)
+    .filter((r): r is ProductRecord => r !== null);
 }
 
 /** Dinero en texto decimal (`"0.044"`): llega exacto a `numeric`, sin pasar por float. */
@@ -227,7 +254,9 @@ function _trackingCandidates(count: number, at: Date): string[] {
   const day = at.toISOString().slice(0, 10).replace(/-/g, '');
   const out = new Set<string>();
   while (out.size < count) {
-    out.add(day + String(Math.floor(Math.random() * 1_000_000)).padStart(6, '0'));
+    out.add(
+      day + String(Math.floor(Math.random() * 1_000_000)).padStart(6, '0')
+    );
   }
   return [...out];
 }
@@ -240,10 +269,14 @@ async function _freeTrackingNumbers(
 ): Promise<string[]> {
   for (let attempt = 0; attempt < TRACKING_ATTEMPTS; attempt++) {
     const candidates = _trackingCandidates(count, at);
-    const taken = await tx.order.count({ where: { trackingNumber: { in: candidates } } });
+    const taken = await tx.order.count({
+      where: { trackingNumber: { in: candidates } },
+    });
     if (taken === 0) return candidates;
   }
-  throw new Error(`No se encontró un tracking_number libre tras ${TRACKING_ATTEMPTS} intentos.`);
+  throw new Error(
+    `No se encontró un tracking_number libre tras ${TRACKING_ATTEMPTS} intentos.`
+  );
 }
 
 function _lineData(line: OrderLineInput, lineNo: number, at: Date) {
@@ -268,7 +301,9 @@ function _lineData(line: OrderLineInput, lineNo: number, at: Date) {
  * datos de cliente, direcciones, estados y pasarela que el padre, con
  * impuesto, envío y descuento en 0 y `total = amount`.
  */
-export async function createOrderWithChildren(input: CreateOrderInput): Promise<OrderDetailRecord> {
+export async function createOrderWithChildren(
+  input: CreateOrderInput
+): Promise<OrderDetailRecord> {
   const at = now();
   const shared = {
     customerId: input.customerId,
@@ -289,7 +324,10 @@ export async function createOrderWithChildren(input: CreateOrderInput): Promise<
 
   const stock = new Map<number, number>();
   for (const line of input.lines) {
-    stock.set(line.productId, (stock.get(line.productId) ?? 0) + line.orderQuantity);
+    stock.set(
+      line.productId,
+      (stock.get(line.productId) ?? 0) + line.orderQuantity
+    );
   }
 
   let parentId: bigint;
@@ -325,7 +363,9 @@ export async function createOrderWithChildren(input: CreateOrderInput): Promise<
             amount: child.amount,
             total: child.amount,
             paidTotal: child.amount,
-            lines: { create: child.lines.map((l, j) => _lineData(l, j + 1, at)) },
+            lines: {
+              create: child.lines.map((l, j) => _lineData(l, j + 1, at)),
+            },
           },
         });
       }
@@ -345,12 +385,28 @@ export async function createOrderWithChildren(input: CreateOrderInput): Promise<
   } catch (error) {
     throw translateCatalogWriteError(error, { aggregate: 'orders' });
   }
-  return _toDetail(await prisma.order.findUniqueOrThrow({ where: { id: parentId }, include: ORDER_INCLUDE }));
+  return _toDetail(
+    await prisma.order.findUniqueOrThrow({
+      where: { id: parentId },
+      include: ORDER_INCLUDE,
+    })
+  );
 }
 
-function _assertStatuses(input: { orderStatus?: string; paymentStatus?: string }): void {
-  if (input.orderStatus !== undefined && !(ORDER_STATUSES as readonly string[]).includes(input.orderStatus)) {
-    throw new InvalidFieldValueError('orders', 'order_status', input.orderStatus, 'orders_order_status_check');
+function _assertStatuses(input: {
+  orderStatus?: string;
+  paymentStatus?: string;
+}): void {
+  if (
+    input.orderStatus !== undefined &&
+    !(ORDER_STATUSES as readonly string[]).includes(input.orderStatus)
+  ) {
+    throw new InvalidFieldValueError(
+      'orders',
+      'order_status',
+      input.orderStatus,
+      'orders_order_status_check'
+    );
   }
   if (
     input.paymentStatus !== undefined &&
@@ -380,12 +436,18 @@ export async function setOrderStatus(
   _assertStatuses(input);
   const data = {
     ...(input.orderStatus !== undefined && { orderStatus: input.orderStatus }),
-    ...(input.paymentStatus !== undefined && { paymentStatus: input.paymentStatus }),
+    ...(input.paymentStatus !== undefined && {
+      paymentStatus: input.paymentStatus,
+    }),
     updatedAt: now(),
   };
   try {
     await prisma.$transaction(async (tx) => {
-      const order = await tx.order.update({ where: { id }, data, select: { parentId: true } });
+      const order = await tx.order.update({
+        where: { id },
+        data,
+        select: { parentId: true },
+      });
       if (order.parentId === null) {
         await tx.order.updateMany({ where: { parentId: id }, data });
       }
@@ -393,15 +455,25 @@ export async function setOrderStatus(
   } catch (error) {
     throw translateCatalogWriteError(error, { aggregate: 'orders', id });
   }
-  return _toDetail(await prisma.order.findUniqueOrThrow({ where: { id }, include: ORDER_INCLUDE }));
+  return _toDetail(
+    await prisma.order.findUniqueOrThrow({
+      where: { id },
+      include: ORDER_INCLUDE,
+    })
+  );
 }
 
 /**
  * Pago confirmado (`STRIPE`/`PAYPAL`): `order-processing` + `payment-success`
  * en la orden y sus hijas. Inexistente: `RecordNotFoundError`.
  */
-export async function markOrderPaid(trackingNumber: string): Promise<OrderDetailRecord> {
-  const order = await prisma.order.findUnique({ where: { trackingNumber }, select: { id: true } });
+export async function markOrderPaid(
+  trackingNumber: string
+): Promise<OrderDetailRecord> {
+  const order = await prisma.order.findUnique({
+    where: { trackingNumber },
+    select: { id: true },
+  });
   if (!order) throw new RecordNotFoundError('orders', trackingNumber);
   return setOrderStatus(Number(order.id), {
     orderStatus: 'order-processing',
@@ -420,7 +492,10 @@ export async function markOrderPaid(trackingNumber: string): Promise<OrderDetail
  * ninguna reseña.
  */
 export async function deleteOrder(id: number): Promise<OrderDetailRecord> {
-  const existing = await prisma.order.findUnique({ where: { id }, include: ORDER_INCLUDE });
+  const existing = await prisma.order.findUnique({
+    where: { id },
+    include: ORDER_INCLUDE,
+  });
   if (!existing) throw new RecordNotFoundError('orders', id);
   try {
     await prisma.order.delete({ where: { id } });

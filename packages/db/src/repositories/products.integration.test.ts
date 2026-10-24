@@ -8,8 +8,8 @@
 
 import 'dotenv/config';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { _setNowProvider } from '../clock';
 import { prisma } from '../client';
+import { _setNowProvider } from '../clock';
 import { InvalidReferenceError, RecordNotFoundError } from '../domain-errors';
 import { buildPaginator } from '../pagination';
 import { getCategoryTree } from './categories.repository';
@@ -61,12 +61,17 @@ beforeAll(async () => {
 
   const gadget = await findTypeBySlug('gadget');
   if (!gadget) throw new Error('type gadget no existe en el seed');
-  const shopRow = await prisma.shop.findFirstOrThrow({ orderBy: { id: 'asc' } });
+  const shopRow = await prisma.shop.findFirstOrThrow({
+    orderBy: { id: 'asc' },
+  });
   const [categoryA, categoryB] = await prisma.category.findMany({
     orderBy: { id: 'asc' },
     take: 2,
   });
-  const [tagA, tagB] = await prisma.tag.findMany({ orderBy: { id: 'asc' }, take: 2 });
+  const [tagA, tagB] = await prisma.tag.findMany({
+    orderBy: { id: 'asc' },
+    take: 2,
+  });
 
   SENTINEL_TYPE_ID = gadget.id;
   SENTINEL_SHOP_ID = Number(shopRow.id);
@@ -177,7 +182,9 @@ describe('listProducts — orderBy (US-5)', () => {
     const { items } = await listProducts({ orderBy: 'soldQuantity', limit: 5 });
     expect(items.map((p) => p.id)).toEqual([888, 1, 2, 883, 887]);
     for (let i = 1; i < items.length; i++) {
-      expect(items[i].soldQuantity).toBeLessThanOrEqual(items[i - 1].soldQuantity);
+      expect(items[i].soldQuantity).toBeLessThanOrEqual(
+        items[i - 1].soldQuantity
+      );
     }
   });
 
@@ -558,7 +565,10 @@ describe('updateProduct — CA-2, pivotes en los 3 estados, slug invariante, upd
       tagIds: [SENTINEL_TAG_A],
     });
 
-    const updated = await updateProduct(created.id, { categoryIds: [], tagIds: [] });
+    const updated = await updateProduct(created.id, {
+      categoryIds: [],
+      tagIds: [],
+    });
     expect(updated.categories).toEqual([]);
     expect(updated.tags).toEqual([]);
 
@@ -939,7 +949,9 @@ describe('404 en updateProduct/deleteProduct con id inexistente, y duplicados de
   });
 
   it('deleteProduct(999999999) → RecordNotFoundError', async () => {
-    await expect(deleteProduct(999999999)).rejects.toBeInstanceOf(RecordNotFoundError);
+    await expect(deleteProduct(999999999)).rejects.toBeInstanceOf(
+      RecordNotFoundError
+    );
   });
 
   it('categoryIds/tagIds con ids duplicados no producen un P2002 espurio (uniq(), DD29-6)', async () => {
@@ -957,7 +969,11 @@ describe('404 en updateProduct/deleteProduct con id inexistente, y duplicados de
     expect(created.tags.map((t) => t.id)).toEqual([SENTINEL_TAG_A]);
 
     const updated = await updateProduct(created.id, {
-      categoryIds: [SENTINEL_CATEGORY_A, SENTINEL_CATEGORY_B, SENTINEL_CATEGORY_B],
+      categoryIds: [
+        SENTINEL_CATEGORY_A,
+        SENTINEL_CATEGORY_B,
+        SENTINEL_CATEGORY_B,
+      ],
     });
     expect(updated.categories.map((c) => c.id).sort((a, b) => a - b)).toEqual(
       [SENTINEL_CATEGORY_A, SENTINEL_CATEGORY_B].sort((a, b) => a - b)
@@ -978,14 +994,24 @@ describe('índices trigram del ILIKE (US-69, CA-4)', () => {
   const planWithoutSeqScan = (sql: string) =>
     prisma.$transaction(async (tx) => {
       await tx.$executeRawUnsafe('SET LOCAL enable_seqscan = off');
-      const rows = await tx.$queryRawUnsafe<Array<{ 'QUERY PLAN': string }>>(`EXPLAIN ${sql}`);
+      const rows = await tx.$queryRawUnsafe<Array<{ 'QUERY PLAN': string }>>(
+        `EXPLAIN ${sql}`
+      );
       return rows.map((r) => r['QUERY PLAN']).join('\n');
     });
 
   it.each([
-    ["SELECT id FROM products WHERE name ILIKE '%phone%'", 'products_nombre_ilike_trgm_idx'],
-    ["SELECT id FROM questions WHERE question ILIKE '%apple%'", 'questions_question_ilike_trgm_idx'],
+    [
+      "SELECT id FROM products WHERE name ILIKE '%phone%'",
+      'products_nombre_ilike_trgm_idx',
+    ],
+    [
+      "SELECT id FROM questions WHERE question ILIKE '%apple%'",
+      'questions_question_ilike_trgm_idx',
+    ],
   ])('%s usa %s', async (sql, index) => {
-    expect(await planWithoutSeqScan(sql)).toContain(`Bitmap Index Scan on ${index}`);
+    expect(await planWithoutSeqScan(sql)).toContain(
+      `Bitmap Index Scan on ${index}`
+    );
   });
 });

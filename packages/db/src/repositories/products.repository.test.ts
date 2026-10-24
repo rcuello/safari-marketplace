@@ -160,7 +160,11 @@ describe('_toProductRecord — fila sana', () => {
 
 describe('_toProductRecord — pivote sin destino (C-1, US-27b): se descarta el ENLACE, no el producto', () => {
   it('`link.tag === null` → `tags` sin ese enlace, el resto del producto intacto', () => {
-    const tornLink = { ...TAG_LINK, tagId: 999n, tag: null } as unknown as TagLink;
+    const tornLink = {
+      ...TAG_LINK,
+      tagId: 999n,
+      tag: null,
+    } as unknown as TagLink;
     const record = _toProductRecord(makeRow({ tags: [TAG_LINK, tornLink] }));
 
     expect(record).not.toBeNull();
@@ -174,7 +178,9 @@ describe('_toProductRecord — pivote sin destino (C-1, US-27b): se descarta el 
       categoryId: 999n,
       category: null,
     } as unknown as CategoryLink;
-    const record = _toProductRecord(makeRow({ categories: [tornLink, CATEGORY_LINK] }));
+    const record = _toProductRecord(
+      makeRow({ categories: [tornLink, CATEGORY_LINK] })
+    );
 
     expect(record).not.toBeNull();
     expect(record?.categories.map((c) => c.id)).toEqual([1]);

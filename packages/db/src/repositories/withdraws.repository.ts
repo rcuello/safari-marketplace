@@ -13,7 +13,10 @@
 import type { Prisma } from '../../generated/prisma/client/client';
 import { prisma } from '../client';
 import { now } from '../clock';
-import { InvalidFieldValueError, translateCatalogWriteError } from '../domain-errors';
+import {
+  InvalidFieldValueError,
+  translateCatalogWriteError,
+} from '../domain-errors';
 import {
   _toShopRecord,
   _toWithdrawRecord,
@@ -22,7 +25,13 @@ import {
 } from '../records';
 
 /** El CHECK `withdraws_status_check`, en minúscula (el vocabulario del admin). */
-export const WITHDRAW_STATUSES = ['pending', 'approved', 'on_hold', 'rejected', 'processing'] as const;
+export const WITHDRAW_STATUSES = [
+  'pending',
+  'approved',
+  'on_hold',
+  'rejected',
+  'processing',
+] as const;
 
 /** `numeric(12,2)`: 10 dígitos enteros. */
 const MAX_AMOUNT = 1e10;
@@ -58,7 +67,11 @@ function _toDetail(row: WithdrawWithShop): WithdrawDetailRecord {
 }
 
 function _translate(error: unknown, id?: number): unknown {
-  return translateCatalogWriteError(error, { aggregate: 'withdraws', id, uniqueField: 'shop_id' });
+  return translateCatalogWriteError(error, {
+    aggregate: 'withdraws',
+    id,
+    uniqueField: 'shop_id',
+  });
 }
 
 /** Paginado en `id DESC` (el orden del mock). Los filtros se combinan con AND. */
@@ -85,15 +98,33 @@ export async function listWithdraws(
   return { items: rows.map(_toDetail), total };
 }
 
-export async function findWithdrawById(id: number): Promise<WithdrawDetailRecord | null> {
-  const row = await prisma.withdraw.findUnique({ where: { id }, include: { shop: true } });
+export async function findWithdrawById(
+  id: number
+): Promise<WithdrawDetailRecord | null> {
+  const row = await prisma.withdraw.findUnique({
+    where: { id },
+    include: { shop: true },
+  });
   return row ? _toDetail(row) : null;
 }
 
 /** Nace `pending` (el default del DDL): el status del que lo pide no cuenta. */
-export async function createWithdraw(input: CreateWithdrawInput): Promise<WithdrawDetailRecord> {
-  if (!(Number.isFinite(input.amount) && input.amount > 0 && input.amount < MAX_AMOUNT)) {
-    throw new InvalidFieldValueError('withdraws', 'amount', input.amount, 'withdraws_amount_check');
+export async function createWithdraw(
+  input: CreateWithdrawInput
+): Promise<WithdrawDetailRecord> {
+  if (
+    !(
+      Number.isFinite(input.amount) &&
+      input.amount > 0 &&
+      input.amount < MAX_AMOUNT
+    )
+  ) {
+    throw new InvalidFieldValueError(
+      'withdraws',
+      'amount',
+      input.amount,
+      'withdraws_amount_check'
+    );
   }
   try {
     const row = await prisma.withdraw.create({
@@ -113,9 +144,17 @@ export async function createWithdraw(input: CreateWithdrawInput): Promise<Withdr
 }
 
 /** Cambia el estado. `updatedAt: now()` explícito (US-32). Inexistente ⇒ `RecordNotFoundError`. */
-export async function updateWithdrawStatus(id: number, status: string): Promise<WithdrawDetailRecord> {
+export async function updateWithdrawStatus(
+  id: number,
+  status: string
+): Promise<WithdrawDetailRecord> {
   if (!(WITHDRAW_STATUSES as readonly string[]).includes(status)) {
-    throw new InvalidFieldValueError('withdraws', 'status', status, 'withdraws_status_check');
+    throw new InvalidFieldValueError(
+      'withdraws',
+      'status',
+      status,
+      'withdraws_status_check'
+    );
   }
   try {
     const row = await prisma.withdraw.update({
@@ -130,9 +169,13 @@ export async function updateWithdrawStatus(id: number, status: string): Promise<
 }
 
 /** Borra de verdad y devuelve la fila borrada. Nada referencia a `withdraws`. */
-export async function deleteWithdraw(id: number): Promise<WithdrawDetailRecord> {
+export async function deleteWithdraw(
+  id: number
+): Promise<WithdrawDetailRecord> {
   try {
-    return _toDetail(await prisma.withdraw.delete({ where: { id }, include: { shop: true } }));
+    return _toDetail(
+      await prisma.withdraw.delete({ where: { id }, include: { shop: true } })
+    );
   } catch (error) {
     throw _translate(error, id);
   }

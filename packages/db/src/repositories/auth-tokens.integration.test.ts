@@ -24,9 +24,8 @@
 
 import 'dotenv/config';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { _setNowProvider } from '../clock';
 import { prisma } from '../client';
-import { createUser } from './users.repository';
+import { _setNowProvider } from '../clock';
 import {
   consumeOtpCode,
   consumePasswordResetToken,
@@ -37,6 +36,7 @@ import {
   findUserIdByProfileContact,
   purgeExpiredAuthTokens,
 } from './auth-tokens.repository';
+import { createUser } from './users.repository';
 
 const TEST_DOMAIN = '@auth-tokens-integration.test'; // RFC 2606
 const OTP_TEST_PREFIX = 'auth-tokens-integration-test-';

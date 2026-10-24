@@ -23,8 +23,8 @@ import {
   RecordNotFoundError,
   translateCatalogWriteError,
 } from '../domain-errors';
-import { generateSlug, normalizeSlug, type ExistingSlugLookup } from '../slug';
 import { _toManufacturerRecord, type ManufacturerRecord } from '../records';
+import { type ExistingSlugLookup, generateSlug, normalizeSlug } from '../slug';
 
 export interface ListManufacturersInput {
   typeSlug?: string;
@@ -44,7 +44,9 @@ export async function listManufacturers(
   const limit = input.limit ?? 30;
   const where: Prisma.ManufacturerWhereInput = {
     ...(input.typeSlug && { type: { slug: input.typeSlug } }),
-    ...(input.name && { name: { contains: input.name, mode: 'insensitive' as const } }),
+    ...(input.name && {
+      name: { contains: input.name, mode: 'insensitive' as const },
+    }),
   };
 
   const [rows, total] = await Promise.all([
@@ -170,7 +172,9 @@ export async function createManufacturer(
       data: {
         name: input.name,
         slug,
-        ...(input.description !== undefined && { description: input.description }),
+        ...(input.description !== undefined && {
+          description: input.description,
+        }),
         ...(input.website !== undefined && { website: input.website }),
         ...(input.image != null && { image: input.image }),
         ...(input.typeId !== undefined && { typeId: input.typeId }),
@@ -210,7 +214,9 @@ export async function updateManufacturer(
       where: { id },
       data: {
         ...(input.name !== undefined && { name: input.name }),
-        ...(input.description !== undefined && { description: input.description }),
+        ...(input.description !== undefined && {
+          description: input.description,
+        }),
         ...(input.website !== undefined && { website: input.website }),
         ...(input.image != null && { image: input.image }),
         ...(input.typeId !== undefined && { typeId: input.typeId }),
@@ -235,7 +241,9 @@ export async function updateManufacturer(
  * `find-then-delete`, precedente `deleteScrapedProduct`
  * (`products.repository.ts:400-413`).
  */
-export async function deleteManufacturer(id: number): Promise<ManufacturerRecord> {
+export async function deleteManufacturer(
+  id: number
+): Promise<ManufacturerRecord> {
   const existing = await prisma.manufacturer.findUnique({ where: { id } });
   if (!existing) {
     throw new RecordNotFoundError('manufacturers', id);

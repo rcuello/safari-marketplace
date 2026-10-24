@@ -7,8 +7,8 @@
 
 import 'dotenv/config';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { _setNowProvider } from '../clock';
 import { prisma } from '../client';
+import { _setNowProvider } from '../clock';
 import {
   InvalidFieldValueError,
   InvalidReferenceError,
@@ -25,7 +25,9 @@ import {
 const SENTINEL_PREFIX = 'zz-rpol-';
 
 const cleanup = () =>
-  prisma.refundPolicy.deleteMany({ where: { slug: { startsWith: SENTINEL_PREFIX } } });
+  prisma.refundPolicy.deleteMany({
+    where: { slug: { startsWith: SENTINEL_PREFIX } },
+  });
 
 beforeAll(cleanup);
 
@@ -46,20 +48,27 @@ describe('listRefundPolicies — seed', () => {
   });
 
   it('target:customer + status:approved → las 4 de cliente', async () => {
-    const { items, total } = await listRefundPolicies({ target: 'customer', status: 'approved' });
+    const { items, total } = await listRefundPolicies({
+      target: 'customer',
+      status: 'approved',
+    });
     expect(total).toBe(4);
     expect(items.map((r) => r.id)).toEqual([2, 3, 4, 5]);
   });
 
   it('target:vendor → solo el id 1; status:pending → 0', async () => {
-    expect((await listRefundPolicies({ target: 'vendor' })).items.map((r) => r.id)).toEqual([1]);
+    expect(
+      (await listRefundPolicies({ target: 'vendor' })).items.map((r) => r.id)
+    ).toEqual([1]);
     expect((await listRefundPolicies({ status: 'pending' })).total).toBe(0);
   });
 });
 
 describe('findRefundPolicyBySlug', () => {
   it('devuelve customer-return-policy (id 2); null si no existe', async () => {
-    expect((await findRefundPolicyBySlug('customer-return-policy'))?.id).toBe(2);
+    expect((await findRefundPolicyBySlug('customer-return-policy'))?.id).toBe(
+      2
+    );
     expect(await findRefundPolicyBySlug('no-existe')).toBeNull();
   });
 });
@@ -86,7 +95,11 @@ describe('createRefundPolicy', () => {
       createRefundPolicy({ title: `${SENTINEL_PREFIX}Mala`, target: 'admin' })
     ).rejects.toBeInstanceOf(InvalidFieldValueError);
     await expect(
-      createRefundPolicy({ title: `${SENTINEL_PREFIX}Mala`, target: 'vendor', status: 'rejected' })
+      createRefundPolicy({
+        title: `${SENTINEL_PREFIX}Mala`,
+        target: 'vendor',
+        status: 'rejected',
+      })
     ).rejects.toBeInstanceOf(InvalidFieldValueError);
     expect(await findRefundPolicyBySlug(`${SENTINEL_PREFIX}mala`)).toBeNull();
   });
@@ -94,7 +107,11 @@ describe('createRefundPolicy', () => {
   it('shop_id inexistente o mal formado ⇒ InvalidReferenceError', async () => {
     for (const shopId of [999_999, Number.NaN]) {
       await expect(
-        createRefundPolicy({ title: `${SENTINEL_PREFIX}Tienda`, target: 'vendor', shopId })
+        createRefundPolicy({
+          title: `${SENTINEL_PREFIX}Tienda`,
+          target: 'vendor',
+          shopId,
+        })
       ).rejects.toBeInstanceOf(InvalidReferenceError);
     }
   });
@@ -135,9 +152,11 @@ describe('updateRefundPolicy / deleteRefundPolicy', () => {
     await expect(updateRefundPolicy(1, { status: 'x' })).rejects.toBeInstanceOf(
       InvalidFieldValueError
     );
-    await expect(updateRefundPolicy(999_999, { title: 'x' })).rejects.toBeInstanceOf(
+    await expect(
+      updateRefundPolicy(999_999, { title: 'x' })
+    ).rejects.toBeInstanceOf(RecordNotFoundError);
+    await expect(deleteRefundPolicy(999_999)).rejects.toBeInstanceOf(
       RecordNotFoundError
     );
-    await expect(deleteRefundPolicy(999_999)).rejects.toBeInstanceOf(RecordNotFoundError);
   });
 });

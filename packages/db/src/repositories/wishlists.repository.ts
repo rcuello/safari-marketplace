@@ -12,7 +12,11 @@
 
 import { prisma } from '../client';
 import { RecordNotFoundError } from '../domain-errors';
-import { _toProductRecord, PRODUCT_INCLUDE, type ProductRecord } from './products.repository';
+import {
+  _toProductRecord,
+  PRODUCT_INCLUDE,
+  type ProductRecord,
+} from './products.repository';
 
 export interface ListWishlistProductsInput {
   page?: number;
@@ -47,7 +51,10 @@ export async function listWishlistProducts(
   return { items, total };
 }
 
-export async function isInWishlist(userId: number, productId: number): Promise<boolean> {
+export async function isInWishlist(
+  userId: number,
+  productId: number
+): Promise<boolean> {
   const row = await prisma.wishlist.findUnique({
     where: { userId_productId: { userId, productId } },
     select: { productId: true },
@@ -68,7 +75,10 @@ export async function findWishlistProduct(
 }
 
 async function _findProduct(productId: number): Promise<ProductRecord> {
-  const row = await prisma.product.findUnique({ where: { id: productId }, include: PRODUCT_INCLUDE });
+  const row = await prisma.product.findUnique({
+    where: { id: productId },
+    include: PRODUCT_INCLUDE,
+  });
   const record = row ? _toProductRecord(row) : null;
   if (!record) {
     throw new RecordNotFoundError('products', productId);
@@ -77,9 +87,15 @@ async function _findProduct(productId: number): Promise<ProductRecord> {
 }
 
 /** Idempotente: añadir un producto que ya estaba no falla ni duplica. */
-export async function addToWishlist(userId: number, productId: number): Promise<ProductRecord> {
+export async function addToWishlist(
+  userId: number,
+  productId: number
+): Promise<ProductRecord> {
   const product = await _findProduct(productId);
-  await prisma.wishlist.createMany({ data: [{ userId, productId }], skipDuplicates: true });
+  await prisma.wishlist.createMany({
+    data: [{ userId, productId }],
+    skipDuplicates: true,
+  });
   return product;
 }
 
@@ -89,7 +105,9 @@ export async function removeFromWishlist(
   productId: number
 ): Promise<ProductRecord> {
   const product = await _findProduct(productId);
-  const { count } = await prisma.wishlist.deleteMany({ where: { userId, productId } });
+  const { count } = await prisma.wishlist.deleteMany({
+    where: { userId, productId },
+  });
   if (count === 0) {
     throw new RecordNotFoundError('wishlists', productId);
   }
@@ -101,10 +119,18 @@ export async function removeFromWishlist(
  * Si dos toggles chocan, el `skipDuplicates` hace que el segundo también
  * deje el producto dentro en vez de fallar.
  */
-export async function toggleWishlist(userId: number, productId: number): Promise<boolean> {
+export async function toggleWishlist(
+  userId: number,
+  productId: number
+): Promise<boolean> {
   await _findProduct(productId);
-  const { count } = await prisma.wishlist.deleteMany({ where: { userId, productId } });
+  const { count } = await prisma.wishlist.deleteMany({
+    where: { userId, productId },
+  });
   if (count > 0) return false;
-  await prisma.wishlist.createMany({ data: [{ userId, productId }], skipDuplicates: true });
+  await prisma.wishlist.createMany({
+    data: [{ userId, productId }],
+    skipDuplicates: true,
+  });
   return true;
 }

@@ -9,18 +9,18 @@
 
 import 'dotenv/config';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { _setNowProvider } from '../clock';
 import { prisma } from '../client';
+import { _setNowProvider } from '../clock';
 import {
   EmptySlugError,
   InvalidReferenceError,
   RecordNotFoundError,
 } from '../domain-errors';
 import {
-  GLOBAL_CONTENT_ISSUER,
   createFaq,
   deleteFaq,
   findFaqById,
+  GLOBAL_CONTENT_ISSUER,
   listFaqs,
   updateFaq,
 } from './faqs.repository';
@@ -133,13 +133,21 @@ describe('createFaq — tipo y emisor derivados de la tienda', () => {
       ).rejects.toBeInstanceOf(InvalidReferenceError);
     }
     expect(
-      await prisma.faq.count({ where: { slug: { startsWith: `${SENTINEL_PREFIX}tienda-rota` } } })
+      await prisma.faq.count({
+        where: { slug: { startsWith: `${SENTINEL_PREFIX}tienda-rota` } },
+      })
     ).toBe(0);
   });
 
   it('título repetido ⇒ slug con sufijo, no colisión', async () => {
-    const a = await createFaq({ faqTitle: `${SENTINEL_PREFIX}Repetida`, faqDescription: 'x' });
-    const b = await createFaq({ faqTitle: `${SENTINEL_PREFIX}Repetida`, faqDescription: 'x' });
+    const a = await createFaq({
+      faqTitle: `${SENTINEL_PREFIX}Repetida`,
+      faqDescription: 'x',
+    });
+    const b = await createFaq({
+      faqTitle: `${SENTINEL_PREFIX}Repetida`,
+      faqDescription: 'x',
+    });
     expect(b.slug).not.toBe(a.slug);
     expect(b.slug.startsWith(a.slug)).toBe(true);
   });
@@ -170,28 +178,36 @@ describe('updateFaq', () => {
   });
 
   it('título que normaliza a vacío ⇒ EmptySlugError', async () => {
-    const created = await createFaq({ faqTitle: `${SENTINEL_PREFIX}Vacia`, faqDescription: 'x' });
-    await expect(updateFaq(created.id, { faqTitle: '???' })).rejects.toBeInstanceOf(
-      EmptySlugError
-    );
+    const created = await createFaq({
+      faqTitle: `${SENTINEL_PREFIX}Vacia`,
+      faqDescription: 'x',
+    });
+    await expect(
+      updateFaq(created.id, { faqTitle: '???' })
+    ).rejects.toBeInstanceOf(EmptySlugError);
   });
 
   it('id inexistente ⇒ RecordNotFoundError', async () => {
-    await expect(updateFaq(999_999, { faqDescription: 'x' })).rejects.toBeInstanceOf(
-      RecordNotFoundError
-    );
+    await expect(
+      updateFaq(999_999, { faqDescription: 'x' })
+    ).rejects.toBeInstanceOf(RecordNotFoundError);
   });
 });
 
 describe('deleteFaq', () => {
   it('borra y devuelve la fila borrada', async () => {
-    const created = await createFaq({ faqTitle: `${SENTINEL_PREFIX}Borrar`, faqDescription: 'x' });
+    const created = await createFaq({
+      faqTitle: `${SENTINEL_PREFIX}Borrar`,
+      faqDescription: 'x',
+    });
     const deleted = await deleteFaq(created.id);
     expect(deleted.id).toBe(created.id);
     expect(await findFaqById(created.id)).toBeNull();
   });
 
   it('id inexistente ⇒ RecordNotFoundError', async () => {
-    await expect(deleteFaq(999_999)).rejects.toBeInstanceOf(RecordNotFoundError);
+    await expect(deleteFaq(999_999)).rejects.toBeInstanceOf(
+      RecordNotFoundError
+    );
   });
 });

@@ -16,8 +16,8 @@ import {
   RecordNotFoundError,
   translateCatalogWriteError,
 } from '../domain-errors';
-import { generateSlug, normalizeSlug, type ExistingSlugLookup } from '../slug';
 import { _toRefundPolicyRecord, type RefundPolicyRecord } from '../records';
+import { type ExistingSlugLookup, generateSlug, normalizeSlug } from '../slug';
 
 export const REFUND_POLICY_TARGETS = ['vendor', 'customer'] as const;
 export const REFUND_POLICY_STATUSES = ['approved', 'pending'] as const;
@@ -97,9 +97,15 @@ export interface CreateRefundPolicyInput {
 }
 
 /** El `slug` es inmutable tras crear (precedente `updateTag`). */
-export type UpdateRefundPolicyInput = Partial<Omit<CreateRefundPolicyInput, 'slug'>>;
+export type UpdateRefundPolicyInput = Partial<
+  Omit<CreateRefundPolicyInput, 'slug'>
+>;
 
-function _assertValues(input: { target?: string; status?: string; shopId?: number | null }): void {
+function _assertValues(input: {
+  target?: string;
+  status?: string;
+  shopId?: number | null;
+}): void {
   if (
     input.target !== undefined &&
     !(REFUND_POLICY_TARGETS as readonly string[]).includes(input.target)
@@ -122,7 +128,10 @@ function _assertValues(input: { target?: string; status?: string; shopId?: numbe
       'refund_policies_status_check'
     );
   }
-  if (input.shopId != null && (!Number.isSafeInteger(input.shopId) || input.shopId <= 0)) {
+  if (
+    input.shopId != null &&
+    (!Number.isSafeInteger(input.shopId) || input.shopId <= 0)
+  ) {
     throw new InvalidReferenceError('refund_policies', 'shop_id', input.shopId);
   }
 }
@@ -144,7 +153,9 @@ export async function createRefundPolicy(
         slug,
         target: input.target,
         ...(input.status !== undefined && { status: input.status }),
-        ...(input.description !== undefined && { description: input.description }),
+        ...(input.description !== undefined && {
+          description: input.description,
+        }),
         ...(input.shopId != null && { shopId: input.shopId }),
         ...(input.language !== undefined && { language: input.language }),
       },
@@ -172,7 +183,9 @@ export async function updateRefundPolicy(
         ...(input.title !== undefined && { title: input.title }),
         ...(input.target !== undefined && { target: input.target }),
         ...(input.status !== undefined && { status: input.status }),
-        ...(input.description !== undefined && { description: input.description }),
+        ...(input.description !== undefined && {
+          description: input.description,
+        }),
         ...(input.shopId !== undefined && { shopId: input.shopId }),
         ...(input.language !== undefined && { language: input.language }),
         updatedAt: now(),
@@ -180,12 +193,17 @@ export async function updateRefundPolicy(
     });
     return _toRefundPolicyRecord(row);
   } catch (error) {
-    throw translateCatalogWriteError(error, { aggregate: 'refund_policies', id });
+    throw translateCatalogWriteError(error, {
+      aggregate: 'refund_policies',
+      id,
+    });
   }
 }
 
 /** Borra una política y devuelve la fila borrada. Nada la referencia. */
-export async function deleteRefundPolicy(id: number): Promise<RefundPolicyRecord> {
+export async function deleteRefundPolicy(
+  id: number
+): Promise<RefundPolicyRecord> {
   const existing = await prisma.refundPolicy.findUnique({ where: { id } });
   if (!existing) {
     throw new RecordNotFoundError('refund_policies', id);
@@ -195,6 +213,9 @@ export async function deleteRefundPolicy(id: number): Promise<RefundPolicyRecord
     await prisma.refundPolicy.delete({ where: { id } });
     return _toRefundPolicyRecord(existing);
   } catch (error) {
-    throw translateCatalogWriteError(error, { aggregate: 'refund_policies', id });
+    throw translateCatalogWriteError(error, {
+      aggregate: 'refund_policies',
+      id,
+    });
   }
 }

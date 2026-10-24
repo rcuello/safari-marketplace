@@ -7,8 +7,8 @@
 
 import 'dotenv/config';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { _setNowProvider } from '../clock';
 import { prisma } from '../client';
+import { _setNowProvider } from '../clock';
 import { InvalidFieldValueError, RecordNotFoundError } from '../domain-errors';
 import {
   createShipping,
@@ -21,7 +21,9 @@ import {
 const SENTINEL_PREFIX = 'zz-ship-';
 
 const cleanup = () =>
-  prisma.shipping.deleteMany({ where: { name: { startsWith: SENTINEL_PREFIX } } });
+  prisma.shipping.deleteMany({
+    where: { name: { startsWith: SENTINEL_PREFIX } },
+  });
 
 beforeAll(cleanup);
 
@@ -44,7 +46,9 @@ describe('listShippings / findShippingById — seed', () => {
       isGlobal: true,
       type: 'fixed',
     });
-    expect(shippings[0].createdAt.toISOString()).toBe('2021-03-25T13:27:49.000Z');
+    expect(shippings[0].createdAt.toISOString()).toBe(
+      '2021-03-25T13:27:49.000Z'
+    );
   });
 
   it('filtra por nombre; null si el id no existe', async () => {
@@ -67,11 +71,18 @@ describe('createShipping / updateShipping / deleteShipping', () => {
         type: 'percentage',
         isGlobal: false,
       });
-      expect(created).toMatchObject({ amount: 12.5, type: 'percentage', isGlobal: false });
+      expect(created).toMatchObject({
+        amount: 12.5,
+        type: 'percentage',
+        isGlobal: false,
+      });
 
       const future = new Date(Date.now() + 60_000);
       _setNowProvider(() => future);
-      const updated = await updateShipping(created.id, { type: 'free', amount: 0 });
+      const updated = await updateShipping(created.id, {
+        type: 'free',
+        amount: 0,
+      });
       expect(updated).toMatchObject({ type: 'free', amount: 0 });
       expect(updated.updatedAt.getTime()).toBe(future.getTime());
 
@@ -84,21 +95,33 @@ describe('createShipping / updateShipping / deleteShipping', () => {
 
   it('type fuera del CHECK o amount negativo ⇒ InvalidFieldValueError, sin escribir', async () => {
     await expect(
-      createShipping({ name: `${SENTINEL_PREFIX}Malo`, amount: 1, type: 'gratis' })
+      createShipping({
+        name: `${SENTINEL_PREFIX}Malo`,
+        amount: 1,
+        type: 'gratis',
+      })
     ).rejects.toBeInstanceOf(InvalidFieldValueError);
     await expect(
-      createShipping({ name: `${SENTINEL_PREFIX}Malo`, amount: -1, type: 'fixed' })
+      createShipping({
+        name: `${SENTINEL_PREFIX}Malo`,
+        amount: -1,
+        type: 'fixed',
+      })
     ).rejects.toBeInstanceOf(InvalidFieldValueError);
     await expect(updateShipping(1, { type: 'x' })).rejects.toBeInstanceOf(
       InvalidFieldValueError
     );
-    expect(await prisma.shipping.count({ where: { name: `${SENTINEL_PREFIX}Malo` } })).toBe(0);
+    expect(
+      await prisma.shipping.count({ where: { name: `${SENTINEL_PREFIX}Malo` } })
+    ).toBe(0);
   });
 
   it('ids inexistentes ⇒ RecordNotFoundError', async () => {
     await expect(updateShipping(999_999, { name: 'x' })).rejects.toBeInstanceOf(
       RecordNotFoundError
     );
-    await expect(deleteShipping(999_999)).rejects.toBeInstanceOf(RecordNotFoundError);
+    await expect(deleteShipping(999_999)).rejects.toBeInstanceOf(
+      RecordNotFoundError
+    );
   });
 });

@@ -8,8 +8,8 @@
 
 import 'dotenv/config';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { _setNowProvider } from '../clock';
 import { prisma } from '../client';
+import { _setNowProvider } from '../clock';
 import { InvalidFieldValueError, RecordNotFoundError } from '../domain-errors';
 import {
   createTax,
@@ -73,7 +73,12 @@ describe('createTax / updateTax / deleteTax', () => {
         country: 'CO',
         onShipping: false,
       });
-      expect(created).toMatchObject({ rate: 19.5, isGlobal: false, country: 'CO', onShipping: false });
+      expect(created).toMatchObject({
+        rate: 19.5,
+        isGlobal: false,
+        country: 'CO',
+        onShipping: false,
+      });
 
       const future = new Date(Date.now() + 60_000);
       _setNowProvider(() => future);
@@ -91,16 +96,24 @@ describe('createTax / updateTax / deleteTax', () => {
 
   it('rate negativo, NaN o infinito ⇒ InvalidFieldValueError, sin escribir', async () => {
     for (const rate of [-1, Number.NaN, Number.POSITIVE_INFINITY]) {
-      await expect(createTax({ name: `${SENTINEL_PREFIX}Malo`, rate })).rejects.toBeInstanceOf(
-        InvalidFieldValueError
-      );
+      await expect(
+        createTax({ name: `${SENTINEL_PREFIX}Malo`, rate })
+      ).rejects.toBeInstanceOf(InvalidFieldValueError);
     }
-    await expect(updateTax(1, { rate: -3 })).rejects.toBeInstanceOf(InvalidFieldValueError);
-    expect(await prisma.tax.count({ where: { name: `${SENTINEL_PREFIX}Malo` } })).toBe(0);
+    await expect(updateTax(1, { rate: -3 })).rejects.toBeInstanceOf(
+      InvalidFieldValueError
+    );
+    expect(
+      await prisma.tax.count({ where: { name: `${SENTINEL_PREFIX}Malo` } })
+    ).toBe(0);
   });
 
   it('ids inexistentes ⇒ RecordNotFoundError', async () => {
-    await expect(updateTax(999_999, { name: 'x' })).rejects.toBeInstanceOf(RecordNotFoundError);
-    await expect(deleteTax(999_999)).rejects.toBeInstanceOf(RecordNotFoundError);
+    await expect(updateTax(999_999, { name: 'x' })).rejects.toBeInstanceOf(
+      RecordNotFoundError
+    );
+    await expect(deleteTax(999_999)).rejects.toBeInstanceOf(
+      RecordNotFoundError
+    );
   });
 });
