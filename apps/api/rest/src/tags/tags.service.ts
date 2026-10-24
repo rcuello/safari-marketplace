@@ -85,7 +85,7 @@ export class TagsService {
     };
   }
 
-  async findOne(param: string, language?: string): Promise<Tag> {
+  async findOne(param: string, _language?: string): Promise<Tag> {
     let record: TagRecord | null;
 
     // El try envuelve SOLO las llamadas de I/O (mismo criterio que

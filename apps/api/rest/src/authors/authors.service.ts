@@ -22,7 +22,7 @@ const fuse = new Fuse(authors, options);
 export class AuthorsService {
   private authors: Author[] = authors;
 
-  create(createAuthorDto: CreateAuthorDto) {
+  create(_createAuthorDto: CreateAuthorDto) {
     return this.authors[0];
   }
 
@@ -35,7 +35,7 @@ export class AuthorsService {
     if (search) {
       const parseSearchParams = search.split(';');
       for (const searchParam of parseSearchParams) {
-        const [key, value] = searchParam.split(':');
+        const [, value] = searchParam.split(':');
         data = fuse.search(value)?.map(({ item }) => item);
       }
     }

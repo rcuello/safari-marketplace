@@ -61,7 +61,7 @@ export class PaymentMethodService {
     );
   }
 
-  update(id: number, updatePaymentMethodDto: UpdatePaymentMethodDto) {
+  update(id: number, _updatePaymentMethodDto: UpdatePaymentMethodDto) {
     return this.findOne(id);
   }
 
@@ -99,7 +99,7 @@ export class PaymentMethodService {
     createPaymentMethodDto: CreatePaymentMethodDto,
     paymentGateway: string,
   ) {
-    const { method_key, default_card } = createPaymentMethodDto;
+    const { method_key } = createPaymentMethodDto;
     const defaultCard = this.paymentMethods.find(
       (card: PaymentMethod) => card.default_card,
     );

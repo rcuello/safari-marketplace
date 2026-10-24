@@ -104,7 +104,7 @@ export class FaqsService {
   }
 
   /** Por id, como el mock; inexistente o id mal formado ⇒ 404 (V-4). */
-  async getFaq(param: string, language?: string): Promise<Faq> {
+  async getFaq(param: string, _language?: string): Promise<Faq> {
     const id = Number(param);
     if (!Number.isSafeInteger(id) || id <= 0) {
       throw new NotFoundException(`No existe una FAQ con id \`${param}\`.`);

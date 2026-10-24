@@ -12,7 +12,7 @@ const paymentIntents = plainToClass(PaymentIntent, taxesJson);
 @Injectable()
 export class PaymentIntentService {
   private paymentIntents: PaymentIntent[] = paymentIntents;
-  getPaymentIntent(query: GetPaymentIntentDto) {
+  getPaymentIntent(_query: GetPaymentIntentDto) {
     const order = [...orders].find(
       (or) => or.tracking_number === ('334983046149' as string),
     );

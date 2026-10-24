@@ -120,7 +120,10 @@ export class TermsAndConditionsService {
   }
 
   /** Por slug, como el mock; inexistente ⇒ 404 (V-4). */
-  async findOne(param: string, language?: string): Promise<TermsAndConditions> {
+  async findOne(
+    param: string,
+    _language?: string,
+  ): Promise<TermsAndConditions> {
     let record: TermsAndConditionsRecord | null;
     try {
       record = await findTermsAndConditionsBySlug(param);

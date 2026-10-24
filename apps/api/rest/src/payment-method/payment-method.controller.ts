@@ -24,7 +24,7 @@ export class PaymentMethodController {
   }
 
   @Get()
-  findAll(@Query() getTaxesDto: GetPaymentMethodsDto) {
+  findAll(@Query() _getTaxesDto: GetPaymentMethodsDto) {
     return this.paymentMethodService.findAll();
   }
 

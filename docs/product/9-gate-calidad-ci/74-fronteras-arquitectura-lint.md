@@ -124,7 +124,9 @@ ese formato: no hace falta migrar a flat config.
 - endurecer reglas existentes (`no-explicit-any` en la API,
   `exhaustive-deps` en el frontend): cada una es una US con su línea base;
 - arreglar los 20 203 `prettier/prettier: Delete ␍` de la API, que son del
-  fin de línea (ver la actualización de US-10 y la DA-2 de US-72);
+  fin de línea (ver la actualización de US-10 y la DA-2 de US-72). **Ya
+  resuelto el 2026-10-24**: US-72 fijó LF y tres commits posteriores
+  dejaron `eslint` de la API y `biome` de `packages/db` en 0 problemas;
 - `knip` (código muerto) y `madge` (ciclos de imports): candidatas
   posteriores en modo reporte; en una base heredada dan cientos de falsos
   positivos al principio;
@@ -203,9 +205,11 @@ Feature: Fronteras de arquitectura en el lint
 - **`patterns` con `group`** cubre los comodines (`@prisma/*`,
   `**/packages/db/**`); `paths` no los admite. En ESLint 8, el formato es
   `{ "patterns": [{ "group": [...], "message": "..." }] }`.
-- **El lint de la API sin `--fix`** hoy da 21 175 problemas, casi todos por
-  CRLF. Para medir CA-1 filtra por `ruleId === "no-restricted-imports"`
-  (`npx eslint ... -f json`), no por el total.
+- **El lint de la API sin `--fix`** daba 21 175 problemas, casi todos por
+  CRLF. Desde el 2026-10-24 da **0** (LF de US-72, formato de Prettier y los
+  52 `no-unused-vars` resueltos), así que una frontera violada se verá sola.
+  Aun así, para medir CA-1 filtra por `ruleId === "no-restricted-imports"`
+  (`npx eslint ... -f json`).
 - **No mezcles refactor y regla:** si una frontera saliera violada al
   escribirla, la violación va a la línea base de DA-1 o al reporte, no se
   corrige en esta US.

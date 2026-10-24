@@ -389,8 +389,15 @@ just db-check                           →  Test Files  32 passed (32) / Tests 
 ```
 
 Los 972 problemas que quedan en la API y los 93 de `biome` ya no son de fin
-de línea: son formato y reglas del código heredado. Arreglarlos es un
-refactor que no entra aquí.
+de línea. Corrección: no eran «código heredado», sino sobre todo código de
+las US del Épico 46 que nunca pasó por el formateador. El dueño pidió no
+dejarlos pendientes, así que se resolvieron el mismo día en commits
+aparte:
+
+```
+API (eslint)   920 prettier/prettier (97 archivos, --fix) + 52 no-unused-vars  ⇒  0 problemas
+packages/db    59 archivos de formato + 32 organizeImports (biome --write) + 3 errores y 1 info a mano  ⇒  0
+```
 
 **Incidencia:** al terminar, la API (9001) y el admin (3002) del dueño, que
 corrían en modo dev, ya no estaban vivos. La causa probable, aunque no

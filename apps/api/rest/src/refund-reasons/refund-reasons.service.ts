@@ -94,7 +94,7 @@ export class RefundReasonsService {
   /** Por slug, como el mock; inexistente ⇒ 404 (V-3). */
   async getRefundReason(
     param: string,
-    language?: string,
+    _language?: string,
   ): Promise<RefundReason> {
     let record: RefundReasonRecord | null;
     try {

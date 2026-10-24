@@ -73,7 +73,7 @@ import { toReviewUserDto } from 'src/reviews/review-dto.mapper';
 // payment-intent.json y payment-gateway.json son el mock permanente de la
 // pasarela (decisión 2 del Épico 46): siguen aquí a propósito.
 const paymentIntents = plainToClass(PaymentIntent, paymentIntentJson);
-const paymentGateways = plainToClass(PaymentGateWay, paymentGatewayJson);
+const _paymentGateways = plainToClass(PaymentGateWay, paymentGatewayJson);
 
 const TRACKING_NUMBER = /^[0-9]{14}$/;
 
@@ -757,11 +757,11 @@ export class OrdersService {
     return url;
   }
 
-  async exportOrder(shop_id: string) {
+  async exportOrder(_shop_id: string) {
     return ORDER_EXPORT_URL;
   }
 
-  async downloadInvoiceUrl(shop_id: string) {
+  async downloadInvoiceUrl(_shop_id: string) {
     return ORDER_INVOICE_URL;
   }
 
@@ -793,7 +793,7 @@ export class OrdersService {
       id: payment_id,
       client_secret = null,
       redirect_url = null,
-      customer = null,
+      customer: _customer = null,
     } = await this.savePaymentIntent(order, order.payment_gateway);
     const is_redirect = redirect_url ? true : false;
     const paymentIntentInfo: PaymentIntent = {
@@ -818,12 +818,12 @@ export class OrdersService {
     // const paymentGateway: PaymentGateWay = {
     //   id: Number(Date.now()),
     //   user_id: this.authService.me().id,
-    //   customer_id: customer,
+    //   customer_id: _customer,
     //   gateway_name: setting.options.paymentGateway,
     //   created_at: new Date(),
     //   updated_at: new Date(),
     // };
-    // paymentGateways.push(paymentGateway);
+    // _paymentGateways.push(paymentGateway);
 
     return paymentIntentInfo;
   }
@@ -834,7 +834,10 @@ export class OrdersService {
    * @param order
    * @param paymentGateway
    */
-  async savePaymentIntent(order: Order, paymentGateway?: string): Promise<any> {
+  async savePaymentIntent(
+    order: Order,
+    _paymentGateway?: string,
+  ): Promise<any> {
     // Ripple no anticipado por US-22: `me()` deja de aceptar llamadas sin
     // contexto de token (D-8 del proposal). Este método no tiene un
     // request/token disponible (se llama servicio-a-servicio, no desde un

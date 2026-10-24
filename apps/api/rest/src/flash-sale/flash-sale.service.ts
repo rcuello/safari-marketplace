@@ -32,7 +32,7 @@ export class FlashSaleService {
   private flashSale: FlashSale[] = flashSale;
   private productsByFlashSale: Product[] = productsByFlashSale;
 
-  create(createFlashSaleDto: CreateFlashSaleDto) {
+  create(_createFlashSaleDto: CreateFlashSaleDto) {
     return this.flashSale[0];
   }
 
@@ -46,7 +46,7 @@ export class FlashSaleService {
     if (search) {
       const parseSearchParams = search.split(';');
       for (const searchParam of parseSearchParams) {
-        const [key, value] = searchParam.split(':');
+        const [, value] = searchParam.split(':');
         data = fuse.search(value)?.map(({ item }) => item);
       }
     }
@@ -59,11 +59,11 @@ export class FlashSaleService {
     };
   }
 
-  getFlashSale(param: string, language: string) {
+  getFlashSale(param: string, _language: string) {
     return this.flashSale.find((p) => p.slug === param);
   }
 
-  update(id: number, updateFlashSaleDto: UpdateFlashSaleDto) {
+  update(_id: number, _updateFlashSaleDto: UpdateFlashSaleDto) {
     return this.flashSale[0];
   }
 
@@ -81,7 +81,7 @@ export class FlashSaleService {
     if (search) {
       const parseSearchParams = search.split(';');
       for (const searchParam of parseSearchParams) {
-        const [key, value] = searchParam.split(':');
+        const [, value] = searchParam.split(':');
         productsByData = productsByFlashSaleFuse
           .search(value)
           ?.map(({ item }) => item);

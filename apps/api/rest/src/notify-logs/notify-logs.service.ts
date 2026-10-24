@@ -26,7 +26,7 @@ export class NotifyLogsService {
     if (search) {
       const parseSearchParams = search.split(';');
       for (const searchParam of parseSearchParams) {
-        const [key, value] = searchParam.split(':');
+        const [, value] = searchParam.split(':');
         data = fuse.search(value)?.map(({ item }) => item);
       }
     }
@@ -39,19 +39,19 @@ export class NotifyLogsService {
     };
   }
 
-  getNotifyLog(param: string, language: string) {
+  getNotifyLog(param: string, _language: string) {
     return this.notifyLogs.find((p) => p.id === Number(param));
   }
 
-  readNotifyLog(id: number) {
+  readNotifyLog(_id: number) {
     return this.notifyLogs[0];
   }
 
-  readAllNotifyLogs(id: number) {
+  readAllNotifyLogs(_id: number) {
     return `This action receiver a  notices`;
   }
 
-  remove(id: number) {
+  remove(_id: number) {
     return this.notifyLogs[0];
   }
 }

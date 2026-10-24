@@ -115,7 +115,7 @@ export class RefundPoliciesService {
   /** Por slug, como el mock; inexistente ⇒ 404 (V-3). */
   async getRefundPolicy(
     param: string,
-    language?: string,
+    _language?: string,
   ): Promise<RefundPolicy> {
     let record: RefundPolicyRecord | null;
     try {

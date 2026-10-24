@@ -1,13 +1,4 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Post,
-  Put,
-  Query,
-} from '@nestjs/common';
+import { Controller, Delete, Get, Param, Put, Query } from '@nestjs/common';
 import { NotifyLogsService } from './notify-logs.service';
 import { GetNotifyLogsDto } from './dto/get-notify-logs.dto';
 import { Public } from 'src/auth/decorators/public.decorator';

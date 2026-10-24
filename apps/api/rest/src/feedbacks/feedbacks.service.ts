@@ -12,11 +12,11 @@ export class FeedbackService {
     return `This action returns a #${id} feedback`;
   }
 
-  create(createFeedBackDto: CreateFeedBackDto) {
+  create(_createFeedBackDto: CreateFeedBackDto) {
     return 'This action adds a new feedback';
   }
 
-  update(id: number, updateFeedbackDto: UpdateFeedBackDto) {
+  update(id: number, _updateFeedbackDto: UpdateFeedBackDto) {
     return `This action updates a #${id} feedback`;
   }
 

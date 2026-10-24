@@ -101,7 +101,7 @@ export class StaffsController {
   constructor(private readonly shopsService: ShopsService) {}
 
   @Post()
-  create(@Body() createShopDto: CreateShopDto) {
+  create(@Body() _createShopDto: CreateShopDto) {
     return this.shopsService.createStaff();
   }
 
@@ -116,7 +116,7 @@ export class StaffsController {
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() updateShopDto: UpdateShopDto) {
+  update(@Param('id') _id: string, @Body() _updateShopDto: UpdateShopDto) {
     return this.shopsService.updateStaff();
   }
 

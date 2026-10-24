@@ -97,7 +97,7 @@ export class AuthController {
   }
   @Public()
   @Post('contact-us')
-  contactUs(@Body() addPointsDto: any) {
+  contactUs(@Body() _addPointsDto: any) {
     return {
       success: true,
       message: 'Thank you for contacting us. We will get back to you soon.',

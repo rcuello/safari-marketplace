@@ -3,7 +3,7 @@ import { CreateNewSubscriberDto } from './dto/create-new-subscriber.dto';
 
 @Injectable()
 export class NewslettersService {
-  async subscribeToNewsletter({ email }: CreateNewSubscriberDto) {
+  async subscribeToNewsletter({ email: _email }: CreateNewSubscriberDto) {
     return `Your email successfully subscribed`;
   }
 }
