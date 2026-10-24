@@ -42,11 +42,6 @@
 //     processing|approved|rejected) y ownership_transfers_owners_distintos
 //     (previous_owner_id <> current_owner_id). Los repositorios los validan antes de escribir y
 //     traducen la violación a errores de dominio.
-//   · El índice de expresión products_nombre_trgm_idx
-//     (gin (lower(name) gin_trgm_ops)) que acelera la búsqueda por
-//     nombre con `contains/insensitive`. Igual questions_question_trgm_idx
-//     (gin (lower(question) gin_trgm_ops)) para la búsqueda de preguntas
-//     (US-55).
 //   · El índice único parcial de expresión users_email_lower_idx
 //     (unique btree (lower(email))): garantiza el email case-insensitive
 //     (US-20). `User.email` por eso NO lleva `@unique` aquí — el
@@ -247,6 +242,7 @@ model Product {
   @@index([scrapedAt(sort: Desc)], map: "products_scraped_idx")
   @@index([shopId], map: "products_shop_idx")
   @@index([typeId, id], map: "products_visibles_idx", where: raw("((status = 'publish'::text) AND (visibility = 'visibility_public'::text))"))
+  @@index([name(ops: raw("gin_trgm_ops"))], map: "products_nombre_ilike_trgm_idx", type: Gin)
   @@map("products")
 }
 
@@ -753,6 +749,7 @@ model Question {
   @@index([productId], map: "questions_producto_idx")
   @@index([shopId], map: "questions_shop_idx")
   @@index([userId], map: "questions_user_idx")
+  @@index([question(ops: raw("gin_trgm_ops"))], map: "questions_question_ilike_trgm_idx", type: Gin)
   @@map("questions")
 }
 

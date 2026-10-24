@@ -290,6 +290,9 @@ db-migrate:
     docker compose exec -T postgres psql -U safari -d safari_scraper -v ON_ERROR_STOP=1 -q -c "CREATE EXTENSION IF NOT EXISTS pg_trgm;"
     docker compose exec -T postgres psql -U safari -d safari_scraper -v ON_ERROR_STOP=1 -q < db/schema.sql
     docker compose exec -T postgres psql -U safari -d safari_scraper -v ON_ERROR_STOP=1 -q < db/seed.sql
+    @# US-69: el seed entra en la pending list de los GIN trigram (creados antes
+    @# que los datos) y el planificador no los usa hasta el primer VACUUM.
+    docker compose exec -T postgres psql -U safari -d safari_scraper -v ON_ERROR_STOP=1 -q -c "VACUUM ANALYZE;"
     @echo "  * esquema y datos de referencia aplicados"
 
 # Regenera db/seed.sql desde los JSON del mock de la aplicacion

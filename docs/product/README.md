@@ -210,7 +210,7 @@ US-65    `abusive_reports/reject` (rechazar)      → standalone ✅ (2026-10-23
 US-66    El staff responde preguntas              → standalone ✅ (2026-10-23) ← después de US-55; «staff» = fila en shop_staff (Decisión 1)
 US-67    Mensaje del 409 por clave única          → standalone ✅ (2026-10-23) ← opción (c): mismo code, el mensaje nombra el campo
 US-68    Cupones del seed vigentes                → standalone ✅ (2026-10-23) ← opción (b) +5 años, decidida por el dueño; se aparta de la decisión 6 solo en las fechas
-US-69    Índices trigram que el ILIKE no usa      → standalone ← después de US-55; pide db-reset
+US-69    Índices trigram que el ILIKE no usa      → standalone ✅ (2026-10-23) ← opción (a): trigram sobre la columna + VACUUM ANALYZE en db-migrate
 ```
 
 Las US-64 a US-69 salen de los «NO incluye» y hallazgos del Épico 46 (US-52

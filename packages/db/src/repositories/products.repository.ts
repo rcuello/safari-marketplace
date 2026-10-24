@@ -123,7 +123,7 @@ export interface ListProductsInput {
   typeSlug?: string;
   categorySlug?: string;
   shopId?: number;
-  /** Búsqueda parcial por nombre, case-insensitive (índice trgm). */
+  /** Búsqueda parcial por nombre, case-insensitive: `ILIKE`, que usa `products_nombre_ilike_trgm_idx` (US-69). */
   name?: string;
   minPrice?: number;
   maxPrice?: number;

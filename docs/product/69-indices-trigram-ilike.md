@@ -10,7 +10,7 @@
 **Épico:** ninguno (US standalone). Nace de la nota de índices de
 [US-55](./46-api-sin-mocks-json/55-questions-postgres.md).
 **Fecha:** 2026-10-22
-**Status:** Listo para ejecución
+**Status:** ✅ Completada (2026-10-23), opción (a)
 **Depende de:** US-55 (crea `questions_question_trgm_idx`). Toca
 `db/schema.sql` y `packages/db/prisma/schema.prisma`, compartidos con el
 Épico 46, así que **no puede ir en paralelo** con ninguna US de ese épico
@@ -182,17 +182,17 @@ Feature: La busqueda por texto usa su indice
 
 ## Definición de Done
 
-- [ ] Autorización del dueño para `just db-reset` pegada en el reporte.
-- [ ] Línea base antes del cambio: los `EXPLAIN` de CA-1 (`Seq Scan`) y los
+- [x] Autorización del dueño para `just db-reset` pegada en el reporte.
+- [x] Línea base antes del cambio: los `EXPLAIN` de CA-1 (`Seq Scan`) y los
   cuerpos de CA-2.
-- [ ] `just db-reset` y los `EXPLAIN` de CA-1 después.
-- [ ] `prisma validate` + `migrate diff --exit-code` → `EXIT=0`, y `just
+- [x] `just db-reset` y los `EXPLAIN` de CA-1 después.
+- [x] `prisma validate` + `migrate diff --exit-code` → `EXIT=0`, y `just
   db-build`.
-- [ ] CA-2: comparación `node -e` en `OK`.
-- [ ] CA-4: el test nuevo en verde y la prueba de que falla sin el índice.
-- [ ] CA-5: `just db-check`, `npx jest`, `just build-api` y `just verify` con
+- [x] CA-2: comparación `node -e` en `OK`.
+- [x] CA-4: el test nuevo en verde y la prueba de que falla sin el índice.
+- [x] CA-5: `just db-check`, `npx jest`, `just build-api` y `just verify` con
   recuentos.
-- [ ] Status actualizado aquí y en el mapa de `docs/product/README.md`.
+- [x] Status actualizado aquí y en el mapa de `docs/product/README.md`.
 
 ## Notas para el agente ejecutor
 
@@ -215,3 +215,144 @@ Feature: La busqueda por texto usa su indice
 - Con 68 preguntas, el planificador puede seguir eligiendo `Seq Scan` en
   `questions` aunque el índice sea aplicable. Por eso CA-1 lo exige allí solo
   con `enable_seqscan = off`.
+
+## Evidencia (2026-10-23)
+
+**Autorización:** el dueño autorizó el `just db-reset` de esta US
+(2026-10-23) y eligió la opción (a), la recomendada.
+
+**Implementación:**
+
+- `db/schema.sql`: los dos índices pasan a `gin (columna gin_trgm_ops)` con
+  nombres nuevos, `products_nombre_ilike_trgm_idx` y
+  `questions_question_ilike_trgm_idx`. Llevan nombre nuevo porque
+  `IF NOT EXISTS` no reemplaza el índice viejo en una base ya creada.
+- `schema.prisma`: los dos `@@index(..., type: Gin)` salen de
+  `prisma db pull --print`, y la cabecera ya no los lista como no modelados.
+- Solo cambian comentarios en `products.repository.ts` y
+  `questions.repository.ts`, más los dos README.
+
+**Decisión añadida al ejecutar: `VACUUM ANALYZE` en `just db-migrate`.**
+Tras el primer `db-reset`, el `ILIKE` de `products` seguía en `Seq Scan`
+sin forzar nada, incluso tras `ANALYZE`. Forzando el plan, el índice costaba
+`310` frente a `91`. La causa es la *pending list* del GIN: el DDL crea el
+índice **antes** de que el seed cargue las filas, así que las 1200
+inserciones quedan pendientes y no en el árbol. La medida con `pgstattuple`
+fue:
+
+```
+antes del VACUUM:   version 2 | pending_pages 69 | pending_tuples 1200
+después del VACUUM: version 2 | pending_pages  0 | pending_tuples    0
+```
+
+La extensión `pgstattuple` se creó solo para medir y se borró después; la
+base quedó con `pg_trgm` y `plpgsql`.
+
+En la prueba de esta US el índice se creó con los datos ya cargados y por
+eso no apareció. El dueño eligió añadir `VACUUM ANALYZE;` como último paso
+de `db-migrate` (una línea del `justfile`, fuera de la tabla de archivos de
+la US). Descartó documentarlo sin más y descartó `fastupdate = off`.
+
+**Línea base** (antes del cambio):
+
+```
+EXPLAIN SELECT id FROM products WHERE name ILIKE '%phone%'
+ Seq Scan on products  (cost=0.00..91.00 rows=1 width=8)
+   Filter: (name ~~* '%phone%'::text)
+SET enable_seqscan=off  →  Seq Scan on products  (cost=10000000000.00..10000000091.00 rows=1 width=8)
+EXPLAIN SELECT id FROM questions WHERE question ILIKE '%apple%' (enable_seqscan=off)
+ Seq Scan on questions  (cost=10000000000.00..10000000002.85 rows=2 width=8)
+```
+
+```
+/products?search=name:apple&limit=50 → 200 total 17 ids [1, 219, 372, 374, 522, 523, 524, 709, 710, 711, 821, 822, 823, 828, 830, 1077, 1135]
+/products?search=name:Baby&limit=50 → 200 total 11 ids [2, 16, 99, 387, 546, 567, 972, 978, 1046, 1078, 1092]
+/products?search=name:CHAIR&limit=50 → 200 total 1 ids [435]
+/questions?product_id=1&search=question:apple → 200 total 3 ids [34, 31, 26]
+```
+
+**CA-1**, tras `just db-reset` con la receta nueva y sin forzar nada:
+
+```
+ products_nombre_ilike_trgm_idx    | CREATE INDEX products_nombre_ilike_trgm_idx ON public.products USING gin (name gin_trgm_ops)
+ questions_question_ilike_trgm_idx | CREATE INDEX questions_question_ilike_trgm_idx ON public.questions USING gin (question gin_trgm_ops)
+
+EXPLAIN SELECT id FROM products WHERE name ILIKE '%phone%'
+ Bitmap Heap Scan on products  (cost=30.19..34.20 rows=1 width=8)
+   Recheck Cond: (name ~~* '%phone%'::text)
+   ->  Bitmap Index Scan on products_nombre_ilike_trgm_idx  (cost=0.00..30.19 rows=1 width=0)
+EXPLAIN SELECT id FROM products WHERE name ILIKE '%Phone%'
+   ->  Bitmap Index Scan on products_nombre_ilike_trgm_idx  (cost=0.00..30.19 rows=1 width=0)
+EXPLAIN ANALYZE (tras VACUUM)  →  Bitmap Index Scan … actual time=0.047..0.047 rows=3; Execution Time: 0.274 ms
+EXPLAIN SELECT id FROM questions WHERE question ILIKE '%apple%'
+ Seq Scan on questions  (cost=0.00..2.85 rows=2 width=8)          ← 68 filas: el planificador lo prefiere, previsto en CA-1
+SET enable_seqscan=off
+   ->  Bitmap Index Scan on questions_question_ilike_trgm_idx  (cost=0.00..17.40 rows=2 width=0)
+```
+
+Con menos de 3 caracteres (`'%ph%'`), sin forzar nada sale `Seq Scan`
+(coste 91). Forzando, sale el índice con coste 739. Es lo correcto y no se
+corrige (Notas).
+
+**CA-2** (`node`, deep-equal sin `created_at`/`updated_at`, que salen del
+`now()` de cada `db-reset`, una divergencia ya declarada):
+
+```
+/products?search=name:apple&limit=50: deep-equal (sin created_at/updated_at) OK, orden OK
+/products?search=name:Baby&limit=50: deep-equal (sin created_at/updated_at) OK, orden OK
+/products?search=name:CHAIR&limit=50: deep-equal (sin created_at/updated_at) OK, orden OK
+/questions?product_id=1&search=question:apple: deep-equal (sin created_at/updated_at) OK, orden OK
+```
+
+**CA-3:**
+
+```
+npx prisma validate  →  The schema at prisma\schema.prisma is valid 🚀
+npx prisma migrate diff --from-config-datasource --to-schema ./prisma/schema.prisma --exit-code  →  No difference detected.  EXIT=0
+sin los @@index (git stash)  →  EXIT=2: [-] Removed index on columns (name) / [-] Removed index on columns (question)
+just db-build  →  ✔ Generated Prisma Client (7.10.0) … DTS ⚡️ Build success
+```
+
+**CA-4.** Es un test nuevo en `products.integration.test.ts`, dentro de una
+transacción con `SET LOCAL enable_seqscan = off`. Lo que comprueba es que el
+índice sea **aplicable**, que es lo que fallaba: el viejo no se usaba ni
+forzado. Así no depende de la pending list ni de los costes. Busca el nombre
+del índice en el plan.
+
+```
+✓ índices trigram del ILIKE (US-69, CA-4) > SELECT id FROM products WHERE name ILIKE '%phone%' usa products_nombre_ilike_trgm_idx
+✓ índices trigram del ILIKE (US-69, CA-4) > SELECT id FROM questions WHERE question ILIKE '%apple%' usa questions_question_ilike_trgm_idx
+```
+
+Para verlo fallar, se volvió a poner a mano el índice viejo en `products`
+(`DROP` del nuevo y `CREATE … (lower(name) gin_trgm_ops)`):
+
+```
+× SELECT id FROM products WHERE name ILIKE '%phone%' usa products_nombre_ilike_trgm_idx
+AssertionError: expected 'Seq Scan on products  (cost=100000000…' to contain 'Bitmap Index Scan on products_nombre_…'
+Tests  1 failed | 1 passed | 44 skipped (46)
+```
+
+Después se restauró el índice nuevo, con `VACUUM ANALYZE products`, y el
+test volvió a dar `2 passed`.
+
+**CA-5:**
+
+```
+just db-check                      →  Test Files  32 passed (32) / Tests  412 passed (412)   (410 + 2 de CA-4)
+npx jest                           →  Test Suites: 34 passed, 34 total / Tests: 565 passed, 565 total
+npx tsc --noEmit -p tsconfig.json  →  EXIT=0
+just build-api                     →  Done in 27.64s.
+just verify
+OK   API    :9001/api/settings  200  5503B  536ms
+OK   Shop   :3003/en  200  190788B  837ms  cards:30
+OK   Admin  :3002/en/login  200  72821B  2309ms  cards:1
+```
+
+**Para el reporte:**
+
+- Fuera del seed, el scraper inserta poco a poco y el autovacuum vacía la
+  pending list. El `VACUUM ANALYZE` solo hace falta tras la carga masiva del
+  seed.
+- `openspec/changes/archive/` sigue citando los nombres viejos: es historia
+  y no se toca.

@@ -124,8 +124,8 @@ CREATE TABLE IF NOT EXISTS users (
     updated_at          timestamptz  NOT NULL DEFAULT now()
 );
 
--- Case-insensitive sin `citext`: consistente con products_nombre_trgm_idx
--- (ya indexa lower(name)) y sin introducir el primer CREATE EXTENSION del
+-- Case-insensitive sin `citext`, como la búsqueda por nombre de productos
+-- (products_nombre_ilike_trgm_idx) y sin introducir el primer CREATE EXTENSION del
 -- DDL versionado (las extensiones se activan en justfile). Consecuencia:
 -- todo lookup por email debe escribirse `WHERE lower(email) = lower($1)`
 -- o este índice no se usa -- lo hereda US-21.
@@ -1179,8 +1179,14 @@ CREATE INDEX IF NOT EXISTS products_scraped_idx       ON products (scraped_at DE
 
 -- Búsqueda por nombre. En el mock la hacía Fuse.js en memoria sobre
 -- 1.200 productos; con un catálogo real hay que resolverla en la base.
-CREATE INDEX IF NOT EXISTS products_nombre_trgm_idx
-    ON products USING gin (lower(name) gin_trgm_ops);
+-- Sobre la COLUMNA, no sobre lower(name) (US-69): Prisma traduce
+-- `contains` + `mode: insensitive` a `name ILIKE '%x%'`, y un índice de
+-- expresión solo sirve a consultas con la misma expresión. gin_trgm_ops
+-- resuelve el ILIKE porque el trigrama ya es insensible a mayúsculas. El
+-- nombre es nuevo a propósito: IF NOT EXISTS no reemplaza el índice viejo
+-- (products_nombre_trgm_idx) en una base ya creada; adoptarlo pide db-reset.
+CREATE INDEX IF NOT EXISTS products_nombre_ilike_trgm_idx
+    ON products USING gin (name gin_trgm_ops);
 
 CREATE INDEX IF NOT EXISTS categories_parent_idx  ON categories (parent_id);
 CREATE INDEX IF NOT EXISTS categories_type_idx    ON categories (type_id);
@@ -1239,12 +1245,14 @@ CREATE INDEX IF NOT EXISTS abusive_reports_modelo_idx     ON abusive_reports (mo
 
 -- Preguntas (US-55): cada FK con su índice (my-questions filtra por user_id,
 -- el shop por product_id y el admin por shop_id). La búsqueda por texto
--- sigue el precedente de products_nombre_trgm_idx.
+-- sigue el precedente de products_nombre_ilike_trgm_idx: trigram sobre la
+-- columna para que la use el ILIKE de Prisma (US-69; antes era
+-- questions_question_trgm_idx, sobre lower(question)).
 CREATE INDEX IF NOT EXISTS questions_user_idx             ON questions (user_id);
 CREATE INDEX IF NOT EXISTS questions_shop_idx             ON questions (shop_id);
 CREATE INDEX IF NOT EXISTS questions_producto_idx         ON questions (product_id);
-CREATE INDEX IF NOT EXISTS questions_question_trgm_idx
-    ON questions USING gin (lower(question) gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS questions_question_ilike_trgm_idx
+    ON questions USING gin (question gin_trgm_ops);
 
 -- Mensajería (US-56): conversations.user_id ya queda cubierto por la
 -- izquierda del UNIQUE (user_id, shop_id). El índice de messages sirve al

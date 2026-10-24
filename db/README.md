@@ -73,8 +73,7 @@ seed.
 
 **Por qué `lower(email)` y no `citext`**: el índice único vive sobre
 `lower(email)`, no sobre la columna `email` (que sigue siendo `text` plano).
-Consistente con `products_nombre_trgm_idx`, que ya indexa `lower(name)`, y
-sin introducir el primer `CREATE EXTENSION` del DDL versionado. La
+Sin `citext`, como la búsqueda por nombre de productos, y sin introducir el primer `CREATE EXTENSION` del DDL versionado. La
 consecuencia práctica: **todo lookup por email debe escribirse
 `WHERE lower(email) = lower($1)`**, o Postgres no usa el índice — un
 `WHERE email = $1` hace table scan igual de correcto pero sin aprovecharlo.
@@ -343,11 +342,15 @@ producto 1 tiene 6 y la tienda 6, 39.
 - **Sin UNIQUE (user, product)**: el mock trae 20 pares repetidos legítimos.
 - **`answer` NULL = sin responder.** Una pregunta nueva nace así; en el seed
   las 68 tienen respuesta.
-- **Búsqueda**: índice trigram `questions_question_trgm_idx` sobre
-  `lower(question)`, como `products_nombre_trgm_idx`. El `ILIKE` que genera
-  Prisma con `contains` + `insensitive` **no** lo usa (`EXPLAIN`: `Seq
-  Scan`, también con `enable_seqscan=off`); `lower(question) LIKE` sí. Con
-  68 filas no importa; es el mismo caso que el índice de productos.
+- **Búsqueda**: índice trigram `questions_question_ilike_trgm_idx` sobre la
+  columna `question`, como `products_nombre_ilike_trgm_idx` sobre `name`
+  (US-69). Van sobre la columna y no sobre `lower(...)` porque el `ILIKE`
+  que genera Prisma con `contains` + `insensitive` no usa un índice de
+  expresión; `gin_trgm_ops` ya es insensible a mayúsculas. Con menos de 3
+  caracteres no hay trigramas y el planificador elige `Seq Scan`, que es lo
+  correcto. `just db-migrate` termina con `VACUUM ANALYZE`: el seed entra
+  en la pending list del GIN (el índice se crea antes que los datos) y,
+  sin ese paso, el planificador no lo usa hasta el primer autovacuum.
 - **Reportable**: `abusive_reports` admite `model_type = 'Question'` y borrar
   una pregunta borra sus reportes en la misma transacción.
 

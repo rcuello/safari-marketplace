@@ -966,3 +966,26 @@ describe('404 en updateProduct/deleteProduct con id inexistente, y duplicados de
     await deleteProduct(created.id);
   });
 });
+
+// US-69: la búsqueda por texto se escribe `contains` + `mode: insensitive`,
+// que Prisma traduce a `ILIKE`. Los índices trigram van sobre la columna para
+// que ese ILIKE los pueda usar; el anterior, sobre lower(name), no se usaba ni
+// con el Seq Scan desactivado. Se fuerza `enable_seqscan = off` (solo dentro
+// de la transacción) porque lo que se protege es que el índice sea
+// APLICABLE: si el planificador lo prefiere depende del tamaño de la tabla y
+// de la pending list del GIN. No se asertan costes, que cambian por máquina.
+describe('índices trigram del ILIKE (US-69, CA-4)', () => {
+  const planWithoutSeqScan = (sql: string) =>
+    prisma.$transaction(async (tx) => {
+      await tx.$executeRawUnsafe('SET LOCAL enable_seqscan = off');
+      const rows = await tx.$queryRawUnsafe<Array<{ 'QUERY PLAN': string }>>(`EXPLAIN ${sql}`);
+      return rows.map((r) => r['QUERY PLAN']).join('\n');
+    });
+
+  it.each([
+    ["SELECT id FROM products WHERE name ILIKE '%phone%'", 'products_nombre_ilike_trgm_idx'],
+    ["SELECT id FROM questions WHERE question ILIKE '%apple%'", 'questions_question_ilike_trgm_idx'],
+  ])('%s usa %s', async (sql, index) => {
+    expect(await planWithoutSeqScan(sql)).toContain(`Bitmap Index Scan on ${index}`);
+  });
+});

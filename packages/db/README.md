@@ -144,9 +144,12 @@ No usar `prisma migrate dev` ni `prisma db push` contra esta base.
   registro de `coupons` con el mismo valor en `code`.» (US-67). Bajo
   adapter-pg, `meta.target` no llega, así que el campo sale del
   `uniqueField` del repositorio o, si falta, de `'slug'`.
-- **El índice trgm** `products_nombre_trgm_idx` (expresión) tampoco: la
-  búsqueda por nombre usa `contains` + `mode: 'insensitive'`, que Postgres
-  resuelve con ese índice.
+- **Los índices trigram** de la búsqueda por texto
+  (`products_nombre_ilike_trgm_idx`, `questions_question_ilike_trgm_idx`)
+  **sí** están modelados, como `@@index(..., type: Gin)`: van sobre la
+  columna para que el `ILIKE` de `contains` + `mode: 'insensitive'` los
+  use (US-69). Los anteriores, sobre `lower(...)`, eran de expresión: Prisma
+  no los modelaba y el `ILIKE` no los usaba.
 
 ### Contenido (US-47, Épico 46) — `faqs` y `terms-and-conditions`
 
@@ -600,7 +603,7 @@ hasheado. Hashear y verificar sigue siendo de `apps/api/rest` (US-22):
 **Por qué `findUserCredentialsByEmail` usa `$queryRaw`.** `users.email`
 no tiene un índice único total: la unicidad case-insensitive vive en
 `users_email_lower_idx`, un índice **de expresión** sobre `lower(email)`
-que Prisma no modela (como el trgm de `products`). Evidencia contra
+que Prisma no modela. Evidencia contra
 Postgres real: ni `mode: 'insensitive'` (genera `ILIKE`) ni normalizar el
 email en JS antes de un `equals` plano (genera `email = $1`) usan ese
 índice — solo `WHERE lower(email) = lower($1)` explícito lo hace. Es el
