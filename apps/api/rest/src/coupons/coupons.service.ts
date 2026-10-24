@@ -14,6 +14,7 @@ import {
   findShopOwnerById,
   getUserFriendlyMessage,
   isPrismaConnectionError,
+  isShopStaff,
   listCoupons,
   now,
   setCouponApproval,
@@ -110,8 +111,10 @@ export class CouponsService {
   /**
    * Propiedad por tienda (DD29-4, precedente `products.service.ts`):
    * `super_admin` pasa sin consultar. Un cupón global (`shopId null`) es solo
-   * suyo. Para el resto, la tienda debe ser del usuario; una tienda
-   * inexistente NO es 403: se deja pasar para que el repositorio dé el 400.
+   * suyo. Para el resto, la tienda debe ser del usuario o tenerlo como staff
+   * (fila en `shop_staff`, US-66 Ampliación; se consulta solo si no es
+   * dueño); una tienda inexistente NO es 403: se deja pasar para que el
+   * repositorio dé el 400.
    */
   private async assertCanManage(shopId: number | null, user: CurrentUserPayload): Promise<void> {
     if (user.permissions.includes('super_admin')) return;
@@ -119,7 +122,7 @@ export class CouponsService {
       throw new ForbiddenException('Solo un super_admin gestiona cupones globales.');
     }
     const ownerId = await findShopOwnerById(shopId);
-    if (ownerId !== null && ownerId !== user.sub) {
+    if (ownerId !== null && ownerId !== user.sub && !(await isShopStaff(user.sub, shopId))) {
       throw new ForbiddenException(`No tienes permisos sobre la tienda ${shopId}.`);
     }
   }

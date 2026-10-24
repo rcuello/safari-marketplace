@@ -23,6 +23,7 @@ import {
   findCouponByCode,
   findCouponById,
   findShopOwnerById,
+  isShopStaff,
   listCoupons,
   RecordNotFoundError,
   setCouponApproval,
@@ -47,6 +48,7 @@ jest.mock('@safari/db', () => ({
   deleteCoupon: jest.fn(),
   setCouponApproval: jest.fn(),
   findShopOwnerById: jest.fn(),
+  isShopStaff: jest.fn(),
 }));
 
 const listMock = jest.mocked(listCoupons);
@@ -57,9 +59,11 @@ const updateMock = jest.mocked(updateCoupon);
 const deleteMock = jest.mocked(deleteCoupon);
 const approvalMock = jest.mocked(setCouponApproval);
 const ownerMock = jest.mocked(findShopOwnerById);
+const staffMock = jest.mocked(isShopStaff);
 
 const NOW = new Date('2026-10-22T12:00:00.000Z');
 const OWNER = 1;
+const STAFF = 2;
 
 const ADMIN_USER: CurrentUserPayload = {
   sub: 3,
@@ -72,6 +76,14 @@ const OWNER_USER: CurrentUserPayload = {
   sub: OWNER,
   email: 'store_owner@demo.com',
   permissions: ['customer', 'store_owner'],
+  iat: 0,
+  exp: 0,
+};
+/** Staff de la tienda 1 por fila en `shop_staff` (US-66, Ampliación). */
+const STAFF_USER: CurrentUserPayload = {
+  sub: STAFF,
+  email: 'customer@demo.com',
+  permissions: ['customer', 'staff'],
   iat: 0,
   exp: 0,
 };
@@ -295,6 +307,85 @@ describe('CouponsService', () => {
     it('remove devuelve el DTO borrado', async () => {
       deleteMock.mockResolvedValue(makeRecord());
       expect((await service.remove(10, ADMIN_USER)).code).toBe('4OFF');
+    });
+  });
+
+  /**
+   * US-66 (Ampliación, Decisión 2 cerrada): `assertCanManage` admite al staff
+   * de la tienda (fila en `shop_staff`), consultado solo si no es dueño.
+   * `jest.resetAllMocks()` deja `isShopStaff` en `undefined` (falsy) para el
+   * resto de casos, que siguen significando «sin fila».
+   */
+  describe('staff de la tienda (US-66, Ampliación)', () => {
+    const DTO = {
+      code: 'zz-coupon-staff',
+      type: 'fixed',
+      amount: '5',
+      active_from: '2026-01-01T00:00:00.000Z',
+      expire_at: '2027-01-01T00:00:00.000Z',
+      shop_id: 1,
+    } as unknown as CreateCouponDto;
+
+    it('crea en su tienda: dueño consultado primero, luego shop_staff con (sub, shop_id)', async () => {
+      ownerMock.mockResolvedValue(OWNER);
+      staffMock.mockResolvedValue(true);
+      createMock.mockResolvedValue(makeRecord({ isApprove: false }));
+      await service.create(DTO, STAFF_USER);
+      expect(ownerMock).toHaveBeenCalledWith(1);
+      expect(staffMock).toHaveBeenCalledWith(STAFF, 1);
+      expect(createMock).toHaveBeenCalledWith(expect.objectContaining({ shopId: 1, userId: STAFF }));
+    });
+
+    it('staff de OTRA tienda ⇒ 403 sin escribir', async () => {
+      ownerMock.mockResolvedValue(OWNER);
+      staffMock.mockResolvedValue(false);
+      await expect(
+        service.create({ ...DTO, shop_id: 5 } as unknown as CreateCouponDto, STAFF_USER),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(staffMock).toHaveBeenCalledWith(STAFF, 5);
+      expect(createMock).not.toHaveBeenCalled();
+    });
+
+    it('cupón global ⇒ 403 para el staff sin consultar tiendas ni shop_staff', async () => {
+      await expect(
+        service.create({ ...DTO, shop_id: undefined } as unknown as CreateCouponDto, STAFF_USER),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(ownerMock).not.toHaveBeenCalled();
+      expect(staffMock).not.toHaveBeenCalled();
+    });
+
+    it('edita y borra un cupón de su tienda; de otra tienda ⇒ 403', async () => {
+      findByIdMock.mockResolvedValue(makeRecord({ shopId: 1 }));
+      ownerMock.mockResolvedValue(OWNER);
+      staffMock.mockImplementation(async (_userId, shopId) => shopId === 1);
+      updateMock.mockResolvedValue(makeRecord({ amount: 8 }));
+      deleteMock.mockResolvedValue(makeRecord());
+      expect((await service.update(10, { amount: 8 }, STAFF_USER)).amount).toBe(8);
+      expect((await service.remove(10, STAFF_USER)).code).toBe('4OFF');
+
+      findByIdMock.mockResolvedValue(makeRecord({ shopId: 2 }));
+      await expect(service.update(10, { amount: 9 }, STAFF_USER)).rejects.toBeInstanceOf(ForbiddenException);
+      await expect(service.remove(10, STAFF_USER)).rejects.toBeInstanceOf(ForbiddenException);
+      expect(staffMock).toHaveBeenCalledWith(STAFF, 2);
+      expect(updateMock).toHaveBeenCalledTimes(1);
+      expect(deleteMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('el dueño y el super_admin no consultan shop_staff', async () => {
+      ownerMock.mockResolvedValue(OWNER);
+      createMock.mockResolvedValue(makeRecord());
+      await service.create(DTO, OWNER_USER);
+      await service.create(DTO, ADMIN_USER);
+      expect(ownerMock).toHaveBeenCalledTimes(1);
+      expect(staffMock).not.toHaveBeenCalled();
+    });
+
+    it('tienda inexistente (dueño null) pasa al repositorio sin consultar shop_staff', async () => {
+      ownerMock.mockResolvedValue(null);
+      createMock.mockResolvedValue(makeRecord({ shopId: 777 }));
+      await service.create({ ...DTO, shop_id: 777 } as unknown as CreateCouponDto, STAFF_USER);
+      expect(staffMock).not.toHaveBeenCalled();
+      expect(createMock).toHaveBeenCalled();
     });
   });
 

@@ -13,6 +13,7 @@ import {
   findShopOwnerById,
   getUserFriendlyMessage,
   isPrismaConnectionError,
+  isShopStaff,
   listProducts,
   updateProduct,
   type CreateProductInput,
@@ -115,10 +116,11 @@ function parseProductSearch(search?: string): ListProductsInput {
 export class ProductsService {
   /**
    * Propiedad por tienda (DD29-4): `super_admin` corta en seco sin
-   * consultar `shops`; `store_owner`/`staff` deben ser dueños de `shopId`.
-   * `findShopOwnerById(shopId) === null` (tienda inexistente) NO es 403: se
-   * deja pasar para que el repositorio produzca el 400 vía `P2003` — mismo
-   * desenlace que si hubiera sido `super_admin` (nunca sondeó).
+   * consultar `shops`; el resto debe ser dueño de `shopId` o su staff (fila
+   * en `shop_staff`, US-66 Ampliación), y el staff se consulta solo si no es
+   * dueño. `findShopOwnerById(shopId) === null` (tienda inexistente) NO es
+   * 403: se deja pasar para que el repositorio produzca el 400 vía `P2003` —
+   * mismo desenlace que si hubiera sido `super_admin` (nunca sondeó).
    */
   async create(
     createProductDto: CreateProductDto,
@@ -128,7 +130,11 @@ export class ProductsService {
 
     if (!user.permissions.includes('super_admin')) {
       const ownerId = await findShopOwnerById(shopId);
-      if (ownerId !== null && ownerId !== user.sub) {
+      if (
+        ownerId !== null &&
+        ownerId !== user.sub &&
+        !(await isShopStaff(user.sub, shopId))
+      ) {
         throw new ForbiddenException(
           `No tienes permisos sobre la tienda ${shopId}.`,
         );
@@ -402,7 +408,8 @@ export class ProductsService {
    * 404 antes que 403 (DD29-4): la propiedad se evalúa sobre el `shop_id`
    * **actual** de la fila, que exige tenerla primero. Mover `shop_id`
    * (`D29-1` ratificada: es mutable) exige propiedad de AMBAS tiendas — la
-   * actual primero, la destino después.
+   * actual primero, la destino después. En cada lado vale ser dueño o
+   * staff (US-66 Ampliación); el staff se consulta solo si no es dueño.
    */
   async update(
     id: number,
@@ -420,7 +427,10 @@ export class ProductsService {
 
     if (!user.permissions.includes('super_admin')) {
       const currentOwnerId = await findShopOwnerById(currentShopId);
-      if (currentOwnerId !== user.sub) {
+      if (
+        currentOwnerId !== user.sub &&
+        !(await isShopStaff(user.sub, currentShopId))
+      ) {
         throw new ForbiddenException(
           `No tienes permisos sobre la tienda ${currentShopId}.`,
         );
@@ -430,7 +440,11 @@ export class ProductsService {
         const destinationShopId = Number(updateProductDto.shop_id);
         if (destinationShopId !== currentShopId) {
           const destinationOwnerId = await findShopOwnerById(destinationShopId);
-          if (destinationOwnerId !== null && destinationOwnerId !== user.sub) {
+          if (
+            destinationOwnerId !== null &&
+            destinationOwnerId !== user.sub &&
+            !(await isShopStaff(user.sub, destinationShopId))
+          ) {
             throw new ForbiddenException(
               `No tienes permisos sobre la tienda ${destinationShopId}.`,
             );
@@ -519,7 +533,7 @@ export class ProductsService {
     }
   }
 
-  /** Mismo guard de id y de propiedad que `update`, sin el lado del destino. */
+  /** Mismo guard de id y de propiedad (dueño o staff) que `update`, sin el lado del destino. */
   async remove(id: number, user: CurrentUserPayload): Promise<Product> {
     if (!Number.isSafeInteger(id) || id <= 0) {
       throw new NotFoundException(`No existe un producto con id ${id}.`);
@@ -532,7 +546,10 @@ export class ProductsService {
 
     if (!user.permissions.includes('super_admin')) {
       const ownerId = await findShopOwnerById(currentShopId);
-      if (ownerId !== user.sub) {
+      if (
+        ownerId !== user.sub &&
+        !(await isShopStaff(user.sub, currentShopId))
+      ) {
         throw new ForbiddenException(
           `No tienes permisos sobre la tienda ${currentShopId}.`,
         );

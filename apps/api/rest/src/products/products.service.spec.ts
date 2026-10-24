@@ -32,6 +32,7 @@ import {
   deleteProduct,
   findProductShopId,
   findShopOwnerById,
+  isShopStaff,
   InvalidReferenceError,
   InvalidSalePriceError,
   MissingPriceError,
@@ -65,6 +66,8 @@ jest.mock('@safari/db', () => ({
   deleteProduct: jest.fn(),
   findProductShopId: jest.fn(),
   findShopOwnerById: jest.fn(),
+  // US-66 (Ampliación): pertenencia a `shop_staff`, solo lectura.
+  isShopStaff: jest.fn(),
 }));
 
 const listProductsMock = jest.mocked(listProducts);
@@ -74,6 +77,7 @@ const updateProductMock = jest.mocked(updateProduct);
 const deleteProductMock = jest.mocked(deleteProduct);
 const findProductShopIdMock = jest.mocked(findProductShopId);
 const findShopOwnerByIdMock = jest.mocked(findShopOwnerById);
+const isShopStaffMock = jest.mocked(isShopStaff);
 
 /**
  * `ValidationPipe` corre sin `transform` (Decision A del design de US-2):
@@ -851,11 +855,15 @@ describe('CA-5 — matriz de roles en las 3 rutas de escritura (US-29)', () => {
     deleteProductMock.mockReset();
     findProductShopIdMock.mockReset();
     findShopOwnerByIdMock.mockReset();
+    isShopStaffMock.mockReset();
 
     createProductMock.mockResolvedValue(makeProductRecord({ shopId: SHOP_ID }));
     updateProductMock.mockResolvedValue(makeProductRecord({ shopId: SHOP_ID }));
     deleteProductMock.mockResolvedValue(makeProductRecord({ shopId: SHOP_ID }));
     findProductShopIdMock.mockResolvedValue(SHOP_ID);
+    // Sin fila en `shop_staff` por defecto: los casos de staff real están en
+    // el describe de la Ampliación de US-66.
+    isShopStaffMock.mockResolvedValue(false);
 
     service = new ProductsService();
   });
@@ -893,6 +901,7 @@ describe('CA-5 — matriz de roles en las 3 rutas de escritura (US-29)', () => {
     await expect(
       invoke(makeUser({ sub: OTHER_USER_ID, permissions: ['staff'] })),
     ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(isShopStaffMock).toHaveBeenCalledWith(OTHER_USER_ID, SHOP_ID);
   });
 
   // Sin token → 401: DECLARADO, no probado en este archivo (a nivel de
@@ -913,10 +922,12 @@ describe('CA-5 — PUT que mueve shop_id exige propiedad de ambas tiendas (US-29
     updateProductMock.mockReset();
     findProductShopIdMock.mockReset();
     findShopOwnerByIdMock.mockReset();
+    isShopStaffMock.mockReset();
     updateProductMock.mockResolvedValue(
       makeProductRecord({ shopId: DESTINATION_SHOP_ID }),
     );
     findProductShopIdMock.mockResolvedValue(CURRENT_SHOP_ID);
+    isShopStaffMock.mockResolvedValue(false);
     service = new ProductsService();
   });
 
@@ -947,6 +958,140 @@ describe('CA-5 — PUT que mueve shop_id exige propiedad de ambas tiendas (US-29
         makeUser({ sub: OWNER_ID, permissions: ['store_owner'] }),
       ),
     ).resolves.toBeDefined();
+  });
+});
+
+/**
+ * US-66 (Ampliación, Decisión 2 cerrada): el staff de la tienda — fila en
+ * `shop_staff`, sin exigir el permiso global `staff` dentro del servicio —
+ * gestiona sus productos igual que el dueño. Orden de las comprobaciones:
+ * `super_admin` (sin consultar) → dueño (`findShopOwnerById`) → staff
+ * (`isShopStaff`, solo si no es dueño). El guard `@Permissions` del
+ * controlador sigue exigiendo el permiso `staff` y no se prueba aquí.
+ */
+describe('US-66 Ampliación — el staff de la tienda gestiona productos', () => {
+  let service: ProductsService;
+  const OWNER_ID = 42;
+  const STAFF_ID = 7;
+  const SHOP_ID = 9;
+  const PRODUCT_ID = 1465;
+  const staffUser = makeUser({ sub: STAFF_ID, permissions: ['customer', 'staff'] });
+
+  type Route = [string, (user: CurrentUserPayload) => Promise<unknown>];
+
+  const routes: readonly Route[] = [
+    [
+      'create',
+      (user) => service.create(makeCreateDto({ shop_id: SHOP_ID }), user),
+    ],
+    [
+      'update',
+      (user) => service.update(PRODUCT_ID, makeUpdateDto(), user),
+    ],
+    ['remove', (user) => service.remove(PRODUCT_ID, user)],
+  ];
+
+  beforeEach(() => {
+    createProductMock.mockReset();
+    updateProductMock.mockReset();
+    deleteProductMock.mockReset();
+    findProductShopIdMock.mockReset();
+    findShopOwnerByIdMock.mockReset();
+    isShopStaffMock.mockReset();
+
+    createProductMock.mockResolvedValue(makeProductRecord({ shopId: SHOP_ID }));
+    updateProductMock.mockResolvedValue(makeProductRecord({ shopId: SHOP_ID }));
+    deleteProductMock.mockResolvedValue(makeProductRecord({ shopId: SHOP_ID }));
+    findProductShopIdMock.mockResolvedValue(SHOP_ID);
+    findShopOwnerByIdMock.mockResolvedValue(OWNER_ID);
+
+    service = new ProductsService();
+  });
+
+  it.each(routes)('%s: staff de la tienda (fila en shop_staff) → 200, tras sondear al dueño', async (_route, invoke) => {
+    isShopStaffMock.mockResolvedValue(true);
+
+    await expect(invoke(staffUser)).resolves.toBeDefined();
+
+    expect(findShopOwnerByIdMock).toHaveBeenCalledWith(SHOP_ID);
+    expect(isShopStaffMock).toHaveBeenCalledWith(STAFF_ID, SHOP_ID);
+  });
+
+  it.each(routes)('%s: staff de OTRA tienda → 403 sin escribir', async (_route, invoke) => {
+    isShopStaffMock.mockResolvedValue(false);
+
+    await expect(invoke(staffUser)).rejects.toBeInstanceOf(ForbiddenException);
+
+    expect(isShopStaffMock).toHaveBeenCalledWith(STAFF_ID, SHOP_ID);
+    expect(createProductMock).not.toHaveBeenCalled();
+    expect(updateProductMock).not.toHaveBeenCalled();
+    expect(deleteProductMock).not.toHaveBeenCalled();
+  });
+
+  it.each(routes)('%s: el dueño pasa SIN consultar shop_staff', async (_route, invoke) => {
+    await expect(
+      invoke(makeUser({ sub: OWNER_ID, permissions: ['store_owner'] })),
+    ).resolves.toBeDefined();
+
+    expect(isShopStaffMock).not.toHaveBeenCalled();
+  });
+
+  it.each(routes)('%s: super_admin pasa SIN consultar ni al dueño ni a shop_staff', async (_route, invoke) => {
+    await expect(
+      invoke(makeUser({ sub: 999, permissions: ['super_admin'] })),
+    ).resolves.toBeDefined();
+
+    expect(findShopOwnerByIdMock).not.toHaveBeenCalled();
+    expect(isShopStaffMock).not.toHaveBeenCalled();
+  });
+
+  it('create: tienda inexistente (dueño null) sigue pasando al repositorio sin consultar shop_staff', async () => {
+    findShopOwnerByIdMock.mockResolvedValue(null);
+
+    await expect(
+      service.create(makeCreateDto({ shop_id: 777 }), staffUser),
+    ).resolves.toBeDefined();
+
+    expect(isShopStaffMock).not.toHaveBeenCalled();
+    expect(createProductMock).toHaveBeenCalled();
+  });
+
+  describe('mover shop_id exige gestionar AMBAS tiendas', () => {
+    const DESTINATION_SHOP_ID = 20;
+    const move = (user: CurrentUserPayload) =>
+      service.update(PRODUCT_ID, makeUpdateDto({ shop_id: DESTINATION_SHOP_ID }), user);
+
+    it('staff de la actual pero NO de la destino → 403, sondeando ambos lados', async () => {
+      isShopStaffMock.mockImplementation(async (_userId, shopId) => shopId === SHOP_ID);
+
+      await expect(move(staffUser)).rejects.toBeInstanceOf(ForbiddenException);
+
+      expect(isShopStaffMock).toHaveBeenCalledWith(STAFF_ID, SHOP_ID);
+      expect(isShopStaffMock).toHaveBeenCalledWith(STAFF_ID, DESTINATION_SHOP_ID);
+      expect(updateProductMock).not.toHaveBeenCalled();
+    });
+
+    it('staff de ambas tiendas → 200', async () => {
+      isShopStaffMock.mockResolvedValue(true);
+
+      await expect(move(staffUser)).resolves.toBeDefined();
+
+      expect(isShopStaffMock).toHaveBeenCalledTimes(2);
+    });
+
+    it('dueño de la actual y staff de la destino → 200; shop_staff solo se consulta para la destino', async () => {
+      findShopOwnerByIdMock.mockImplementation(async (shopId: number) =>
+        shopId === SHOP_ID ? OWNER_ID : 12345,
+      );
+      isShopStaffMock.mockResolvedValue(true);
+
+      await expect(
+        move(makeUser({ sub: OWNER_ID, permissions: ['store_owner'] })),
+      ).resolves.toBeDefined();
+
+      expect(isShopStaffMock).toHaveBeenCalledTimes(1);
+      expect(isShopStaffMock).toHaveBeenCalledWith(OWNER_ID, DESTINATION_SHOP_ID);
+    });
   });
 });
 
