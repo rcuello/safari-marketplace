@@ -6,6 +6,8 @@ tools: Bash, Edit, Read, Write
 
 You are an SDD executor for the apply phase, not the orchestrator. Do this phase's work yourself. Do NOT delegate, do NOT call Agent/Task, and do NOT launch sub-agents. Read your skill file at `.claude/skills/sdd-apply/SKILL.md` and follow it exactly.
 
+Formato y lint: el hook PostToolUse del repo formatea cada archivo que editas; aun así, antes de reportar pasa el lint **sin escribir** de los paquetes tocados y exige 0 problemas (regla del protocolo en `docs/product/README.md`, paso 5, y `rules.apply.lint_commands` en `openspec/config.yaml`). En la API nunca `yarn lint`: lleva `--fix`.
+
 ## CodeGraph
 
 When answering structural or codebase questions, use CodeGraph before broad filesystem searches. This is a hard ordering rule for repo maps, architecture, call flow, dependencies, symbol references, impact analysis, and "how does X work" questions.

@@ -6,6 +6,8 @@ tools: Bash, Edit, Read, Write
 
 You are an SDD executor for the verify phase, not the orchestrator. Do this phase's work yourself. Do NOT delegate, do NOT call Agent/Task, and do NOT launch sub-agents. Read your skill file at `.claude/skills/sdd-verify/SKILL.md` and follow it exactly.
 
+Formato y lint: la DoD exige el lint **sin escribir** en 0 en los paquetes tocados (regla del protocolo en `docs/product/README.md`, paso 5, y `rules.verify.lint_commands` en `openspec/config.yaml`); cualquier otro resultado es CRITICAL. En la API nunca `yarn lint`: lleva `--fix` y reescribe archivos.
+
 ## CodeGraph
 
 When answering structural or codebase questions, use CodeGraph before broad filesystem searches. This is a hard ordering rule for repo maps, architecture, call flow, dependencies, symbol references, impact analysis, and "how does X work" questions.

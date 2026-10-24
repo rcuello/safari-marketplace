@@ -25,30 +25,40 @@ context: |
 strict_tdd: false   # no hay runner de tests repo-wide todavia (ver testing.test_command)
 
 testing:
-  framework: mixed             # vitest (packages/db), jest con 9 specs (apps/api/rest), script Python (scraper)
-  # PENDIENTE: no existe un comando de test repo-wide. Los tests reales hoy:
-  #   - packages/db: `npm test` (vitest, integracion; requiere `just db-up` antes)  -> envuelto en `just db-check`
-  #   - apps/api/rest: `cd apps/api/rest && npx jest` (9 suites / 285 tests: products, shops, users,
-  #     user-dto.mapper, types, tags, manufacturers, categories, domain-error.mapper; mockean @safari/db,
-  #     no requieren Postgres). Cifra medida en la rama correcciones-post-us-31 (incluye los 17 tests de
-  #     US-31 y los 11 de su red CA-2). SIN receta de `just` que lo envuelva.
+  framework: mixed             # vitest (packages/db), jest con 34 suites (apps/api/rest), script Python (scraper)
+  # PENDIENTE: no existe un comando de test repo-wide. Los tests reales hoy (medidos 2026-10-24,
+  # rama lint-formato-api-db):
+  #   - packages/db: `npm test` (vitest; 10 archivos: 9 *.integration.test.ts + products.repository.test.ts;
+  #     requiere `just db-up` antes) -> envuelto en `just db-check` (typecheck + tests)
+  #   - apps/api/rest: `cd apps/api/rest && npx jest` (34 suites / 565 tests; mockean @safari/db,
+  #     no requieren Postgres). SIN receta de `just` que lo envuelva.
   #     Su package.json resuelve `@db/*` y `src/*` via moduleNameMapper y excluye packages/db/dist
   #     del transform (requiere `just db-build` antes). No hay suite de auth.
-  #   - scraper: `just db-test` (services/scraper-worker/test_pipeline.py) — HOY ROTO:
-  #     el pipeline escribe en la tabla `productos`, que ya no existe en db/schema.sql
+  #   - scraper: `just db-test` (services/scraper-worker/test_pipeline.py; requiere `just db-up`).
+  #     El pipeline ya upserta en `products` (US-6); lo que sigue consultando `productos` es
+  #     `just db-count` (US-8, pendiente).
   # Crear el gate agregador (`just check`) es una US del backlog (Epico 9 / US-10).
-  test_command: "just db-check"   # el unico gate envuelto en una receta de `just` (requiere just db-up); jest de la API se corre aparte
+  test_command: "just db-check"   # el unico gate envuelto en una receta de `just` (requiere just db-up); el jest de la API se corre aparte
   coverage_command: ""            # not yet configured
-  build_command: "just build"     # build de produccion shop + admin (build-api aparte)
+  build_command: "just build"     # build de produccion shop + admin (build-api aparte; exige la API arriba)
   coverage_threshold: 0
   layers:
-    unit: true                 # apps/api/rest: jest con @safari/db mockeado (products, shops, users, user-dto.mapper)
-    integration: true          # packages/db/src/repositories/products.integration.test.ts (vitest + Postgres real)
+    unit: true                 # apps/api/rest: jest con @safari/db mockeado (34 suites / 565 tests); packages/db: products.repository.test.ts
+    integration: true          # packages/db/src/**/*.integration.test.ts (9 archivos; vitest + Postgres real)
     e2e: false                 # `just verify` comprueba los 3 servicios levantados, pero es manual, no una suite
   quality:
-    linter: true               # biome en packages/db (`npm run lint`); eslint declarado en apps/api/rest
+    # Lint SIN escribir (el que exige la DoD; ver rules.apply.lint_commands):
+    #   packages/db   -> npm run lint   (biome check .)
+    #   apps/api/rest -> npx eslint "{src,apps,libs,test}/**/*.ts"   (NUNCA `yarn lint`: lleva --fix y reescribe)
+    #   apps/shop y apps/admin/rest -> yarn lint   (next lint)
+    linter: true
     type_checker: true         # tsc --noEmit en packages/db (`npm run typecheck`); resto solo via build
-    formatter: true            # biome format en packages/db; prettier configurado en apps/
+    # Formateadores: biome `npm run format` en packages/db; prettier 2.8 `yarn format` en apps/api/rest;
+    # prettier 2.4.0 de apps/node_modules en shop/admin (prettier.config.js de cada app; el 3.3.3 local
+    # de cada app NO es el que dejo ese codigo en 0). El hook PostToolUse
+    # .claude/hooks/post-tool-use/format-edited-file.cjs pasa el formateador correspondiente sobre
+    # cada archivo que el agente edita; no sustituye al lint de la DoD.
+    formatter: true
 
 rules:
   proposal:
@@ -74,9 +84,17 @@ rules:
     # Inner loop por paquete (elegir segun el area tocada):
     #   packages/db  -> cd packages/db && npm test          (vitest; requiere just db-up)
     #   scraper      -> just db-test                        (hoy roto: ver testing.test_command)
-    #   apps/api     -> cd apps/api/rest && npx jest      (9 suites; sin receta de just) + build + curl contra el endpoint
+    #   apps/api     -> cd apps/api/rest && npx jest      (34 suites / 565 tests; sin receta de just) + build + curl contra el endpoint
     test_command: "just db-check"
     follow_existing_patterns: true
+    # Formato y lint (docs/product/README.md, paso 5 del protocolo). El hook PostToolUse
+    # .claude/hooks/post-tool-use/format-edited-file.cjs formatea cada archivo al editarlo;
+    # aun asi, antes de reportar, el lint SIN escribir de los paquetes tocados debe dar 0 problemas.
+    # La API NUNCA se verifica con `yarn lint`: lleva --fix y reescribe archivos.
+    lint_commands:
+      - cd packages/db && npm run lint
+      - cd apps/api/rest && npx eslint "{src,apps,libs,test}/**/*.ts"
+      - cd apps/shop && yarn lint
   verify:
     # No hay runner quiet-mode como en otros repos. La evidencia de cierre es la salida
     # REAL de los comandos: just db-check / just db-test / just verify / curl contra
@@ -85,6 +103,12 @@ rules:
     build_command: "just build"
     coverage_threshold: 0
     require_evidence: true
+    # Lint SIN escribir en 0 en los paquetes tocados; cualquier otro resultado es CRITICAL.
+    # Mismos comandos que rules.apply.lint_commands; en la API nunca `yarn lint` (lleva --fix).
+    lint_commands:
+      - cd packages/db && npm run lint
+      - cd apps/api/rest && npx eslint "{src,apps,libs,test}/**/*.ts"
+      - cd apps/shop && yarn lint
   archive:
     - Warn before merging destructive deltas
     - Archive is an audit trail; never delete or modify archived changes

@@ -88,6 +88,13 @@ Cada US la ejecuta **un agente en una sesión**. Protocolo obligatorio:
 5. **Verificar la Definición de Done con comandos reales** (`just db-check`,
    `just db-test`, `just verify`, `curl` contra endpoints, builds) y
    pegar la evidencia en el reporte. "Debería funcionar" no cierra una US.
+   La DoD incluye el **lint sin escribir en 0** en los paquetes tocados:
+   `cd packages/db && npm run lint`, `cd apps/api/rest && npx eslint
+   "{src,apps,libs,test}/**/*.ts"` (nunca `yarn lint`: lleva `--fix` y
+   reescribe archivos) y `cd apps/shop && yarn lint`. El hook PostToolUse
+   `.claude/hooks/post-tool-use/format-edited-file.cjs` formatea cada archivo
+   al editarlo (biome en `packages/db`, prettier en la API, el shop y el
+   admin), pero la DoD lo verifica igual.
 6. **Actualizar el Status** de la US al terminar (`Implementada`) y marcar la fila
    correspondiente en la tabla del épico.
 7. **1 US = 1 sesión.** No mezclar dos US aunque sean del mismo épico. Si la US
@@ -133,6 +140,9 @@ Feature: …
 
 ## Definición de Done
 - [ ] …
+- [ ] Lint sin escribir en 0 en los paquetes tocados, con la salida pegada
+      (`npm run lint` en `packages/db`, `npx eslint "{src,apps,libs,test}/**/*.ts"`
+      en la API, `yarn lint` en el shop)
 
 ## Notas para el agente ejecutor
 - …
@@ -186,6 +196,7 @@ Feature: …
 | Editar `schema.prisma` a mano para cambiar el modelo | Cambiar `db/schema.sql` y re-introspeccionar |
 | El scraper con tablas/esquema propios | Escribe en `products` con `source_store`/`source_product_id` |
 | Reportar "implementado" sin evidencia | DoD verificado con comandos y salida pegada |
+| Dejar el formateador y el lint "para después" | El hook formatea al editar; la DoD verifica el lint sin escribir en 0 (en la API nunca `yarn lint`: lleva `--fix`) |
 | Mezclar 2 US en 1 sesión | 1 US = 1 sesión de agente |
 
 ---
