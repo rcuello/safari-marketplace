@@ -72,7 +72,8 @@ describe('listReviews / findReviewById — seed', () => {
     const r1 = await findReviewById(1);
     expect(r1?.user.email).toBe('customer@demo.com');
     expect(r1?.product.id).toBe(r1?.productId);
-    expect(Object.keys((r1?.photos as object[])[0])).toEqual([
+    const photos = r1?.photos as object[] | undefined;
+    expect(Object.keys(photos?.[0] ?? {})).toEqual([
       'id',
       'original',
       'thumbnail',

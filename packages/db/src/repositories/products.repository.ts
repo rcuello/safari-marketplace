@@ -248,8 +248,7 @@ function buildOrderBy(
       return [{ ratings: 'desc' }, { id: 'asc' }];
     case 'soldQuantity':
       return [{ soldQuantity: 'desc' }, { id: 'asc' }];
-    case 'id':
-    default:
+    default: // 'id' o sin orderBy
       return { id: 'asc' };
   }
 }

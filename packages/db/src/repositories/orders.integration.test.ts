@@ -26,6 +26,7 @@ import {
   InsufficientStockError,
   listOrders,
   markOrderPaid,
+  type OrderDetailRecord,
   type OrderLineInput,
   setOrderStatus,
 } from './orders.repository';
@@ -230,7 +231,7 @@ describe('lecturas — seed', () => {
   it('por id o por tracking; inexistente ⇒ null', async () => {
     const byTracking = await findOrderByIdOrTracking('20231105635099');
     expect(byTracking).toMatchObject({ id: 41, customerId: ADMIN });
-    expect((byTracking?.customerSnapshot as { id: number }).id).toBe(6);
+    expect(byTracking?.customerSnapshot).toMatchObject({ id: 6 });
     expect(await findOrderByIdOrTracking(999_999)).toBeNull();
     expect(await findOrderByIdOrTracking('00000000000000')).toBeNull();
   });
@@ -379,7 +380,7 @@ describe('createOrderWithChildren', () => {
   it('crea padre + una hija por tienda + líneas, descuenta stock y numera con la fecha UTC', async () => {
     const [before1, before21] = [await stockOf(1), await stockOf(21)];
     const stamp = new Date('2026-10-23T15:00:00.000Z');
-    let order;
+    let order: OrderDetailRecord;
     try {
       _setNowProvider(() => stamp);
       const l1 = line(1, 2, '1.6');
