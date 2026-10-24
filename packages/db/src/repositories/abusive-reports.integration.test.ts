@@ -4,7 +4,9 @@
  * los reportes de preguntas, US-55.
  *
  * Las escrituras son del admin (3), sin reportes en el seed; se borran en
- * `beforeAll`/`afterAll`.
+ * `beforeAll`/`afterAll`. Los rechazos (US-65) trabajan sobre reportes
+ * centinela del admin en objetos sin reportes sembrados, así que los 3 del
+ * seed no se tocan.
  */
 
 import 'dotenv/config';
@@ -22,6 +24,7 @@ import {
   findAbusiveReportById,
   listAbusiveReports,
   listAbusiveReportsByUser,
+  rejectAbusiveReports,
   updateAbusiveReport,
 } from './abusive-reports.repository';
 
@@ -128,5 +131,37 @@ describe('updateAbusiveReport / deleteAbusiveReport', () => {
     } finally {
       _setNowProvider(() => new Date());
     }
+  });
+});
+
+describe('rejectAbusiveReports — US-65', () => {
+  const seeded = () =>
+    prisma.abusiveReport.findMany({ where: { userId: CUSTOMER }, orderBy: { id: 'asc' }, select: { id: true } });
+
+  it('borra todos los reportes del objeto, devuelve cuántos y deja intactos los demás; repetir da 0', async () => {
+    const before = await seeded();
+    await createAbusiveReport({ userId: ADMIN, modelType: 'Review', modelId: 2, message: 'zz-reject' });
+    expect(await rejectAbusiveReports('Review', 2)).toBe(1);
+    expect(await prisma.abusiveReport.count({ where: { modelType: 'Review', modelId: 2 } })).toBe(0);
+    expect(await prisma.review.count({ where: { id: 2 } })).toBe(1);
+    expect(await rejectAbusiveReports('Review', 2)).toBe(0);
+    expect(await seeded()).toEqual(before);
+
+    // DD-2: rechazado, el mismo usuario puede volver a reportarlo.
+    await expect(
+      createAbusiveReport({ userId: ADMIN, modelType: 'Review', modelId: 2, message: 'zz-otra-vez' })
+    ).resolves.toMatchObject({ modelId: 2 });
+  });
+
+  it('también rechaza los de una pregunta', async () => {
+    await createAbusiveReport({ userId: ADMIN, modelType: 'Question', modelId: 67, message: 'zz-reject-q' });
+    expect(await rejectAbusiveReports('Question', 67)).toBe(1);
+  });
+
+  it('objeto inexistente ⇒ RecordNotFoundError; tipo no reportable ⇒ InvalidFieldValueError; no borra nada', async () => {
+    const before = await prisma.abusiveReport.count();
+    await expect(rejectAbusiveReports('Review', 999999)).rejects.toBeInstanceOf(RecordNotFoundError);
+    await expect(rejectAbusiveReports('Product', 1)).rejects.toBeInstanceOf(InvalidFieldValueError);
+    expect(await prisma.abusiveReport.count()).toBe(before);
   });
 });

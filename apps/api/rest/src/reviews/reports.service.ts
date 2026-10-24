@@ -12,15 +12,17 @@ import {
   getUserFriendlyMessage,
   isPrismaConnectionError,
   listAbusiveReports,
+  rejectAbusiveReports,
   updateAbusiveReport,
   type AbusiveReportDetailRecord,
 } from '@safari/db';
 import { CurrentUserPayload } from 'src/auth/decorators/current-user.decorator';
 import { toWriteHttpException } from 'src/common/errors/domain-error.mapper';
 import { CreateReportDto } from './dto/create-report.dto';
+import { RejectReportDto } from './dto/reject-report.dto';
 import { UpdateReportDto } from './dto/update-report.dto';
 import { Report } from './entities/reports.entity';
-import { toReportDto, toShortModelType } from './review-dto.mapper';
+import { REPORTABLE_FQCN, toReportDto, toShortModelType } from './review-dto.mapper';
 
 function readError(error: unknown): never {
   if (isPrismaConnectionError(error)) {
@@ -87,6 +89,30 @@ export class AbusiveReportService {
         message: dto.message,
       });
       return toReportDto(record);
+    } catch (error) {
+      throw toWriteHttpException(error);
+    }
+  }
+
+  /**
+   * Rechazar (US-65): borra todos los reportes del objeto y lo deja intacto.
+   * `model_type` corto o FQCN; si falta vale `Review`, que es lo que llega
+   * hoy del admin (no recibe `abusive_reports` en el detalle). Objeto
+   * inexistente ⇒ 404; `model_id` o `model_type` inválidos ⇒ 400; sin
+   * reportes ⇒ `deleted: 0`.
+   */
+  async reject(dto: RejectReportDto): Promise<{ model_type: string; model_id: number; deleted: number }> {
+    const modelType = dto.model_type == null ? 'Review' : toShortModelType(dto.model_type);
+    if (!modelType) {
+      throw new BadRequestException(`\`model_type\` no admite \`${String(dto.model_type)}\`.`);
+    }
+    const modelId = Number(dto.model_id);
+    if (dto.model_id == null || !Number.isSafeInteger(modelId) || modelId <= 0) {
+      throw new BadRequestException(`\`model_id\` no admite \`${String(dto.model_id)}\`.`);
+    }
+    try {
+      const deleted = await rejectAbusiveReports(modelType, modelId);
+      return { model_type: REPORTABLE_FQCN[modelType], model_id: modelId, deleted };
     } catch (error) {
       throw toWriteHttpException(error);
     }

@@ -8,7 +8,7 @@
 **Épico:** ninguno (US standalone). Nace del «NO incluye» de
 [US-54](./46-api-sin-mocks-json/54-reviews-abuse-reports-postgres.md).
 **Fecha:** 2026-10-22
-**Status:** Listo para ejecución
+**Status:** ✅ Implementada (2026-10-23)
 **Depende de:** US-54 (crea `abusive_reports` y su repositorio) y US-55 (deja
 `assertReportableExists` con las ramas `Review` y `Question`). Comparte con el
 Épico 46 `packages/db/index.ts` y el módulo `reviews`, así que **no puede ir en
@@ -232,3 +232,116 @@ Feature: Rechazar reportes de abuso
   centinela creados por el propio test.
 - Mencionar DD-3 en el reporte: sin el array `abusive_reports`, la tabla de
   reportes del detalle sigue vacía en el admin.
+
+## Evidencia (2026-10-23)
+
+**Decisiones DD-1 a DD-3:** se aplicaron las propuestas por defecto. El
+dueño no indicó otra cosa.
+
+- **DD-1 — borrar:** rechazar borra los reportes; no se añade columna de
+  estado.
+- **DD-2 — sí:** se puede volver a reportar. El integration test lo
+  comprueba: tras rechazar, el mismo usuario reporta otra vez la misma
+  reseña sin 409.
+- **DD-3 — no:** el array `abusive_reports` no se emite en `GET
+  /reviews/:id`.
+
+**Línea base** (API recién arrancada sobre `main` `8206642`):
+
+```
+base GET /reviews/1 → abusive_reports_count 1 200
+base POST /abusive_reports/reject → {"statusCode":404,"message":"Cannot POST /api/abusive_reports/reject","error":"Not Found"} 404
+base list 200 1183B · base get-3 200 381B · base my-reports 200 1183B
+```
+
+**CA-1** (token del admin; `psql` sobre `abusive_reports` como `id:tipo/objeto`):
+
+```
+psql antes: 1:Review/78 2:Review/21 3:Review/1
+GET /reviews/1 → abusive_reports_count 1 · status 200
+POST reject {"model_id":1} → {"model_type":"Marvel\\Database\\Models\\Review","model_id":1,"deleted":1} 201
+GET /reviews/1 → abusive_reports_count 0 · status 200
+psql después: 1:Review/78 2:Review/21
+```
+
+**CA-2:**
+
+```
+POST reject {"model_id":21,"model_type":"Review"}                     → {…"model_id":21,"deleted":1} 201
+POST reject {"model_id":78,"model_type":"Marvel\\Database\\Models\\Review"} → {…"model_id":78,"deleted":1} 201
+POST /abusive_reports (cliente, pregunta 68) → 201 · psql: 1:Review/78 24:Question/68
+POST reject {"model_id":68,"model_type":"Question"} → {"model_type":"Marvel\\Database\\Models\\Question","model_id":68,"deleted":1} 201
+POST reject {"model_id":1} otra vez → {…"model_id":1,"deleted":0} 201
+```
+
+El primer intento con el FQCN dio 400 (`Bad escaped character in JSON`):
+el `\\` se perdió en el escapado de bash. Con el cuerpo en un archivo dio
+201. El fallo era del `curl`, no de la API.
+
+**CA-3** (antes de los errores había un reporte nuevo del cliente sobre la
+reseña 1; `psql: 1:Review/78 25:Review/1`):
+
+```
+{"model_id":999999}                   → 404 No existe un registro de `reviews` con id 999999.
+{"model_id":"abc"}                    → 400 `model_id` no admite `abc`.
+{} (sin model_id)                     → 400 `model_id` no admite `undefined`.
+{"model_id":1,"model_type":"Product"} → 400 `model_type` no admite `Product`.
+cliente {"model_id":1}                → 403 No tienes permisos suficientes para esta operación.
+sin token                             → 401 Token de autenticación ausente o inválido.
+psql después de los errores: 1:Review/78 25:Review/1   (no se borró nada)
+```
+
+**Restauración del reposo:** `just db-reset` →
+`1:Review/78 2:Review/21 3:Review/1`.
+
+**CA-4:**
+
+```
+after GET /reviews/1 → abusive_reports_count 1 200
+list:       idéntico a la línea base: true OK
+get-3:      idéntico a la línea base: true OK
+my-reports: idéntico a la línea base: true OK
+POST /abusive_reports → 201 id 4
+PUT /abusive_reports/4 → 200 · cliente PUT → 403
+DELETE /abusive_reports/4 → 200 · otra vez → 404
+(se restauró setval('abusive_reports_id_seq', 3); quedan los reportes 1, 2 y 3)
+```
+
+```
+$ just db-check
+ Test Files  32 passed (32)
+      Tests  402 passed (402)
+$ cd apps/api/rest && npx jest
+Test Suites: 34 passed, 34 total
+Tests:       539 passed, 539 total
+$ npx tsc --noEmit -p tsconfig.json   → exit 0
+$ just build-api                      → Done in 17.39s.
+$ just verify
+OK   API    :9001/api/settings  200  5503B  551ms
+OK   Shop   :3003/en  200  190788B  362ms  cards:30
+OK   Admin  :3002/en/login  200  72821B  36ms  cards:1
+```
+
+Antes (US-64): 399 tests en `db-check` y 533 en jest. Se suman 3 casos en
+`abusive-reports.integration.test.ts` y 6 en `reports.service.spec.ts`
+(4 `it` más 2 filas extra del `it.each`).
+
+`just build-api` se corrió con la API detenida, y después se volvió a
+arrancar. Así se evita que el watch quede caído por el `dist/` vacío
+(incidencia de US-63 y US-64).
+
+**Decisiones de implementación:**
+
+- El integration test trabaja sobre reportes centinela del admin en la
+  reseña 2 y la pregunta 67, que no tienen reportes sembrados. Los 3 del
+  seed no se tocan. Se usa la 67 y no la 68 porque un caso previo de US-55
+  deja un reporte del admin sobre la 68 hasta el `afterAll`.
+- `model_type` ausente o `null` vale `Review`. Un string que no es
+  reportable da 400. `model_id` admite número o string numérico, como el
+  resto de las rutas.
+- La ruta se declara antes de `GET :id`, por la convención del repo.
+
+**Notas para el reporte:** sigue abierto DD-3. Sin el array
+`abusive_reports` en `GET /reviews/:id`, la tabla de reportes del detalle
+del admin sale vacía y el botón manda solo `model_id` (por eso `Review` es
+el default).

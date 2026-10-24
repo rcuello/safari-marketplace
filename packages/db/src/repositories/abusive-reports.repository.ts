@@ -180,3 +180,16 @@ export async function deleteAbusiveReport(id: number): Promise<AbusiveReportDeta
     throw _translate(error, id);
   }
 }
+
+/**
+ * Rechazar (US-65): borra TODOS los reportes de un objeto y deja el objeto
+ * intacto; es lo opuesto de «aceptar», que borra la reseña con sus
+ * reportes. Devuelve cuántos borró (0 si no tenía: idempotente). El objeto
+ * debe existir; si no, `RecordNotFoundError` sin borrar nada. Como la fila
+ * desaparece, el UNIQUE deja volver a reportarlo (DD-2).
+ */
+export async function rejectAbusiveReports(modelType: string, modelId: number): Promise<number> {
+  await assertReportableExists(modelType, modelId);
+  const { count } = await prisma.abusiveReport.deleteMany({ where: { modelType, modelId } });
+  return count;
+}

@@ -262,6 +262,7 @@ export {
   findAbusiveReportById,
   listAbusiveReports,
   listAbusiveReportsByUser,
+  rejectAbusiveReports,
   updateAbusiveReport,
 } from './src/repositories/abusive-reports.repository';
 export type { ListOrderFilesInput } from './src/repositories/order-files.repository';

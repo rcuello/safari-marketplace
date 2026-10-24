@@ -206,7 +206,7 @@ Feature: …
 US-31    Guardas de id fuera del rango bigint   → standalone   ← implementada: cubrió `types`/`tags`/`manufacturers`, `users` y las 2 FK de `packages/db`
 US-32    Deriva de reloj `updated_at`/`created_at` → standalone ← PRERREQUISITO de US-34: su elección de reloj es insumo del DDL del Épico 33 (R-3, resuelto 2026-09-14)
 US-64    `messages/seen` y estado de lectura      → standalone ✅ (2026-10-23) ← después de US-56; comparte archivos con el Épico 46, NO en paralelo con sus US
-US-65    `abusive_reports/reject` (rechazar)      → standalone ← después de US-55; decisiones DD-1..DD-3 con propuesta por defecto
+US-65    `abusive_reports/reject` (rechazar)      → standalone ✅ (2026-10-23) ← después de US-55; decisiones DD-1..DD-3 con propuesta por defecto
 US-66    El staff responde preguntas              → standalone ← después de US-55; confirmar qué cuenta como «staff»
 US-67    Mensaje del 409 por clave única          → standalone ← solo texto y estructura, commit propio; sin dependencia dura
 US-68    Cupones del seed vigentes                → standalone ← BLOQUEADA por decisión del dueño (choca con la decisión 6 del Épico 46); pide db-reset

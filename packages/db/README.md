@@ -336,6 +336,12 @@ polimórfica y no hay relación para `_count`.
   `InvalidFieldValueError`. Desde US-55, `'Question'` se valida contra
   `questions` y una pregunta inexistente da `RecordNotFoundError`. Un
   reporte repetido da `SlugConflictError`.
+- **`rejectAbusiveReports(modelType, modelId)`** (US-65): rechazar es
+  borrar **todos** los reportes de un objeto y dejar el objeto intacto, lo
+  opuesto de «aceptar», que borra la reseña. Valida el objeto con
+  `assertReportableExists` y borra en un solo `deleteMany`; devuelve
+  cuántos borró (0 si no tenía). Como la fila desaparece, el UNIQUE deja
+  volver a reportarlo.
 - **`_countReports(modelType, ids)`** (interno del paquete): el `groupBy`
   que usan reseñas y preguntas para su `abusiveReportsCount`.
 

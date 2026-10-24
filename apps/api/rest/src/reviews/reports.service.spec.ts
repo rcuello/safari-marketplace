@@ -20,6 +20,7 @@ import {
   InvalidFieldValueError,
   listAbusiveReports,
   RecordNotFoundError,
+  rejectAbusiveReports,
   SlugConflictError,
   updateAbusiveReport,
   type AbusiveReportDetailRecord,
@@ -36,6 +37,7 @@ jest.mock('@safari/db', () => ({
   createAbusiveReport: jest.fn(),
   updateAbusiveReport: jest.fn(),
   deleteAbusiveReport: jest.fn(),
+  rejectAbusiveReports: jest.fn(),
 }));
 
 const listMock = jest.mocked(listAbusiveReports);
@@ -43,6 +45,7 @@ const findMock = jest.mocked(findAbusiveReportById);
 const createMock = jest.mocked(createAbusiveReport);
 const updateMock = jest.mocked(updateAbusiveReport);
 const deleteMock = jest.mocked(deleteAbusiveReport);
+const rejectMock = jest.mocked(rejectAbusiveReports);
 
 const CUSTOMER: CurrentUserPayload = {
   sub: 2,
@@ -167,5 +170,40 @@ describe('AbusiveReportService', () => {
     expect((await service.delete(3)).id).toBe(3);
     deleteMock.mockRejectedValue(new RecordNotFoundError('abusive_reports', 3));
     await expect(service.delete(3)).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  describe('reject (US-65)', () => {
+    it('sin model_type vale Review (lo que manda el admin hoy) y responde con el FQCN y el conteo', async () => {
+      rejectMock.mockResolvedValue(1);
+      expect(await service.reject({ model_id: 1 })).toEqual({
+        model_type: 'Marvel\\Database\\Models\\Review',
+        model_id: 1,
+        deleted: 1,
+      });
+      expect(rejectMock).toHaveBeenCalledWith('Review', 1);
+    });
+
+    it.each([
+      ['Review', 'Review'],
+      ['Marvel\\Database\\Models\\Review', 'Review'],
+      ['Question', 'Question'],
+    ])('model_type %s se normaliza a %s; un id string numérico vale', async (input, short) => {
+      rejectMock.mockResolvedValue(0);
+      const result = await service.reject({ model_id: '21', model_type: input });
+      expect(rejectMock).toHaveBeenCalledWith(short, 21);
+      expect(result.deleted).toBe(0);
+    });
+
+    it('model_id ausente o inválido, o model_type no reportable ⇒ 400 sin tocar la base', async () => {
+      for (const dto of [{}, { model_id: 'abc' }, { model_id: 0 }, { model_id: 1, model_type: 'Product' }]) {
+        await expect(service.reject(dto)).rejects.toBeInstanceOf(BadRequestException);
+      }
+      expect(rejectMock).not.toHaveBeenCalled();
+    });
+
+    it('objeto inexistente ⇒ 404', async () => {
+      rejectMock.mockRejectedValue(new RecordNotFoundError('reviews', 999999));
+      await expect(service.reject({ model_id: 999999 })).rejects.toBeInstanceOf(NotFoundException);
+    });
   });
 });
