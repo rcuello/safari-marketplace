@@ -41,9 +41,15 @@ const ADMIN: CurrentUserPayload = {
   iat: 0,
   exp: 0,
 };
-const OWNER: CurrentUserPayload = { ...ADMIN, sub: 1, permissions: ['store_owner', 'customer'] };
+const OWNER: CurrentUserPayload = {
+  ...ADMIN,
+  sub: 1,
+  permissions: ['store_owner', 'customer'],
+};
 
-function makeConversation(overrides: Partial<ConversationDetailRecord> = {}): ConversationDetailRecord {
+function makeConversation(
+  overrides: Partial<ConversationDetailRecord> = {},
+): ConversationDetailRecord {
   return {
     id: 1,
     userId: 3,
@@ -97,11 +103,26 @@ describe('ConversationsService', () => {
   describe('DTO', () => {
     it('emite las claves del mock en su orden, sin __typename, con ids string y unseen numérico', async () => {
       findMock.mockResolvedValue(makeConversation());
-      const dto = JSON.parse(JSON.stringify(await service.getConversation('1', ADMIN)));
+      const dto = JSON.parse(
+        JSON.stringify(await service.getConversation('1', ADMIN)),
+      );
       expect(Object.keys(dto)).toEqual([
-        'user_id', 'id', 'shop_id', 'unseen', 'created_at', 'updated_at', 'shop', 'user', 'latest_message',
+        'user_id',
+        'id',
+        'shop_id',
+        'unseen',
+        'created_at',
+        'updated_at',
+        'shop',
+        'user',
+        'latest_message',
       ]);
-      expect(dto).toMatchObject({ user_id: '3', id: '1', shop_id: '7', unseen: 0 });
+      expect(dto).toMatchObject({
+        user_id: '3',
+        id: '1',
+        shop_id: '7',
+        unseen: 0,
+      });
       expect(dto.user).toEqual({
         id: '3',
         name: 'Jhon Doe',
@@ -134,9 +155,13 @@ describe('ConversationsService', () => {
     it('US-64: la lectura apaga unseen y un mensaje posterior lo vuelve a encender', async () => {
       findMock.mockResolvedValue(makeConversation({ lastSeenAt: AT }));
       expect((await service.getConversation('1', OWNER)).unseen).toBe(0);
-      findMock.mockResolvedValue(makeConversation({ lastSeenAt: new Date(AT.getTime() + 1) }));
+      findMock.mockResolvedValue(
+        makeConversation({ lastSeenAt: new Date(AT.getTime() + 1) }),
+      );
       expect((await service.getConversation('1', OWNER)).unseen).toBe(0);
-      findMock.mockResolvedValue(makeConversation({ lastSeenAt: new Date(AT.getTime() - 1) }));
+      findMock.mockResolvedValue(
+        makeConversation({ lastSeenAt: new Date(AT.getTime() - 1) }),
+      );
       expect((await service.getConversation('1', OWNER)).unseen).toBe(1);
       // El último mensaje es suyo: 0 aunque nunca la haya leído.
       findMock.mockResolvedValue(makeConversation());
@@ -155,15 +180,22 @@ describe('ConversationsService', () => {
 
     it('ajena, inexistente o id no numérico ⇒ 404', async () => {
       findMock.mockResolvedValue(null);
-      await expect(service.getConversation('1', OWNER)).rejects.toBeInstanceOf(NotFoundException);
-      await expect(service.getConversation('abc', OWNER)).rejects.toBeInstanceOf(NotFoundException);
+      await expect(service.getConversation('1', OWNER)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+      await expect(
+        service.getConversation('abc', OWNER),
+      ).rejects.toBeInstanceOf(NotFoundException);
     });
   });
 
   describe('getAllConversations', () => {
     it('limit 15 por defecto, sin orderBy ⇒ id ASC, url del mock', async () => {
       listMock.mockResolvedValue({ items: [makeConversation()], total: 1 });
-      const result = await service.getAllConversations({} as GetConversationsDto, ADMIN);
+      const result = await service.getAllConversations(
+        {} as GetConversationsDto,
+        ADMIN,
+      );
       expect(listMock).toHaveBeenCalledWith({
         viewer: { userId: 3, seeAll: true },
         shopName: undefined,
@@ -173,41 +205,69 @@ describe('ConversationsService', () => {
         limit: 15,
       });
       expect(result.per_page).toBe(15);
-      expect(result.first_page_url).toBe('http://localhost:5000/api/conversations?limit=15&page=1');
+      expect(result.first_page_url).toBe(
+        'http://localhost:5000/api/conversations?limit=15&page=1',
+      );
     });
 
     it('respeta orderBy=updated_at&sortedBy=desc y busca por nombre de tienda; claves desconocidas se ignoran', async () => {
       listMock.mockResolvedValue({ items: [], total: 0 });
       await service.getAllConversations(
-        { limit: '5', orderBy: 'updated_at', sortedBy: 'desc', search: 'gadget' } as unknown as GetConversationsDto,
+        {
+          limit: '5',
+          orderBy: 'updated_at',
+          sortedBy: 'desc',
+          search: 'gadget',
+        } as unknown as GetConversationsDto,
         OWNER,
       );
       expect(listMock).toHaveBeenCalledWith(
-        expect.objectContaining({ shopName: 'gadget', orderBy: 'updated_at', sortedBy: 'desc', limit: 5 }),
+        expect.objectContaining({
+          shopName: 'gadget',
+          orderBy: 'updated_at',
+          sortedBy: 'desc',
+          limit: 5,
+        }),
       );
       await service.getAllConversations(
-        { orderBy: 'password', search: 'shop.name:bags' } as unknown as GetConversationsDto,
+        {
+          orderBy: 'password',
+          search: 'shop.name:bags',
+        } as unknown as GetConversationsDto,
         OWNER,
       );
-      expect(listMock).toHaveBeenLastCalledWith(expect.objectContaining({ orderBy: undefined, shopName: 'bags' }));
+      expect(listMock).toHaveBeenLastCalledWith(
+        expect.objectContaining({ orderBy: undefined, shopName: 'bags' }),
+      );
     });
   });
 
   describe('create', () => {
     it('reutiliza o crea la del par (quien llama, tienda) e ignora `via`', async () => {
       upsertMock.mockResolvedValue(makeConversation());
-      const result = await service.create({ shop_id: '7', via: 'admin' } as unknown as CreateConversationDto, ADMIN);
+      const result = await service.create(
+        { shop_id: '7', via: 'admin' } as unknown as CreateConversationDto,
+        ADMIN,
+      );
       expect(upsertMock).toHaveBeenCalledWith(3, 7);
       expect(result.id).toBe('1');
     });
 
     it('shop_id no numérico ⇒ 400; tienda inexistente ⇒ 400 (InvalidReferenceError)', async () => {
       await expect(
-        service.create({ shop_id: 'x' } as unknown as CreateConversationDto, ADMIN),
+        service.create(
+          { shop_id: 'x' } as unknown as CreateConversationDto,
+          ADMIN,
+        ),
       ).rejects.toBeInstanceOf(BadRequestException);
-      upsertMock.mockRejectedValue(new InvalidReferenceError('conversations', 'shop_id'));
+      upsertMock.mockRejectedValue(
+        new InvalidReferenceError('conversations', 'shop_id'),
+      );
       await expect(
-        service.create({ shop_id: 999 } as unknown as CreateConversationDto, ADMIN),
+        service.create(
+          { shop_id: 999 } as unknown as CreateConversationDto,
+          ADMIN,
+        ),
       ).rejects.toBeInstanceOf(BadRequestException);
     });
   });

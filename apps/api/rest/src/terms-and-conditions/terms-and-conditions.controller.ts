@@ -13,7 +13,10 @@ import { GetTermsAndConditionsDto } from './dto/get-terms-and-conditions.dto';
 import { CreateTermsAndConditionsDto } from './dto/create-terms-and-conditions.dto';
 import { UpdateTermsAndConditionsDto } from './dto/update-terms-and-conditions.dto';
 import { Public } from 'src/auth/decorators/public.decorator';
-import { ADMIN_ONLY, Permissions } from 'src/auth/decorators/permissions.decorator';
+import {
+  ADMIN_ONLY,
+  Permissions,
+} from 'src/auth/decorators/permissions.decorator';
 import {
   CurrentUser,
   CurrentUserPayload,

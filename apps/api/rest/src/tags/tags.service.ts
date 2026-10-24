@@ -34,11 +34,9 @@ import { parseSearch } from 'src/common/search/parse-search';
  * `toProductDto` — la entidad declara campos que este listado no emite
  * (`parent`, `products`).
  */
-function toTagDto(
-  record: TagRecord,
-  typesById: Map<number, TypeRecord>
-): Tag {
-  const type = record.typeId !== null ? typesById.get(record.typeId) : undefined;
+function toTagDto(record: TagRecord, typesById: Map<number, TypeRecord>): Tag {
+  const type =
+    record.typeId !== null ? typesById.get(record.typeId) : undefined;
   return {
     id: record.id,
     name: record.name,

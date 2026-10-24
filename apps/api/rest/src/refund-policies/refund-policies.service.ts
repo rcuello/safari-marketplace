@@ -64,7 +64,9 @@ function readError(error: unknown): never {
 
 function assertId(id: number): void {
   if (!Number.isSafeInteger(id) || id <= 0) {
-    throw new NotFoundException(`No existe una política de reembolso con id ${id}.`);
+    throw new NotFoundException(
+      `No existe una política de reembolso con id ${id}.`,
+    );
   }
 }
 
@@ -111,7 +113,10 @@ export class RefundPoliciesService {
   }
 
   /** Por slug, como el mock; inexistente ⇒ 404 (V-3). */
-  async getRefundPolicy(param: string, language?: string): Promise<RefundPolicy> {
+  async getRefundPolicy(
+    param: string,
+    language?: string,
+  ): Promise<RefundPolicy> {
     let record: RefundPolicyRecord | null;
     try {
       record = await findRefundPolicyBySlug(param);

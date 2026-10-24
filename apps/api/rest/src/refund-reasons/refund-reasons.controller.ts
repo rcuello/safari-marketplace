@@ -13,7 +13,10 @@ import { CreateRefundReasonDto } from './dto/create-refund-reasons.dto';
 import { GetRefundReasonDto } from './dto/get-refund-reasons.dto';
 import { UpdateRefundReasonDto } from './dto/update-refund-reasons.dto';
 import { Public } from 'src/auth/decorators/public.decorator';
-import { ADMIN_ONLY, Permissions } from 'src/auth/decorators/permissions.decorator';
+import {
+  ADMIN_ONLY,
+  Permissions,
+} from 'src/auth/decorators/permissions.decorator';
 
 @Controller('refund-reasons')
 export class RefundReasonsController {

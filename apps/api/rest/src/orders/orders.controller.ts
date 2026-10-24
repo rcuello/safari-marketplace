@@ -56,7 +56,10 @@ export class OrdersController {
     @Body() createOrderDto: CreateOrderDto,
     @Headers('authorization') authorization?: string,
   ): Promise<Order> {
-    return this.ordersService.create(createOrderDto, this.optionalUserId(authorization));
+    return this.ordersService.create(
+      createOrderDto,
+      this.optionalUserId(authorization),
+    );
   }
 
   private optionalUserId(authorization: string | undefined): number | null {
@@ -182,7 +185,10 @@ export class OrderFilesController {
     @Body('digital_file_id', ParseIntPipe) digitalFileId: number,
     @CurrentUser() user: CurrentUserPayload,
   ) {
-    return this.ordersService.getDigitalFileDownloadUrl(digitalFileId, user.sub);
+    return this.ordersService.getDigitalFileDownloadUrl(
+      digitalFileId,
+      user.sub,
+    );
   }
 }
 

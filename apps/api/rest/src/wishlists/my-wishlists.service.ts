@@ -3,7 +3,8 @@ import { Product } from 'src/products/entities/product.entity';
 import { GetWishlistDto } from './dto/get-wishlists.dto';
 import { WishlistsService } from './wishlists.service';
 
-export const MY_WISHLISTS_URL = '/my-wishlists?with=shop&orderBy=created_at&sortedBy=desc';
+export const MY_WISHLISTS_URL =
+  '/my-wishlists?with=shop&orderBy=created_at&sortedBy=desc';
 
 /**
  * `my-wishlists` es la misma lista que `wishlists` (US-53): antes servía

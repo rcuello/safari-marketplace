@@ -29,8 +29,19 @@ import { Withdraw } from './entities/withdraw.entity';
 
 /** Las 13 primeras claves de `toShopDto`: el snapshot `shop` de `withdraws.json`. */
 const SHOP_SNAPSHOT_KEYS = [
-  'id', 'owner_id', 'name', 'slug', 'description', 'cover_image', 'logo',
-  'is_active', 'address', 'settings', 'notifications', 'created_at', 'updated_at',
+  'id',
+  'owner_id',
+  'name',
+  'slug',
+  'description',
+  'cover_image',
+  'logo',
+  'is_active',
+  'address',
+  'settings',
+  'notifications',
+  'created_at',
+  'updated_at',
 ];
 
 /**
@@ -61,7 +72,8 @@ function readError(error: unknown): never {
   throw new InternalServerErrorException(getUserFriendlyMessage(error));
 }
 
-const isAdmin = (user: CurrentUserPayload): boolean => user.permissions.includes('super_admin');
+const isAdmin = (user: CurrentUserPayload): boolean =>
+  user.permissions.includes('super_admin');
 
 /** Un id de ruta o de body que no es entero positivo no existe: 404 sin tocar la base. */
 function toId(value: unknown): number {
@@ -122,7 +134,10 @@ export class WithdrawsService {
   }
 
   /** Nace `pending`. El dueño solo pide para una tienda suya (403). */
-  async create(dto: CreateWithdrawDto, user: CurrentUserPayload): Promise<Withdraw> {
+  async create(
+    dto: CreateWithdrawDto,
+    user: CurrentUserPayload,
+  ): Promise<Withdraw> {
     const shopId = toShopId(dto.shop_id);
     if (!dto.payment_method) {
       throw new BadRequestException('payment_method es obligatorio.');
@@ -147,7 +162,9 @@ export class WithdrawsService {
   async approve(id: unknown, dto: ApproveWithdrawDto): Promise<Withdraw> {
     const withdrawId = toId(id);
     try {
-      return toWithdrawDto(await updateWithdrawStatus(withdrawId, String(dto.status)));
+      return toWithdrawDto(
+        await updateWithdrawStatus(withdrawId, String(dto.status)),
+      );
     } catch (error) {
       throw toWriteHttpException(error);
     }
@@ -168,13 +185,19 @@ export class WithdrawsService {
         readError(error);
       }
       if (!record) {
-        throw new NotFoundException(`No existe un retiro con id ${withdrawId}.`);
+        throw new NotFoundException(
+          `No existe un retiro con id ${withdrawId}.`,
+        );
       }
       if (record.shop.ownerId !== user.sub) {
-        throw new ForbiddenException(`No tienes permisos sobre la tienda ${record.shopId}.`);
+        throw new ForbiddenException(
+          `No tienes permisos sobre la tienda ${record.shopId}.`,
+        );
       }
       if (record.status !== 'pending') {
-        throw new ForbiddenException(`Solo puedes borrar retiros pending; el ${withdrawId} está ${record.status}.`);
+        throw new ForbiddenException(
+          `Solo puedes borrar retiros pending; el ${withdrawId} está ${record.status}.`,
+        );
       }
     }
     try {
@@ -184,7 +207,10 @@ export class WithdrawsService {
     }
   }
 
-  private async findVisible(id: number, user: CurrentUserPayload): Promise<WithdrawDetailRecord> {
+  private async findVisible(
+    id: number,
+    user: CurrentUserPayload,
+  ): Promise<WithdrawDetailRecord> {
     let record: WithdrawDetailRecord | null;
     try {
       record = await findWithdrawById(id);
@@ -202,7 +228,10 @@ export class WithdrawsService {
    * pasa sin consultar. Una tienda inexistente no es 403: se deja pasar para
    * que el repositorio dé el 400.
    */
-  private async assertOwnsShop(shopId: number, user: CurrentUserPayload): Promise<void> {
+  private async assertOwnsShop(
+    shopId: number,
+    user: CurrentUserPayload,
+  ): Promise<void> {
     if (isAdmin(user)) return;
     let ownerId: number | null;
     try {
@@ -211,7 +240,9 @@ export class WithdrawsService {
       readError(error);
     }
     if (ownerId !== null && ownerId !== user.sub) {
-      throw new ForbiddenException(`No tienes permisos sobre la tienda ${shopId}.`);
+      throw new ForbiddenException(
+        `No tienes permisos sobre la tienda ${shopId}.`,
+      );
     }
   }
 }

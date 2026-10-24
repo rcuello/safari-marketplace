@@ -48,7 +48,9 @@ const toggleMock = jest.mocked(toggleWishlist);
 const NOW = new Date('2026-10-22T00:00:00Z');
 const CUSTOMER = 2;
 
-function makeProductRecord(overrides: Partial<ProductRecord> = {}): ProductRecord {
+function makeProductRecord(
+  overrides: Partial<ProductRecord> = {},
+): ProductRecord {
   return {
     id: 945,
     name: 'Producto 945',
@@ -151,11 +153,13 @@ describe('WishlistsService', () => {
 
     it('un fallo de conexión es 503', async () => {
       listMock.mockRejectedValue(
-        Object.assign(new Error('down'), { name: 'PrismaClientInitializationError' }),
+        Object.assign(new Error('down'), {
+          name: 'PrismaClientInitializationError',
+        }),
       );
-      await expect(service.findAll(CUSTOMER, {} as GetWishlistDto)).rejects.toBeInstanceOf(
-        ServiceUnavailableException,
-      );
+      await expect(
+        service.findAll(CUSTOMER, {} as GetWishlistDto),
+      ).rejects.toBeInstanceOf(ServiceUnavailableException);
     });
   });
 
@@ -165,13 +169,17 @@ describe('WishlistsService', () => {
       expect((await service.findOne(CUSTOMER, '945')).id).toBe(945);
       expect(findMock).toHaveBeenCalledWith(CUSTOMER, 945);
       findMock.mockResolvedValue(null);
-      await expect(service.findOne(CUSTOMER, '945')).rejects.toBeInstanceOf(NotFoundException);
+      await expect(service.findOne(CUSTOMER, '945')).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
     });
 
     it.each(['abc', '0', '-1', '1.5', String(Number.MAX_SAFE_INTEGER + 2)])(
       'id %s ⇒ 400 sin consultar (US-31)',
       async (id) => {
-        await expect(service.findOne(CUSTOMER, id)).rejects.toBeInstanceOf(BadRequestException);
+        await expect(service.findOne(CUSTOMER, id)).rejects.toBeInstanceOf(
+          BadRequestException,
+        );
         expect(findMock).not.toHaveBeenCalled();
       },
     );
@@ -183,14 +191,18 @@ describe('WishlistsService', () => {
       expect((await service.add(CUSTOMER, 3)).id).toBe(3);
       expect(addMock).toHaveBeenCalledWith(CUSTOMER, 3);
       addMock.mockRejectedValue(new RecordNotFoundError('products', 999999));
-      await expect(service.add(CUSTOMER, 999999)).rejects.toBeInstanceOf(NotFoundException);
+      await expect(service.add(CUSTOMER, 999999)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
     });
 
     it('remove devuelve el producto; si no estaba ⇒ 404', async () => {
       removeMock.mockResolvedValue(makeProductRecord({ id: 3 }));
       expect((await service.remove(CUSTOMER, '3')).id).toBe(3);
       removeMock.mockRejectedValue(new RecordNotFoundError('wishlists', 3));
-      await expect(service.remove(CUSTOMER, '3')).rejects.toBeInstanceOf(NotFoundException);
+      await expect(service.remove(CUSTOMER, '3')).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
     });
 
     it('toggle devuelve el booleano desnudo del estado nuevo', async () => {
@@ -206,9 +218,9 @@ describe('WishlistsService', () => {
       await expect(
         service.toggle(CUSTOMER, { product_id: '999999' } as CreateWishlistDto),
       ).rejects.toBeInstanceOf(NotFoundException);
-      await expect(service.toggle(CUSTOMER, {} as CreateWishlistDto)).rejects.toBeInstanceOf(
-        BadRequestException,
-      );
+      await expect(
+        service.toggle(CUSTOMER, {} as CreateWishlistDto),
+      ).rejects.toBeInstanceOf(BadRequestException);
     });
   });
 

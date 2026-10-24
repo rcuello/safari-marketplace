@@ -114,11 +114,19 @@ describe('TypesService.create (US-27a)', () => {
 
   it('cuando `settings`/`banners` llegan, se castean al input del repositorio (nunca `as any`)', async () => {
     createTypeMock.mockResolvedValue(makeTypeRecord());
-    const settings = { isHome: true, layoutType: 'classic', productCard: 'neon' };
+    const settings = {
+      isHome: true,
+      layoutType: 'classic',
+      productCard: 'neon',
+    };
     const banners = [{ id: 1, image: {} }] as never;
 
     await service.create(
-      createDto({ name: 'Vertical Prueba', settings: settings as never, banners }),
+      createDto({
+        name: 'Vertical Prueba',
+        settings: settings as never,
+        banners,
+      }),
     );
 
     expect(createTypeMock).toHaveBeenCalledWith({
@@ -199,22 +207,27 @@ describe('TypesService.update (US-27a)', () => {
     ['cero', 0],
     ['negativo', -5],
     ['fuera del rango seguro de bigint (1e21)', 1e21],
-  ])('id %s → 404 sin llamar al repositorio (`!Number.isSafeInteger(id) || id <= 0`)', async (_label, id) => {
-    expect.assertions(3);
-    try {
-      await service.update(id, updateDto({ name: 'x' }));
-    } catch (error) {
-      expect(error).toBeInstanceOf(NotFoundException);
-      expect((error as NotFoundException).getStatus()).toBe(404);
-      expect(updateTypeMock).not.toHaveBeenCalled();
-    }
-  });
+  ])(
+    'id %s → 404 sin llamar al repositorio (`!Number.isSafeInteger(id) || id <= 0`)',
+    async (_label, id) => {
+      expect.assertions(3);
+      try {
+        await service.update(id, updateDto({ name: 'x' }));
+      } catch (error) {
+        expect(error).toBeInstanceOf(NotFoundException);
+        expect((error as NotFoundException).getStatus()).toBe(404);
+        expect(updateTypeMock).not.toHaveBeenCalled();
+      }
+    },
+  );
 
   // Inverso de CA-4 (CA-2, US-31): un id grande pero seguro atraviesa la
   // guarda y el 404 lo decide la fila inexistente, no el guard. Se pone rojo
   // si alguien adelanta el corte (p. ej. `|| id > 1e6`).
   it('id 123456789012345 (seguro) → llega al repositorio; el 404 lo da la fila inexistente (CA-2, US-31)', async () => {
-    updateTypeMock.mockRejectedValue(new RecordNotFoundError('types', 123456789012345));
+    updateTypeMock.mockRejectedValue(
+      new RecordNotFoundError('types', 123456789012345),
+    );
 
     expect.assertions(3);
     try {
@@ -222,14 +235,19 @@ describe('TypesService.update (US-27a)', () => {
     } catch (error) {
       expect(error).toBeInstanceOf(NotFoundException);
       expect((error as NotFoundException).getStatus()).toBe(404);
-      expect(updateTypeMock).toHaveBeenCalledWith(123456789012345, { name: 'x' });
+      expect(updateTypeMock).toHaveBeenCalledWith(123456789012345, {
+        name: 'x',
+      });
     }
   });
 
   it('proyecta el DTO campo a campo, sin `slug` (inmutable)', async () => {
     updateTypeMock.mockResolvedValue(makeTypeRecord({ name: 'Renombrada' }));
 
-    await service.update(12, updateDto({ name: 'Renombrada', slug: 'ignorado' as never }));
+    await service.update(
+      12,
+      updateDto({ name: 'Renombrada', slug: 'ignorado' as never }),
+    );
 
     expect(updateTypeMock).toHaveBeenCalledWith(12, { name: 'Renombrada' });
   });
@@ -272,19 +290,24 @@ describe('TypesService.remove (US-27a)', () => {
     ['cero', 0],
     ['negativo', -5],
     ['fuera del rango seguro de bigint (1e21)', 1e21],
-  ])('id %s → 404 sin llamar al repositorio (`!Number.isSafeInteger(id) || id <= 0`)', async (_label, id) => {
-    expect.assertions(3);
-    try {
-      await service.remove(id);
-    } catch (error) {
-      expect(error).toBeInstanceOf(NotFoundException);
-      expect((error as NotFoundException).getStatus()).toBe(404);
-      expect(deleteTypeMock).not.toHaveBeenCalled();
-    }
-  });
+  ])(
+    'id %s → 404 sin llamar al repositorio (`!Number.isSafeInteger(id) || id <= 0`)',
+    async (_label, id) => {
+      expect.assertions(3);
+      try {
+        await service.remove(id);
+      } catch (error) {
+        expect(error).toBeInstanceOf(NotFoundException);
+        expect((error as NotFoundException).getStatus()).toBe(404);
+        expect(deleteTypeMock).not.toHaveBeenCalled();
+      }
+    },
+  );
 
   it('id 123456789012345 (seguro) → llega al repositorio; el 404 lo da la fila inexistente (CA-2, US-31)', async () => {
-    deleteTypeMock.mockRejectedValue(new RecordNotFoundError('types', 123456789012345));
+    deleteTypeMock.mockRejectedValue(
+      new RecordNotFoundError('types', 123456789012345),
+    );
 
     expect.assertions(3);
     try {

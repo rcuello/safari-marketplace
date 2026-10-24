@@ -21,7 +21,9 @@ export const REPORTABLE_FQCN: Record<string, string> = {
 export function toShortModelType(value: unknown): string | undefined {
   if (typeof value !== 'string') return undefined;
   if (value in REPORTABLE_FQCN) return value;
-  return Object.keys(REPORTABLE_FQCN).find((short) => REPORTABLE_FQCN[short] === value);
+  return Object.keys(REPORTABLE_FQCN).find(
+    (short) => REPORTABLE_FQCN[short] === value,
+  );
 }
 
 /**

@@ -13,7 +13,10 @@ import { GetFaqsDto } from './dto/get-faqs.dto';
 import { CreateFaqDto } from './dto/create-faq.dto';
 import { UpdateFaqDto } from './dto/update-faq.dto';
 import { Public } from 'src/auth/decorators/public.decorator';
-import { ADMIN_ONLY, Permissions } from 'src/auth/decorators/permissions.decorator';
+import {
+  ADMIN_ONLY,
+  Permissions,
+} from 'src/auth/decorators/permissions.decorator';
 import {
   CurrentUser,
   CurrentUserPayload,

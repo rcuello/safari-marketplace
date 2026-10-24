@@ -25,7 +25,10 @@ export class MyQuestionsController {
   // In product single page front-end all the questions apperaed. It should be based on product ID.
   // Todas las rutas son del usuario que llama (US-55): lo ajeno es 404.
   @Get()
-  findAll(@Query() query: GetQuestionDto, @CurrentUser() user: CurrentUserPayload) {
+  findAll(
+    @Query() query: GetQuestionDto,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
     return this.myQuestionService.findMyQuestions(user.sub, query);
   }
   // show one

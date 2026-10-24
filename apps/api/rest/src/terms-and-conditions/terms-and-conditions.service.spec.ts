@@ -132,7 +132,9 @@ describe('TermsAndConditionsService', () => {
       findMock.mockResolvedValueOnce(makeRecord());
       expect((await service.findOne('privacy-policy')).id).toBe(10);
       findMock.mockResolvedValueOnce(null);
-      await expect(service.findOne('no-existe')).rejects.toBeInstanceOf(NotFoundException);
+      await expect(service.findOne('no-existe')).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
     });
   });
 
@@ -140,7 +142,12 @@ describe('TermsAndConditionsService', () => {
     it('aprobado de entrada, con autor, slug opcional y shop_id coercionado', async () => {
       createMock.mockResolvedValue(makeRecord());
       await service.create(
-        { title: 'T', description: 'd', slug: 'mi-slug', shop_id: '5' } as CreateTermsAndConditionsDto,
+        {
+          title: 'T',
+          description: 'd',
+          slug: 'mi-slug',
+          shop_id: '5',
+        } as CreateTermsAndConditionsDto,
         3,
       );
       expect(createMock).toHaveBeenCalledWith({
@@ -166,14 +173,16 @@ describe('TermsAndConditionsService', () => {
     });
 
     it('id inexistente ⇒ 404 (antes 500); id mal formado no toca el driver', async () => {
-      approvalMock.mockRejectedValue(new RecordNotFoundError('terms_and_conditions', 999));
-      await expect(service.approveTermsAndCondition(999)).rejects.toBeInstanceOf(
-        NotFoundException,
+      approvalMock.mockRejectedValue(
+        new RecordNotFoundError('terms_and_conditions', 999),
       );
+      await expect(
+        service.approveTermsAndCondition(999),
+      ).rejects.toBeInstanceOf(NotFoundException);
       approvalMock.mockClear();
-      await expect(service.approveTermsAndCondition('abc')).rejects.toBeInstanceOf(
-        NotFoundException,
-      );
+      await expect(
+        service.approveTermsAndCondition('abc'),
+      ).rejects.toBeInstanceOf(NotFoundException);
       expect(approvalMock).not.toHaveBeenCalled();
     });
   });
@@ -181,11 +190,17 @@ describe('TermsAndConditionsService', () => {
   describe('update / remove', () => {
     it('update y remove devuelven la fila; ids mal formados ⇒ 404', async () => {
       updateMock.mockResolvedValue(makeRecord({ title: 'Nuevo' }));
-      expect((await service.update(10, { title: 'Nuevo' })).title).toBe('Nuevo');
+      expect((await service.update(10, { title: 'Nuevo' })).title).toBe(
+        'Nuevo',
+      );
       deleteMock.mockResolvedValue(makeRecord());
       expect(Object.keys(await service.remove(10))).toEqual(MOCK_KEYS);
-      await expect(service.update(-1, {})).rejects.toBeInstanceOf(NotFoundException);
-      await expect(service.remove(Number.NaN)).rejects.toBeInstanceOf(NotFoundException);
+      await expect(service.update(-1, {})).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+      await expect(service.remove(Number.NaN)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
     });
   });
 });

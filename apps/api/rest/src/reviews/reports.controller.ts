@@ -11,7 +11,10 @@ import { CreateReportDto } from './dto/create-report.dto';
 import { RejectReportDto } from './dto/reject-report.dto';
 import { UpdateReportDto } from './dto/update-report.dto';
 import { AbusiveReportService } from './reports.service';
-import { ADMIN_ONLY, Permissions } from 'src/auth/decorators/permissions.decorator';
+import {
+  ADMIN_ONLY,
+  Permissions,
+} from 'src/auth/decorators/permissions.decorator';
 import {
   CurrentUser,
   CurrentUserPayload,

@@ -85,9 +85,15 @@ function toEmbeddedUser(user: UserRecord) {
  * orden, para el usuario `viewerId`: `is_read` es SU lectura (V-5), no un
  * valor global. `deleted_at` es constante `null` (no hay soft delete).
  */
-function toStoreNoticeDto(record: StoreNoticeDetailRecord, viewerId: number): StoreNotice {
-  const creatorPermissions = new Set(record.creator.permissions.map((p) => p.name));
-  const creatorRole = ROLE_LABELS.find(([name]) => creatorPermissions.has(name))?.[1] ?? null;
+function toStoreNoticeDto(
+  record: StoreNoticeDetailRecord,
+  viewerId: number,
+): StoreNotice {
+  const creatorPermissions = new Set(
+    record.creator.permissions.map((p) => p.name),
+  );
+  const creatorRole =
+    ROLE_LABELS.find(([name]) => creatorPermissions.has(name))?.[1] ?? null;
   return {
     id: record.id,
     priority: record.priority,
@@ -125,7 +131,11 @@ function toStoreNoticeDto(record: StoreNoticeDetailRecord, viewerId: number): St
     shops: record.shops.map(toShopDto),
     read_status: record.reads.map((r) => ({
       ...toEmbeddedUser(r.user),
-      pivot: { store_notice_id: record.id, user_id: r.user.id, is_read: Number(r.isRead) },
+      pivot: {
+        store_notice_id: record.id,
+        user_id: r.user.id,
+        is_read: Number(r.isRead),
+      },
     })),
   } as unknown as StoreNotice;
 }
@@ -163,7 +173,10 @@ export class StoreNoticesService {
    * (ver `store-notices.repository.ts`); un id de `received_by` inexistente
    * da 400 sin dejar filas.
    */
-  async create(dto: CreateStoreNoticeDto, userId: number): Promise<StoreNotice> {
+  async create(
+    dto: CreateStoreNoticeDto,
+    userId: number,
+  ): Promise<StoreNotice> {
     try {
       const record = await createStoreNotice({
         priority: dto.priority,
@@ -172,7 +185,9 @@ export class StoreNoticesService {
         effectiveFrom: toDate(dto.effective_from) ?? null,
         expiredAt: toDate(dto.expired_at) ?? new Date(Number.NaN),
         type: dto.type,
-        receivedBy: (dto.received_by as unknown as unknown[] | undefined)?.map(Number),
+        receivedBy: (dto.received_by as unknown as unknown[] | undefined)?.map(
+          Number,
+        ),
         createdBy: userId,
       });
       return toStoreNoticeDto(record, userId);
@@ -202,7 +217,9 @@ export class StoreNoticesService {
       return { data: [], ...paginate(0, page, limit, 0, url) };
     }
 
-    const sortField = orderBy ? SORT_ALIASES[String(orderBy).toLowerCase()] : undefined;
+    const sortField = orderBy
+      ? SORT_ALIASES[String(orderBy).toLowerCase()]
+      : undefined;
     const input: ListStoreNoticesInput = {
       notice: tokens.notice,
       userId,
@@ -245,7 +262,11 @@ export class StoreNoticesService {
   }
 
   /** `updated_by` = usuario del token; `type`/`received_by` recalculan los pivotes. */
-  async update(id: number, dto: UpdateStoreNoticeDto, userId: number): Promise<StoreNotice> {
+  async update(
+    id: number,
+    dto: UpdateStoreNoticeDto,
+    userId: number,
+  ): Promise<StoreNotice> {
     assertId(id);
     const effectiveFrom = toDate(dto.effective_from);
     const expiredAt = toDate(dto.expired_at);
@@ -287,7 +308,10 @@ export class StoreNoticesService {
     const noticeId = Number(id);
     assertId(noticeId);
     try {
-      return toStoreNoticeDto(await markStoreNoticeRead(noticeId, userId), userId);
+      return toStoreNoticeDto(
+        await markStoreNoticeRead(noticeId, userId),
+        userId,
+      );
     } catch (error) {
       throw toWriteHttpException(error);
     }

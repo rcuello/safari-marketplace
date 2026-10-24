@@ -50,7 +50,10 @@ function parsePositiveInt(value: unknown): number | null {
 function optionalBodyId(value: unknown, field: string): number | null {
   if (value === undefined || value === null || value === '') return null;
   const n = parsePositiveInt(value);
-  if (n === null) throw new BadRequestException(`\`${field}\` no admite \`${String(value)}\`.`);
+  if (n === null)
+    throw new BadRequestException(
+      `\`${field}\` no admite \`${String(value)}\`.`,
+    );
   return n;
 }
 
@@ -71,7 +74,10 @@ export class ReviewService {
     const tokens = parseSearch(search);
     const empty = () => ({ data: [], ...paginate(0, page, limit, 0, url) });
 
-    const numeric: Record<'productId' | 'shopId' | 'rating', number | undefined> = {
+    const numeric: Record<
+      'productId' | 'shopId' | 'rating',
+      number | undefined
+    > = {
       productId: undefined,
       shopId: undefined,
       rating: undefined,
@@ -114,14 +120,22 @@ export class ReviewService {
    * no es su tienda o `rating` está fuera de 1..5; 409 si ya reseñó ese
    * producto con esa orden.
    */
-  async create(dto: CreateReviewDto, user: CurrentUserPayload): Promise<Review> {
+  async create(
+    dto: CreateReviewDto,
+    user: CurrentUserPayload,
+  ): Promise<Review> {
     const productId = optionalBodyId(dto.product_id, 'product_id');
     const shopId = optionalBodyId(dto.shop_id, 'shop_id');
-    if (productId === null) throw new BadRequestException('`product_id` es obligatorio.');
-    if (shopId === null) throw new BadRequestException('`shop_id` es obligatorio.');
+    if (productId === null)
+      throw new BadRequestException('`product_id` es obligatorio.');
+    if (shopId === null)
+      throw new BadRequestException('`shop_id` es obligatorio.');
     // Fuera del try: `toWriteHttpException` convertiría este 400 en un 500.
     const orderId = optionalBodyId(dto.order_id, 'order_id');
-    const variationOptionId = optionalBodyId(dto.variation_option_id, 'variation_option_id');
+    const variationOptionId = optionalBodyId(
+      dto.variation_option_id,
+      'variation_option_id',
+    );
     try {
       const record = await createReview({
         userId: user.sub,
@@ -142,7 +156,11 @@ export class ReviewService {
   }
 
   /** Solo el autor o un `super_admin` (403). Edita `rating`, `comment` y `photos`. */
-  async update(id: number, dto: UpdateReviewDto, user: CurrentUserPayload): Promise<Review> {
+  async update(
+    id: number,
+    dto: UpdateReviewDto,
+    user: CurrentUserPayload,
+  ): Promise<Review> {
     assertId(id);
     this.assertCanModify(await this.findOrFail(id), user);
     try {
@@ -170,9 +188,17 @@ export class ReviewService {
     }
   }
 
-  private assertCanModify(record: ReviewDetailRecord, user: CurrentUserPayload): void {
-    if (record.userId !== user.sub && !user.permissions.includes('super_admin')) {
-      throw new ForbiddenException('Solo el autor puede modificar esta reseña.');
+  private assertCanModify(
+    record: ReviewDetailRecord,
+    user: CurrentUserPayload,
+  ): void {
+    if (
+      record.userId !== user.sub &&
+      !user.permissions.includes('super_admin')
+    ) {
+      throw new ForbiddenException(
+        'Solo el autor puede modificar esta reseña.',
+      );
     }
   }
 

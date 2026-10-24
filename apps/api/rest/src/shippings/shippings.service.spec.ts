@@ -74,21 +74,40 @@ describe('ShippingsService', () => {
 
   it('create coerciona amount; type inválido ⇒ 400', async () => {
     createMock.mockResolvedValueOnce(makeRecord({ id: 2 }));
-    await service.create({ name: 'E', amount: '10', type: 'fixed' } as unknown as CreateShippingDto);
-    expect(createMock).toHaveBeenCalledWith({ name: 'E', amount: 10, type: 'fixed' });
+    await service.create({
+      name: 'E',
+      amount: '10',
+      type: 'fixed',
+    } as unknown as CreateShippingDto);
+    expect(createMock).toHaveBeenCalledWith({
+      name: 'E',
+      amount: 10,
+      type: 'fixed',
+    });
 
     createMock.mockRejectedValueOnce(
-      new InvalidFieldValueError('shippings', 'type', 'gratis', 'shippings_type_check'),
+      new InvalidFieldValueError(
+        'shippings',
+        'type',
+        'gratis',
+        'shippings_type_check',
+      ),
     );
     await expect(
-      service.create({ name: 'E', amount: 1, type: 'gratis' } as unknown as CreateShippingDto),
+      service.create({
+        name: 'E',
+        amount: 1,
+        type: 'gratis',
+      } as unknown as CreateShippingDto),
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it('findOne / update / remove: 404 en inexistente o id inválido', async () => {
     findMock.mockResolvedValueOnce(null);
     await expect(service.findOne(9)).rejects.toBeInstanceOf(NotFoundException);
-    await expect(service.update(-1, {})).rejects.toBeInstanceOf(NotFoundException);
+    await expect(service.update(-1, {})).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
     deleteMock.mockRejectedValueOnce(new RecordNotFoundError('shippings', 9));
     await expect(service.remove(9)).rejects.toBeInstanceOf(NotFoundException);
     expect(updateMock).not.toHaveBeenCalled();

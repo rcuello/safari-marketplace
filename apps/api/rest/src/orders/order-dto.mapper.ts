@@ -8,7 +8,10 @@ import { Order } from './entities/order.entity';
  * `order_quantity` sale como string, igual que en el mock.
  */
 function toOrderProductDto(line: OrderProductRecord) {
-  const { variation_options, ...product } = line.productSnapshot as Record<string, unknown>;
+  const { variation_options, ...product } = line.productSnapshot as Record<
+    string,
+    unknown
+  >;
   return {
     ...product,
     pivot: {

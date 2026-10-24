@@ -64,7 +64,9 @@ const user = (sub: number, permissions: string[]): CurrentUserPayload => ({
 const ADMIN = user(3, ['super_admin', 'store_owner', 'customer']);
 const OWNER = user(1, ['store_owner', 'customer']);
 
-function makeWithdraw(overrides: Partial<WithdrawDetailRecord> = {}): WithdrawDetailRecord {
+function makeWithdraw(
+  overrides: Partial<WithdrawDetailRecord> = {},
+): WithdrawDetailRecord {
   return {
     id: 2,
     shopId: 3,
@@ -107,12 +109,22 @@ describe('WithdrawsService', () => {
       const mock = JSON.parse(
         readFileSync(join(__dirname, '../db/pickbazar/withdraws.json'), 'utf8'),
       ) as Record<string, Record<string, unknown>>[];
-      const page = await service.getWithdraws({ limit: '10', page: '1' } as unknown as GetWithdrawsDto, ADMIN);
-      const row = page.data[0] as unknown as Record<string, Record<string, unknown>>;
+      const page = await service.getWithdraws(
+        { limit: '10', page: '1' } as unknown as GetWithdrawsDto,
+        ADMIN,
+      );
+      const row = page.data[0] as unknown as Record<
+        string,
+        Record<string, unknown>
+      >;
 
       expect(Object.keys(row)).toEqual(Object.keys(mock[0]));
       expect(Object.keys(row.shop)).toEqual(Object.keys(mock[0].shop));
-      expect(row).toMatchObject({ amount: 10, deleted_at: null, status: 'pending' });
+      expect(row).toMatchObject({
+        amount: 10,
+        deleted_at: null,
+        status: 'pending',
+      });
       expect(row.shop.is_active).toBe(1);
       expect(page.per_page).toBe('10');
       expect(page.first_page_url).toContain('/withdraws?limit=10&page=1');
@@ -121,13 +133,35 @@ describe('WithdrawsService', () => {
 
     it('el dueño solo ve sus tiendas; el shop_id de la query gana al de search; sin limit ⇒ 10', async () => {
       listMock.mockResolvedValue({ items: [], total: 0 });
-      await service.getWithdraws({ shop_id: '3', search: 'shop_id:9', status: 'pending' } as GetWithdrawsDto, OWNER);
-      expect(listMock).toHaveBeenLastCalledWith({ shopId: 3, ownerId: 1, status: 'pending', page: 1, limit: 10 });
+      await service.getWithdraws(
+        {
+          shop_id: '3',
+          search: 'shop_id:9',
+          status: 'pending',
+        } as GetWithdrawsDto,
+        OWNER,
+      );
+      expect(listMock).toHaveBeenLastCalledWith({
+        shopId: 3,
+        ownerId: 1,
+        status: 'pending',
+        page: 1,
+        limit: 10,
+      });
 
-      const page = await service.getWithdraws({ search: 'shop_id:9' } as GetWithdrawsDto, ADMIN);
-      expect(listMock).toHaveBeenLastCalledWith({ shopId: 9, page: 1, limit: 10 });
+      const page = await service.getWithdraws(
+        { search: 'shop_id:9' } as GetWithdrawsDto,
+        ADMIN,
+      );
+      expect(listMock).toHaveBeenLastCalledWith({
+        shopId: 9,
+        page: 1,
+        limit: 10,
+      });
       expect(page.per_page).toBe(10);
-      expect(page.first_page_url).toContain('/withdraws?limit=undefined&page=1');
+      expect(page.first_page_url).toContain(
+        '/withdraws?limit=undefined&page=1',
+      );
     });
 
     it('shop_id inválido ⇒ 400 sin tocar la base; conexión caída ⇒ 503', async () => {
@@ -141,65 +175,113 @@ describe('WithdrawsService', () => {
         code: 'P1001',
         message: "Can't reach database server at `localhost:5433`",
       });
-      await expect(service.getWithdraws({} as GetWithdrawsDto, ADMIN)).rejects.toBeInstanceOf(
-        ServiceUnavailableException,
-      );
+      await expect(
+        service.getWithdraws({} as GetWithdrawsDto, ADMIN),
+      ).rejects.toBeInstanceOf(ServiceUnavailableException);
     });
   });
 
   it('GET /:id: el admin ve cualquiera; el dueño, ajeno o inexistente ⇒ 404; id inválido ⇒ 404', async () => {
-    findMock.mockResolvedValue(makeWithdraw({ shop: { ...makeWithdraw().shop, ownerId: 9 } }));
+    findMock.mockResolvedValue(
+      makeWithdraw({ shop: { ...makeWithdraw().shop, ownerId: 9 } }),
+    );
     expect((await service.findOne(2, ADMIN)).id).toBe(2);
-    await expect(service.findOne(2, OWNER)).rejects.toBeInstanceOf(NotFoundException);
+    await expect(service.findOne(2, OWNER)).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
     findMock.mockResolvedValue(null);
-    await expect(service.findOne(2, ADMIN)).rejects.toBeInstanceOf(NotFoundException);
-    await expect(service.findOne(Number.NaN, ADMIN)).rejects.toBeInstanceOf(NotFoundException);
+    await expect(service.findOne(2, ADMIN)).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+    await expect(service.findOne(Number.NaN, ADMIN)).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
     expect(findMock).toHaveBeenCalledTimes(3);
   });
 
   describe('POST /withdraws', () => {
     const dto = (over: Record<string, unknown> = {}) =>
-      ({ amount: '15.5', shop_id: '3', payment_method: 'cash', ...over }) as unknown as CreateWithdrawDto;
+      ({
+        amount: '15.5',
+        shop_id: '3',
+        payment_method: 'cash',
+        ...over,
+      } as unknown as CreateWithdrawDto);
 
     it('crea con los campos proyectados; el status del body no viaja', async () => {
       ownerMock.mockResolvedValue(1);
       createMock.mockResolvedValue(makeWithdraw({ amount: 15.5 }));
       await service.create(dto({ status: 'approved', note: 'n' }), OWNER);
       expect(createMock).toHaveBeenCalledWith({
-        shopId: 3, amount: 15.5, paymentMethod: 'cash', details: null, note: 'n',
+        shopId: 3,
+        amount: 15.5,
+        paymentMethod: 'cash',
+        details: null,
+        note: 'n',
       });
     });
 
     it('tienda ajena ⇒ 403; shop_id inválido o sin payment_method ⇒ 400; el admin no consulta dueño', async () => {
       ownerMock.mockResolvedValue(9);
-      await expect(service.create(dto(), OWNER)).rejects.toBeInstanceOf(ForbiddenException);
-      await expect(service.create(dto({ shop_id: 'x' }), OWNER)).rejects.toBeInstanceOf(BadRequestException);
-      await expect(service.create(dto({ payment_method: '' }), OWNER)).rejects.toBeInstanceOf(BadRequestException);
+      await expect(service.create(dto(), OWNER)).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
+      await expect(
+        service.create(dto({ shop_id: 'x' }), OWNER),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      await expect(
+        service.create(dto({ payment_method: '' }), OWNER),
+      ).rejects.toBeInstanceOf(BadRequestException);
       expect(createMock).not.toHaveBeenCalled();
 
-      createMock.mockRejectedValue(new InvalidFieldValueError('withdraws', 'amount', 0, 'withdraws_amount_check'));
-      await expect(service.create(dto({ amount: 0 }), ADMIN)).rejects.toBeInstanceOf(BadRequestException);
+      createMock.mockRejectedValue(
+        new InvalidFieldValueError(
+          'withdraws',
+          'amount',
+          0,
+          'withdraws_amount_check',
+        ),
+      );
+      await expect(
+        service.create(dto({ amount: 0 }), ADMIN),
+      ).rejects.toBeInstanceOf(BadRequestException);
       expect(ownerMock).toHaveBeenCalledTimes(1);
     });
   });
 
   it('aprobar: id del body o de la ruta; status fuera del CHECK ⇒ 400; inexistente o id inválido ⇒ 404', async () => {
     updateMock.mockResolvedValueOnce(makeWithdraw({ status: 'on_hold' }));
-    const approved = await service.approve('2', { id: 2, status: 'on_hold' } as unknown as ApproveWithdrawDto);
+    const approved = await service.approve('2', {
+      id: 2,
+      status: 'on_hold',
+    } as unknown as ApproveWithdrawDto);
     expect(approved.status).toBe('on_hold');
     expect(updateMock).toHaveBeenCalledWith(2, 'on_hold');
 
-    updateMock.mockRejectedValueOnce(new InvalidFieldValueError('withdraws', 'status', 'Approved', 'withdraws_status_check'));
-    await expect(service.approve('2', { status: 'Approved' } as unknown as ApproveWithdrawDto)).rejects.toBeInstanceOf(
-      BadRequestException,
+    updateMock.mockRejectedValueOnce(
+      new InvalidFieldValueError(
+        'withdraws',
+        'status',
+        'Approved',
+        'withdraws_status_check',
+      ),
     );
+    await expect(
+      service.approve('2', {
+        status: 'Approved',
+      } as unknown as ApproveWithdrawDto),
+    ).rejects.toBeInstanceOf(BadRequestException);
     updateMock.mockRejectedValueOnce(new RecordNotFoundError('withdraws', 999));
-    await expect(service.approve('999', { status: 'approved' } as unknown as ApproveWithdrawDto)).rejects.toBeInstanceOf(
-      NotFoundException,
-    );
-    await expect(service.approve(undefined, { status: 'approved' } as unknown as ApproveWithdrawDto)).rejects.toBeInstanceOf(
-      NotFoundException,
-    );
+    await expect(
+      service.approve('999', {
+        status: 'approved',
+      } as unknown as ApproveWithdrawDto),
+    ).rejects.toBeInstanceOf(NotFoundException);
+    await expect(
+      service.approve(undefined, {
+        status: 'approved',
+      } as unknown as ApproveWithdrawDto),
+    ).rejects.toBeInstanceOf(NotFoundException);
     expect(updateMock).toHaveBeenCalledTimes(3);
   });
 
@@ -208,12 +290,20 @@ describe('WithdrawsService', () => {
     findMock.mockResolvedValueOnce(makeWithdraw());
     expect((await service.remove(2, OWNER)).id).toBe(2);
 
-    findMock.mockResolvedValueOnce(makeWithdraw({ shop: { ...makeWithdraw().shop, ownerId: 9 } }));
-    await expect(service.remove(2, OWNER)).rejects.toBeInstanceOf(ForbiddenException);
+    findMock.mockResolvedValueOnce(
+      makeWithdraw({ shop: { ...makeWithdraw().shop, ownerId: 9 } }),
+    );
+    await expect(service.remove(2, OWNER)).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
     findMock.mockResolvedValueOnce(makeWithdraw({ status: 'approved' }));
-    await expect(service.remove(2, OWNER)).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(service.remove(2, OWNER)).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
     findMock.mockResolvedValueOnce(null);
-    await expect(service.remove(2, OWNER)).rejects.toBeInstanceOf(NotFoundException);
+    await expect(service.remove(2, OWNER)).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
     expect(deleteMock).toHaveBeenCalledTimes(1);
 
     await service.remove(1, ADMIN);

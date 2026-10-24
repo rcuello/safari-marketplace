@@ -14,7 +14,10 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { CreateProfileDto } from './dto/create-profile.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { GetUsersDto } from './dto/get-users.dto';
-import { ADMIN_ONLY, Permissions } from 'src/auth/decorators/permissions.decorator';
+import {
+  ADMIN_ONLY,
+  Permissions,
+} from 'src/auth/decorators/permissions.decorator';
 import {
   CurrentUser,
   type CurrentUserPayload,

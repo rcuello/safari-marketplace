@@ -13,7 +13,10 @@ import { CreateRefundPolicyDto } from './dto/create-refund-policy.dto';
 import { GetRefundPolicyDto } from './dto/get-refund-policies.dto';
 import { UpdateRefundPolicyDto } from './dto/update-refund-policy.dto';
 import { Public } from 'src/auth/decorators/public.decorator';
-import { ADMIN_ONLY, Permissions } from 'src/auth/decorators/permissions.decorator';
+import {
+  ADMIN_ONLY,
+  Permissions,
+} from 'src/auth/decorators/permissions.decorator';
 
 @Controller('refund-policies')
 export class RefundPoliciesController {

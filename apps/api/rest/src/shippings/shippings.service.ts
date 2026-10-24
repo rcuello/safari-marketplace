@@ -104,10 +104,15 @@ export class ShippingsService {
     return toShippingDto(record);
   }
 
-  async update(id: number, updateShippingDto: UpdateShippingDto): Promise<Shipping> {
+  async update(
+    id: number,
+    updateShippingDto: UpdateShippingDto,
+  ): Promise<Shipping> {
     assertId(id);
     try {
-      return toShippingDto(await updateShipping(id, toShippingInput(updateShippingDto)));
+      return toShippingDto(
+        await updateShipping(id, toShippingInput(updateShippingDto)),
+      );
     } catch (error) {
       throw toWriteHttpException(error);
     }

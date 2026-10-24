@@ -37,8 +37,18 @@ export const STATUS_KEYS = {
 } as const;
 
 const MONTHS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
 ];
 
 const DEFAULT_LIMIT = 10;
@@ -89,8 +99,19 @@ export interface TopRateProductDto {
 
 /** Las 13 primeras claves de `toShopDto`, las que embebe `low-stock-products.json`. */
 const LOW_STOCK_SHOP_KEYS = [
-  'id', 'owner_id', 'name', 'slug', 'description', 'cover_image', 'logo',
-  'is_active', 'address', 'settings', 'notifications', 'created_at', 'updated_at',
+  'id',
+  'owner_id',
+  'name',
+  'slug',
+  'description',
+  'cover_image',
+  'logo',
+  'is_active',
+  'address',
+  'settings',
+  'notifications',
+  'created_at',
+  'updated_at',
 ];
 
 function byStatus(counts: OrderStatusCounts): StatusCountsDto {
@@ -102,13 +123,19 @@ function byStatus(counts: OrderStatusCounts): StatusCountsDto {
 }
 
 /** `limit` y `search=shop_id:N`; lo que no sea un entero positivo se ignora. */
-function toListInput({ limit, search }: GetAnalyticsListDto): AnalyticsListInput {
+function toListInput({
+  limit,
+  search,
+}: GetAnalyticsListDto): AnalyticsListInput {
   const positive = (value: string | undefined): number | undefined => {
     const n = Number(value);
     return Number.isSafeInteger(n) && n > 0 ? n : undefined;
   };
   const shopId = positive(parseSearch(search).shop_id);
-  return { limit: positive(limit) ?? DEFAULT_LIMIT, ...(shopId !== undefined && { shopId }) };
+  return {
+    limit: positive(limit) ?? DEFAULT_LIMIT,
+    ...(shopId !== undefined && { shopId }),
+  };
 }
 
 /**
@@ -182,7 +209,9 @@ export function toLowStockProductDto(p: ProductRecord): Product {
     in_wishlist: false,
     translated_languages: p.translatedLanguages,
     type: toLowStockTypeDto(p.type),
-    shop: Object.fromEntries(LOW_STOCK_SHOP_KEYS.map((key) => [key, shop[key]])),
+    shop: Object.fromEntries(
+      LOW_STOCK_SHOP_KEYS.map((key) => [key, shop[key]]),
+    ),
   } as unknown as Product;
 }
 
@@ -220,12 +249,19 @@ export class AnalyticsService {
       weeklyTotalOrderByStatus: byStatus(a.ordersByStatus.weekly),
       monthlyTotalOrderByStatus: byStatus(a.ordersByStatus.monthly),
       yearlyTotalOrderByStatus: byStatus(a.ordersByStatus.yearly),
-      totalYearSaleByMonth: a.salesByMonth.map((total, i) => ({ total, month: MONTHS[i] })),
+      totalYearSaleByMonth: a.salesByMonth.map((total, i) => ({
+        total,
+        month: MONTHS[i],
+      })),
     };
   }
 
-  async findAllCategoryWiseProduct(query: GetAnalyticsListDto): Promise<CategoryWiseProductDto[]> {
-    const rows = await read(() => listCategoryWiseProductCounts(toListInput(query)));
+  async findAllCategoryWiseProduct(
+    query: GetAnalyticsListDto,
+  ): Promise<CategoryWiseProductDto[]> {
+    const rows = await read(() =>
+      listCategoryWiseProductCounts(toListInput(query)),
+    );
     return rows.map((row) => ({
       category_id: row.categoryId,
       category_name: row.categoryName,
@@ -234,29 +270,35 @@ export class AnalyticsService {
     }));
   }
 
-  async findAllLowStockProducts(query: GetAnalyticsListDto): Promise<Product[]> {
+  async findAllLowStockProducts(
+    query: GetAnalyticsListDto,
+  ): Promise<Product[]> {
     const rows = await read(() => listLowStockProducts(toListInput(query)));
     return rows.map(toLowStockProductDto);
   }
 
-  async findAllTopRateProduct(query: GetAnalyticsListDto): Promise<TopRateProductDto[]> {
+  async findAllTopRateProduct(
+    query: GetAnalyticsListDto,
+  ): Promise<TopRateProductDto[]> {
     const rows = await read(() => listTopRatedProducts(toListInput(query)));
-    return rows.map(({ product: p, totalRating, ratingCount, actualRating }) => ({
-      id: p.id,
-      name: p.name,
-      slug: p.slug,
-      regular_price: p.price,
-      sale_price: p.salePrice,
-      min_price: p.minPrice,
-      max_price: p.maxPrice,
-      product_type: p.productType,
-      description: p.description,
-      type_id: p.typeId,
-      type_slug: p.type.slug,
-      total_rating: totalRating,
-      rating_count: ratingCount,
-      actual_rating: actualRating,
-      image: p.image,
-    }));
+    return rows.map(
+      ({ product: p, totalRating, ratingCount, actualRating }) => ({
+        id: p.id,
+        name: p.name,
+        slug: p.slug,
+        regular_price: p.price,
+        sale_price: p.salePrice,
+        min_price: p.minPrice,
+        max_price: p.maxPrice,
+        product_type: p.productType,
+        description: p.description,
+        type_id: p.typeId,
+        type_slug: p.type.slug,
+        total_rating: totalRating,
+        rating_count: ratingCount,
+        actual_rating: actualRating,
+        image: p.image,
+      }),
+    );
   }
 }

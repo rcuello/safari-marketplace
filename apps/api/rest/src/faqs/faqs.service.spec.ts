@@ -98,7 +98,10 @@ describe('FaqsService', () => {
     it('traduce los tokens del shop /help a filtros con AND', async () => {
       listFaqsMock.mockResolvedValue({ items: [], total: 0 });
       await service.findAllFaqs(
-        query({ limit: '100', search: 'faq_type:global;issued_by:Super Admin' }),
+        query({
+          limit: '100',
+          search: 'faq_type:global;issued_by:Super Admin',
+        }),
       );
       expect(listFaqsMock).toHaveBeenCalledWith({
         shopId: undefined,
@@ -115,7 +118,10 @@ describe('FaqsService', () => {
       await service.findAllFaqs(query({ shop_id: '3' }));
       await service.findAllFaqs(query({ search: 'faq_title:envio;shop_id:4' }));
       expect(listFaqsMock.mock.calls[0][0]).toMatchObject({ shopId: 3 });
-      expect(listFaqsMock.mock.calls[1][0]).toMatchObject({ shopId: 4, title: 'envio' });
+      expect(listFaqsMock.mock.calls[1][0]).toMatchObject({
+        shopId: 4,
+        title: 'envio',
+      });
     });
 
     it('shop_id mal formado no consulta la base y devuelve página vacía', async () => {
@@ -160,9 +166,15 @@ describe('FaqsService', () => {
 
     it('inexistente o id mal formado ⇒ 404 (V-4)', async () => {
       findFaqByIdMock.mockResolvedValue(null);
-      await expect(service.getFaq('999')).rejects.toBeInstanceOf(NotFoundException);
-      await expect(service.getFaq('abc')).rejects.toBeInstanceOf(NotFoundException);
-      await expect(service.getFaq('1e21')).rejects.toBeInstanceOf(NotFoundException);
+      await expect(service.getFaq('999')).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+      await expect(service.getFaq('abc')).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+      await expect(service.getFaq('1e21')).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
       expect(findFaqByIdMock).toHaveBeenCalledTimes(1);
     });
   });
@@ -188,14 +200,26 @@ describe('FaqsService', () => {
 
     it('sin shop_id es global (shopId null)', async () => {
       createFaqMock.mockResolvedValue(makeFaqRecord({ shopId: null }));
-      await service.create({ faq_title: 'G', faq_description: 'x' } as CreateFaqDto, 3);
+      await service.create(
+        { faq_title: 'G', faq_description: 'x' } as CreateFaqDto,
+        3,
+      );
       expect(createFaqMock.mock.calls[0][0]).toMatchObject({ shopId: null });
     });
 
     it('tienda inexistente ⇒ 400', async () => {
-      createFaqMock.mockRejectedValue(new InvalidReferenceError('faqs', 'shop_id', 999));
+      createFaqMock.mockRejectedValue(
+        new InvalidReferenceError('faqs', 'shop_id', 999),
+      );
       await expect(
-        service.create({ faq_title: 'G', faq_description: 'x', shop_id: '999' } as CreateFaqDto, 3),
+        service.create(
+          {
+            faq_title: 'G',
+            faq_description: 'x',
+            shop_id: '999',
+          } as CreateFaqDto,
+          3,
+        ),
       ).rejects.toBeInstanceOf(BadRequestException);
     });
   });
@@ -214,13 +238,17 @@ describe('FaqsService', () => {
     });
 
     it('id mal formado ⇒ 404 sin tocar el driver; inexistente ⇒ 404', async () => {
-      await expect(service.update(Number.NaN, {})).rejects.toBeInstanceOf(NotFoundException);
+      await expect(service.update(Number.NaN, {})).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
       await expect(service.remove(0)).rejects.toBeInstanceOf(NotFoundException);
       expect(updateFaqMock).not.toHaveBeenCalled();
       expect(deleteFaqMock).not.toHaveBeenCalled();
 
       deleteFaqMock.mockRejectedValue(new RecordNotFoundError('faqs', 999));
-      await expect(service.remove(999)).rejects.toBeInstanceOf(NotFoundException);
+      await expect(service.remove(999)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
     });
   });
 });

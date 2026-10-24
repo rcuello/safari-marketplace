@@ -40,7 +40,9 @@ const deleteMock = jest.mocked(deleteQuestion);
 
 const AT = new Date('2022-03-18T10:19:46.000Z');
 
-function makeRecord(overrides: Partial<QuestionDetailRecord> = {}): QuestionDetailRecord {
+function makeRecord(
+  overrides: Partial<QuestionDetailRecord> = {},
+): QuestionDetailRecord {
   return {
     id: 34,
     userId: 4,
@@ -83,7 +85,9 @@ describe('MyQuestionsService', () => {
 
   it('lista solo las del usuario, limit 8 por defecto y la url fija del mock', async () => {
     listMock.mockResolvedValue({ items: [makeRecord()], total: 14 });
-    const result = await service.findMyQuestions(4, { search: 'answer:x' } as GetQuestionDto);
+    const result = await service.findMyQuestions(4, {
+      search: 'answer:x',
+    } as GetQuestionDto);
     expect(listMock).toHaveBeenCalledWith(4, { page: 1, limit: 8 });
     expect(result.total).toBe(14);
     expect(result.per_page).toBe(8);
@@ -94,13 +98,19 @@ describe('MyQuestionsService', () => {
 
   it('una pregunta ajena o inexistente es 404 en lectura, edición y borrado', async () => {
     findMock.mockResolvedValue(makeRecord({ userId: 4 }));
-    await expect(service.findMyQuestion(2, 34)).rejects.toBeInstanceOf(NotFoundException);
-    await expect(service.update(2, 34, { question: 'x' } as UpdateQuestionDto)).rejects.toBeInstanceOf(
+    await expect(service.findMyQuestion(2, 34)).rejects.toBeInstanceOf(
       NotFoundException,
     );
-    await expect(service.delete(2, 34)).rejects.toBeInstanceOf(NotFoundException);
+    await expect(
+      service.update(2, 34, { question: 'x' } as UpdateQuestionDto),
+    ).rejects.toBeInstanceOf(NotFoundException);
+    await expect(service.delete(2, 34)).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
     findMock.mockResolvedValue(null);
-    await expect(service.findMyQuestion(4, 34)).rejects.toBeInstanceOf(NotFoundException);
+    await expect(service.findMyQuestion(4, 34)).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
     expect(updateMock).not.toHaveBeenCalled();
     expect(deleteMock).not.toHaveBeenCalled();
   });
@@ -109,16 +119,31 @@ describe('MyQuestionsService', () => {
     findMock.mockResolvedValue(makeRecord());
     expect((await service.findMyQuestion(4, 34)).id).toBe(34);
     updateMock.mockResolvedValue(makeRecord({ question: 'nueva' }));
-    await service.update(4, 34, { question: 'nueva', answer: 'trampa' } as UpdateQuestionDto);
+    await service.update(4, 34, {
+      question: 'nueva',
+      answer: 'trampa',
+    } as UpdateQuestionDto);
     expect(updateMock).toHaveBeenCalledWith(34, 'nueva');
     deleteMock.mockResolvedValue(makeRecord());
     expect((await service.delete(4, 34)).id).toBe(34);
   });
 
   it('crear delega en QuestionService con el usuario que llama', async () => {
-    const spy = jest.spyOn(questions, 'create').mockResolvedValue({} as Question);
-    const dto = { question: 'zz', product_id: '1', shop_id: '6' } as unknown as CreateQuestionDto;
-    const who: CurrentUserPayload = { sub: 2, email: 'c@demo.com', permissions: ['customer'], iat: 0, exp: 0 };
+    const spy = jest
+      .spyOn(questions, 'create')
+      .mockResolvedValue({} as Question);
+    const dto = {
+      question: 'zz',
+      product_id: '1',
+      shop_id: '6',
+    } as unknown as CreateQuestionDto;
+    const who: CurrentUserPayload = {
+      sub: 2,
+      email: 'c@demo.com',
+      permissions: ['customer'],
+      iat: 0,
+      exp: 0,
+    };
     await service.create(dto, who);
     expect(spy).toHaveBeenCalledWith(dto, who);
   });

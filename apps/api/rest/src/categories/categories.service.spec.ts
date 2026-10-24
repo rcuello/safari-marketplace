@@ -243,9 +243,7 @@ describe('CategoriesService.create (US-28)', () => {
   it('`type_id` STRING (`"7"`, `ValidationPipe` sin `transform`) se coerciona a `typeId: 7` (DD28-10, réplica de W-2 de US-27b)', async () => {
     createCategoryMock.mockResolvedValue(makeCategoryNode());
 
-    await service.create(
-      createDto({ name: 'Dairy', type_id: '7' as never }),
-    );
+    await service.create(createDto({ name: 'Dairy', type_id: '7' as never }));
 
     expect(createCategoryMock).toHaveBeenCalledWith({
       name: 'Dairy',
@@ -298,7 +296,9 @@ describe('CategoriesService.create (US-28)', () => {
   });
 
   it('EmptySlugError del repositorio → 400', async () => {
-    createCategoryMock.mockRejectedValue(new EmptySlugError('categories', '!!!'));
+    createCategoryMock.mockRejectedValue(
+      new EmptySlugError('categories', '!!!'),
+    );
 
     expect.assertions(2);
     try {
@@ -385,16 +385,19 @@ describe('CategoriesService.update (US-28)', () => {
     ['cero', 0],
     ['negativo', -5],
     ['fuera del rango seguro de bigint (1e21)', 1e21],
-  ])('id %s → 404 sin llamar al repositorio (`!Number.isSafeInteger(id) || id <= 0`)', async (_label, id) => {
-    expect.assertions(3);
-    try {
-      await service.update(id, updateDto({ name: 'x' }));
-    } catch (error) {
-      expect(error).toBeInstanceOf(NotFoundException);
-      expect((error as NotFoundException).getStatus()).toBe(404);
-      expect(updateCategoryMock).not.toHaveBeenCalled();
-    }
-  });
+  ])(
+    'id %s → 404 sin llamar al repositorio (`!Number.isSafeInteger(id) || id <= 0`)',
+    async (_label, id) => {
+      expect.assertions(3);
+      try {
+        await service.update(id, updateDto({ name: 'x' }));
+      } catch (error) {
+        expect(error).toBeInstanceOf(NotFoundException);
+        expect((error as NotFoundException).getStatus()).toBe(404);
+        expect(updateCategoryMock).not.toHaveBeenCalled();
+      }
+    },
+  );
 
   it('`PUT {}` no envía `parent`/`type_id` al repositorio: un campo ausente NUNCA sobrescribe el valor actual (semántica `Partial`, DD28-10)', async () => {
     updateCategoryMock.mockResolvedValue(makeCategoryNode());

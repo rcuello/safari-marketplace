@@ -53,7 +53,11 @@ import { CheckoutVerificationDto } from './dto/verify-checkout.dto';
 import { JwtService } from '@nestjs/jwt';
 import { GetOrderFilesDto } from './dto/get-downloads.dto';
 import { OrderFilesController } from './orders.controller';
-import { ORDER_EXPORT_URL, ORDER_INVOICE_URL, OrdersService } from './orders.service';
+import {
+  ORDER_EXPORT_URL,
+  ORDER_INVOICE_URL,
+  OrdersService,
+} from './orders.service';
 
 jest.mock('@safari/db', () => ({
   ...jest.requireActual<typeof import('@safari/db')>('@safari/db'),
@@ -109,7 +113,9 @@ const SHOP: ShopRecord = {
   productsCount: 4,
 };
 
-function makeOrder(overrides: Partial<OrderDetailRecord> = {}): OrderDetailRecord {
+function makeOrder(
+  overrides: Partial<OrderDetailRecord> = {},
+): OrderDetailRecord {
   return {
     id: 48,
     trackingNumber: '20240207303639',
@@ -150,7 +156,12 @@ function makeOrder(overrides: Partial<OrderDetailRecord> = {}): OrderDetailRecor
         orderQuantity: 2,
         unitPrice: 3.5,
         subtotal: 7,
-        productSnapshot: { id: 206, name: 'Producto', translated_languages: ['en'], variation_options: [] },
+        productSnapshot: {
+          id: 206,
+          name: 'Producto',
+          translated_languages: ['en'],
+          variation_options: [],
+        },
         createdAt: CREATED,
         updatedAt: CREATED,
       },
@@ -162,7 +173,13 @@ function makeOrder(overrides: Partial<OrderDetailRecord> = {}): OrderDetailRecor
 }
 
 function makeParentWithChild(): OrderDetailRecord {
-  const child = makeOrder({ id: 49, parentId: 48, shopId: 7, shop: SHOP, trackingNumber: '20240207303640' });
+  const child = makeOrder({
+    id: 49,
+    parentId: 48,
+    shopId: 7,
+    shop: SHOP,
+    trackingNumber: '20240207303640',
+  });
   return makeOrder({ children: [child] });
 }
 
@@ -185,22 +202,52 @@ describe('OrdersService — lectura', () => {
   describe('forma (D-1)', () => {
     it('padre: claves del mock en orden, terminando en children; dinero y cancelled_* como el mock', async () => {
       findMock.mockResolvedValue(makeParentWithChild());
-      const order = (await service.getOrder('48', ADMIN_USER)) as unknown as Record<string, unknown>;
-      expect(Object.keys(order).slice(-4)).toEqual(['created_at', 'customer', 'products', 'children']);
+      const order = (await service.getOrder(
+        '48',
+        ADMIN_USER,
+      )) as unknown as Record<string, unknown>;
+      expect(Object.keys(order).slice(-4)).toEqual([
+        'created_at',
+        'customer',
+        'products',
+        'children',
+      ]);
       expect(order).not.toHaveProperty('shop');
-      expect(order).toMatchObject({ sales_tax: 0.044, total: 52.244, cancelled_amount: '0.00', coupon_id: null });
+      expect(order).toMatchObject({
+        sales_tax: 0.044,
+        total: 52.244,
+        cancelled_amount: '0.00',
+        coupon_id: null,
+      });
       const child = (order.children as Record<string, unknown>[])[0];
-      expect(Object.keys(child).slice(-3)).toEqual(['customer', 'products', 'shop']);
+      expect(Object.keys(child).slice(-3)).toEqual([
+        'customer',
+        'products',
+        'shop',
+      ]);
       expect(child).not.toHaveProperty('children');
       expect(Object.keys(child.shop as object)).toHaveLength(16);
-      expect(child.shop).toMatchObject({ id: 7, products_count: 4, orders_count: 0, owner: null });
+      expect(child.shop).toMatchObject({
+        id: 7,
+        products_count: 4,
+        orders_count: 0,
+        owner: null,
+      });
     });
 
     it('producto: el snapshot con pivot justo antes de variation_options y order_quantity string', async () => {
       findMock.mockResolvedValue(makeOrder());
-      const order = (await service.getOrder('48', ADMIN_USER)) as unknown as { products: Record<string, unknown>[] };
+      const order = (await service.getOrder('48', ADMIN_USER)) as unknown as {
+        products: Record<string, unknown>[];
+      };
       const product = order.products[0];
-      expect(Object.keys(product)).toEqual(['id', 'name', 'translated_languages', 'pivot', 'variation_options']);
+      expect(Object.keys(product)).toEqual([
+        'id',
+        'name',
+        'translated_languages',
+        'pivot',
+        'variation_options',
+      ]);
       expect(product.pivot).toEqual({
         order_id: 48,
         product_id: 206,
@@ -225,7 +272,9 @@ describe('OrdersService — lectura', () => {
         page: 1,
         limit: 15,
       });
-      expect(page.first_page_url).toContain('/orders?search=undefined&limit=15&page=1');
+      expect(page.first_page_url).toContain(
+        '/orders?search=undefined&limit=15&page=1',
+      );
     });
 
     it('obedece customer_id, shop_id y search=tracking_number:X; per_page queda string', async () => {
@@ -257,12 +306,17 @@ describe('OrdersService — lectura', () => {
 
     it('base caída ⇒ 503', async () => {
       listMock.mockRejectedValue(
-        Object.assign(new Error('Invalid `prisma.order.findMany()` invocation'), {
-          name: 'PrismaClientKnownRequestError',
-          code: 'ECONNREFUSED',
-        })
+        Object.assign(
+          new Error('Invalid `prisma.order.findMany()` invocation'),
+          {
+            name: 'PrismaClientKnownRequestError',
+            code: 'ECONNREFUSED',
+          },
+        ),
       );
-      await expect(service.getOrders({} as GetOrdersDto)).rejects.toBeInstanceOf(ServiceUnavailableException);
+      await expect(
+        service.getOrders({} as GetOrdersDto),
+      ).rejects.toBeInstanceOf(ServiceUnavailableException);
     });
   });
 
@@ -271,27 +325,36 @@ describe('OrdersService — lectura', () => {
       findMock.mockResolvedValue(makeOrder());
       await service.getOrder('48', ADMIN_USER);
       await service.getOrder('20240207303639', ADMIN_USER);
-      expect(findMock.mock.calls.map(([key]) => key)).toEqual([48, '20240207303639']);
+      expect(findMock.mock.calls.map(([key]) => key)).toEqual([
+        48,
+        '20240207303639',
+      ]);
       for (const bad of ['abc', '0', '1e21', '-3']) {
-        await expect(service.getOrder(bad, ADMIN_USER)).rejects.toBeInstanceOf(BadRequestException);
+        await expect(service.getOrder(bad, ADMIN_USER)).rejects.toBeInstanceOf(
+          BadRequestException,
+        );
       }
       expect(findMock).toHaveBeenCalledTimes(2);
     });
 
     it('inexistente ⇒ 404', async () => {
       findMock.mockResolvedValue(null);
-      await expect(service.getOrder('999999', ADMIN_USER)).rejects.toBeInstanceOf(NotFoundException);
-      await expect(service.getOrderByTrackingNumber('20231105635099', ADMIN_USER)).rejects.toBeInstanceOf(
-        NotFoundException
-      );
+      await expect(
+        service.getOrder('999999', ADMIN_USER),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      await expect(
+        service.getOrderByTrackingNumber('20231105635099', ADMIN_USER),
+      ).rejects.toBeInstanceOf(NotFoundException);
     });
 
     it('orden ajena ⇒ 404 para un cliente, 200 para el admin (V-4, R-5)', async () => {
       findMock.mockResolvedValue(makeOrder({ id: 41, customerId: 3 }));
-      await expect(service.getOrder('41', CUSTOMER_USER)).rejects.toBeInstanceOf(NotFoundException);
-      await expect(service.getOrderByTrackingNumber('20231105635099', CUSTOMER_USER)).rejects.toBeInstanceOf(
-        NotFoundException
-      );
+      await expect(
+        service.getOrder('41', CUSTOMER_USER),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      await expect(
+        service.getOrderByTrackingNumber('20231105635099', CUSTOMER_USER),
+      ).rejects.toBeInstanceOf(NotFoundException);
       expect((await service.getOrder('41', ADMIN_USER)).id).toBe(41);
       findMock.mockResolvedValue(makeOrder());
       expect((await service.getOrder('48', CUSTOMER_USER)).id).toBe(48);
@@ -314,7 +377,11 @@ const statusMock = jest.mocked(setOrderStatus);
 const deleteMock = jest.mocked(deleteOrder);
 const paidMock = jest.mocked(markOrderPaid);
 
-function makeProduct(id: number, shopId: number, overrides: Partial<ProductRecord> = {}): ProductRecord {
+function makeProduct(
+  id: number,
+  shopId: number,
+  overrides: Partial<ProductRecord> = {},
+): ProductRecord {
   return {
     id,
     name: `Producto ${id}`,
@@ -351,7 +418,17 @@ function makeProduct(id: number, shopId: number, overrides: Partial<ProductRecor
     scrapedAt: null,
     createdAt: CREATED,
     updatedAt: CREATED,
-    type: { id: 1, name: 'T', slug: 't', icon: null, settings: {}, banners: [], language: 'en', createdAt: CREATED, updatedAt: CREATED },
+    type: {
+      id: 1,
+      name: 'T',
+      slug: 't',
+      icon: null,
+      settings: {},
+      banners: [],
+      language: 'en',
+      createdAt: CREATED,
+      updatedAt: CREATED,
+    },
     shop: { ...SHOP, id: shopId },
     manufacturer: null,
     categories: [],
@@ -360,7 +437,13 @@ function makeProduct(id: number, shopId: number, overrides: Partial<ProductRecor
   };
 }
 
-const DIR = { zip: '40391', city: 'Winchester', state: 'KY', country: 'United States', street_address: '2148 Straford Park' };
+const DIR = {
+  zip: '40391',
+  city: 'Winchester',
+  state: 'KY',
+  country: 'United States',
+  street_address: '2148 Straford Park',
+};
 
 function makeCoupon(overrides: Partial<CouponRecord> = {}): CouponRecord {
   return {
@@ -420,17 +503,44 @@ describe('OrdersService — escritura', () => {
     service = moduleRef.get(OrdersService);
     settingsMock.mockResolvedValue({
       id: 1,
-      options: { taxClass: '1', shippingClass: '1', freeShipping: false, freeShippingAmount: 0, paymentGateway: [] },
+      options: {
+        taxClass: '1',
+        shippingClass: '1',
+        freeShipping: false,
+        freeShippingAmount: 0,
+        paymentGateway: [],
+      },
       language: 'en',
       createdAt: CREATED,
       updatedAt: CREATED,
     });
     taxMock.mockResolvedValue({
-      id: 1, name: 'Global', rate: 2, isGlobal: true, country: null, state: null, zip: null, city: null,
-      priority: null, onShipping: true, createdAt: CREATED, updatedAt: CREATED,
+      id: 1,
+      name: 'Global',
+      rate: 2,
+      isGlobal: true,
+      country: null,
+      state: null,
+      zip: null,
+      city: null,
+      priority: null,
+      onShipping: true,
+      createdAt: CREATED,
+      updatedAt: CREATED,
     });
-    shippingMock.mockResolvedValue({ id: 1, name: 'Global', amount: 50, isGlobal: true, type: 'fixed', createdAt: CREATED, updatedAt: CREATED });
-    productsMock.mockResolvedValue([makeProduct(1, 6), makeProduct(21, 4, { price: 9, salePrice: 8, minPrice: 9, maxPrice: 9 })]);
+    shippingMock.mockResolvedValue({
+      id: 1,
+      name: 'Global',
+      amount: 50,
+      isGlobal: true,
+      type: 'fixed',
+      createdAt: CREATED,
+      updatedAt: CREATED,
+    });
+    productsMock.mockResolvedValue([
+      makeProduct(1, 6),
+      makeProduct(21, 4, { price: 9, salePrice: 8, minPrice: 9, maxPrice: 9 }),
+    ]);
     createMock.mockResolvedValue(makeParentWithChild());
   });
 
@@ -438,11 +548,25 @@ describe('OrdersService — escritura', () => {
     it('calcula impuesto y envío con las 5 claves del contrato en su orden', async () => {
       const verified = await service.verifyCheckout({
         amount: 10,
-        products: [{ product_id: 1, order_quantity: 2, unit_price: 1.6, subtotal: 3.2 }],
+        products: [
+          { product_id: 1, order_quantity: 2, unit_price: 1.6, subtotal: 3.2 },
+        ],
         shipping_address: DIR,
       } as CheckoutVerificationDto);
-      expect(Object.keys(verified)).toEqual(['total_tax', 'shipping_charge', 'unavailable_products', 'wallet_currency', 'wallet_amount']);
-      expect(verified).toEqual({ total_tax: 0.064, shipping_charge: 50, unavailable_products: [], wallet_currency: 0, wallet_amount: 0 });
+      expect(Object.keys(verified)).toEqual([
+        'total_tax',
+        'shipping_charge',
+        'unavailable_products',
+        'wallet_currency',
+        'wallet_amount',
+      ]);
+      expect(verified).toEqual({
+        total_tax: 0.064,
+        shipping_charge: 50,
+        unavailable_products: [],
+        wallet_currency: 0,
+        wallet_amount: 0,
+      });
       expect(taxMock).toHaveBeenCalledWith(1);
       expect(shippingMock).toHaveBeenCalledWith(1);
     });
@@ -450,15 +574,34 @@ describe('OrdersService — escritura', () => {
     it('sin dirección no hay envío; con stock corto, el producto sale en unavailable_products', async () => {
       const verified = await service.verifyCheckout({
         amount: 10,
-        products: [{ product_id: 1, order_quantity: 99, unit_price: 1.6, subtotal: 158.4 }],
+        products: [
+          {
+            product_id: 1,
+            order_quantity: 99,
+            unit_price: 1.6,
+            subtotal: 158.4,
+          },
+        ],
       } as CheckoutVerificationDto);
-      expect(verified).toMatchObject({ total_tax: 0, shipping_charge: 0, unavailable_products: [1] });
+      expect(verified).toMatchObject({
+        total_tax: 0,
+        shipping_charge: 0,
+        unavailable_products: [1],
+      });
     });
   });
 
   describe('create (V-2)', () => {
     it('totales del servidor, una hija por tienda, snapshot del producto y estados de COD', async () => {
-      userMock.mockResolvedValue({ id: 2, name: 'Customer', email: 'customer@demo.com', isActive: true, emailVerifiedAt: null, createdAt: CREATED, updatedAt: CREATED });
+      userMock.mockResolvedValue({
+        id: 2,
+        name: 'Customer',
+        email: 'customer@demo.com',
+        isActive: true,
+        emailVerifiedAt: null,
+        createdAt: CREATED,
+        updatedAt: CREATED,
+      });
       const order = await service.create(orderDto(), 2);
       const input = createMock.mock.calls[0][0];
       expect(input).toMatchObject({
@@ -475,60 +618,130 @@ describe('OrdersService — escritura', () => {
         customerName: 'Customer',
       });
       expect(Object.keys(input.customerSnapshot as object)).toHaveLength(9);
-      expect(input.lines.map((l) => [l.productId, l.unitPrice, l.subtotal])).toEqual([[1, '1.6', '3.2'], [21, '8', '16']]);
-      expect(input.children.map((c) => [c.shopId, c.amount, c.lines.length])).toEqual([[6, '3.2', 1], [4, '16', 1]]);
-      const snapshot = input.lines[0].productSnapshot as Record<string, unknown>;
+      expect(
+        input.lines.map((l) => [l.productId, l.unitPrice, l.subtotal]),
+      ).toEqual([
+        [1, '1.6', '3.2'],
+        [21, '8', '16'],
+      ]);
+      expect(
+        input.children.map((c) => [c.shopId, c.amount, c.lines.length]),
+      ).toEqual([
+        [6, '3.2', 1],
+        [4, '16', 1],
+      ]);
+      const snapshot = input.lines[0].productSnapshot as Record<
+        string,
+        unknown
+      >;
       expect(Object.keys(snapshot)).toHaveLength(44);
-      expect(Object.keys(snapshot).slice(-2)).toEqual(['translated_languages', 'variation_options']);
-      expect(snapshot).toMatchObject({ id: 1, quantity: 16, sold_quantity: 2, price: 2, sale_price: 1.6 });
-      expect(Object.keys(order).slice(-2)).toEqual(['children', 'payment_intent']);
+      expect(Object.keys(snapshot).slice(-2)).toEqual([
+        'translated_languages',
+        'variation_options',
+      ]);
+      expect(snapshot).toMatchObject({
+        id: 1,
+        quantity: 16,
+        sold_quantity: 2,
+        price: 2,
+        sale_price: 1.6,
+      });
+      expect(Object.keys(order).slice(-2)).toEqual([
+        'children',
+        'payment_intent',
+      ]);
       expect(order.payment_intent).toBeNull();
     });
 
     it('invitado: sin usuario, customer_id y snapshot nulos', async () => {
       await service.create(orderDto(), null);
-      expect(createMock.mock.calls[0][0]).toMatchObject({ customerId: null, customerSnapshot: null });
+      expect(createMock.mock.calls[0][0]).toMatchObject({
+        customerId: null,
+        customerSnapshot: null,
+      });
       expect(userMock).not.toHaveBeenCalled();
     });
 
     it('cupón vigente descuenta; inexistente o vencido ⇒ 422 sin escribir', async () => {
       couponMock.mockResolvedValueOnce(makeCoupon());
       await service.create(orderDto({ coupon_id: 9 }), null);
-      expect(createMock.mock.calls[0][0]).toMatchObject({ couponId: 9, discount: '5', total: '64.584' });
+      expect(createMock.mock.calls[0][0]).toMatchObject({
+        couponId: 9,
+        discount: '5',
+        total: '64.584',
+      });
 
-      couponMock.mockResolvedValueOnce(makeCoupon({ expireAt: new Date('2021-01-01T00:00:00.000Z') }));
-      await expect(service.create(orderDto({ coupon_id: 9 }), null)).rejects.toBeInstanceOf(UnprocessableEntityException);
+      couponMock.mockResolvedValueOnce(
+        makeCoupon({ expireAt: new Date('2021-01-01T00:00:00.000Z') }),
+      );
+      await expect(
+        service.create(orderDto({ coupon_id: 9 }), null),
+      ).rejects.toBeInstanceOf(UnprocessableEntityException);
       couponMock.mockResolvedValueOnce(null);
-      await expect(service.create(orderDto({ coupon_id: 77 }), null)).rejects.toBeInstanceOf(UnprocessableEntityException);
+      await expect(
+        service.create(orderDto({ coupon_id: 77 }), null),
+      ).rejects.toBeInstanceOf(UnprocessableEntityException);
       expect(createMock).toHaveBeenCalledTimes(1);
     });
 
     it('stock insuficiente ⇒ 422 con la lista; carrera en la transacción ⇒ 409', async () => {
-      const rejection = service.create(orderDto({ products: [{ product_id: 1, order_quantity: 99, unit_price: 1.6, subtotal: 1 }] }), null);
-      await expect(rejection).rejects.toBeInstanceOf(UnprocessableEntityException);
+      const rejection = service.create(
+        orderDto({
+          products: [
+            { product_id: 1, order_quantity: 99, unit_price: 1.6, subtotal: 1 },
+          ],
+        }),
+        null,
+      );
+      await expect(rejection).rejects.toBeInstanceOf(
+        UnprocessableEntityException,
+      );
       await rejection.catch((error: UnprocessableEntityException) => {
-        expect(error.getResponse()).toMatchObject({ statusCode: 422, unavailable_products: [1] });
+        expect(error.getResponse()).toMatchObject({
+          statusCode: 422,
+          unavailable_products: [1],
+        });
       });
       expect(createMock).not.toHaveBeenCalled();
 
       createMock.mockRejectedValueOnce(new InsufficientStockError(1));
-      await expect(service.create(orderDto(), null)).rejects.toBeInstanceOf(ConflictException);
+      await expect(service.create(orderDto(), null)).rejects.toBeInstanceOf(
+        ConflictException,
+      );
     });
 
     it('FULL_WALLET_PAYMENT ⇒ 422 (V-5); pasarela desconocida ⇒ 400; sin productos ⇒ 400', async () => {
-      await expect(service.create(orderDto({ payment_gateway: 'FULL_WALLET_PAYMENT' } as Partial<CreateOrderDto>), null)).rejects.toBeInstanceOf(
-        UnprocessableEntityException
-      );
-      await expect(service.create(orderDto({ payment_gateway: 'ZZ' } as unknown as Partial<CreateOrderDto>), null)).rejects.toBeInstanceOf(
-        BadRequestException
-      );
-      await expect(service.create(orderDto({ products: [] }), null)).rejects.toBeInstanceOf(BadRequestException);
+      await expect(
+        service.create(
+          orderDto({
+            payment_gateway: 'FULL_WALLET_PAYMENT',
+          } as Partial<CreateOrderDto>),
+          null,
+        ),
+      ).rejects.toBeInstanceOf(UnprocessableEntityException);
+      await expect(
+        service.create(
+          orderDto({
+            payment_gateway: 'ZZ',
+          } as unknown as Partial<CreateOrderDto>),
+          null,
+        ),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      await expect(
+        service.create(orderDto({ products: [] }), null),
+      ).rejects.toBeInstanceOf(BadRequestException);
       expect(createMock).not.toHaveBeenCalled();
     });
 
     it('STRIPE: estados pendientes y payment_intent del mock permanente (o null si la pasarela falla)', async () => {
-      const order = await service.create(orderDto({ payment_gateway: 'STRIPE' } as Partial<CreateOrderDto>), null);
-      expect(createMock.mock.calls[0][0]).toMatchObject({ orderStatus: 'order-pending', paymentStatus: 'payment-pending' });
+      const order = await service.create(
+        orderDto({ payment_gateway: 'STRIPE' } as Partial<CreateOrderDto>),
+        null,
+      );
+      expect(createMock.mock.calls[0][0]).toMatchObject({
+        orderStatus: 'order-pending',
+        paymentStatus: 'payment-pending',
+      });
       expect(order).toHaveProperty('payment_intent', null);
     });
   });
@@ -536,53 +749,83 @@ describe('OrdersService — escritura', () => {
   describe('update / remove (V-7)', () => {
     it('update pasa order_status y payment_status al repositorio y devuelve la orden', async () => {
       statusMock.mockResolvedValue(makeParentWithChild());
-      const order = await service.update(48, { order_status: 'order-completed' } as UpdateOrderDto);
-      expect(statusMock).toHaveBeenCalledWith(48, { orderStatus: 'order-completed' });
+      const order = await service.update(48, {
+        order_status: 'order-completed',
+      } as UpdateOrderDto);
+      expect(statusMock).toHaveBeenCalledWith(48, {
+        orderStatus: 'order-completed',
+      });
       expect(order.id).toBe(48);
     });
 
     it('update sin estado o con id inválido ⇒ 400; inexistente ⇒ 404', async () => {
-      await expect(service.update(48, {} as UpdateOrderDto)).rejects.toBeInstanceOf(BadRequestException);
-      await expect(service.update(Number.NaN, { order_status: 'order-completed' } as UpdateOrderDto)).rejects.toBeInstanceOf(
-        BadRequestException
-      );
+      await expect(
+        service.update(48, {} as UpdateOrderDto),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      await expect(
+        service.update(Number.NaN, {
+          order_status: 'order-completed',
+        } as UpdateOrderDto),
+      ).rejects.toBeInstanceOf(BadRequestException);
       statusMock.mockRejectedValue(new RecordNotFoundError('orders', 999));
-      await expect(service.update(999, { order_status: 'order-completed' } as UpdateOrderDto)).rejects.toBeInstanceOf(
-        NotFoundException
-      );
+      await expect(
+        service.update(999, {
+          order_status: 'order-completed',
+        } as UpdateOrderDto),
+      ).rejects.toBeInstanceOf(NotFoundException);
     });
 
     it('remove devuelve el snapshot; inexistente ⇒ 404', async () => {
       deleteMock.mockResolvedValueOnce(makeParentWithChild());
       expect((await service.remove(48)).id).toBe(48);
       deleteMock.mockRejectedValueOnce(new RecordNotFoundError('orders', 999));
-      await expect(service.remove(999)).rejects.toBeInstanceOf(NotFoundException);
+      await expect(service.remove(999)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
     });
   });
 
   describe('pay (V-8)', () => {
     it('STRIPE marca la orden pedida; inexistente ⇒ 404', async () => {
-      findMock.mockResolvedValueOnce(makeOrder({ paymentGateway: 'STRIPE', trackingNumber: '20261023000001' }));
+      findMock.mockResolvedValueOnce(
+        makeOrder({
+          paymentGateway: 'STRIPE',
+          trackingNumber: '20261023000001',
+        }),
+      );
       await service.pay(20261023000001);
       expect(findMock).toHaveBeenCalledWith('20261023000001');
       expect(paidMock).toHaveBeenCalledWith('20261023000001');
       findMock.mockResolvedValueOnce(null);
-      await expect(service.pay('00000000000000')).rejects.toBeInstanceOf(NotFoundException);
+      await expect(service.pay('00000000000000')).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
     });
 
     it('PAYPAL sin intento en el mock ⇒ 422 sin marcar; con intento, verifica y marca', async () => {
-      findMock.mockResolvedValueOnce(makeOrder({ paymentGateway: 'PAYPAL', trackingNumber: '20261023000002' }));
-      await expect(service.pay('20261023000002')).rejects.toBeInstanceOf(UnprocessableEntityException);
+      findMock.mockResolvedValueOnce(
+        makeOrder({
+          paymentGateway: 'PAYPAL',
+          trackingNumber: '20261023000002',
+        }),
+      );
+      await expect(service.pay('20261023000002')).rejects.toBeInstanceOf(
+        UnprocessableEntityException,
+      );
       expect(paidMock).not.toHaveBeenCalled();
 
-      findMock.mockResolvedValueOnce(makeOrder({ paymentGateway: 'PAYPAL', trackingNumber: '334983046149' }));
+      findMock.mockResolvedValueOnce(
+        makeOrder({ paymentGateway: 'PAYPAL', trackingNumber: '334983046149' }),
+      );
       await service.pay('334983046149');
       expect(verifyOrder).toHaveBeenCalledTimes(1);
       expect(paidMock).toHaveBeenCalledWith('334983046149');
     });
 
     it('otras pasarelas: sin cambio', async () => {
-      findMock.mockResolvedValueOnce(makeOrder({ paymentGateway: 'CASH_ON_DELIVERY' }));
+      findMock.mockResolvedValueOnce(
+        makeOrder({ paymentGateway: 'CASH_ON_DELIVERY' }),
+      );
       await service.pay('20240207303639');
       expect(paidMock).not.toHaveBeenCalled();
     });
@@ -607,7 +850,9 @@ const FILE = {
   fileable: { id: 888 },
 };
 
-function makeOrderFile(overrides: Partial<OrderFileRecord> = {}): OrderFileRecord {
+function makeOrderFile(
+  overrides: Partial<OrderFileRecord> = {},
+): OrderFileRecord {
   return {
     id: 4,
     purchaseKey: 'abcdefghijklmnop',
@@ -646,7 +891,14 @@ describe('OrdersService — descargas, export e invoice', () => {
     const page = await service.getOrderFileItems({} as GetOrderFilesDto, 2);
     expect(filesMock).toHaveBeenCalledWith(2, { page: 1, limit: 30 });
     expect(Object.keys(page.data[0])).toEqual([
-      'id', 'purchase_key', 'digital_file_id', 'order_id', 'customer_id', 'created_at', 'updated_at', 'file',
+      'id',
+      'purchase_key',
+      'digital_file_id',
+      'order_id',
+      'customer_id',
+      'created_at',
+      'updated_at',
+      'file',
     ]);
     expect(page.data[0].file).toBe(FILE);
     expect(page.first_page_url).toContain('/downloads?&limit=30&page=1');
@@ -654,27 +906,43 @@ describe('OrdersService — descargas, export e invoice', () => {
 
   it('CA-3: el controlador pasa el sub del token, nunca un customer_id de la query', async () => {
     filesMock.mockResolvedValue({ items: [], total: 0 });
-    const query = { limit: '10', customer_id: '2' } as unknown as GetOrderFilesDto;
+    const query = {
+      limit: '10',
+      customer_id: '2',
+    } as unknown as GetOrderFilesDto;
     const page = await controller.getOrderFileItems(query, ADMIN_USER);
-    expect(filesMock).toHaveBeenCalledWith(ADMIN_USER.sub, { page: 1, limit: 10 });
+    expect(filesMock).toHaveBeenCalledWith(ADMIN_USER.sub, {
+      page: 1,
+      limit: 10,
+    });
     expect(page).toMatchObject({ data: [], total: 0, per_page: '10' });
   });
 
   it('digital_file: la url del primer match del usuario como string; inexistente, ajeno o id inválido ⇒ 404', async () => {
     firstFileMock.mockResolvedValueOnce(makeOrderFile());
-    expect(await controller.getDigitalFileDownloadUrl(42, CUSTOMER_USER)).toBe(FILE.url);
+    expect(await controller.getDigitalFileDownloadUrl(42, CUSTOMER_USER)).toBe(
+      FILE.url,
+    );
     expect(firstFileMock).toHaveBeenCalledWith(42, CUSTOMER_USER.sub);
 
     firstFileMock.mockResolvedValueOnce(null);
-    await expect(service.getDigitalFileDownloadUrl(999, 2)).rejects.toBeInstanceOf(NotFoundException);
-    await expect(service.getDigitalFileDownloadUrl(1e21, 2)).rejects.toBeInstanceOf(NotFoundException);
+    await expect(
+      service.getDigitalFileDownloadUrl(999, 2),
+    ).rejects.toBeInstanceOf(NotFoundException);
+    await expect(
+      service.getDigitalFileDownloadUrl(1e21, 2),
+    ).rejects.toBeInstanceOf(NotFoundException);
     expect(firstFileMock).toHaveBeenCalledTimes(2);
   });
 
   it('export e invoice devuelven las URLs constantes del mock permanente', async () => {
     expect(await service.exportOrder('1')).toBe(ORDER_EXPORT_URL);
     expect(await service.downloadInvoiceUrl('1')).toBe(ORDER_INVOICE_URL);
-    expect(ORDER_EXPORT_URL).toBe('https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/100/orders.xlsx');
-    expect(ORDER_INVOICE_URL).toBe('https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/100/invoice-order.pdf');
+    expect(ORDER_EXPORT_URL).toBe(
+      'https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/100/orders.xlsx',
+    );
+    expect(ORDER_INVOICE_URL).toBe(
+      'https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/100/invoice-order.pdf',
+    );
   });
 });

@@ -65,7 +65,9 @@ function rawQuery(
 
 const FIXED_DATE = new Date('2026-09-02T15:33:36.102Z');
 
-function buildFixture(overrides: Partial<UserWithRelations> = {}): UserWithRelations {
+function buildFixture(
+  overrides: Partial<UserWithRelations> = {},
+): UserWithRelations {
   return {
     id: 3,
     name: 'Jhon Doe',
@@ -103,7 +105,9 @@ describe('UsersService (US-25 PR3 — migración a Postgres)', () => {
       const items = [buildFixture({ id: 1 }), buildFixture({ id: 2 })];
       listUsersWithRelationsMock.mockResolvedValue({ items, total: 2 });
 
-      const result = await service.getUsers(rawQuery({ limit: '20', page: '1' }));
+      const result = await service.getUsers(
+        rawQuery({ limit: '20', page: '1' }),
+      );
       const { data, ...actualPagination } = result as unknown as Record<
         string,
         unknown
@@ -117,7 +121,13 @@ describe('UsersService (US-25 PR3 — migración a Postgres)', () => {
         permissionName: undefined,
       });
 
-      const expected = paginate(2, 1, '20' as unknown as number, 2, '/users?limit=20');
+      const expected = paginate(
+        2,
+        1,
+        '20' as unknown as number,
+        2,
+        '/users?limit=20',
+      );
       expect(Object.keys(actualPagination).sort()).toEqual(
         Object.keys(expected).sort(),
       );
@@ -135,7 +145,9 @@ describe('UsersService (US-25 PR3 — migración a Postgres)', () => {
     it('total=0 clampa current_page/last_page a 0 y lastItem a -1 (my-staffs/all-staffs reales)', async () => {
       listUsersWithRelationsMock.mockResolvedValue({ items: [], total: 0 });
 
-      const result = await service.getMyStaffs(rawQuery({ limit: 30, page: 1 }));
+      const result = await service.getMyStaffs(
+        rawQuery({ limit: 30, page: 1 }),
+      );
 
       expect(result.current_page).toBe(0);
       expect(result.last_page).toBe(0);
@@ -160,7 +172,9 @@ describe('UsersService (US-25 PR3 — migración a Postgres)', () => {
         permissionName: 'staff',
       });
       expect(myStaffsResult.first_page_url).toContain('/my-staffs/list?limit=');
-      expect(allStaffsResult.first_page_url).toContain('/all-staffs/list?limit=');
+      expect(allStaffsResult.first_page_url).toContain(
+        '/all-staffs/list?limit=',
+      );
     });
 
     it('admin/vendors/customers filtran por el permiso correcto', async () => {
@@ -344,9 +358,9 @@ describe('UsersService (US-25 PR3 — migración a Postgres)', () => {
     });
 
     it('409 al bloquearse a sí mismo (@CurrentUser().sub === id)', async () => {
-      await expect(
-        service.banUser(1, currentUser(1)),
-      ).rejects.toBeInstanceOf(ConflictException);
+      await expect(service.banUser(1, currentUser(1))).rejects.toBeInstanceOf(
+        ConflictException,
+      );
       expect(findUserWithRelationsMock).not.toHaveBeenCalled();
     });
 
@@ -367,9 +381,9 @@ describe('UsersService (US-25 PR3 — migración a Postgres)', () => {
       );
       listUsersMock.mockResolvedValue({ items: [], total: 1 });
 
-      await expect(
-        service.banUser(3, currentUser(1)),
-      ).rejects.toBeInstanceOf(ConflictException);
+      await expect(service.banUser(3, currentUser(1))).rejects.toBeInstanceOf(
+        ConflictException,
+      );
       expect(setUserActiveMock).not.toHaveBeenCalled();
     });
 
@@ -399,9 +413,7 @@ describe('UsersService (US-25 PR3 — migración a Postgres)', () => {
         updatedAt: FIXED_DATE,
       });
 
-      await expect(
-        service.banUser(3, currentUser(1)),
-      ).resolves.toBeDefined();
+      await expect(service.banUser(3, currentUser(1))).resolves.toBeDefined();
       expect(setUserActiveMock).toHaveBeenCalledWith(3, false);
     });
 
@@ -568,7 +580,9 @@ describe('UsersService (US-25 PR3 — migración a Postgres)', () => {
     });
 
     it('error de conexión a la base → 503', async () => {
-      const error = new Error("Can't reach database server at `localhost:5433`");
+      const error = new Error(
+        "Can't reach database server at `localhost:5433`",
+      );
       error.name = 'PrismaClientInitializationError';
       createUserMock.mockRejectedValue(error);
 
@@ -596,7 +610,9 @@ describe('UsersService (US-25 PR3 — migración a Postgres)', () => {
 
   describe('update — PUT stub (A11, no persiste)', () => {
     it('devuelve el usuario actual sin aplicar el body', async () => {
-      findUserWithRelationsMock.mockResolvedValue(buildFixture({ id: 3, name: 'Original' }));
+      findUserWithRelationsMock.mockResolvedValue(
+        buildFixture({ id: 3, name: 'Original' }),
+      );
 
       const dto = await service.update(3, {
         name: 'Otro nombre',

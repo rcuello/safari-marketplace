@@ -34,7 +34,11 @@ import { InternalServerErrorException } from '@nestjs/common';
 import becomeSellerJson from '@db/become-seller.json';
 import { BecomeSellerService } from './become-seller.service';
 import { CreateBecomeSellerDto } from './dto/create-become-seller.dto';
-import { BecomeSeller, BecomeSellerEnvelope, BecomeSellerOptions } from './entities/become-seller.entity';
+import {
+  BecomeSeller,
+  BecomeSellerEnvelope,
+  BecomeSellerOptions,
+} from './entities/become-seller.entity';
 
 jest.mock('@safari/db', () => ({
   ...jest.requireActual<typeof import('@safari/db')>('@safari/db'),
@@ -48,7 +52,9 @@ const updateBecomeSellerMock = jest.mocked(updateBecomeSeller);
 const CREATED_AT = new Date('2024-06-06T10:30:48.000Z');
 const UPDATED_AT = new Date('2024-06-12T11:31:46.000Z');
 
-function makeRecord(overrides: Partial<BecomeSellerRecord> = {}): BecomeSellerRecord {
+function makeRecord(
+  overrides: Partial<BecomeSellerRecord> = {},
+): BecomeSellerRecord {
   return {
     id: 1,
     pageOptions: { sellingStepsTitle: 'Vende con nosotros' },
@@ -81,7 +87,10 @@ type AssertSameKeys<T, K extends string> = [KeyDrift<T, K>] extends [never]
   ? true
   : KeyDrift<T, K>;
 
-const _topLevelKeys: AssertSameKeys<BecomeSeller, keyof typeof becomeSellerJson> = true;
+const _topLevelKeys: AssertSameKeys<
+  BecomeSeller,
+  keyof typeof becomeSellerJson
+> = true;
 const _envelopeKeys: AssertSameKeys<
   BecomeSellerEnvelope,
   keyof typeof becomeSellerJson.page_options
@@ -97,7 +106,9 @@ const _dtoKeys: AssertSameKeys<
 
 describe('BecomeSellerService — red de tipos del contrato interno (CA-3 / D-10)', () => {
   it('las 24 claves del objeto interno siguen presentes en el dato real, en el orden declarado', () => {
-    expect(Object.keys(becomeSellerJson.page_options.page_options)).toHaveLength(24);
+    expect(
+      Object.keys(becomeSellerJson.page_options.page_options),
+    ).toHaveLength(24);
     expect(Object.keys(becomeSellerJson.page_options.page_options)).toEqual([
       'defaultCommissionRate',
       'defaultCommissionDetails',
@@ -127,7 +138,12 @@ describe('BecomeSellerService — red de tipos del contrato interno (CA-3 / D-10
   });
 
   it('las aserciones de tipo `AssertSameKeys` compilan en verde (ver `_topLevelKeys`/`_envelopeKeys`/`_optionKeys`/`_dtoKeys` arriba)', () => {
-    expect([_topLevelKeys, _envelopeKeys, _optionKeys, _dtoKeys]).toEqual([true, true, true, true]);
+    expect([_topLevelKeys, _envelopeKeys, _optionKeys, _dtoKeys]).toEqual([
+      true,
+      true,
+      true,
+      true,
+    ]);
   });
 });
 

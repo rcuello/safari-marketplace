@@ -13,7 +13,10 @@ import { CreateTypeDto } from './dto/create-type.dto';
 import { UpdateTypeDto } from './dto/update-type.dto';
 import { GetTypesDto } from './dto/get-types.dto';
 import { Public } from 'src/auth/decorators/public.decorator';
-import { ADMIN_ONLY, Permissions } from 'src/auth/decorators/permissions.decorator';
+import {
+  ADMIN_ONLY,
+  Permissions,
+} from 'src/auth/decorators/permissions.decorator';
 
 @Controller('types')
 export class TypesController {

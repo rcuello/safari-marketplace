@@ -57,7 +57,11 @@ const AUTHOR: CurrentUserPayload = {
   iat: 0,
   exp: 0,
 };
-const OTHER: CurrentUserPayload = { ...AUTHOR, sub: 5, email: 'customer3@demo.com' };
+const OTHER: CurrentUserPayload = {
+  ...AUTHOR,
+  sub: 5,
+  email: 'customer3@demo.com',
+};
 const ADMIN: CurrentUserPayload = {
   sub: 3,
   email: 'admin@demo.com',
@@ -88,7 +92,9 @@ const PRODUCT = {
   shop: { id: 6, name: 'Grocery Shop', slug: 'grocery-shop', logo: null },
 } as unknown as ProductRecord;
 
-function makeRecord(overrides: Partial<ReviewDetailRecord> = {}): ReviewDetailRecord {
+function makeRecord(
+  overrides: Partial<ReviewDetailRecord> = {},
+): ReviewDetailRecord {
   return {
     id: 85,
     orderId: null,
@@ -131,11 +137,30 @@ describe('ReviewService', () => {
       findMock.mockResolvedValue(makeRecord({ abusiveReportsCount: 1 }));
       const dto = JSON.parse(JSON.stringify(await service.findReview(85)));
       expect(Object.keys(dto)).toEqual([
-        'id', 'order_id', 'user_id', 'shop_id', 'product_id', 'variation_option_id', 'comment',
-        'rating', 'photos', 'deleted_at', 'created_at', 'updated_at', 'positive_feedbacks_count',
-        'negative_feedbacks_count', 'my_feedback', 'abusive_reports_count', 'product', 'user',
+        'id',
+        'order_id',
+        'user_id',
+        'shop_id',
+        'product_id',
+        'variation_option_id',
+        'comment',
+        'rating',
+        'photos',
+        'deleted_at',
+        'created_at',
+        'updated_at',
+        'positive_feedbacks_count',
+        'negative_feedbacks_count',
+        'my_feedback',
+        'abusive_reports_count',
+        'product',
+        'user',
       ]);
-      expect(dto).toMatchObject({ deleted_at: null, my_feedback: null, abusive_reports_count: 1 });
+      expect(dto).toMatchObject({
+        deleted_at: null,
+        my_feedback: null,
+        abusive_reports_count: 1,
+      });
       expect(dto.created_at).toBe('2022-03-18T09:06:12.000Z');
       expect(Object.keys(dto.product)).toHaveLength(20);
       expect(dto.user).toEqual({
@@ -152,8 +177,12 @@ describe('ReviewService', () => {
 
     it('id desconocido o no válido ⇒ 404', async () => {
       findMock.mockResolvedValue(null);
-      await expect(service.findReview(999)).rejects.toBeInstanceOf(NotFoundException);
-      await expect(service.findReview(Number.NaN)).rejects.toBeInstanceOf(NotFoundException);
+      await expect(service.findReview(999)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+      await expect(service.findReview(Number.NaN)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
     });
   });
 
@@ -182,7 +211,9 @@ describe('ReviewService', () => {
 
     it('defaults page=1/limit=30 y search vacío sin filtros', async () => {
       listMock.mockResolvedValue({ items: [], total: 0 });
-      const result = await service.findAllReviews({ search: '' } as GetReviewsDto);
+      const result = await service.findAllReviews({
+        search: '',
+      } as GetReviewsDto);
       expect(listMock).toHaveBeenCalledWith({
         productId: undefined,
         shopId: undefined,
@@ -198,25 +229,32 @@ describe('ReviewService', () => {
       [{ search: 'rating:cinco' }],
       [{ product_id: 'abc' }],
       [{ search: 'shop_id:-1' }],
-    ])('un número no válido (%j) devuelve la lista vacía sin consultar', async (query) => {
-      const result = await service.findAllReviews(query as GetReviewsDto);
-      expect(listMock).not.toHaveBeenCalled();
-      expect(result.total).toBe(0);
-    });
+    ])(
+      'un número no válido (%j) devuelve la lista vacía sin consultar',
+      async (query) => {
+        const result = await service.findAllReviews(query as GetReviewsDto);
+        expect(listMock).not.toHaveBeenCalled();
+        expect(result.total).toBe(0);
+      },
+    );
 
     it('un token sin `:` se ignora en vez de dar 500', async () => {
       listMock.mockResolvedValue({ items: [], total: 0 });
       await service.findAllReviews({ search: 'rating' } as GetReviewsDto);
-      expect(listMock).toHaveBeenCalledWith(expect.objectContaining({ rating: undefined }));
+      expect(listMock).toHaveBeenCalledWith(
+        expect.objectContaining({ rating: undefined }),
+      );
     });
 
     it('un fallo de conexión es 503', async () => {
       listMock.mockRejectedValue(
-        Object.assign(new Error('down'), { name: 'PrismaClientInitializationError' }),
+        Object.assign(new Error('down'), {
+          name: 'PrismaClientInitializationError',
+        }),
       );
-      await expect(service.findAllReviews({} as GetReviewsDto)).rejects.toBeInstanceOf(
-        ServiceUnavailableException,
-      );
+      await expect(
+        service.findAllReviews({} as GetReviewsDto),
+      ).rejects.toBeInstanceOf(ServiceUnavailableException);
     });
   });
 
@@ -246,19 +284,39 @@ describe('ReviewService', () => {
 
     it('mapea los errores del repositorio a 404, 400 y 409', async () => {
       createMock.mockRejectedValueOnce(new RecordNotFoundError('products', 1));
-      await expect(service.create(DTO, AUTHOR)).rejects.toBeInstanceOf(NotFoundException);
-      createMock.mockRejectedValueOnce(
-        new InvalidFieldValueError('reviews', 'shop_id', 9, 'tienda del producto 1'),
+      await expect(service.create(DTO, AUTHOR)).rejects.toBeInstanceOf(
+        NotFoundException,
       );
-      await expect(service.create(DTO, AUTHOR)).rejects.toBeInstanceOf(BadRequestException);
-      createMock.mockRejectedValueOnce(new SlugConflictError('reviews', 'user_id, product_id, order_id'));
-      await expect(service.create(DTO, AUTHOR)).rejects.toBeInstanceOf(ConflictException);
+      createMock.mockRejectedValueOnce(
+        new InvalidFieldValueError(
+          'reviews',
+          'shop_id',
+          9,
+          'tienda del producto 1',
+        ),
+      );
+      await expect(service.create(DTO, AUTHOR)).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+      createMock.mockRejectedValueOnce(
+        new SlugConflictError('reviews', 'user_id, product_id, order_id'),
+      );
+      await expect(service.create(DTO, AUTHOR)).rejects.toBeInstanceOf(
+        ConflictException,
+      );
     });
 
     it('sin product_id o con ids no numéricos ⇒ 400 sin escribir', async () => {
-      for (const bad of [{ product_id: undefined }, { shop_id: 'x' }, { order_id: 'x' }]) {
+      for (const bad of [
+        { product_id: undefined },
+        { shop_id: 'x' },
+        { order_id: 'x' },
+      ]) {
         await expect(
-          service.create({ ...DTO, ...bad } as unknown as CreateReviewDto, AUTHOR),
+          service.create(
+            { ...DTO, ...bad } as unknown as CreateReviewDto,
+            AUTHOR,
+          ),
         ).rejects.toBeInstanceOf(BadRequestException);
       }
       expect(createMock).not.toHaveBeenCalled();
@@ -269,14 +327,22 @@ describe('ReviewService', () => {
     it('el autor edita solo rating, comment y photos', async () => {
       findMock.mockResolvedValue(makeRecord());
       updateMock.mockResolvedValue(makeRecord({ rating: 2 }));
-      await service.update(85, { rating: 2, comment: 'x', shop_id: '1' } as UpdateReviewDto, AUTHOR);
+      await service.update(
+        85,
+        { rating: 2, comment: 'x', shop_id: '1' } as UpdateReviewDto,
+        AUTHOR,
+      );
       expect(updateMock).toHaveBeenCalledWith(85, { rating: 2, comment: 'x' });
     });
 
     it('otro usuario ⇒ 403 sin escribir; super_admin puede', async () => {
       findMock.mockResolvedValue(makeRecord());
-      await expect(service.update(85, { rating: 1 }, OTHER)).rejects.toBeInstanceOf(ForbiddenException);
-      await expect(service.delete(85, OTHER)).rejects.toBeInstanceOf(ForbiddenException);
+      await expect(
+        service.update(85, { rating: 1 }, OTHER),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      await expect(service.delete(85, OTHER)).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
       expect(updateMock).not.toHaveBeenCalled();
       expect(deleteMock).not.toHaveBeenCalled();
       deleteMock.mockResolvedValue(makeRecord());
@@ -285,8 +351,12 @@ describe('ReviewService', () => {
 
     it('reseña inexistente ⇒ 404', async () => {
       findMock.mockResolvedValue(null);
-      await expect(service.update(85, { rating: 1 }, AUTHOR)).rejects.toBeInstanceOf(NotFoundException);
-      await expect(service.delete(85, ADMIN)).rejects.toBeInstanceOf(NotFoundException);
+      await expect(
+        service.update(85, { rating: 1 }, AUTHOR),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      await expect(service.delete(85, ADMIN)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
     });
   });
 });

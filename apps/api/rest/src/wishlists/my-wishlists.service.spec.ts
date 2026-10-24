@@ -44,9 +44,14 @@ describe('MyWishlistService', () => {
     ['findOne', 'findOne'],
     ['add', 'add'],
     ['remove', 'remove'],
-  ] as const)('%s delega en WishlistsService con el mismo usuario e id', async (method, target) => {
-    const spy = jest.spyOn(wishlists, target).mockResolvedValue({} as Product);
-    await service[method](2, '945');
-    expect(spy).toHaveBeenCalledWith(2, '945');
-  });
+  ] as const)(
+    '%s delega en WishlistsService con el mismo usuario e id',
+    async (method, target) => {
+      const spy = jest
+        .spyOn(wishlists, target)
+        .mockResolvedValue({} as Product);
+      await service[method](2, '945');
+      expect(spy).toHaveBeenCalledWith(2, '945');
+    },
+  );
 });

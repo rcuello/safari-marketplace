@@ -102,7 +102,9 @@ describe('AttributesService', () => {
     findMock.mockResolvedValueOnce(makeRecord());
     expect((await service.findOne('color-OMG')).id).toBe(10);
     findMock.mockResolvedValueOnce(null);
-    await expect(service.findOne('999')).rejects.toBeInstanceOf(NotFoundException);
+    await expect(service.findOne('999')).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
   });
 
   it('create coerciona shop_id y pasa los valores sin id', async () => {
@@ -122,9 +124,15 @@ describe('AttributesService', () => {
   });
 
   it('tienda inexistente ⇒ 400', async () => {
-    createMock.mockRejectedValue(new InvalidReferenceError('attributes', 'shop_id', 999));
+    createMock.mockRejectedValue(
+      new InvalidReferenceError('attributes', 'shop_id', 999),
+    );
     await expect(
-      service.create({ name: 'X', shop_id: '999', values: [] } as unknown as CreateAttributeDto),
+      service.create({
+        name: 'X',
+        shop_id: '999',
+        values: [],
+      } as unknown as CreateAttributeDto),
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 
@@ -151,7 +159,9 @@ describe('AttributesService', () => {
   it('remove devuelve el atributo con sus valores; ids inválidos o inexistentes ⇒ 404', async () => {
     deleteMock.mockResolvedValueOnce(makeRecord());
     expect((await service.remove(10)).values).toHaveLength(1);
-    await expect(service.remove(Number.NaN)).rejects.toBeInstanceOf(NotFoundException);
+    await expect(service.remove(Number.NaN)).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
     deleteMock.mockRejectedValueOnce(new RecordNotFoundError('attributes', 99));
     await expect(service.remove(99)).rejects.toBeInstanceOf(NotFoundException);
   });

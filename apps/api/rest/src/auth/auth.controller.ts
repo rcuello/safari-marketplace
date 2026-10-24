@@ -89,7 +89,10 @@ export class AuthController {
     return this.authService.me(user.sub);
   }
   @Post('add-points')
-  addWalletPoints(@Body() addPointsDto: any, @CurrentUser() user: CurrentUserPayload) {
+  addWalletPoints(
+    @Body() addPointsDto: any,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
     return this.authService.me(user.sub);
   }
   @Public()

@@ -120,7 +120,8 @@ export class ShopsService {
         logo: createShopDto.logo as unknown as Prisma.InputJsonValue,
       }),
       ...(createShopDto.cover_image != null && {
-        coverImage: createShopDto.cover_image as unknown as Prisma.InputJsonValue,
+        coverImage:
+          createShopDto.cover_image as unknown as Prisma.InputJsonValue,
       }),
       ...(createShopDto.address != null && {
         address: createShopDto.address as unknown as Prisma.InputJsonValue,
@@ -292,9 +293,7 @@ export class ShopsService {
     }
 
     if (!user.permissions.includes('super_admin') && ownerId !== user.sub) {
-      throw new ForbiddenException(
-        `No tienes permisos sobre la tienda ${id}.`,
-      );
+      throw new ForbiddenException(`No tienes permisos sobre la tienda ${id}.`);
     }
 
     const input: UpdateShopInput = {
@@ -306,7 +305,8 @@ export class ShopsService {
         logo: updateShopDto.logo as unknown as Prisma.InputJsonValue,
       }),
       ...(updateShopDto.cover_image != null && {
-        coverImage: updateShopDto.cover_image as unknown as Prisma.InputJsonValue,
+        coverImage:
+          updateShopDto.cover_image as unknown as Prisma.InputJsonValue,
       }),
       ...(updateShopDto.address != null && {
         address: updateShopDto.address as unknown as Prisma.InputJsonValue,
@@ -384,7 +384,9 @@ export class ShopsService {
 
     if (!Number.isSafeInteger(parsed) || parsed <= 0) {
       throw new BadRequestException(
-        `El id de la tienda debe ser un entero positivo, recibido: ${JSON.stringify(rawId)}.`,
+        `El id de la tienda debe ser un entero positivo, recibido: ${JSON.stringify(
+          rawId,
+        )}.`,
       );
     }
 

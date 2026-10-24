@@ -1,7 +1,10 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { AnalyticsService } from './analytics.service';
 import { GetAnalyticsListDto } from './dto/get-analytics-list.dto';
-import { ADMIN_ONLY, Permissions } from 'src/auth/decorators/permissions.decorator';
+import {
+  ADMIN_ONLY,
+  Permissions,
+} from 'src/auth/decorators/permissions.decorator';
 
 @Permissions(...ADMIN_ONLY)
 @Controller('analytics')

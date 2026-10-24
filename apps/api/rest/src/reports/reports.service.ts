@@ -21,7 +21,9 @@ export class ReportsService {
   async findMyReports(userId: number): Promise<{ data: MyReports[] }> {
     try {
       const records = await listAbusiveReportsByUser(userId);
-      return { data: records.map((r) => toReportDto(r) as unknown as MyReports) };
+      return {
+        data: records.map((r) => toReportDto(r) as unknown as MyReports),
+      };
     } catch (error) {
       if (isPrismaConnectionError(error)) {
         throw new ServiceUnavailableException(getUserFriendlyMessage(error));

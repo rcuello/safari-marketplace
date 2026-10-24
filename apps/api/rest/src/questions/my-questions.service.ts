@@ -14,9 +14,14 @@ import { GetQuestionDto } from './dto/get-questions.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
 import { Question } from './entities/question.entity';
 import { toQuestionDto } from './question-dto.mapper';
-import { assertQuestionId, QuestionService, readError } from './questions.service';
+import {
+  assertQuestionId,
+  QuestionService,
+  readError,
+} from './questions.service';
 
-export const MY_QUESTIONS_URL = '/my-questions?with=user&orderBy=created_at&sortedBy=desc';
+export const MY_QUESTIONS_URL =
+  '/my-questions?with=user&orderBy=created_at&sortedBy=desc';
 
 /**
  * «Mis preguntas» (US-55): solo las del usuario que llama (V-2, corrección
@@ -54,7 +59,11 @@ export class MyQuestionsService {
   }
 
   /** El autor edita el texto de su pregunta; la respuesta no se toca. */
-  async update(userId: number, id: number, dto: UpdateQuestionDto): Promise<Question> {
+  async update(
+    userId: number,
+    id: number,
+    dto: UpdateQuestionDto,
+  ): Promise<Question> {
     await this.findOwn(userId, id);
     try {
       return toQuestionDto(await updateQuestionText(id, dto.question));
@@ -72,7 +81,10 @@ export class MyQuestionsService {
     }
   }
 
-  private async findOwn(userId: number, id: number): Promise<QuestionDetailRecord> {
+  private async findOwn(
+    userId: number,
+    id: number,
+  ): Promise<QuestionDetailRecord> {
     assertQuestionId(id);
     let record: QuestionDetailRecord | null;
     try {

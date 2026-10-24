@@ -185,7 +185,9 @@ describe('ManufacturersService.create (US-27b)', () => {
   it('`type_id: null` se proyecta como `typeId: null` (limpia la FK), nunca `NaN`', async () => {
     createManufacturerMock.mockResolvedValue(makeManufacturerRecord());
 
-    await service.create(createDto({ name: 'Marca Prueba', type_id: null as never }));
+    await service.create(
+      createDto({ name: 'Marca Prueba', type_id: null as never }),
+    );
 
     expect(createManufacturerMock).toHaveBeenCalledWith({
       name: 'Marca Prueba',
@@ -333,16 +335,19 @@ describe('ManufacturersService.update (US-27b)', () => {
     ['cero', 0],
     ['negativo', -5],
     ['fuera del rango seguro de bigint (1e21)', 1e21],
-  ])('id %s → 404 sin llamar al repositorio (`!Number.isSafeInteger(id) || id <= 0`)', async (_label, id) => {
-    expect.assertions(3);
-    try {
-      await service.update(id, updateDto({ name: 'x' }));
-    } catch (error) {
-      expect(error).toBeInstanceOf(NotFoundException);
-      expect((error as NotFoundException).getStatus()).toBe(404);
-      expect(updateManufacturerMock).not.toHaveBeenCalled();
-    }
-  });
+  ])(
+    'id %s → 404 sin llamar al repositorio (`!Number.isSafeInteger(id) || id <= 0`)',
+    async (_label, id) => {
+      expect.assertions(3);
+      try {
+        await service.update(id, updateDto({ name: 'x' }));
+      } catch (error) {
+        expect(error).toBeInstanceOf(NotFoundException);
+        expect((error as NotFoundException).getStatus()).toBe(404);
+        expect(updateManufacturerMock).not.toHaveBeenCalled();
+      }
+    },
+  );
 
   // Inverso de CA-4 (CA-2, US-31): un id grande pero seguro atraviesa la
   // guarda y el 404 lo decide la fila inexistente, no el guard. Se pone rojo
@@ -472,7 +477,9 @@ describe('ManufacturersService.update (US-27b)', () => {
   });
 
   it('EmptySlugError del repositorio (`name` vacío) → 400', async () => {
-    updateManufacturerMock.mockRejectedValue(new EmptySlugError('manufacturers', ''));
+    updateManufacturerMock.mockRejectedValue(
+      new EmptySlugError('manufacturers', ''),
+    );
 
     expect.assertions(2);
     try {
@@ -511,16 +518,19 @@ describe('ManufacturersService.remove (US-27b)', () => {
     ['cero', 0],
     ['negativo', -5],
     ['fuera del rango seguro de bigint (1e21)', 1e21],
-  ])('id %s → 404 sin llamar al repositorio (`!Number.isSafeInteger(id) || id <= 0`)', async (_label, id) => {
-    expect.assertions(3);
-    try {
-      await service.remove(id);
-    } catch (error) {
-      expect(error).toBeInstanceOf(NotFoundException);
-      expect((error as NotFoundException).getStatus()).toBe(404);
-      expect(deleteManufacturerMock).not.toHaveBeenCalled();
-    }
-  });
+  ])(
+    'id %s → 404 sin llamar al repositorio (`!Number.isSafeInteger(id) || id <= 0`)',
+    async (_label, id) => {
+      expect.assertions(3);
+      try {
+        await service.remove(id);
+      } catch (error) {
+        expect(error).toBeInstanceOf(NotFoundException);
+        expect((error as NotFoundException).getStatus()).toBe(404);
+        expect(deleteManufacturerMock).not.toHaveBeenCalled();
+      }
+    },
+  );
 
   it('id 123456789012345 (seguro) → llega al repositorio; el 404 lo da la fila inexistente (CA-2, US-31)', async () => {
     deleteManufacturerMock.mockRejectedValue(
@@ -581,8 +591,13 @@ describe('Contrato de 13 claves — create/update/remove igual a getManufactures
     deleteManufacturerMock.mockResolvedValue(record);
 
     const readResult = await service.getManufacturesBySlug('marca-prueba');
-    const createResult = await service.create(createDto({ name: 'Marca Prueba' }));
-    const updateResult = await service.update(20, updateDto({ name: 'Marca Prueba' }));
+    const createResult = await service.create(
+      createDto({ name: 'Marca Prueba' }),
+    );
+    const updateResult = await service.update(
+      20,
+      updateDto({ name: 'Marca Prueba' }),
+    );
     const removeResult = await service.remove(20);
 
     const expectedKeys = Object.keys(readResult);

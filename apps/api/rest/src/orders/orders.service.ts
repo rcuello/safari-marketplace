@@ -62,7 +62,12 @@ import {
   PaymentStatusType,
 } from './entities/order.entity';
 import { toOrderDto } from './order-dto.mapper';
-import { hasAddress, isCouponApplicable, priceOrder, type PricingInput } from './orders-pricing';
+import {
+  hasAddress,
+  isCouponApplicable,
+  priceOrder,
+  type PricingInput,
+} from './orders-pricing';
 import { toReviewUserDto } from 'src/reviews/review-dto.mapper';
 
 // payment-intent.json y payment-gateway.json son el mock permanente de la
@@ -74,7 +79,9 @@ const TRACKING_NUMBER = /^[0-9]{14}$/;
 
 /** Admin, dueño o staff ven todas las órdenes; el resto, solo las suyas. */
 function canSeeAllOrders(user: CurrentUserPayload): boolean {
-  return ADMIN_OWNER_AND_STAFF.some((permission) => user.permissions.includes(permission));
+  return ADMIN_OWNER_AND_STAFF.some((permission) =>
+    user.permissions.includes(permission),
+  );
 }
 
 /** Un id de la query; ausente ⇒ undefined; mal formado ⇒ null (no casa con nada). */
@@ -93,13 +100,49 @@ const INTENT_GATEWAYS: string[] = [
 
 /** Las 43 claves Laravel del producto de una línea, en el orden del mock de órdenes. */
 const SNAPSHOT_KEYS = [
-  'id', 'name', 'slug', 'description', 'type_id', 'price', 'shop_id', 'sale_price', 'language',
-  'min_price', 'max_price', 'sku', 'quantity', 'sold_quantity', 'in_stock', 'is_taxable',
-  'in_flash_sale', 'shipping_class_id', 'status', 'product_type', 'unit', 'height', 'width', 'length',
-  'image', 'video', 'gallery', 'deleted_at', 'created_at', 'updated_at', 'author_id',
-  'manufacturer_id', 'is_digital', 'is_external', 'external_product_url',
-  'external_product_button_text', 'blocked_dates', 'ratings', 'total_reviews', 'rating_count',
-  'my_review', 'in_wishlist', 'translated_languages',
+  'id',
+  'name',
+  'slug',
+  'description',
+  'type_id',
+  'price',
+  'shop_id',
+  'sale_price',
+  'language',
+  'min_price',
+  'max_price',
+  'sku',
+  'quantity',
+  'sold_quantity',
+  'in_stock',
+  'is_taxable',
+  'in_flash_sale',
+  'shipping_class_id',
+  'status',
+  'product_type',
+  'unit',
+  'height',
+  'width',
+  'length',
+  'image',
+  'video',
+  'gallery',
+  'deleted_at',
+  'created_at',
+  'updated_at',
+  'author_id',
+  'manufacturer_id',
+  'is_digital',
+  'is_external',
+  'external_product_url',
+  'external_product_button_text',
+  'blocked_dates',
+  'ratings',
+  'total_reviews',
+  'rating_count',
+  'my_review',
+  'in_wishlist',
+  'translated_languages',
 ] as const;
 
 /**
@@ -149,14 +192,26 @@ function toProductSnapshot(p: ProductRecord): Prisma.InputJsonValue {
 }
 
 /** Estados iniciales según la pasarela (el `switch` del mock, R-h). */
-function initialStatuses(gateway: string): { orderStatus: string; paymentStatus: string } {
+function initialStatuses(gateway: string): {
+  orderStatus: string;
+  paymentStatus: string;
+} {
   switch (gateway) {
     case PaymentGatewayType.CASH_ON_DELIVERY:
-      return { orderStatus: OrderStatusType.PROCESSING, paymentStatus: PaymentStatusType.CASH_ON_DELIVERY };
+      return {
+        orderStatus: OrderStatusType.PROCESSING,
+        paymentStatus: PaymentStatusType.CASH_ON_DELIVERY,
+      };
     case PaymentGatewayType.CASH:
-      return { orderStatus: OrderStatusType.PROCESSING, paymentStatus: PaymentStatusType.CASH };
+      return {
+        orderStatus: OrderStatusType.PROCESSING,
+        paymentStatus: PaymentStatusType.CASH,
+      };
     default:
-      return { orderStatus: OrderStatusType.PENDING, paymentStatus: PaymentStatusType.PENDING };
+      return {
+        orderStatus: OrderStatusType.PENDING,
+        paymentStatus: PaymentStatusType.PENDING,
+      };
   }
 }
 
@@ -167,7 +222,10 @@ function assertOrderId(id: number): void {
   }
 }
 
-function unprocessable(message: string, extra: Record<string, unknown> = {}): UnprocessableEntityException {
+function unprocessable(
+  message: string,
+  extra: Record<string, unknown> = {},
+): UnprocessableEntityException {
   return new UnprocessableEntityException({
     statusCode: 422,
     message,
@@ -183,7 +241,8 @@ const money = (value: Decimal): string => value.toString();
  * de la demo de Pickbazar. No se genera ningún Excel ni PDF; antes salían de
  * los JSON del mock y ahora son constantes, con el mismo valor.
  */
-export const ORDER_EXPORT_URL = 'https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/100/orders.xlsx';
+export const ORDER_EXPORT_URL =
+  'https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/100/orders.xlsx';
 export const ORDER_INVOICE_URL =
   'https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/100/invoice-order.pdf';
 
@@ -229,9 +288,20 @@ export class OrdersService {
   private async pricingContext(
     lines: CreateOrderDto['products'],
     shippingAddress: unknown,
-  ): Promise<Omit<PricingInput, 'coupon'> & { productRows: ProductRecord[]; options: Record<string, unknown> }> {
+  ): Promise<
+    Omit<PricingInput, 'coupon'> & {
+      productRows: ProductRecord[];
+      options: Record<string, unknown>;
+    }
+  > {
     try {
-      const ids = [...new Set((lines ?? []).map((l) => Number(l.product_id)).filter(Number.isSafeInteger))];
+      const ids = [
+        ...new Set(
+          (lines ?? [])
+            .map((l) => Number(l.product_id))
+            .filter(Number.isSafeInteger),
+        ),
+      ];
       const settings = await getSettings();
       const options = (settings?.options ?? {}) as Record<string, unknown>;
       const [productRows, tax, shipping] = await Promise.all([
@@ -261,8 +331,13 @@ export class OrdersService {
    * `checkout/verify` (V-1): lee el body y calcula con R-a a R-d, las mismas
    * reglas que `POST /orders`. Sin cupón: el shop lo aplica después.
    */
-  async verifyCheckout(input: CheckoutVerificationDto): Promise<VerifiedCheckoutData> {
-    const context = await this.pricingContext(input?.products ?? [], input?.shipping_address);
+  async verifyCheckout(
+    input: CheckoutVerificationDto,
+  ): Promise<VerifiedCheckoutData> {
+    const context = await this.pricingContext(
+      input?.products ?? [],
+      input?.shipping_address,
+    );
     const priced = priceOrder({ ...context, coupon: null });
     return {
       total_tax: priced.salesTax.toNumber(),
@@ -277,7 +352,11 @@ export class OrdersService {
    * Cupón de R-e: `coupon_id` ausente o `null` (el shop manda `Number(undefined)`,
    * que viaja como `null`) ⇒ sin cupón. Inexistente o no aplicable ⇒ 422.
    */
-  private async couponFor(rawId: unknown, amount: Decimal, shopIds: number[]): Promise<CouponRecord | null> {
+  private async couponFor(
+    rawId: unknown,
+    amount: Decimal,
+    shopIds: number[],
+  ): Promise<CouponRecord | null> {
     if (rawId === undefined || rawId === null || rawId === '') return null;
     const id = Number(rawId);
     let coupon: CouponRecord | null = null;
@@ -288,7 +367,10 @@ export class OrdersService {
         readError(error);
       }
     }
-    if (!coupon || !isCouponApplicable(coupon, { amount, shopIds, at: new Date() })) {
+    if (
+      !coupon ||
+      !isCouponApplicable(coupon, { amount, shopIds, at: new Date() })
+    ) {
       throw unprocessable('error-invalid-coupon', { coupon_id: rawId });
     }
     return coupon;
@@ -304,8 +386,13 @@ export class OrdersService {
       readError(error);
     }
     if (!user) return { customerId: null, customerSnapshot: null };
-    const snapshot = JSON.parse(JSON.stringify(toReviewUserDto(user, { withEmailVerified: true })));
-    return { customerId: user.id, customerSnapshot: snapshot as Prisma.InputJsonValue };
+    const snapshot = JSON.parse(
+      JSON.stringify(toReviewUserDto(user, { withEmailVerified: true })),
+    );
+    return {
+      customerId: user.id,
+      customerSnapshot: snapshot as Prisma.InputJsonValue,
+    };
   }
 
   /**
@@ -318,17 +405,24 @@ export class OrdersService {
   async create(dto: CreateOrderDto, userId: number | null): Promise<Order> {
     const gateway = dto.payment_gateway ?? PaymentGatewayType.CASH_ON_DELIVERY;
     if (!(Object.values(PaymentGatewayType) as string[]).includes(gateway)) {
-      throw new BadRequestException(`payment_gateway \`${gateway}\` no existe.`);
+      throw new BadRequestException(
+        `payment_gateway \`${gateway}\` no existe.`,
+      );
     }
     if (gateway === PaymentGatewayType.FULL_WALLET_PAYMENT) {
       // V-5: los wallets siguen fuera del épico (decisión 4).
-      throw unprocessable('FULL_WALLET_PAYMENT no está disponible: no hay wallets.');
+      throw unprocessable(
+        'FULL_WALLET_PAYMENT no está disponible: no hay wallets.',
+      );
     }
     if (!Array.isArray(dto.products) || dto.products.length === 0) {
       throw new BadRequestException('La orden no trae productos.');
     }
 
-    const context = await this.pricingContext(dto.products, dto.shipping_address);
+    const context = await this.pricingContext(
+      dto.products,
+      dto.shipping_address,
+    );
     const withoutCoupon = priceOrder({ ...context, coupon: null });
     if (withoutCoupon.unavailable.length > 0) {
       throw unprocessable('Hay productos no disponibles.', {
@@ -336,7 +430,11 @@ export class OrdersService {
       });
     }
     const shopIds = [...new Set(withoutCoupon.lines.map((l) => l.shopId))];
-    const coupon = await this.couponFor(dto.coupon_id, withoutCoupon.amount, shopIds);
+    const coupon = await this.couponFor(
+      dto.coupon_id,
+      withoutCoupon.amount,
+      shopIds,
+    );
     const priced = coupon ? priceOrder({ ...context, coupon }) : withoutCoupon;
     this.warnOnClientTotals(dto, priced);
 
@@ -354,7 +452,9 @@ export class OrdersService {
       const own = priced.lines.filter((l) => l.shopId === shopId);
       return {
         shopId,
-        amount: money(own.reduce((sum, l) => sum.plus(l.subtotal), new Decimal(0))),
+        amount: money(
+          own.reduce((sum, l) => sum.plus(l.subtotal), new Decimal(0)),
+        ),
         lines: own.map(toLine),
       };
     });
@@ -393,18 +493,26 @@ export class OrdersService {
     let paymentIntent: PaymentIntent | null = null;
     if (INTENT_GATEWAYS.includes(gateway)) {
       try {
-        paymentIntent = await this.processPaymentIntent(order, context.options.paymentGateway);
+        paymentIntent = await this.processPaymentIntent(
+          order,
+          context.options.paymentGateway,
+        );
       } catch (error) {
         // Mismo criterio que el mock: si la pasarela falla, la orden queda
         // creada y sin payment_intent.
-        this.logger.warn(`payment_intent de ${record.trackingNumber}: ${String(error)}`);
+        this.logger.warn(
+          `payment_intent de ${record.trackingNumber}: ${String(error)}`,
+        );
       }
     }
     return { ...order, payment_intent: paymentIntent } as Order;
   }
 
   /** R-f: las cifras del cliente no mandan, pero un desfase queda registrado. */
-  private warnOnClientTotals(dto: CreateOrderDto, priced: ReturnType<typeof priceOrder>): void {
+  private warnOnClientTotals(
+    dto: CreateOrderDto,
+    priced: ReturnType<typeof priceOrder>,
+  ): void {
     const pairs: [string, unknown, Decimal][] = [
       ['amount', dto.amount, priced.amount],
       ['sales_tax', dto.sales_tax, priced.salesTax],
@@ -416,7 +524,9 @@ export class OrdersService {
     for (const [field, sent, computed] of pairs) {
       if (sent === undefined || sent === null) continue;
       if (!computed.equals(Number(sent))) {
-        this.logger.warn(`${field}: el cliente mandó ${sent}, el servidor calculó ${computed.toString()}`);
+        this.logger.warn(
+          `${field}: el cliente mandó ${sent}, el servidor calculó ${computed.toString()}`,
+        );
       }
     }
   }
@@ -474,12 +584,17 @@ export class OrdersService {
     }
     const id = Number(param);
     if (!Number.isSafeInteger(id) || id <= 0) {
-      throw new BadRequestException(`\`${param}\` no es un id ni un número de seguimiento.`);
+      throw new BadRequestException(
+        `\`${param}\` no es un id ni un número de seguimiento.`,
+      );
     }
     return this.findVisibleOrder(id, user);
   }
 
-  async getOrderByTrackingNumber(trackingNumber: string, user: CurrentUserPayload): Promise<Order> {
+  async getOrderByTrackingNumber(
+    trackingNumber: string,
+    user: CurrentUserPayload,
+  ): Promise<Order> {
     return this.findVisibleOrder(String(trackingNumber), user);
   }
 
@@ -487,7 +602,10 @@ export class OrdersService {
    * Inexistente u orden ajena para un usuario sin rol de tienda ⇒ 404 (V-4):
    * un 403 revelaría que la orden existe.
    */
-  private async findVisibleOrder(idOrTracking: number | string, user: CurrentUserPayload): Promise<Order> {
+  private async findVisibleOrder(
+    idOrTracking: number | string,
+    user: CurrentUserPayload,
+  ): Promise<Order> {
     let record: OrderDetailRecord | null;
     try {
       record = await findOrderByIdOrTracking(idOrTracking);
@@ -507,13 +625,19 @@ export class OrdersService {
   async update(id: number, dto: UpdateOrderDto): Promise<Order> {
     assertOrderId(id);
     if (dto.order_status === undefined && dto.payment_status === undefined) {
-      throw new BadRequestException('Nada que cambiar: falta order_status o payment_status.');
+      throw new BadRequestException(
+        'Nada que cambiar: falta order_status o payment_status.',
+      );
     }
     try {
       return toOrderDto(
         await setOrderStatus(id, {
-          ...(dto.order_status !== undefined && { orderStatus: dto.order_status }),
-          ...(dto.payment_status !== undefined && { paymentStatus: dto.payment_status }),
+          ...(dto.order_status !== undefined && {
+            orderStatus: dto.order_status,
+          }),
+          ...(dto.payment_status !== undefined && {
+            paymentStatus: dto.payment_status,
+          }),
         }),
       );
     } catch (error) {
@@ -552,11 +676,17 @@ export class OrdersService {
       case PaymentGatewayType.STRIPE:
         break;
       case PaymentGatewayType.PAYPAL: {
-        const intent = paymentIntents.find((i) => i.tracking_number === record.trackingNumber);
+        const intent = paymentIntents.find(
+          (i) => i.tracking_number === record.trackingNumber,
+        );
         if (!intent) {
-          throw unprocessable('No hay un intento de pago de PayPal que verificar para esta orden.');
+          throw unprocessable(
+            'No hay un intento de pago de PayPal que verificar para esta orden.',
+          );
         }
-        await this.paypalService.verifyOrder(intent.payment_intent_info.payment_id);
+        await this.paypalService.verifyOrder(
+          intent.payment_intent_info.payment_id,
+        );
         break;
       }
       default:
@@ -574,7 +704,10 @@ export class OrdersService {
    * página «mis descargas» del shop. `orderBy`/`sortedBy` se ignoran, como
    * en el mock. La url conserva el literal `?&limit=`.
    */
-  async getOrderFileItems({ page, limit }: GetOrderFilesDto, customerId: number): Promise<OrderFilesPaginator> {
+  async getOrderFileItems(
+    { page, limit }: GetOrderFilesDto,
+    customerId: number,
+  ): Promise<OrderFilesPaginator> {
     if (!page) page = 1;
     if (!limit) limit = 30;
     const url = `/downloads?&limit=${limit}`;
@@ -597,19 +730,29 @@ export class OrdersService {
    * usuario del token con ese `digital_file_id`. Inexistente o ajena ⇒ 404
    * (V-2; el mock daba 500).
    */
-  async getDigitalFileDownloadUrl(digitalFileId: number, customerId: number): Promise<string> {
+  async getDigitalFileDownloadUrl(
+    digitalFileId: number,
+    customerId: number,
+  ): Promise<string> {
     if (!Number.isSafeInteger(digitalFileId) || digitalFileId <= 0) {
-      throw new NotFoundException(`No tienes una descarga con digital_file_id ${digitalFileId}.`);
+      throw new NotFoundException(
+        `No tienes una descarga con digital_file_id ${digitalFileId}.`,
+      );
     }
     let record: OrderFileRecord | null;
     try {
-      record = await findFirstOrderFileByDigitalFileId(digitalFileId, customerId);
+      record = await findFirstOrderFileByDigitalFileId(
+        digitalFileId,
+        customerId,
+      );
     } catch (error) {
       readError(error);
     }
     const url = (record?.file as { url?: unknown } | undefined)?.url;
     if (typeof url !== 'string') {
-      throw new NotFoundException(`No tienes una descarga con digital_file_id ${digitalFileId}.`);
+      throw new NotFoundException(
+        `No tienes una descarga con digital_file_id ${digitalFileId}.`,
+      );
     }
     return url;
   }

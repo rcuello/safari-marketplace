@@ -153,9 +153,16 @@ describe('CouponsService', () => {
     it('defaults page=1/limit=12 y la url del mock con search=undefined', async () => {
       listMock.mockResolvedValue({ items: [makeRecord()], total: 1 });
       const result = await service.getCoupons({} as GetCouponsDto);
-      expect(listMock).toHaveBeenCalledWith({ shopId: undefined, code: undefined, page: 1, limit: 12 });
+      expect(listMock).toHaveBeenCalledWith({
+        shopId: undefined,
+        code: undefined,
+        page: 1,
+        limit: 12,
+      });
       expect(result.per_page).toBe(12);
-      expect(result.first_page_url).toBe('http://localhost:5000/api/coupons?search=undefined&limit=12&page=1');
+      expect(result.first_page_url).toBe(
+        'http://localhost:5000/api/coupons?search=undefined&limit=12&page=1',
+      );
     });
 
     it('combina shop_id y code con AND y deja per_page como llegó por query', async () => {
@@ -165,12 +172,19 @@ describe('CouponsService', () => {
         search: 'code:BAZAR',
         limit: '20',
       } as unknown as GetCouponsDto);
-      expect(listMock).toHaveBeenCalledWith({ shopId: 2, code: 'BAZAR', page: 1, limit: 20 });
+      expect(listMock).toHaveBeenCalledWith({
+        shopId: 2,
+        code: 'BAZAR',
+        page: 1,
+        limit: 20,
+      });
       expect(result.per_page).toBe('20');
     });
 
     it('un shop_id no numérico devuelve la lista vacía sin consultar', async () => {
-      const result = await service.getCoupons({ shop_id: 'abc' } as unknown as GetCouponsDto);
+      const result = await service.getCoupons({
+        shop_id: 'abc',
+      } as unknown as GetCouponsDto);
       expect(listMock).not.toHaveBeenCalled();
       expect(result.data).toEqual([]);
       expect(result.total).toBe(0);
@@ -178,17 +192,21 @@ describe('CouponsService', () => {
 
     it('un fallo de conexión es 503', async () => {
       listMock.mockRejectedValue(
-        Object.assign(new Error('down'), { name: 'PrismaClientInitializationError' }),
+        Object.assign(new Error('down'), {
+          name: 'PrismaClientInitializationError',
+        }),
       );
-      await expect(service.getCoupons({} as GetCouponsDto)).rejects.toBeInstanceOf(
-        ServiceUnavailableException,
-      );
+      await expect(
+        service.getCoupons({} as GetCouponsDto),
+      ).rejects.toBeInstanceOf(ServiceUnavailableException);
     });
   });
 
   it('getCoupon con un código desconocido es 404', async () => {
     findByCodeMock.mockResolvedValue(null);
-    await expect(service.getCoupon('NOEXISTE')).rejects.toBeInstanceOf(NotFoundException);
+    await expect(service.getCoupon('NOEXISTE')).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
   });
 
   describe('verifyCoupon', () => {
@@ -198,23 +216,41 @@ describe('CouponsService', () => {
       ['código inexistente', null, 10],
       ['vencido (4OFF del seed)', {}, 500],
       ['vigente con mínimo 160 y sub_total 100', { ...IN_FORCE }, 100],
-      ['vigente pero no aprobado', { ...IN_FORCE, isApprove: false, minimumCartAmount: 0 }, 500],
+      [
+        'vigente pero no aprobado',
+        { ...IN_FORCE, isApprove: false, minimumCartAmount: 0 },
+        500,
+      ],
       ['sub_total ausente cuenta como 0', { ...IN_FORCE }, undefined],
       ['sub_total no numérico cuenta como 0', { ...IN_FORCE }, 'mucho'],
     ])('%s ⇒ is_valid false sin coupon', async (_caso, overrides, subTotal) => {
-      findByCodeMock.mockResolvedValue(overrides ? makeRecord(overrides) : null);
-      expect(await service.verifyCoupon({ code: 'X', sub_total: subTotal as number })).toEqual(INVALID);
+      findByCodeMock.mockResolvedValue(
+        overrides ? makeRecord(overrides) : null,
+      );
+      expect(
+        await service.verifyCoupon({
+          code: 'X',
+          sub_total: subTotal as number,
+        }),
+      ).toEqual(INVALID);
     });
 
     it('vigente, aprobado y con sub_total suficiente ⇒ is_valid true con el DTO', async () => {
       findByCodeMock.mockResolvedValue(makeRecord(IN_FORCE));
-      const result = await service.verifyCoupon({ code: '4OFF', sub_total: 160 });
+      const result = await service.verifyCoupon({
+        code: '4OFF',
+        sub_total: 160,
+      });
       expect(result.is_valid).toBe(true);
-      expect(result).toMatchObject({ coupon: { id: 10, is_valid: true, is_approve: 1 } });
+      expect(result).toMatchObject({
+        coupon: { id: 10, is_valid: true, is_approve: 1 },
+      });
     });
 
     it('sin code no consulta la base', async () => {
-      expect(await service.verifyCoupon({} as VerifyCouponInput)).toEqual(INVALID);
+      expect(await service.verifyCoupon({} as VerifyCouponInput)).toEqual(
+        INVALID,
+      );
       expect(findByCodeMock).not.toHaveBeenCalled();
     });
   });
@@ -249,25 +285,39 @@ describe('CouponsService', () => {
 
     it('tienda ajena ⇒ 403 sin escribir', async () => {
       ownerMock.mockResolvedValue(99);
-      await expect(service.create(DTO, OWNER_USER)).rejects.toBeInstanceOf(ForbiddenException);
+      await expect(service.create(DTO, OWNER_USER)).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
       expect(createMock).not.toHaveBeenCalled();
     });
 
     it('cupón global: 403 para el dueño, permitido al super_admin sin consultar tiendas', async () => {
-      const global = { ...DTO, shop_id: undefined } as unknown as CreateCouponDto;
-      await expect(service.create(global, OWNER_USER)).rejects.toBeInstanceOf(ForbiddenException);
+      const global = {
+        ...DTO,
+        shop_id: undefined,
+      } as unknown as CreateCouponDto;
+      await expect(service.create(global, OWNER_USER)).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
       createMock.mockResolvedValue(makeRecord({ shopId: null }));
       await service.create(global, ADMIN_USER);
       expect(ownerMock).not.toHaveBeenCalled();
-      expect(createMock).toHaveBeenCalledWith(expect.objectContaining({ shopId: null, userId: 3 }));
+      expect(createMock).toHaveBeenCalledWith(
+        expect.objectContaining({ shopId: null, userId: 3 }),
+      );
     });
 
     it('shop_id no numérico ⇒ 400; código duplicado ⇒ 409', async () => {
       await expect(
-        service.create({ ...DTO, shop_id: 'x' } as unknown as CreateCouponDto, ADMIN_USER),
+        service.create(
+          { ...DTO, shop_id: 'x' } as unknown as CreateCouponDto,
+          ADMIN_USER,
+        ),
       ).rejects.toBeInstanceOf(BadRequestException);
       createMock.mockRejectedValue(new SlugConflictError('coupons', 'code'));
-      await expect(service.create(DTO, ADMIN_USER)).rejects.toBeInstanceOf(ConflictException);
+      await expect(service.create(DTO, ADMIN_USER)).rejects.toBeInstanceOf(
+        ConflictException,
+      );
     });
   });
 
@@ -288,20 +338,30 @@ describe('CouponsService', () => {
     it('cupón de otra tienda o global ⇒ 403; inexistente ⇒ 404', async () => {
       findByIdMock.mockResolvedValue(makeRecord({ shopId: 2 }));
       ownerMock.mockResolvedValue(99);
-      await expect(service.remove(10, OWNER_USER)).rejects.toBeInstanceOf(ForbiddenException);
+      await expect(service.remove(10, OWNER_USER)).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
       findByIdMock.mockResolvedValue(makeRecord({ shopId: null }));
-      await expect(service.update(10, {}, OWNER_USER)).rejects.toBeInstanceOf(ForbiddenException);
+      await expect(service.update(10, {}, OWNER_USER)).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
       findByIdMock.mockResolvedValue(null);
-      await expect(service.remove(10, OWNER_USER)).rejects.toBeInstanceOf(NotFoundException);
+      await expect(service.remove(10, OWNER_USER)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
       expect(deleteMock).not.toHaveBeenCalled();
       expect(updateMock).not.toHaveBeenCalled();
     });
 
     it('super_admin no consulta la fila; el 404 llega del repositorio', async () => {
       deleteMock.mockRejectedValue(new RecordNotFoundError('coupons', 10));
-      await expect(service.remove(10, ADMIN_USER)).rejects.toBeInstanceOf(NotFoundException);
+      await expect(service.remove(10, ADMIN_USER)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
       expect(findByIdMock).not.toHaveBeenCalled();
-      await expect(service.remove(Number.NaN, ADMIN_USER)).rejects.toBeInstanceOf(NotFoundException);
+      await expect(
+        service.remove(Number.NaN, ADMIN_USER),
+      ).rejects.toBeInstanceOf(NotFoundException);
     });
 
     it('remove devuelve el DTO borrado', async () => {
@@ -333,14 +393,19 @@ describe('CouponsService', () => {
       await service.create(DTO, STAFF_USER);
       expect(ownerMock).toHaveBeenCalledWith(1);
       expect(staffMock).toHaveBeenCalledWith(STAFF, 1);
-      expect(createMock).toHaveBeenCalledWith(expect.objectContaining({ shopId: 1, userId: STAFF }));
+      expect(createMock).toHaveBeenCalledWith(
+        expect.objectContaining({ shopId: 1, userId: STAFF }),
+      );
     });
 
     it('staff de OTRA tienda ⇒ 403 sin escribir', async () => {
       ownerMock.mockResolvedValue(OWNER);
       staffMock.mockResolvedValue(false);
       await expect(
-        service.create({ ...DTO, shop_id: 5 } as unknown as CreateCouponDto, STAFF_USER),
+        service.create(
+          { ...DTO, shop_id: 5 } as unknown as CreateCouponDto,
+          STAFF_USER,
+        ),
       ).rejects.toBeInstanceOf(ForbiddenException);
       expect(staffMock).toHaveBeenCalledWith(STAFF, 5);
       expect(createMock).not.toHaveBeenCalled();
@@ -348,7 +413,10 @@ describe('CouponsService', () => {
 
     it('cupón global ⇒ 403 para el staff sin consultar tiendas ni shop_staff', async () => {
       await expect(
-        service.create({ ...DTO, shop_id: undefined } as unknown as CreateCouponDto, STAFF_USER),
+        service.create(
+          { ...DTO, shop_id: undefined } as unknown as CreateCouponDto,
+          STAFF_USER,
+        ),
       ).rejects.toBeInstanceOf(ForbiddenException);
       expect(ownerMock).not.toHaveBeenCalled();
       expect(staffMock).not.toHaveBeenCalled();
@@ -360,12 +428,18 @@ describe('CouponsService', () => {
       staffMock.mockImplementation(async (_userId, shopId) => shopId === 1);
       updateMock.mockResolvedValue(makeRecord({ amount: 8 }));
       deleteMock.mockResolvedValue(makeRecord());
-      expect((await service.update(10, { amount: 8 }, STAFF_USER)).amount).toBe(8);
+      expect((await service.update(10, { amount: 8 }, STAFF_USER)).amount).toBe(
+        8,
+      );
       expect((await service.remove(10, STAFF_USER)).code).toBe('4OFF');
 
       findByIdMock.mockResolvedValue(makeRecord({ shopId: 2 }));
-      await expect(service.update(10, { amount: 9 }, STAFF_USER)).rejects.toBeInstanceOf(ForbiddenException);
-      await expect(service.remove(10, STAFF_USER)).rejects.toBeInstanceOf(ForbiddenException);
+      await expect(
+        service.update(10, { amount: 9 }, STAFF_USER),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      await expect(service.remove(10, STAFF_USER)).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
       expect(staffMock).toHaveBeenCalledWith(STAFF, 2);
       expect(updateMock).toHaveBeenCalledTimes(1);
       expect(deleteMock).toHaveBeenCalledTimes(1);
@@ -383,7 +457,10 @@ describe('CouponsService', () => {
     it('tienda inexistente (dueño null) pasa al repositorio sin consultar shop_staff', async () => {
       ownerMock.mockResolvedValue(null);
       createMock.mockResolvedValue(makeRecord({ shopId: 777 }));
-      await service.create({ ...DTO, shop_id: 777 } as unknown as CreateCouponDto, STAFF_USER);
+      await service.create(
+        { ...DTO, shop_id: 777 } as unknown as CreateCouponDto,
+        STAFF_USER,
+      );
       expect(staffMock).not.toHaveBeenCalled();
       expect(createMock).toHaveBeenCalled();
     });
@@ -397,9 +474,13 @@ describe('CouponsService', () => {
     });
 
     it('id no numérico o inexistente ⇒ 404', async () => {
-      await expect(service.setApproval('abc', true)).rejects.toBeInstanceOf(NotFoundException);
+      await expect(service.setApproval('abc', true)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
       approvalMock.mockRejectedValue(new RecordNotFoundError('coupons', 999));
-      await expect(service.setApproval(999, true)).rejects.toBeInstanceOf(NotFoundException);
+      await expect(service.setApproval(999, true)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
     });
   });
 });

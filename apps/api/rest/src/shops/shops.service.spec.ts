@@ -88,7 +88,9 @@ function makeShopRecord(overrides: Partial<ShopRecord> = {}): ShopRecord {
   };
 }
 
-function makeUser(overrides: Partial<CurrentUserPayload> = {}): CurrentUserPayload {
+function makeUser(
+  overrides: Partial<CurrentUserPayload> = {},
+): CurrentUserPayload {
   return {
     sub: 1,
     email: 'store-owner@demo.com',
@@ -446,7 +448,11 @@ describe('ShopsService.update (US-30)', () => {
     findShopOwnerByIdMock.mockResolvedValue(9);
     updateShopMock.mockResolvedValue(makeShopRecord({ ownerId: 9 }));
 
-    const result = await service.update(20, updateDto({ name: 'x' }), superAdmin());
+    const result = await service.update(
+      20,
+      updateDto({ name: 'x' }),
+      superAdmin(),
+    );
 
     expect(result.owner_id).toBe(9);
     expect(updateShopMock).toHaveBeenCalledTimes(1);
@@ -572,7 +578,7 @@ describe('ShopsService.update (US-30)', () => {
  * directamente sobre `approveShop`/`disapproveShop`, que reciben el `rawId`
  * tal cual llega del `@Body('id')` sin tipar del controller.
  */
-describe('ShopsService.approveShop / disapproveShop — frontera numérica de `@Body(\'id\')` (DD30-3)', () => {
+describe("ShopsService.approveShop / disapproveShop — frontera numérica de `@Body('id')` (DD30-3)", () => {
   let service: ShopsService;
 
   beforeEach(() => {
@@ -588,16 +594,19 @@ describe('ShopsService.approveShop / disapproveShop — frontera numérica de `@
     ['[] (array)', []],
     ['{} (objeto)', {}],
     ['1e21 (fuera de MAX_SAFE_INTEGER)', 1e21],
-  ])('approveShop(%s) → 400, `setShopActive` NUNCA se llama', async (_label, rawId) => {
-    expect.assertions(3);
-    try {
-      await service.approveShop(rawId);
-    } catch (error) {
-      expect(error).toBeInstanceOf(BadRequestException);
-      expect((error as BadRequestException).getStatus()).toBe(400);
-      expect(setShopActiveMock).not.toHaveBeenCalled();
-    }
-  });
+  ])(
+    'approveShop(%s) → 400, `setShopActive` NUNCA se llama',
+    async (_label, rawId) => {
+      expect.assertions(3);
+      try {
+        await service.approveShop(rawId);
+      } catch (error) {
+        expect(error).toBeInstanceOf(BadRequestException);
+        expect((error as BadRequestException).getStatus()).toBe(400);
+        expect(setShopActiveMock).not.toHaveBeenCalled();
+      }
+    },
+  );
 
   it('approveShop(`true`) → 400, NUNCA modera la tienda 1 (`Number(true) === 1` sin el `typeof`-narrow previo)', async () => {
     expect.assertions(3);
@@ -622,7 +631,9 @@ describe('ShopsService.approveShop / disapproveShop — frontera numérica de `@
   });
 
   it('id inexistente → 404 (`P2025` traducido vía `toWriteHttpException`), NUNCA 500', async () => {
-    setShopActiveMock.mockRejectedValue(new RecordNotFoundError('shops', 888888));
+    setShopActiveMock.mockRejectedValue(
+      new RecordNotFoundError('shops', 888888),
+    );
 
     expect.assertions(2);
     try {

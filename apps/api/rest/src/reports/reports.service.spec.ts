@@ -42,7 +42,9 @@ describe('ReportsService', () => {
         },
       },
     ]);
-    const result = JSON.parse(JSON.stringify(await new ReportsService().findMyReports(2)));
+    const result = JSON.parse(
+      JSON.stringify(await new ReportsService().findMyReports(2)),
+    );
     expect(listMock).toHaveBeenCalledWith(2);
     expect(Object.keys(result)).toEqual(['data']);
     expect(result.data[0]).toMatchObject({

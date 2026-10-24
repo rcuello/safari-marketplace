@@ -1,4 +1,7 @@
-import { BecomeSellerOptions, CommissionItem } from '../entities/become-seller.entity';
+import {
+  BecomeSellerOptions,
+  CommissionItem,
+} from '../entities/become-seller.entity';
 
 /**
  * Forma real del body del `POST` (`BecomeSellerInput`,

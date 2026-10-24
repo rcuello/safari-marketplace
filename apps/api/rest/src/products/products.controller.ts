@@ -82,7 +82,9 @@ export class PopularProductsController {
 export class BestSellingProductsController {
   constructor(private readonly productsService: ProductsService) {}
   @Get()
-  async getProducts(@Query() query: GetBestSellingProductsDto): Promise<Product[]> {
+  async getProducts(
+    @Query() query: GetBestSellingProductsDto,
+  ): Promise<Product[]> {
     return this.productsService.getBestSellingProducts(query);
   }
 }

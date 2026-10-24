@@ -13,8 +13,10 @@ async function bootstrap() {
   // `jsonParser` si encuentra en la pila otra capa con ese nombre, y entonces
   // ninguna otra ruta leería JSON.
   const seenBodyParser = json({ strict: false });
-  app.use('/api/messages/seen', (req: Request, res: Response, next: NextFunction) =>
-    seenBodyParser(req, res, next),
+  app.use(
+    '/api/messages/seen',
+    (req: Request, res: Response, next: NextFunction) =>
+      seenBodyParser(req, res, next),
   );
   app.setGlobalPrefix('api');
   app.useGlobalPipes(new ValidationPipe());

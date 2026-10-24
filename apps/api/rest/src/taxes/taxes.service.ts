@@ -67,7 +67,9 @@ function toTaxInput(dto: UpdateTaxDto): UpdateTaxInput {
     ...(dto.zip !== undefined && { zip: dto.zip }),
     ...(dto.city !== undefined && { city: dto.city }),
     ...(priority !== undefined && { priority }),
-    ...(dto.on_shipping !== undefined && { onShipping: toBool(dto.on_shipping) }),
+    ...(dto.on_shipping !== undefined && {
+      onShipping: toBool(dto.on_shipping),
+    }),
   };
 }
 
@@ -80,7 +82,9 @@ function readError(error: unknown): never {
 
 function assertId(id: number): void {
   if (!Number.isSafeInteger(id) || id <= 0) {
-    throw new NotFoundException(`No existe una clase de impuesto con id ${id}.`);
+    throw new NotFoundException(
+      `No existe una clase de impuesto con id ${id}.`,
+    );
   }
 }
 
@@ -128,7 +132,9 @@ export class TaxesService {
       readError(error);
     }
     if (!record) {
-      throw new NotFoundException(`No existe una clase de impuesto con id ${id}.`);
+      throw new NotFoundException(
+        `No existe una clase de impuesto con id ${id}.`,
+      );
     }
     return toTaxDto(record);
   }

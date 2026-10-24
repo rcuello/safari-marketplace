@@ -23,9 +23,7 @@ import {
   type UpdateProductInput,
 } from '@safari/db';
 import { toWriteHttpException } from 'src/common/errors/domain-error.mapper';
-import {
-  CurrentUserPayload,
-} from 'src/auth/decorators/current-user.decorator';
+import { CurrentUserPayload } from 'src/auth/decorators/current-user.decorator';
 import { CreateProductDto } from './dto/create-product.dto';
 import { GetProductsDto, ProductPaginator } from './dto/get-products.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -270,7 +268,9 @@ export class ProductsService {
     }
 
     if (!detail) {
-      throw new NotFoundException(`No existe un producto con slug \`${slug}\`.`);
+      throw new NotFoundException(
+        `No existe un producto con slug \`${slug}\`.`,
+      );
     }
 
     return {

@@ -68,10 +68,14 @@ export class BecomeSellerService {
     return this._toEnvelope(row);
   }
 
-  async create(createBecomeSellerDto: CreateBecomeSellerDto): Promise<BecomeSeller> {
+  async create(
+    createBecomeSellerDto: CreateBecomeSellerDto,
+  ): Promise<BecomeSeller> {
     const { page_options, commissions, language } = createBecomeSellerDto;
     const row = await updateBecomeSeller({
-      ...(_isBecomeSellerOptions(page_options) && { pageOptions: page_options }),
+      ...(_isBecomeSellerOptions(page_options) && {
+        pageOptions: page_options,
+      }),
       ...(_isCommissionList(commissions) && { commissions: commissions }),
       ...(language !== undefined && { language }),
     });
@@ -103,7 +107,10 @@ export class BecomeSellerService {
         'No hay fila en `become_seller`. Siembra la base con `just db-migrate`.',
       );
     }
-    if (!_isBecomeSellerOptions(row.pageOptions) || !_isCommissionList(row.commissions)) {
+    if (
+      !_isBecomeSellerOptions(row.pageOptions) ||
+      !_isCommissionList(row.commissions)
+    ) {
       throw new InternalServerErrorException(
         'La fila de `become_seller` tiene `page_options`/`commissions` con forma inesperada.',
       );

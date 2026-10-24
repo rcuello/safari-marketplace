@@ -129,7 +129,9 @@ export class TermsAndConditionsService {
     }
 
     if (!record) {
-      throw new NotFoundException(`No existe un término con slug \`${param}\`.`);
+      throw new NotFoundException(
+        `No existe un término con slug \`${param}\`.`,
+      );
     }
     return toTermsDto(record);
   }
@@ -145,7 +147,9 @@ export class TermsAndConditionsService {
         description: dto.description,
         ...(dto.slug !== undefined && { slug: dto.slug }),
         shopId:
-          dto.shop_id == null || dto.shop_id === '' ? null : Number(dto.shop_id),
+          dto.shop_id == null || dto.shop_id === ''
+            ? null
+            : Number(dto.shop_id),
         userId: userId ?? null,
         isApproved: true,
         ...(dto.language !== undefined && { language: dto.language }),

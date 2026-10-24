@@ -40,9 +40,10 @@ import { parseSearch } from '../common/search/parse-search';
  */
 function toManufacturerDto(
   record: ManufacturerRecord,
-  typesById: Map<number, TypeRecord>
+  typesById: Map<number, TypeRecord>,
 ): Manufacturer {
-  const type = record.typeId !== null ? typesById.get(record.typeId) : undefined;
+  const type =
+    record.typeId !== null ? typesById.get(record.typeId) : undefined;
   return {
     id: record.id,
     name: record.name,
@@ -171,7 +172,9 @@ export class ManufacturersService {
    * `type` se resuelve con un `listTypes()` SECUENCIAL, después de la
    * escritura (design.md, DD-7): nunca `Promise.all`.
    */
-  async create(createManufactureDto: CreateManufacturerDto): Promise<Manufacturer> {
+  async create(
+    createManufactureDto: CreateManufacturerDto,
+  ): Promise<Manufacturer> {
     try {
       const record = await createManufacturer({
         name: createManufactureDto.name,
@@ -218,7 +221,7 @@ export class ManufacturersService {
    */
   async update(
     id: number,
-    updateManufacturesDto: UpdateManufacturerDto
+    updateManufacturesDto: UpdateManufacturerDto,
   ): Promise<Manufacturer> {
     if (!Number.isSafeInteger(id) || id <= 0) {
       throw new NotFoundException(`No existe una marca con id ${id}.`);
@@ -236,7 +239,8 @@ export class ManufacturersService {
           website: updateManufacturesDto.website,
         }),
         ...(updateManufacturesDto.image !== undefined && {
-          image: updateManufacturesDto.image as unknown as Prisma.InputJsonValue,
+          image:
+            updateManufacturesDto.image as unknown as Prisma.InputJsonValue,
         }),
         ...(updateManufacturesDto.type_id !== undefined && {
           typeId:

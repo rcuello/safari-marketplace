@@ -1,9 +1,18 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { createMessage, listMessages, markConversationSeen, type ConversationDetailRecord } from '@safari/db';
+import {
+  createMessage,
+  listMessages,
+  markConversationSeen,
+  type ConversationDetailRecord,
+} from '@safari/db';
 import { CurrentUserPayload } from 'src/auth/decorators/current-user.decorator';
 import { paginate } from 'src/common/pagination/paginate';
 import { toWriteHttpException } from 'src/common/errors/domain-error.mapper';
-import { toConversationDto, toMessageDto, toViewer } from 'src/conversations/conversation-dto.mapper';
+import {
+  toConversationDto,
+  toMessageDto,
+  toViewer,
+} from 'src/conversations/conversation-dto.mapper';
 import {
   findVisibleConversation,
   readError,
@@ -73,7 +82,10 @@ export class MessagesService {
    * proyectada, ya con `unseen: 0`. El admin ignora la respuesta. Ajena,
    * inexistente o id no numérico ⇒ 404, sin escribir nada.
    */
-  async markSeen(param: string, user: CurrentUserPayload): Promise<Conversation> {
+  async markSeen(
+    param: string,
+    user: CurrentUserPayload,
+  ): Promise<Conversation> {
     const id = toConversationId(param);
     let record: ConversationDetailRecord | null;
     try {

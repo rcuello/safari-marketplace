@@ -56,7 +56,13 @@ export class QuestionService {
    * lista vacía. Orden `id DESC`, defaults `page=1`/`limit=10`; la url
    * interpola `answer`, que casi siempre sale `undefined`, como el mock.
    */
-  async findAllQuestions({ limit, page, search, answer, product_id }: GetQuestionDto) {
+  async findAllQuestions({
+    limit,
+    page,
+    search,
+    answer,
+    product_id,
+  }: GetQuestionDto) {
     if (!page) page = 1;
     if (!limit) limit = 10;
     const url = `/questions?search=${search}&answer=${answer}&limit=${limit}`;
@@ -103,14 +109,21 @@ export class QuestionService {
    * nace sin respuesta. 404 si el producto no existe; 400 si `shop_id` no es
    * su tienda o la pregunta está vacía. Lo usan los dos controladores.
    */
-  async create(dto: CreateQuestionDto, user: CurrentUserPayload): Promise<Question> {
+  async create(
+    dto: CreateQuestionDto,
+    user: CurrentUserPayload,
+  ): Promise<Question> {
     const productId = parsePositiveInt(dto.product_id);
     const shopId = parsePositiveInt(dto.shop_id);
     if (productId === null) {
-      throw new BadRequestException(`\`product_id\` no admite \`${String(dto.product_id)}\`.`);
+      throw new BadRequestException(
+        `\`product_id\` no admite \`${String(dto.product_id)}\`.`,
+      );
     }
     if (shopId === null) {
-      throw new BadRequestException(`\`shop_id\` no admite \`${String(dto.shop_id)}\`.`);
+      throw new BadRequestException(
+        `\`shop_id\` no admite \`${String(dto.shop_id)}\`.`,
+      );
     }
     try {
       const record = await createQuestion({
@@ -131,11 +144,20 @@ export class QuestionService {
    * solo si no es dueño. Persiste `answer`, y `question` si llega (el
    * `ReplyQuestion` del admin envía los dos).
    */
-  async update(id: number, dto: UpdateQuestionDto, user: CurrentUserPayload): Promise<Question> {
+  async update(
+    id: number,
+    dto: UpdateQuestionDto,
+    user: CurrentUserPayload,
+  ): Promise<Question> {
     assertQuestionId(id);
     const record = await this.findOrFail(id);
-    if (!(await this.isAdminOrShopOwner(record, user)) && !(await this.isStaff(record, user))) {
-      throw new ForbiddenException('Solo el dueño o el staff de la tienda pueden responder esta pregunta.');
+    if (
+      !(await this.isAdminOrShopOwner(record, user)) &&
+      !(await this.isStaff(record, user))
+    ) {
+      throw new ForbiddenException(
+        'Solo el dueño o el staff de la tienda pueden responder esta pregunta.',
+      );
     }
     try {
       const updated = await answerQuestion(id, {
@@ -152,7 +174,10 @@ export class QuestionService {
   async delete(id: number, user: CurrentUserPayload): Promise<Question> {
     assertQuestionId(id);
     const record = await this.findOrFail(id);
-    if (record.userId !== user.sub && !(await this.isAdminOrShopOwner(record, user))) {
+    if (
+      record.userId !== user.sub &&
+      !(await this.isAdminOrShopOwner(record, user))
+    ) {
       throw new ForbiddenException('No puedes borrar esta pregunta.');
     }
     try {
@@ -176,7 +201,10 @@ export class QuestionService {
   }
 
   /** Solo para responder: el staff no borra preguntas ajenas (US-66, Decisión 3). */
-  private async isStaff(record: QuestionDetailRecord, user: CurrentUserPayload): Promise<boolean> {
+  private async isStaff(
+    record: QuestionDetailRecord,
+    user: CurrentUserPayload,
+  ): Promise<boolean> {
     try {
       return await isShopStaff(user.sub, record.shopId);
     } catch (error) {

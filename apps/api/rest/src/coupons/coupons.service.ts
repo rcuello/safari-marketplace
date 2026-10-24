@@ -99,7 +99,9 @@ function toCouponInput(dto: UpdateCouponDto): UpdateCouponInput {
     ...(dto.minimum_cart_amount !== undefined && {
       minimumCartAmount: Number(dto.minimum_cart_amount),
     }),
-    ...(dto.active_from !== undefined && { activeFrom: new Date(dto.active_from) }),
+    ...(dto.active_from !== undefined && {
+      activeFrom: new Date(dto.active_from),
+    }),
     ...(dto.expire_at !== undefined && { expireAt: new Date(dto.expire_at) }),
     ...(dto.target !== undefined && { target: Boolean(dto.target) }),
     ...(dto.language !== undefined && { language: dto.language }),
@@ -116,14 +118,25 @@ export class CouponsService {
    * dueño); una tienda inexistente NO es 403: se deja pasar para que el
    * repositorio dé el 400.
    */
-  private async assertCanManage(shopId: number | null, user: CurrentUserPayload): Promise<void> {
+  private async assertCanManage(
+    shopId: number | null,
+    user: CurrentUserPayload,
+  ): Promise<void> {
     if (user.permissions.includes('super_admin')) return;
     if (shopId === null) {
-      throw new ForbiddenException('Solo un super_admin gestiona cupones globales.');
+      throw new ForbiddenException(
+        'Solo un super_admin gestiona cupones globales.',
+      );
     }
     const ownerId = await findShopOwnerById(shopId);
-    if (ownerId !== null && ownerId !== user.sub && !(await isShopStaff(user.sub, shopId))) {
-      throw new ForbiddenException(`No tienes permisos sobre la tienda ${shopId}.`);
+    if (
+      ownerId !== null &&
+      ownerId !== user.sub &&
+      !(await isShopStaff(user.sub, shopId))
+    ) {
+      throw new ForbiddenException(
+        `No tienes permisos sobre la tienda ${shopId}.`,
+      );
     }
   }
 
@@ -146,13 +159,18 @@ export class CouponsService {
    * (`coupon-form.tsx`) y el `ValidationPipe` no hace whitelist: se lee del
    * body de forma explícita. Nace sin aprobar; el autor es quien llama.
    */
-  async create(dto: CreateCouponDto, user: CurrentUserPayload): Promise<Coupon> {
+  async create(
+    dto: CreateCouponDto,
+    user: CurrentUserPayload,
+  ): Promise<Coupon> {
     const rawShopId = (dto as CreateCouponDto & { shop_id?: unknown }).shop_id;
     let shopId: number | null = null;
     if (rawShopId !== undefined && rawShopId !== null && rawShopId !== '') {
       shopId = Number(rawShopId);
       if (!Number.isSafeInteger(shopId) || shopId <= 0) {
-        throw new BadRequestException(`\`shop_id\` no admite \`${String(rawShopId)}\`.`);
+        throw new BadRequestException(
+          `\`shop_id\` no admite \`${String(rawShopId)}\`.`,
+        );
       }
     }
     await this.assertCanManage(shopId, user);
@@ -221,13 +239,19 @@ export class CouponsService {
       readError(error);
     }
     if (!record) {
-      throw new NotFoundException(`No existe un cupón con código \`${param}\`.`);
+      throw new NotFoundException(
+        `No existe un cupón con código \`${param}\`.`,
+      );
     }
     return toCouponDto(record);
   }
 
   /** `shop_id` no cambia tras crear. Propiedad sobre la tienda de la fila. */
-  async update(id: number, dto: UpdateCouponDto, user: CurrentUserPayload): Promise<Coupon> {
+  async update(
+    id: number,
+    dto: UpdateCouponDto,
+    user: CurrentUserPayload,
+  ): Promise<Coupon> {
     assertId(id);
     if (!user.permissions.includes('super_admin')) {
       await this.assertCanManage((await this.findForWrite(id)).shopId, user);

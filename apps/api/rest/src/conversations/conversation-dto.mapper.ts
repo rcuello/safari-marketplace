@@ -23,7 +23,11 @@ export function toViewer(user: CurrentUserPayload): ConversationViewer {
 function unseen(record: ConversationDetailRecord, viewerId: number): number {
   const latest = record.latestMessage;
   if (!latest || latest.userId === viewerId) return 0;
-  if (record.lastSeenAt && latest.createdAt.getTime() <= record.lastSeenAt.getTime()) return 0;
+  if (
+    record.lastSeenAt &&
+    latest.createdAt.getTime() <= record.lastSeenAt.getTime()
+  )
+    return 0;
   return 1;
 }
 
@@ -32,7 +36,10 @@ function unseen(record: ConversationDetailRecord, viewerId: number): number {
  * igual que el mock y los tipos del admin; `unseen` como número; `shop` con
  * `toShopDto` (V-6); `latest_message` calculado (V-1, V-2), ids string.
  */
-export function toConversationDto(record: ConversationDetailRecord, viewerId: number): Conversation {
+export function toConversationDto(
+  record: ConversationDetailRecord,
+  viewerId: number,
+): Conversation {
   const latest = record.latestMessage;
   return {
     user_id: String(record.userId),
@@ -78,7 +85,10 @@ function toEmbeddedMessage(m: MessageRecord) {
  * Forma de `messages.json`: ids NÚMERO y la conversación embebida con su
  * propio orden de claves y su `user` en la forma mínima de Laravel.
  */
-export function toMessageDto(record: MessageDetailRecord, viewerId: number): Message {
+export function toMessageDto(
+  record: MessageDetailRecord,
+  viewerId: number,
+): Message {
   const c = record.conversation;
   return {
     id: record.id,

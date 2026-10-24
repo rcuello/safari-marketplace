@@ -37,7 +37,9 @@ const deleteMock = jest.mocked(deleteRefundReason);
 
 const MOCK_DATE = new Date('2023-11-12T10:58:58.000Z');
 
-function makeRecord(overrides: Partial<RefundReasonRecord> = {}): RefundReasonRecord {
+function makeRecord(
+  overrides: Partial<RefundReasonRecord> = {},
+): RefundReasonRecord {
   return {
     id: 3,
     name: 'Damaged Item',
@@ -73,21 +75,37 @@ describe('RefundReasonsService', () => {
 
   it('filtra por el token name e ignora type.slug', async () => {
     listMock.mockResolvedValue({ items: [], total: 0 });
-    await service.findAll(query({ searchJoin: 'and', search: 'type.slug:x;name:damaged' }));
-    expect(listMock).toHaveBeenCalledWith({ name: 'damaged', page: 1, limit: 10 });
+    await service.findAll(
+      query({ searchJoin: 'and', search: 'type.slug:x;name:damaged' }),
+    );
+    expect(listMock).toHaveBeenCalledWith({
+      name: 'damaged',
+      page: 1,
+      limit: 10,
+    });
   });
 
   it('getRefundReason por slug; inexistente ⇒ 404', async () => {
     findMock.mockResolvedValueOnce(makeRecord());
     expect((await service.getRefundReason('damaged-item')).id).toBe(3);
     findMock.mockResolvedValueOnce(null);
-    await expect(service.getRefundReason('no-existe')).rejects.toBeInstanceOf(NotFoundException);
+    await expect(service.getRefundReason('no-existe')).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
   });
 
   it('create usa name/slug/language del admin', async () => {
     createMock.mockResolvedValue(makeRecord());
-    await service.create({ name: 'Producto defectuoso', slug: '', language: 'en' } as never);
-    expect(createMock).toHaveBeenCalledWith({ name: 'Producto defectuoso', slug: '', language: 'en' });
+    await service.create({
+      name: 'Producto defectuoso',
+      slug: '',
+      language: 'en',
+    } as never);
+    expect(createMock).toHaveBeenCalledWith({
+      name: 'Producto defectuoso',
+      slug: '',
+      language: 'en',
+    });
   });
 
   it('update y remove devuelven la fila; ids mal formados ⇒ 404 sin tocar el driver', async () => {
@@ -95,7 +113,9 @@ describe('RefundReasonsService', () => {
     expect((await service.update(3, { name: 'Nuevo' })).name).toBe('Nuevo');
     deleteMock.mockResolvedValue(makeRecord());
     expect((await service.remove(3)).id).toBe(3);
-    await expect(service.update(0, {})).rejects.toBeInstanceOf(NotFoundException);
+    await expect(service.update(0, {})).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
     await expect(service.remove(-4)).rejects.toBeInstanceOf(NotFoundException);
     expect(updateMock).toHaveBeenCalledTimes(1);
     expect(deleteMock).toHaveBeenCalledTimes(1);

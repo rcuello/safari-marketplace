@@ -39,7 +39,13 @@ function buildFixture(): UserWithRelations {
       updatedAt: FIXED_DATE,
     },
     permissions: [
-      { id: 1, name: 'super_admin', guardName: 'api', createdAt: FIXED_DATE, updatedAt: FIXED_DATE },
+      {
+        id: 1,
+        name: 'super_admin',
+        guardName: 'api',
+        createdAt: FIXED_DATE,
+        updatedAt: FIXED_DATE,
+      },
     ],
     shops: [],
   };
@@ -70,7 +76,10 @@ describe('user-dto.mapper (US-25 PR2 — extracción pura, cero cambio observabl
     });
 
     it('wallet y last_order son null, address es []', () => {
-      const dto = toUserDto(buildFixture()) as unknown as Record<string, unknown>;
+      const dto = toUserDto(buildFixture()) as unknown as Record<
+        string,
+        unknown
+      >;
 
       expect(dto.wallet).toBeNull();
       expect(dto.last_order).toBeNull();
@@ -106,7 +115,13 @@ describe('user-dto.mapper (US-25 PR2 — extracción pura, cero cambio observabl
   describe('toPermissionDto', () => {
     it('sintetiza pivot con model_id = userId real', () => {
       const dto = toPermissionDto(
-        { id: 2, name: 'customer', guardName: 'api', createdAt: FIXED_DATE, updatedAt: FIXED_DATE },
+        {
+          id: 2,
+          name: 'customer',
+          guardName: 'api',
+          createdAt: FIXED_DATE,
+          updatedAt: FIXED_DATE,
+        },
         42,
       );
 

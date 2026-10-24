@@ -17,7 +17,10 @@ import {
 } from '@safari/db';
 import { parseSearch } from 'src/common/search/parse-search';
 import { toWriteHttpException } from 'src/common/errors/domain-error.mapper';
-import { AttributeValueDto, CreateAttributeDto } from './dto/create-attribute.dto';
+import {
+  AttributeValueDto,
+  CreateAttributeDto,
+} from './dto/create-attribute.dto';
 import { GetAttributesArgs } from './dto/get-attributes.dto';
 import { UpdateAttributeDto } from './dto/update-attribute.dto';
 import { Attribute } from './entities/attribute.entity';
@@ -54,7 +57,9 @@ function toAttributeDto(record: AttributeRecord): Attribute {
  * `null` (NaN serializado). Cualquier cosa que no sea número queda en `null`
  * y el repositorio la trata como valor nuevo.
  */
-function toValueInputs(values: AttributeValueDto[] | undefined): AttributeValueInput[] | undefined {
+function toValueInputs(
+  values: AttributeValueDto[] | undefined,
+): AttributeValueInput[] | undefined {
   if (values === undefined) return undefined;
   return values.map((v) => ({
     id: typeof v.id === 'number' ? v.id : null,
@@ -100,7 +105,9 @@ export class AttributesService {
    * `search=shop_id:N` filtra por tienda (V-1) y `name:X` por nombre; el
    * token `type.slug` se ignora: no hay `type`.
    */
-  async findAll({ search, shop_id }: GetAttributesArgs = {}): Promise<Attribute[]> {
+  async findAll({ search, shop_id }: GetAttributesArgs = {}): Promise<
+    Attribute[]
+  > {
     const tokens = parseSearch(search);
     const rawShopId = tokens.shop_id ?? shop_id;
     let shopId: number | undefined;
@@ -110,7 +117,9 @@ export class AttributesService {
     }
 
     try {
-      return (await listAttributes({ shopId, name: tokens.name })).map(toAttributeDto);
+      return (await listAttributes({ shopId, name: tokens.name })).map(
+        toAttributeDto,
+      );
     } catch (error) {
       readError(error);
     }
@@ -125,7 +134,9 @@ export class AttributesService {
       readError(error);
     }
     if (!record) {
-      throw new NotFoundException(`No existe un atributo con id o slug \`${param}\`.`);
+      throw new NotFoundException(
+        `No existe un atributo con id o slug \`${param}\`.`,
+      );
     }
     return toAttributeDto(record);
   }

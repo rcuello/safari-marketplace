@@ -34,7 +34,9 @@ export function readError(error: unknown): never {
 export function toConversationId(param: unknown): number {
   const id = Number(param);
   if (!Number.isSafeInteger(id) || id <= 0) {
-    throw new NotFoundException(`No existe una conversación con id ${String(param)}.`);
+    throw new NotFoundException(
+      `No existe una conversación con id ${String(param)}.`,
+    );
   }
   return id;
 }
@@ -67,13 +69,21 @@ export class ConversationsService {
    * (V-12). El admin manda también `via`, que se ignora. Tienda inexistente
    * ⇒ 400 por `InvalidReferenceError`.
    */
-  async create(dto: CreateConversationDto, user: CurrentUserPayload): Promise<Conversation> {
+  async create(
+    dto: CreateConversationDto,
+    user: CurrentUserPayload,
+  ): Promise<Conversation> {
     const shopId = Number(dto.shop_id);
     if (!Number.isSafeInteger(shopId) || shopId <= 0) {
-      throw new BadRequestException(`\`shop_id\` no admite \`${String(dto.shop_id)}\`.`);
+      throw new BadRequestException(
+        `\`shop_id\` no admite \`${String(dto.shop_id)}\`.`,
+      );
     }
     try {
-      return toConversationDto(await findOrCreateConversation(user.sub, shopId), user.sub);
+      return toConversationDto(
+        await findOrCreateConversation(user.sub, shopId),
+        user.sub,
+      );
     } catch (error) {
       throw toWriteHttpException(error);
     }
@@ -92,10 +102,14 @@ export class ConversationsService {
     if (!page) page = 1;
     if (!limit) limit = 15;
     const url = `/conversations?limit=${limit}`;
-    const sortField = (CONVERSATION_SORTABLE as readonly string[]).includes(orderBy ?? '')
+    const sortField = (CONVERSATION_SORTABLE as readonly string[]).includes(
+      orderBy ?? '',
+    )
       ? (orderBy as ConversationSortField)
       : undefined;
-    const text = search?.includes(':') ? search.slice(search.indexOf(':') + 1) : search;
+    const text = search?.includes(':')
+      ? search.slice(search.indexOf(':') + 1)
+      : search;
     try {
       const { items, total } = await listConversations({
         viewer: toViewer(user),
@@ -115,7 +129,13 @@ export class ConversationsService {
   }
 
   /** Por `id` (V-10), no por `latest_message.conversation_id`. */
-  async getConversation(param: string, user: CurrentUserPayload): Promise<Conversation> {
-    return toConversationDto(await findVisibleConversation(param, user), user.sub);
+  async getConversation(
+    param: string,
+    user: CurrentUserPayload,
+  ): Promise<Conversation> {
+    return toConversationDto(
+      await findVisibleConversation(param, user),
+      user.sub,
+    );
   }
 }

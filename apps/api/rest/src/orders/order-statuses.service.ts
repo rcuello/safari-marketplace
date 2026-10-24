@@ -96,7 +96,9 @@ export class OrderStatusesService {
     const url = `/order-status?search=${search}&limit=${limit}`;
 
     const freeText = search && !search.includes(':') ? search : undefined;
-    const sortField = orderBy ? SORT_ALIASES[String(orderBy).toLowerCase()] : undefined;
+    const sortField = orderBy
+      ? SORT_ALIASES[String(orderBy).toLowerCase()]
+      : undefined;
     const input: ListOrderStatusesInput = {
       name: parseSearch(search).name ?? freeText,
       ...(sortField && {
@@ -127,7 +129,9 @@ export class OrderStatusesService {
       readError(error);
     }
     if (!record) {
-      throw new NotFoundException(`No existe un estado de pedido con slug \`${slug}\`.`);
+      throw new NotFoundException(
+        `No existe un estado de pedido con slug \`${slug}\`.`,
+      );
     }
     return toOrderStatusDto(record);
   }

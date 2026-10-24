@@ -321,7 +321,9 @@ export class UsersService {
    * Envoltura común (precedente `auth.service.ts`/`shops.service.ts`): base
    * caída → 503 legible; cualquier otro error de Prisma → 500 legible.
    */
-  private async withPrismaErrorTranslation<T>(fn: () => Promise<T>): Promise<T> {
+  private async withPrismaErrorTranslation<T>(
+    fn: () => Promise<T>,
+  ): Promise<T> {
     try {
       return await fn();
     } catch (error) {

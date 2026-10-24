@@ -257,7 +257,9 @@ function makeProductDetail(
  * corrió y `@CurrentUser()` ya lo resolvió — estos tests entran DIRECTO por
  * la superficie del servicio, así que se construye a mano, sin JWT real.
  */
-function makeUser(overrides: Partial<CurrentUserPayload> = {}): CurrentUserPayload {
+function makeUser(
+  overrides: Partial<CurrentUserPayload> = {},
+): CurrentUserPayload {
   return {
     sub: 1,
     email: 'store-owner@demo.com',
@@ -273,7 +275,9 @@ function makeUser(overrides: Partial<CurrentUserPayload> = {}): CurrentUserPaylo
  * necesita para no lanzar por su cuenta; el resto queda fuera (`categories`/
  * `tags` como `[]`, filtrados por `Array.isArray()` igual que un body real).
  */
-function makeCreateDto(overrides: Partial<CreateProductDto> = {}): CreateProductDto {
+function makeCreateDto(
+  overrides: Partial<CreateProductDto> = {},
+): CreateProductDto {
   return {
     name: 'Producto centinela',
     type_id: 1,
@@ -288,7 +292,9 @@ function makeCreateDto(overrides: Partial<CreateProductDto> = {}): CreateProduct
 }
 
 /** DTO de `PUT /products/:id` — parcial por diseño (`PartialType`), vacío si no se pasan overrides. */
-function makeUpdateDto(overrides: Partial<UpdateProductDto> = {}): UpdateProductDto {
+function makeUpdateDto(
+  overrides: Partial<UpdateProductDto> = {},
+): UpdateProductDto {
   return { ...overrides } as UpdateProductDto;
 }
 
@@ -647,25 +653,26 @@ describe('endpoints derivados — mapeo de errores de base (US-5)', () => {
 
   // Cada entrada invoca el método por su superficie pública real; los DTO
   // llegan como strings crudos porque `ValidationPipe` corre sin `transform`.
-  const casos: ReadonlyArray<[string, (s: ProductsService) => Promise<unknown>]> =
+  const casos: ReadonlyArray<
+    [string, (s: ProductsService) => Promise<unknown>]
+  > = [
     [
-      [
-        'getPopularProducts',
-        (s) => s.getPopularProducts({ limit: '10' } as never),
-      ],
-      [
-        'getBestSellingProducts',
-        (s) => s.getBestSellingProducts({ limit: '5' } as never),
-      ],
-      [
-        'getProductsStock',
-        (s) => s.getProductsStock(rawQuery({ limit: '30', page: '1' })),
-      ],
-      [
-        'getDraftProducts',
-        (s) => s.getDraftProducts(rawQuery({ limit: '30', page: '1' })),
-      ],
-    ];
+      'getPopularProducts',
+      (s) => s.getPopularProducts({ limit: '10' } as never),
+    ],
+    [
+      'getBestSellingProducts',
+      (s) => s.getBestSellingProducts({ limit: '5' } as never),
+    ],
+    [
+      'getProductsStock',
+      (s) => s.getProductsStock(rawQuery({ limit: '30', page: '1' })),
+    ],
+    [
+      'getDraftProducts',
+      (s) => s.getDraftProducts(rawQuery({ limit: '30', page: '1' })),
+    ],
+  ];
 
   it.each(casos)('%s: error de conexión → 503', async (_nombre, invocar) => {
     listProductsMock.mockRejectedValue(connectionError());
@@ -842,10 +849,7 @@ describe('CA-5 — matriz de roles en las 3 rutas de escritura (US-29)', () => {
       'create',
       (user) => service.create(makeCreateDto({ shop_id: SHOP_ID }), user),
     ],
-    [
-      'update',
-      (user) => service.update(PRODUCT_ID, makeUpdateDto(), user),
-    ],
+    ['update', (user) => service.update(PRODUCT_ID, makeUpdateDto(), user)],
     ['remove', (user) => service.remove(PRODUCT_ID, user)],
   ];
 
@@ -868,21 +872,27 @@ describe('CA-5 — matriz de roles en las 3 rutas de escritura (US-29)', () => {
     service = new ProductsService();
   });
 
-  it.each(routes)('%s: store_owner dueño de la tienda → 200', async (_route, invoke) => {
-    findShopOwnerByIdMock.mockResolvedValue(OWNER_ID);
+  it.each(routes)(
+    '%s: store_owner dueño de la tienda → 200',
+    async (_route, invoke) => {
+      findShopOwnerByIdMock.mockResolvedValue(OWNER_ID);
 
-    await expect(
-      invoke(makeUser({ sub: OWNER_ID, permissions: ['store_owner'] })),
-    ).resolves.toBeDefined();
-  });
+      await expect(
+        invoke(makeUser({ sub: OWNER_ID, permissions: ['store_owner'] })),
+      ).resolves.toBeDefined();
+    },
+  );
 
-  it.each(routes)('%s: store_owner ajeno a la tienda → 403', async (_route, invoke) => {
-    findShopOwnerByIdMock.mockResolvedValue(OWNER_ID);
+  it.each(routes)(
+    '%s: store_owner ajeno a la tienda → 403',
+    async (_route, invoke) => {
+      findShopOwnerByIdMock.mockResolvedValue(OWNER_ID);
 
-    await expect(
-      invoke(makeUser({ sub: OTHER_USER_ID, permissions: ['store_owner'] })),
-    ).rejects.toBeInstanceOf(ForbiddenException);
-  });
+      await expect(
+        invoke(makeUser({ sub: OTHER_USER_ID, permissions: ['store_owner'] })),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+    },
+  );
 
   it.each(routes)(
     '%s: super_admin → 200 SIN sondear findShopOwnerById (short-circuit)',
@@ -895,14 +905,17 @@ describe('CA-5 — matriz de roles en las 3 rutas de escritura (US-29)', () => {
     },
   );
 
-  it.each(routes)('%s: staff (sin relación con la tienda) → 403', async (_route, invoke) => {
-    findShopOwnerByIdMock.mockResolvedValue(OWNER_ID);
+  it.each(routes)(
+    '%s: staff (sin relación con la tienda) → 403',
+    async (_route, invoke) => {
+      findShopOwnerByIdMock.mockResolvedValue(OWNER_ID);
 
-    await expect(
-      invoke(makeUser({ sub: OTHER_USER_ID, permissions: ['staff'] })),
-    ).rejects.toBeInstanceOf(ForbiddenException);
-    expect(isShopStaffMock).toHaveBeenCalledWith(OTHER_USER_ID, SHOP_ID);
-  });
+      await expect(
+        invoke(makeUser({ sub: OTHER_USER_ID, permissions: ['staff'] })),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(isShopStaffMock).toHaveBeenCalledWith(OTHER_USER_ID, SHOP_ID);
+    },
+  );
 
   // Sin token → 401: DECLARADO, no probado en este archivo (a nivel de
   // guard, `JwtAuthGuard`/US-23 — `@CurrentUser()` mismo lanza 401 si no hay
@@ -975,7 +988,10 @@ describe('US-66 Ampliación — el staff de la tienda gestiona productos', () =>
   const STAFF_ID = 7;
   const SHOP_ID = 9;
   const PRODUCT_ID = 1465;
-  const staffUser = makeUser({ sub: STAFF_ID, permissions: ['customer', 'staff'] });
+  const staffUser = makeUser({
+    sub: STAFF_ID,
+    permissions: ['customer', 'staff'],
+  });
 
   type Route = [string, (user: CurrentUserPayload) => Promise<unknown>];
 
@@ -984,10 +1000,7 @@ describe('US-66 Ampliación — el staff de la tienda gestiona productos', () =>
       'create',
       (user) => service.create(makeCreateDto({ shop_id: SHOP_ID }), user),
     ],
-    [
-      'update',
-      (user) => service.update(PRODUCT_ID, makeUpdateDto(), user),
-    ],
+    ['update', (user) => service.update(PRODUCT_ID, makeUpdateDto(), user)],
     ['remove', (user) => service.remove(PRODUCT_ID, user)],
   ];
 
@@ -1008,42 +1021,56 @@ describe('US-66 Ampliación — el staff de la tienda gestiona productos', () =>
     service = new ProductsService();
   });
 
-  it.each(routes)('%s: staff de la tienda (fila en shop_staff) → 200, tras sondear al dueño', async (_route, invoke) => {
-    isShopStaffMock.mockResolvedValue(true);
+  it.each(routes)(
+    '%s: staff de la tienda (fila en shop_staff) → 200, tras sondear al dueño',
+    async (_route, invoke) => {
+      isShopStaffMock.mockResolvedValue(true);
 
-    await expect(invoke(staffUser)).resolves.toBeDefined();
+      await expect(invoke(staffUser)).resolves.toBeDefined();
 
-    expect(findShopOwnerByIdMock).toHaveBeenCalledWith(SHOP_ID);
-    expect(isShopStaffMock).toHaveBeenCalledWith(STAFF_ID, SHOP_ID);
-  });
+      expect(findShopOwnerByIdMock).toHaveBeenCalledWith(SHOP_ID);
+      expect(isShopStaffMock).toHaveBeenCalledWith(STAFF_ID, SHOP_ID);
+    },
+  );
 
-  it.each(routes)('%s: staff de OTRA tienda → 403 sin escribir', async (_route, invoke) => {
-    isShopStaffMock.mockResolvedValue(false);
+  it.each(routes)(
+    '%s: staff de OTRA tienda → 403 sin escribir',
+    async (_route, invoke) => {
+      isShopStaffMock.mockResolvedValue(false);
 
-    await expect(invoke(staffUser)).rejects.toBeInstanceOf(ForbiddenException);
+      await expect(invoke(staffUser)).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
 
-    expect(isShopStaffMock).toHaveBeenCalledWith(STAFF_ID, SHOP_ID);
-    expect(createProductMock).not.toHaveBeenCalled();
-    expect(updateProductMock).not.toHaveBeenCalled();
-    expect(deleteProductMock).not.toHaveBeenCalled();
-  });
+      expect(isShopStaffMock).toHaveBeenCalledWith(STAFF_ID, SHOP_ID);
+      expect(createProductMock).not.toHaveBeenCalled();
+      expect(updateProductMock).not.toHaveBeenCalled();
+      expect(deleteProductMock).not.toHaveBeenCalled();
+    },
+  );
 
-  it.each(routes)('%s: el dueño pasa SIN consultar shop_staff', async (_route, invoke) => {
-    await expect(
-      invoke(makeUser({ sub: OWNER_ID, permissions: ['store_owner'] })),
-    ).resolves.toBeDefined();
+  it.each(routes)(
+    '%s: el dueño pasa SIN consultar shop_staff',
+    async (_route, invoke) => {
+      await expect(
+        invoke(makeUser({ sub: OWNER_ID, permissions: ['store_owner'] })),
+      ).resolves.toBeDefined();
 
-    expect(isShopStaffMock).not.toHaveBeenCalled();
-  });
+      expect(isShopStaffMock).not.toHaveBeenCalled();
+    },
+  );
 
-  it.each(routes)('%s: super_admin pasa SIN consultar ni al dueño ni a shop_staff', async (_route, invoke) => {
-    await expect(
-      invoke(makeUser({ sub: 999, permissions: ['super_admin'] })),
-    ).resolves.toBeDefined();
+  it.each(routes)(
+    '%s: super_admin pasa SIN consultar ni al dueño ni a shop_staff',
+    async (_route, invoke) => {
+      await expect(
+        invoke(makeUser({ sub: 999, permissions: ['super_admin'] })),
+      ).resolves.toBeDefined();
 
-    expect(findShopOwnerByIdMock).not.toHaveBeenCalled();
-    expect(isShopStaffMock).not.toHaveBeenCalled();
-  });
+      expect(findShopOwnerByIdMock).not.toHaveBeenCalled();
+      expect(isShopStaffMock).not.toHaveBeenCalled();
+    },
+  );
 
   it('create: tienda inexistente (dueño null) sigue pasando al repositorio sin consultar shop_staff', async () => {
     findShopOwnerByIdMock.mockResolvedValue(null);
@@ -1059,15 +1086,24 @@ describe('US-66 Ampliación — el staff de la tienda gestiona productos', () =>
   describe('mover shop_id exige gestionar AMBAS tiendas', () => {
     const DESTINATION_SHOP_ID = 20;
     const move = (user: CurrentUserPayload) =>
-      service.update(PRODUCT_ID, makeUpdateDto({ shop_id: DESTINATION_SHOP_ID }), user);
+      service.update(
+        PRODUCT_ID,
+        makeUpdateDto({ shop_id: DESTINATION_SHOP_ID }),
+        user,
+      );
 
     it('staff de la actual pero NO de la destino → 403, sondeando ambos lados', async () => {
-      isShopStaffMock.mockImplementation(async (_userId, shopId) => shopId === SHOP_ID);
+      isShopStaffMock.mockImplementation(
+        async (_userId, shopId) => shopId === SHOP_ID,
+      );
 
       await expect(move(staffUser)).rejects.toBeInstanceOf(ForbiddenException);
 
       expect(isShopStaffMock).toHaveBeenCalledWith(STAFF_ID, SHOP_ID);
-      expect(isShopStaffMock).toHaveBeenCalledWith(STAFF_ID, DESTINATION_SHOP_ID);
+      expect(isShopStaffMock).toHaveBeenCalledWith(
+        STAFF_ID,
+        DESTINATION_SHOP_ID,
+      );
       expect(updateProductMock).not.toHaveBeenCalled();
     });
 
@@ -1090,7 +1126,10 @@ describe('US-66 Ampliación — el staff de la tienda gestiona productos', () =>
       ).resolves.toBeDefined();
 
       expect(isShopStaffMock).toHaveBeenCalledTimes(1);
-      expect(isShopStaffMock).toHaveBeenCalledWith(OWNER_ID, DESTINATION_SHOP_ID);
+      expect(isShopStaffMock).toHaveBeenCalledWith(
+        OWNER_ID,
+        DESTINATION_SHOP_ID,
+      );
     });
   });
 });

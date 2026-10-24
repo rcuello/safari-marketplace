@@ -63,7 +63,12 @@ const INVALID_TOKEN_MESSAGE = 'PICKBAZAR_MESSAGE.INVALID_TOKEN';
 // Precedencia de `role` sobre `permissions[]` (Decisión F, design.md).
 // Decorativa: ningún `hasAccess()` de los frontends la lee, pero el admin
 // la guarda en cookie (`login-form.tsx:48`).
-const ROLE_PRECEDENCE = ['super_admin', 'store_owner', 'staff', 'customer'] as const;
+const ROLE_PRECEDENCE = [
+  'super_admin',
+  'store_owner',
+  'staff',
+  'customer',
+] as const;
 
 function deriveRole(permissions: string[]): string {
   return ROLE_PRECEDENCE.find((r) => permissions.includes(r)) ?? 'customer';
@@ -214,7 +219,9 @@ export class AuthService {
     // D5: advertencia de "sin envío real" en la MISMA emisión que el secreto.
     this.logger.warn(
       `[forget-password] Implementación de desarrollo, SIN envío real de correo. ` +
-        `Token en claro para ${forgetPasswordInput.email}: ${token} (expira ${expiresAt.toISOString()})`,
+        `Token en claro para ${
+          forgetPasswordInput.email
+        }: ${token} (expira ${expiresAt.toISOString()})`,
     );
 
     return { success: true, message: PASSWORD_CHANGE_SUCCESS_MESSAGE };
@@ -244,7 +251,12 @@ export class AuthService {
       findLivePasswordResetTokens(creds.id),
     );
     for (const row of liveTokens) {
-      if (await bcrypt.compare(verifyForgetPasswordTokenInput.token, row.tokenHash)) {
+      if (
+        await bcrypt.compare(
+          verifyForgetPasswordTokenInput.token,
+          row.tokenHash,
+        )
+      ) {
         return { success: true, message: PASSWORD_CHANGE_SUCCESS_MESSAGE };
       }
     }
@@ -434,7 +446,9 @@ export class AuthService {
     // D5: advertencia de "sin envío real" en la MISMA emisión que el secreto.
     this.logger.warn(
       `[send-otp-code] Implementación de desarrollo, SIN envío real de SMS. ` +
-        `Código en claro para ${otpInput.phone_number}: ${code} (expira ${expiresAt.toISOString()})`,
+        `Código en claro para ${
+          otpInput.phone_number
+        }: ${code} (expira ${expiresAt.toISOString()})`,
     );
 
     return {
@@ -459,7 +473,9 @@ export class AuthService {
    * error de Prisma → 500 legible. Mismo precedente que
    * `shops.service.ts` (`isPrismaConnectionError`/`getUserFriendlyMessage`).
    */
-  private async withPrismaErrorTranslation<T>(fn: () => Promise<T>): Promise<T> {
+  private async withPrismaErrorTranslation<T>(
+    fn: () => Promise<T>,
+  ): Promise<T> {
     try {
       return await fn();
     } catch (error) {

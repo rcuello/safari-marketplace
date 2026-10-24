@@ -22,7 +22,11 @@ import { CreateReportDto } from './dto/create-report.dto';
 import { RejectReportDto } from './dto/reject-report.dto';
 import { UpdateReportDto } from './dto/update-report.dto';
 import { Report } from './entities/reports.entity';
-import { REPORTABLE_FQCN, toReportDto, toShortModelType } from './review-dto.mapper';
+import {
+  REPORTABLE_FQCN,
+  toReportDto,
+  toShortModelType,
+} from './review-dto.mapper';
 
 function readError(error: unknown): never {
   if (isPrismaConnectionError(error)) {
@@ -72,14 +76,21 @@ export class AbusiveReportService {
    * repositorio valida que el objeto exista: una reseña o pregunta
    * (US-55) inexistente es 404. Reportar dos veces lo mismo es 409.
    */
-  async create(dto: CreateReportDto, user: CurrentUserPayload): Promise<Report> {
+  async create(
+    dto: CreateReportDto,
+    user: CurrentUserPayload,
+  ): Promise<Report> {
     const modelType = toShortModelType(dto.model_type);
     if (!modelType) {
-      throw new BadRequestException(`\`model_type\` no admite \`${String(dto.model_type)}\`.`);
+      throw new BadRequestException(
+        `\`model_type\` no admite \`${String(dto.model_type)}\`.`,
+      );
     }
     const modelId = Number(dto.model_id);
     if (!Number.isSafeInteger(modelId) || modelId <= 0) {
-      throw new BadRequestException(`\`model_id\` no admite \`${String(dto.model_id)}\`.`);
+      throw new BadRequestException(
+        `\`model_id\` no admite \`${String(dto.model_id)}\`.`,
+      );
     }
     try {
       const record = await createAbusiveReport({
@@ -101,18 +112,33 @@ export class AbusiveReportService {
    * inexistente ⇒ 404; `model_id` o `model_type` inválidos ⇒ 400; sin
    * reportes ⇒ `deleted: 0`.
    */
-  async reject(dto: RejectReportDto): Promise<{ model_type: string; model_id: number; deleted: number }> {
-    const modelType = dto.model_type == null ? 'Review' : toShortModelType(dto.model_type);
+  async reject(
+    dto: RejectReportDto,
+  ): Promise<{ model_type: string; model_id: number; deleted: number }> {
+    const modelType =
+      dto.model_type == null ? 'Review' : toShortModelType(dto.model_type);
     if (!modelType) {
-      throw new BadRequestException(`\`model_type\` no admite \`${String(dto.model_type)}\`.`);
+      throw new BadRequestException(
+        `\`model_type\` no admite \`${String(dto.model_type)}\`.`,
+      );
     }
     const modelId = Number(dto.model_id);
-    if (dto.model_id == null || !Number.isSafeInteger(modelId) || modelId <= 0) {
-      throw new BadRequestException(`\`model_id\` no admite \`${String(dto.model_id)}\`.`);
+    if (
+      dto.model_id == null ||
+      !Number.isSafeInteger(modelId) ||
+      modelId <= 0
+    ) {
+      throw new BadRequestException(
+        `\`model_id\` no admite \`${String(dto.model_id)}\`.`,
+      );
     }
     try {
       const deleted = await rejectAbusiveReports(modelType, modelId);
-      return { model_type: REPORTABLE_FQCN[modelType], model_id: modelId, deleted };
+      return {
+        model_type: REPORTABLE_FQCN[modelType],
+        model_id: modelId,
+        deleted,
+      };
     } catch (error) {
       throw toWriteHttpException(error);
     }
@@ -122,7 +148,9 @@ export class AbusiveReportService {
   async update(id: number, dto: UpdateReportDto): Promise<Report> {
     assertId(id);
     try {
-      return toReportDto(await updateAbusiveReport(id, { message: dto.message }));
+      return toReportDto(
+        await updateAbusiveReport(id, { message: dto.message }),
+      );
     } catch (error) {
       throw toWriteHttpException(error);
     }

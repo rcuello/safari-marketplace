@@ -23,7 +23,8 @@ import { toProductDto } from 'src/products/product-dto.mapper';
 import { CreateWishlistDto } from './dto/create-wishlists.dto';
 import { GetWishlistDto } from './dto/get-wishlists.dto';
 
-export const WISHLISTS_URL = '/wishlists?with=shop&orderBy=created_at&sortedBy=desc';
+export const WISHLISTS_URL =
+  '/wishlists?with=shop&orderBy=created_at&sortedBy=desc';
 
 function readError(error: unknown): never {
   if (isPrismaConnectionError(error)) {
@@ -36,7 +37,9 @@ function readError(error: unknown): never {
 function toProductId(value: unknown): number {
   const id = Number(value);
   if (!Number.isSafeInteger(id) || id <= 0) {
-    throw new BadRequestException(`\`product_id\` no admite \`${String(value)}\`.`);
+    throw new BadRequestException(
+      `\`product_id\` no admite \`${String(value)}\`.`,
+    );
   }
   return id;
 }
@@ -54,7 +57,11 @@ export class WishlistsService {
    * `limit` crudo. `orderBy`, `sortedBy` y `search` se ignoran (V-6): el
    * orden es siempre el más reciente primero.
    */
-  async findAll(userId: number, { limit, page }: GetWishlistDto, url = WISHLISTS_URL) {
+  async findAll(
+    userId: number,
+    { limit, page }: GetWishlistDto,
+    url = WISHLISTS_URL,
+  ) {
     if (!page) page = 1;
     if (!limit) limit = 30;
     try {
@@ -81,7 +88,9 @@ export class WishlistsService {
       readError(error);
     }
     if (!record) {
-      throw new NotFoundException(`El producto ${productId} no está en tu lista de deseos.`);
+      throw new NotFoundException(
+        `El producto ${productId} no está en tu lista de deseos.`,
+      );
     }
     return toProductDto(record);
   }
@@ -111,7 +120,10 @@ export class WishlistsService {
    * ignora la respuesta y escribe `!inWishlist` en su caché). Por usuario y
    * persistido (V-3).
    */
-  async toggle(userId: number, { product_id }: CreateWishlistDto): Promise<boolean> {
+  async toggle(
+    userId: number,
+    { product_id }: CreateWishlistDto,
+  ): Promise<boolean> {
     const productId = toProductId(product_id);
     try {
       return await toggleWishlist(userId, productId);

@@ -54,7 +54,9 @@ function readError(error: unknown): never {
 
 function assertId(id: number): void {
   if (!Number.isSafeInteger(id) || id <= 0) {
-    throw new NotFoundException(`No existe un motivo de reembolso con id ${id}.`);
+    throw new NotFoundException(
+      `No existe un motivo de reembolso con id ${id}.`,
+    );
   }
 }
 
@@ -90,7 +92,10 @@ export class RefundReasonsService {
   }
 
   /** Por slug, como el mock; inexistente ⇒ 404 (V-3). */
-  async getRefundReason(param: string, language?: string): Promise<RefundReason> {
+  async getRefundReason(
+    param: string,
+    language?: string,
+  ): Promise<RefundReason> {
     let record: RefundReasonRecord | null;
     try {
       record = await findRefundReasonBySlug(param);

@@ -30,4 +30,3 @@ export class TodayTotalOrderByStatus {
   localFacility: number;
   outForDelivery: number;
 }
-

@@ -87,7 +87,9 @@ const PRODUCT = {
   shop: { id: 6, name: 'Grocery Shop', slug: 'grocery-shop', logo: null },
 } as unknown as ProductRecord;
 
-function makeRecord(overrides: Partial<QuestionDetailRecord> = {}): QuestionDetailRecord {
+function makeRecord(
+  overrides: Partial<QuestionDetailRecord> = {},
+): QuestionDetailRecord {
   return {
     id: 68,
     userId: 2,
@@ -127,23 +129,54 @@ describe('QuestionService', () => {
       findMock.mockResolvedValue(makeRecord({ abusiveReportsCount: 1 }));
       const dto = JSON.parse(JSON.stringify(await service.findQuestion(68)));
       expect(Object.keys(dto)).toEqual([
-        'id', 'user_id', 'shop_id', 'product_id', 'question', 'answer', 'deleted_at', 'created_at',
-        'updated_at', 'positive_feedbacks_count', 'negative_feedbacks_count', 'my_feedback',
-        'abusive_reports_count', 'product', 'user',
+        'id',
+        'user_id',
+        'shop_id',
+        'product_id',
+        'question',
+        'answer',
+        'deleted_at',
+        'created_at',
+        'updated_at',
+        'positive_feedbacks_count',
+        'negative_feedbacks_count',
+        'my_feedback',
+        'abusive_reports_count',
+        'product',
+        'user',
       ]);
-      expect(dto).toMatchObject({ deleted_at: null, my_feedback: null, abusive_reports_count: 1 });
+      expect(dto).toMatchObject({
+        deleted_at: null,
+        my_feedback: null,
+        abusive_reports_count: 1,
+      });
       expect(Object.keys(dto.product)).toHaveLength(20);
       expect(Object.keys(dto.user)).toEqual([
-        'id', 'name', 'email', 'email_verified_at', 'created_at', 'updated_at', 'is_active',
-        'shop_id', 'email_verified',
+        'id',
+        'name',
+        'email',
+        'email_verified_at',
+        'created_at',
+        'updated_at',
+        'is_active',
+        'shop_id',
+        'email_verified',
       ]);
-      expect(dto.user).toMatchObject({ is_active: 1, shop_id: null, email_verified: false });
+      expect(dto.user).toMatchObject({
+        is_active: 1,
+        shop_id: null,
+        email_verified: false,
+      });
     });
 
     it('pregunta desconocida o id no válido ⇒ 404', async () => {
       findMock.mockResolvedValue(null);
-      await expect(service.findQuestion(999)).rejects.toBeInstanceOf(NotFoundException);
-      await expect(service.findQuestion(Number.NaN)).rejects.toBeInstanceOf(NotFoundException);
+      await expect(service.findQuestion(999)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+      await expect(service.findQuestion(Number.NaN)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
     });
   });
 
@@ -171,48 +204,77 @@ describe('QuestionService', () => {
 
     it('defaults page=1/limit=10', async () => {
       listMock.mockResolvedValue({ items: [], total: 0 });
-      const result = await service.findAllQuestions({ search: '' } as GetQuestionDto);
-      expect(listMock).toHaveBeenCalledWith(expect.objectContaining({ page: 1, limit: 10, question: undefined }));
+      const result = await service.findAllQuestions({
+        search: '',
+      } as GetQuestionDto);
+      expect(listMock).toHaveBeenCalledWith(
+        expect.objectContaining({ page: 1, limit: 10, question: undefined }),
+      );
       expect(result.per_page).toBe(10);
     });
 
     it('un número no válido devuelve la lista vacía sin consultar', async () => {
-      const result = await service.findAllQuestions({ product_id: 'abc' } as GetQuestionDto);
+      const result = await service.findAllQuestions({
+        product_id: 'abc',
+      } as GetQuestionDto);
       expect(listMock).not.toHaveBeenCalled();
       expect(result.total).toBe(0);
     });
 
     it('un fallo de conexión es 503', async () => {
       listMock.mockRejectedValue(
-        Object.assign(new Error('down'), { name: 'PrismaClientInitializationError' }),
+        Object.assign(new Error('down'), {
+          name: 'PrismaClientInitializationError',
+        }),
       );
-      await expect(service.findAllQuestions({} as GetQuestionDto)).rejects.toBeInstanceOf(
-        ServiceUnavailableException,
-      );
+      await expect(
+        service.findAllQuestions({} as GetQuestionDto),
+      ).rejects.toBeInstanceOf(ServiceUnavailableException);
     });
   });
 
   describe('create', () => {
-    const DTO = { question: 'zz', product_id: '1', shop_id: '6' } as unknown as CreateQuestionDto;
+    const DTO = {
+      question: 'zz',
+      product_id: '1',
+      shop_id: '6',
+    } as unknown as CreateQuestionDto;
 
     it('el autor es quien llama', async () => {
       createMock.mockResolvedValue(makeRecord({ answer: null }));
       const result = await service.create(DTO, CUSTOMER);
-      expect(createMock).toHaveBeenCalledWith({ userId: 2, productId: 1, shopId: 6, question: 'zz' });
+      expect(createMock).toHaveBeenCalledWith({
+        userId: 2,
+        productId: 1,
+        shopId: 6,
+        question: 'zz',
+      });
       expect(result.answer).toBeNull();
     });
 
     it('ids no válidos ⇒ 400 sin escribir; errores del repositorio ⇒ 404/400', async () => {
       await expect(
-        service.create({ ...DTO, shop_id: 'x' } as unknown as CreateQuestionDto, CUSTOMER),
+        service.create(
+          { ...DTO, shop_id: 'x' } as unknown as CreateQuestionDto,
+          CUSTOMER,
+        ),
       ).rejects.toBeInstanceOf(BadRequestException);
       expect(createMock).not.toHaveBeenCalled();
       createMock.mockRejectedValueOnce(new RecordNotFoundError('products', 1));
-      await expect(service.create(DTO, CUSTOMER)).rejects.toBeInstanceOf(NotFoundException);
-      createMock.mockRejectedValueOnce(
-        new InvalidFieldValueError('questions', 'shop_id', 9, 'tienda del producto 1'),
+      await expect(service.create(DTO, CUSTOMER)).rejects.toBeInstanceOf(
+        NotFoundException,
       );
-      await expect(service.create(DTO, CUSTOMER)).rejects.toBeInstanceOf(BadRequestException);
+      createMock.mockRejectedValueOnce(
+        new InvalidFieldValueError(
+          'questions',
+          'shop_id',
+          9,
+          'tienda del producto 1',
+        ),
+      );
+      await expect(service.create(DTO, CUSTOMER)).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
     });
   });
 
@@ -223,12 +285,19 @@ describe('QuestionService', () => {
       answerMock.mockResolvedValue(makeRecord({ answer: 'Nueva' }));
       const result = await service.update(
         68,
-        { id: 68, answer: 'Nueva', question: '¿Son orgánicas?' } as unknown as UpdateQuestionDto,
+        {
+          id: 68,
+          answer: 'Nueva',
+          question: '¿Son orgánicas?',
+        } as unknown as UpdateQuestionDto,
         OWNER,
       );
       expect(ownerMock).toHaveBeenCalledWith(6);
       expect(staffMock).not.toHaveBeenCalled();
-      expect(answerMock).toHaveBeenCalledWith(68, { answer: 'Nueva', question: '¿Son orgánicas?' });
+      expect(answerMock).toHaveBeenCalledWith(68, {
+        answer: 'Nueva',
+        question: '¿Son orgánicas?',
+      });
       expect(result.answer).toBe('Nueva');
     });
 
@@ -246,7 +315,11 @@ describe('QuestionService', () => {
       ownerMock.mockResolvedValue(1);
       staffMock.mockResolvedValue(true);
       answerMock.mockResolvedValue(makeRecord({ answer: 'Del staff' }));
-      const result = await service.update(47, { answer: 'Del staff' } as UpdateQuestionDto, CUSTOMER);
+      const result = await service.update(
+        47,
+        { answer: 'Del staff' } as UpdateQuestionDto,
+        CUSTOMER,
+      );
       expect(staffMock).toHaveBeenCalledWith(2, 1);
       expect(answerMock).toHaveBeenCalledWith(47, { answer: 'Del staff' });
       expect(result.answer).toBe('Del staff');
@@ -256,9 +329,15 @@ describe('QuestionService', () => {
       findMock.mockResolvedValue(makeRecord());
       ownerMock.mockResolvedValue(1);
       staffMock.mockResolvedValue(false);
-      const update = service.update(68, { answer: 'x' } as UpdateQuestionDto, CUSTOMER);
+      const update = service.update(
+        68,
+        { answer: 'x' } as UpdateQuestionDto,
+        CUSTOMER,
+      );
       await expect(update).rejects.toBeInstanceOf(ForbiddenException);
-      await expect(update).rejects.toThrow('Solo el dueño o el staff de la tienda pueden responder esta pregunta.');
+      await expect(update).rejects.toThrow(
+        'Solo el dueño o el staff de la tienda pueden responder esta pregunta.',
+      );
       expect(staffMock).toHaveBeenCalledWith(2, 6);
       expect(answerMock).not.toHaveBeenCalled();
     });
@@ -266,7 +345,11 @@ describe('QuestionService', () => {
     it('si la consulta de staff pierde la conexión ⇒ 503', async () => {
       findMock.mockResolvedValue(makeRecord());
       ownerMock.mockResolvedValue(1);
-      staffMock.mockRejectedValue(Object.assign(new Error('down'), { name: 'PrismaClientKnownRequestError' }));
+      staffMock.mockRejectedValue(
+        Object.assign(new Error('down'), {
+          name: 'PrismaClientKnownRequestError',
+        }),
+      );
       await expect(
         service.update(68, { answer: 'x' } as UpdateQuestionDto, CUSTOMER),
       ).rejects.toBeInstanceOf(ServiceUnavailableException);
@@ -282,7 +365,9 @@ describe('QuestionService', () => {
       for (const who of [CUSTOMER, OWNER, ADMIN]) {
         expect((await service.delete(68, who)).id).toBe(68);
       }
-      await expect(service.delete(68, user(5, ['customer']))).rejects.toBeInstanceOf(ForbiddenException);
+      await expect(
+        service.delete(68, user(5, ['customer'])),
+      ).rejects.toBeInstanceOf(ForbiddenException);
       expect(deleteMock).toHaveBeenCalledTimes(3);
     });
 
@@ -290,14 +375,18 @@ describe('QuestionService', () => {
       findMock.mockResolvedValue(makeRecord({ userId: 4, shopId: 1 }));
       ownerMock.mockResolvedValue(1);
       staffMock.mockResolvedValue(true);
-      await expect(service.delete(68, CUSTOMER)).rejects.toBeInstanceOf(ForbiddenException);
+      await expect(service.delete(68, CUSTOMER)).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
       expect(staffMock).not.toHaveBeenCalled();
       expect(deleteMock).not.toHaveBeenCalled();
     });
 
     it('pregunta inexistente ⇒ 404', async () => {
       findMock.mockResolvedValue(null);
-      await expect(service.delete(68, ADMIN)).rejects.toBeInstanceOf(NotFoundException);
+      await expect(service.delete(68, ADMIN)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
     });
   });
 });

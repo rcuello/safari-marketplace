@@ -25,7 +25,10 @@ import { toShopDto } from 'src/shops/shops.service';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { toProfileDto } from 'src/users/user-dto.mapper';
 import { CreateOwnershipTransferDto } from './dto/create-ownership-transfer.dto';
-import { GetOwnershipTransferDto, RefundPolicyPaginator } from './dto/get-ownership-transfer.dto';
+import {
+  GetOwnershipTransferDto,
+  RefundPolicyPaginator,
+} from './dto/get-ownership-transfer.dto';
 import { TransferShopOwnershipDto } from './dto/transfer-shop-ownership.dto';
 import { UpdateOwnershipTransferDto } from './dto/update-ownership-transfer.dto';
 import { OwnershipTransfer } from './entities/ownership-transfer.entity';
@@ -74,13 +77,16 @@ function readError(error: unknown): never {
   throw new InternalServerErrorException(getUserFriendlyMessage(error));
 }
 
-const isAdmin = (user: CurrentUserPayload): boolean => user.permissions.includes('super_admin');
+const isAdmin = (user: CurrentUserPayload): boolean =>
+  user.permissions.includes('super_admin');
 
 /** Un id de ruta que no es entero positivo no existe: 404 sin tocar la base. */
 function toRouteId(value: unknown): number {
   const id = Number(value);
   if (!Number.isSafeInteger(id) || id <= 0) {
-    throw new NotFoundException(`No existe una transferencia con id ${String(value)}.`);
+    throw new NotFoundException(
+      `No existe una transferencia con id ${String(value)}.`,
+    );
   }
   return id;
 }
@@ -110,7 +116,9 @@ export class OwnershipTransferService {
     const { transaction_identifier } = parseSearch(search);
     const size = Number(limit);
     const input = {
-      ...(transaction_identifier !== undefined && { transactionIdentifier: transaction_identifier }),
+      ...(transaction_identifier !== undefined && {
+        transactionIdentifier: transaction_identifier,
+      }),
       ...(shop_id !== undefined && { shopId: toBodyId('shop_id', shop_id) }),
       ...(!isAdmin(user) && { participantId: user.sub }),
       page: Number(page) || 1,
@@ -129,7 +137,10 @@ export class OwnershipTransferService {
   }
 
   /** Por `transaction_identifier`, como lo pide el admin. Inexistente o ajeno para el dueño ⇒ 404. */
-  async getOwnershipTransfer(identifier: string, user: CurrentUserPayload): Promise<OwnershipTransfer> {
+  async getOwnershipTransfer(
+    identifier: string,
+    user: CurrentUserPayload,
+  ): Promise<OwnershipTransfer> {
     let record: OwnershipTransferDetailRecord | null;
     try {
       record = await findOwnershipTransferByIdentifier(identifier);
@@ -137,7 +148,10 @@ export class OwnershipTransferService {
       readError(error);
     }
     const visible =
-      record && (isAdmin(user) || record.previousOwnerId === user.sub || record.currentOwnerId === user.sub);
+      record &&
+      (isAdmin(user) ||
+        record.previousOwnerId === user.sub ||
+        record.currentOwnerId === user.sub);
     if (!visible) {
       throw new NotFoundException(`No existe una transferencia ${identifier}.`);
     }
@@ -145,7 +159,10 @@ export class OwnershipTransferService {
   }
 
   /** Solicitud `pending` (solo super admin, lo exige el guard). No toca la tienda. */
-  async create(dto: CreateOwnershipTransferDto, user: CurrentUserPayload): Promise<OwnershipTransfer> {
+  async create(
+    dto: CreateOwnershipTransferDto,
+    user: CurrentUserPayload,
+  ): Promise<OwnershipTransfer> {
     const input = {
       shopId: toBodyId('shop_id', dto.shop_id),
       currentOwnerId: toBodyId('vendor_id', dto.vendor_id),
@@ -160,7 +177,10 @@ export class OwnershipTransferService {
   }
 
   /** Cambia `status`/`message` (solo super admin). Status fuera del CHECK ⇒ 400; inexistente ⇒ 404. */
-  async update(id: unknown, dto: UpdateOwnershipTransferDto): Promise<OwnershipTransfer> {
+  async update(
+    id: unknown,
+    dto: UpdateOwnershipTransferDto,
+  ): Promise<OwnershipTransfer> {
     const transferId = toRouteId(id);
     try {
       return toTransferDto(
@@ -188,7 +208,10 @@ export class OwnershipTransferService {
    * transacción. Devuelve la tienda con `owner` = el dueño nuevo, que es lo
    * que lee el toast del admin.
    */
-  async transferShopOwnership(dto: TransferShopOwnershipDto, user: CurrentUserPayload): Promise<Shop> {
+  async transferShopOwnership(
+    dto: TransferShopOwnershipDto,
+    user: CurrentUserPayload,
+  ): Promise<Shop> {
     const input = {
       shopId: toBodyId('shop_id', dto.shop_id),
       vendorId: toBodyId('vendor_id', dto.vendor_id),

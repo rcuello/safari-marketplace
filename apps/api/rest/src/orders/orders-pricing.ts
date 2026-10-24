@@ -82,7 +82,7 @@ export interface CouponCandidate extends PricingCoupon {
  */
 export function isCouponApplicable(
   coupon: CouponCandidate,
-  { amount, shopIds, at }: { amount: Decimal; shopIds: number[]; at: Date }
+  { amount, shopIds, at }: { amount: Decimal; shopIds: number[]; at: Date },
 ): boolean {
   const t = at.getTime();
   return (
@@ -107,7 +107,10 @@ export function hasAddress(address: unknown): boolean {
  * `sale_price ?? price` de la fila viva e ignora el del cliente; una línea con
  * variación acepta el del cliente solo dentro de `[min_price, max_price]`.
  */
-function unitPriceOf(line: PricingLine, product: PricingProduct | undefined): Decimal | null {
+function unitPriceOf(
+  line: PricingLine,
+  product: PricingProduct | undefined,
+): Decimal | null {
   const quantity = Number(line.order_quantity);
   if (
     !product ||
@@ -121,8 +124,15 @@ function unitPriceOf(line: PricingLine, product: PricingProduct | undefined): De
   }
   if (line.variation_option_id != null) {
     const price = Number(line.unit_price);
-    if (!Number.isFinite(price) || product.minPrice === null || product.maxPrice === null) return null;
-    return price >= product.minPrice && price <= product.maxPrice ? new Decimal(price) : null;
+    if (
+      !Number.isFinite(price) ||
+      product.minPrice === null ||
+      product.maxPrice === null
+    )
+      return null;
+    return price >= product.minPrice && price <= product.maxPrice
+      ? new Decimal(price)
+      : null;
   }
   const price = product.salePrice ?? product.price;
   return price === null ? null : new Decimal(price);
@@ -132,7 +142,11 @@ function unitPriceOf(line: PricingLine, product: PricingProduct | undefined): De
 function deliveryFeeOf(amount: Decimal, input: PricingInput): Decimal {
   const zero = new Decimal(0);
   if (!input.hasShippingAddress) return zero;
-  if (input.settings.freeShipping && amount.gte(input.settings.freeShippingAmount)) return zero;
+  if (
+    input.settings.freeShipping &&
+    amount.gte(input.settings.freeShippingAmount)
+  )
+    return zero;
   if (input.coupon?.type === 'free_shipping') return zero;
   if (!input.shipping) return zero;
   switch (input.shipping.type) {
@@ -187,9 +201,19 @@ export function priceOrder(input: PricingInput): PricingResult {
   }
 
   const amount = lines.reduce((sum, l) => sum.plus(l.subtotal), new Decimal(0));
-  const salesTax = input.tax ? amount.times(input.tax.rate).dividedBy(100) : new Decimal(0);
+  const salesTax = input.tax
+    ? amount.times(input.tax.rate).dividedBy(100)
+    : new Decimal(0);
   const deliveryFee = deliveryFeeOf(amount, input);
   const discount = discountOf(amount, input.coupon);
   const total = amount.plus(salesTax).plus(deliveryFee).minus(discount);
-  return { lines, amount, salesTax, deliveryFee, discount, total, unavailable: [...unavailable] };
+  return {
+    lines,
+    amount,
+    salesTax,
+    deliveryFee,
+    discount,
+    total,
+    unavailable: [...unavailable],
+  };
 }

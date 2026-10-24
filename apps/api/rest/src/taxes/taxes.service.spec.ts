@@ -75,13 +75,20 @@ describe('TaxesService', () => {
     listMock.mockResolvedValue([]);
     await service.findAll({ search: 'name:IVA' });
     await service.findAll({});
-    expect(listMock.mock.calls).toEqual([[{ name: 'IVA' }], [{ name: undefined }]]);
+    expect(listMock.mock.calls).toEqual([
+      [{ name: 'IVA' }],
+      [{ name: undefined }],
+    ]);
   });
 
   it('findOne: 404 si no existe o el id es inválido, sin tocar el driver en el segundo caso', async () => {
     findMock.mockResolvedValueOnce(null);
-    await expect(service.findOne(999)).rejects.toBeInstanceOf(NotFoundException);
-    await expect(service.findOne(Number.NaN)).rejects.toBeInstanceOf(NotFoundException);
+    await expect(service.findOne(999)).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+    await expect(service.findOne(Number.NaN)).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
     expect(findMock).toHaveBeenCalledTimes(1);
   });
 
@@ -104,7 +111,12 @@ describe('TaxesService', () => {
 
   it('rate no numérico ⇒ 400 (el repositorio rechaza NaN)', async () => {
     createMock.mockRejectedValue(
-      new InvalidFieldValueError('taxes', 'rate', Number.NaN, 'taxes_rate_check'),
+      new InvalidFieldValueError(
+        'taxes',
+        'rate',
+        Number.NaN,
+        'taxes_rate_check',
+      ),
     );
     await expect(
       service.create({ name: 'x', rate: 'abc' } as unknown as CreateTaxDto),

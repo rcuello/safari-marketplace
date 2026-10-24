@@ -41,7 +41,9 @@ const deleteMock = jest.mocked(deleteRefundPolicy);
 
 const NOW = new Date('2026-10-21T00:00:00Z');
 
-function makeRecord(overrides: Partial<RefundPolicyRecord> = {}): RefundPolicyRecord {
+function makeRecord(
+  overrides: Partial<RefundPolicyRecord> = {},
+): RefundPolicyRecord {
   return {
     id: 2,
     title: 'Customer Return Policy',
@@ -90,7 +92,11 @@ describe('RefundPoliciesService', () => {
     it('traduce la query del shop a target y status con AND (V-1)', async () => {
       listMock.mockResolvedValue({ items: [], total: 0 });
       await service.findAllRefundPolicies(
-        query({ searchJoin: 'and', limit: '10', search: 'target:customer;status:approved' }),
+        query({
+          searchJoin: 'and',
+          limit: '10',
+          search: 'target:customer;status:approved',
+        }),
       );
       expect(listMock).toHaveBeenCalledWith({
         target: 'customer',
@@ -112,7 +118,9 @@ describe('RefundPoliciesService', () => {
     });
 
     it('shop_id mal formado no consulta y devuelve página vacía', async () => {
-      const page = await service.findAllRefundPolicies(query({ search: 'shop_id:abc' }));
+      const page = await service.findAllRefundPolicies(
+        query({ search: 'shop_id:abc' }),
+      );
       expect(listMock).not.toHaveBeenCalled();
       expect(page.total).toBe(0);
     });
@@ -121,9 +129,9 @@ describe('RefundPoliciesService', () => {
   describe('getRefundPolicy', () => {
     it('por slug; inexistente ⇒ 404 (V-3)', async () => {
       findMock.mockResolvedValueOnce(makeRecord());
-      expect(Object.keys(await service.getRefundPolicy('customer-return-policy'))).toEqual(
-        MOCK_KEYS,
-      );
+      expect(
+        Object.keys(await service.getRefundPolicy('customer-return-policy')),
+      ).toEqual(MOCK_KEYS);
       findMock.mockResolvedValueOnce(null);
       await expect(service.getRefundPolicy('no-existe')).rejects.toBeInstanceOf(
         NotFoundException,
@@ -162,13 +170,19 @@ describe('RefundPoliciesService', () => {
         ),
       );
       await expect(
-        service.create({ title: 'x', target: 'admin' } as CreateRefundPolicyDto),
+        service.create({
+          title: 'x',
+          target: 'admin',
+        } as CreateRefundPolicyDto),
       ).rejects.toBeInstanceOf(BadRequestException);
     });
 
     it('update ignora el slug del body y devuelve la fila', async () => {
       updateMock.mockResolvedValue(makeRecord({ status: 'pending' }));
-      const out = await service.update(2, { status: 'pending', slug: 'otro' } as never);
+      const out = await service.update(2, {
+        status: 'pending',
+        slug: 'otro',
+      } as never);
       expect(updateMock).toHaveBeenCalledWith(2, { status: 'pending' });
       expect(out).toMatchObject({ status: 'pending' });
     });
@@ -176,8 +190,12 @@ describe('RefundPoliciesService', () => {
     it('remove devuelve la fila; ids mal formados o inexistentes ⇒ 404', async () => {
       deleteMock.mockResolvedValueOnce(makeRecord());
       expect(Object.keys(await service.remove(2))).toEqual(MOCK_KEYS);
-      await expect(service.remove(Number.NaN)).rejects.toBeInstanceOf(NotFoundException);
-      deleteMock.mockRejectedValueOnce(new RecordNotFoundError('refund_policies', 9));
+      await expect(service.remove(Number.NaN)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+      deleteMock.mockRejectedValueOnce(
+        new RecordNotFoundError('refund_policies', 9),
+      );
       await expect(service.remove(9)).rejects.toBeInstanceOf(NotFoundException);
     });
   });

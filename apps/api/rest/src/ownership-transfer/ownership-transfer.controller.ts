@@ -42,7 +42,10 @@ export class OwnershipTransferController {
     @Body() createOwnershipTransferDto: CreateOwnershipTransferDto,
     @CurrentUser() user: CurrentUserPayload,
   ): Promise<OwnershipTransfer> {
-    return this.ownershipTransferService.create(createOwnershipTransferDto, user);
+    return this.ownershipTransferService.create(
+      createOwnershipTransferDto,
+      user,
+    );
   }
 
   @Get()

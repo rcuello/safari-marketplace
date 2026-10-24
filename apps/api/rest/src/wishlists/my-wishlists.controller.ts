@@ -23,7 +23,10 @@ export class MyWishlistsController {
 
   // Get All
   @Get()
-  findAll(@Query() query: GetWishlistDto, @CurrentUser() user: CurrentUserPayload) {
+  findAll(
+    @Query() query: GetWishlistDto,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
     return this.myWishlistService.findAll(user.sub, query);
   }
   // Get single

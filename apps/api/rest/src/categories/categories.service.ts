@@ -293,7 +293,7 @@ export class CategoriesService {
    */
   async update(
     id: number,
-    updateCategoryDto: UpdateCategoryDto
+    updateCategoryDto: UpdateCategoryDto,
   ): Promise<Category> {
     if (!Number.isSafeInteger(id) || id <= 0) {
       throw new NotFoundException(`No existe una categoría con id ${id}.`);
