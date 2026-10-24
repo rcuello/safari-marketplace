@@ -85,7 +85,7 @@ arriba.
 | US | Título | Releasable solo | Depende de | LOC est. |
 |----|--------|-----------------|------------|----------|
 | [US-76](./76-parches-menores-dependencias.md) ✅ | Parches y versiones menores (db, scraper, axios, next-auth). Implementada el 2026-10-24; vitest sigue en 4.1.11 | Sí | ninguna | ~30 (manifiestos y lockfiles) |
-| [US-77](./77-nestjs-9-a-10.md) | NestJS 9 → 10 y TypeScript 5 en la API | Sí | ninguna | ~150 |
+| [US-77](./77-nestjs-9-a-10.md) ✅ | NestJS 9 → 10 y TypeScript 5 en la API. Implementada el 2026-10-24; sin cambios de código; los errores HTTP cambian el orden de sus claves (aceptado) | Sí | ninguna | ~150 |
 | [US-78](./78-nestjs-10-a-11.md) | NestJS 10 → 11 (Express 5) | Sí | US-77 | ~150 |
 | [US-79](./79-nestjs-11-a-12.md) | NestJS 11 → 12 | Sí | US-78, DA-2 | ~100 |
 | [US-80](./80-next-13-a-14.md) | Next 13.5 → 14.2 en shop y admin, con React 18 | Sí | ninguna | ~150 |
