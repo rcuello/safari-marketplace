@@ -1,15 +1,17 @@
-import { Injectable } from '@nestjs/common';
-import { createMessage, listMessages } from '@safari/db';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { createMessage, listMessages, markConversationSeen, type ConversationDetailRecord } from '@safari/db';
 import { CurrentUserPayload } from 'src/auth/decorators/current-user.decorator';
 import { paginate } from 'src/common/pagination/paginate';
 import { toWriteHttpException } from 'src/common/errors/domain-error.mapper';
-import { toMessageDto } from 'src/conversations/conversation-dto.mapper';
+import { toConversationDto, toMessageDto, toViewer } from 'src/conversations/conversation-dto.mapper';
 import {
   findVisibleConversation,
   readError,
+  toConversationId,
 } from 'src/conversations/conversations.service';
 import { GetConversationsDto } from 'src/conversations/dto/get-conversations.dto';
 import { CreateMessageDto } from './dto/create-message.dto';
+import { Conversation } from 'src/conversations/entities/conversation.entity';
 import { Message } from './entities/message.entity';
 
 /**
@@ -55,6 +57,7 @@ export class MessagesService {
       const { items, total } = await listMessages(conversation.id, {
         page: Number(page),
         limit: Number(limit),
+        readerId: user.sub,
       });
       return {
         data: items.map((m) => toMessageDto(m, user.sub)),
@@ -63,5 +66,24 @@ export class MessagesService {
     } catch (error) {
       readError(error);
     }
+  }
+
+  /**
+   * Marca la conversación como leída por quien llama (US-64) y la devuelve
+   * proyectada, ya con `unseen: 0`. El admin ignora la respuesta. Ajena,
+   * inexistente o id no numérico ⇒ 404, sin escribir nada.
+   */
+  async markSeen(param: string, user: CurrentUserPayload): Promise<Conversation> {
+    const id = toConversationId(param);
+    let record: ConversationDetailRecord | null;
+    try {
+      record = await markConversationSeen(id, toViewer(user));
+    } catch (error) {
+      readError(error);
+    }
+    if (!record) {
+      throw new NotFoundException(`No existe una conversación con id ${id}.`);
+    }
+    return toConversationDto(record, user.sub);
   }
 }

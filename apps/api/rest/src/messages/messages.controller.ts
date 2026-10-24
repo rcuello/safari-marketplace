@@ -30,3 +30,19 @@ export class MessagesController {
     return this.messagesService.getMessages(param, query, user);
   }
 }
+
+/**
+ * `POST /messages/seen/:id` (US-64): el admin marca leída una CONVERSACIÓN.
+ * Manda el id desnudo como cuerpo (`1`); se ignora y cuenta el de la ruta.
+ * `main.ts` monta un parser JSON no estricto solo para esta ruta, porque el
+ * estricto rechaza un primitivo con 400 antes de llegar aquí.
+ */
+@Controller('messages/seen')
+export class MessageSeenController {
+  constructor(private readonly messagesService: MessagesService) {}
+
+  @Post(':id')
+  markSeen(@Param('id') id: string, @CurrentUser() user: CurrentUserPayload) {
+    return this.messagesService.markSeen(id, user);
+  }
+}

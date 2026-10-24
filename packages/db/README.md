@@ -387,12 +387,21 @@ el usuario, la tienda (`ShopRecord`) y `latestMessage` (o `null`), y
   visible.
 - **`findOrCreateConversation(userId, shopId)`**: upsert por el par. Una
   tienda inexistente da `InvalidReferenceError`.
-- **`listMessages(conversationId)`**: `id DESC`, paginado; una
-  conversación inexistente da `RecordNotFoundError`.
+- **`listMessages(conversationId, {page, limit, readerId})`**: `id DESC`,
+  paginado; una conversación inexistente da `RecordNotFoundError`.
+  `readerId` solo trae la lectura de ese usuario a la conversación embebida.
 - **`createMessage`**: inserta y fija `conversations.updated_at = now()` en
   un `$transaction`. Un cuerpo vacío da `InvalidFieldValueError`.
+- **`markConversationSeen(id, viewer)`** (US-64): upsert de
+  `conversation_reads.last_seen_at = now()`; repetirla solo mueve la marca.
+  Devuelve la conversación con esa lectura, o `null` si no existe o no es
+  visible, sin escribir nada.
 
-`unseen` no vive aquí: depende de quién consulta y lo calcula la API.
+`unseen` no vive aquí: depende de quién consulta y lo calcula la API. Lo que
+sí trae cada `ConversationDetailRecord` es `lastSeenAt`, la última lectura
+de quien consulta (`viewer.userId`, o `readerId` en los mensajes): `null`
+si nunca la marcó o si la consulta no tiene lector. Sale de una sola consulta
+por página, como `latestMessage`.
 
 ### Estados de pedido (US-57, Épico 46) — `order-statuses.repository.ts`
 

@@ -364,8 +364,16 @@ y sus mensajes.
 - **`latest_message` y `unseen` no son columnas.** El mock los traía
   incoherentes: el `latest_message` de la 1 decía el mensaje 2 con el texto
   del 5, y el de la 6 apuntaba a un mensaje que no existe. La API los
-  calcula. `unseen` es provisional hasta que exista `messages/seen`: vale
-  1 si el último mensaje es de otro usuario.
+  calcula. `unseen` depende de quién consulta (ver abajo).
+- **Estado de lectura: `conversation_reads`** (US-64). Una fila por
+  (conversación, usuario) con `last_seen_at`, la última vez que ese
+  participante la leyó (`POST /messages/seen/:id`); calco de
+  `store_notice_read`. Va por participante porque cliente y tienda tienen
+  cada uno su «sin leer». Arranca vacía: el mock no trae lecturas. Para
+  quien consulta, `unseen` vale 0 si no hay mensajes, si el último es suyo o
+  si su `last_seen_at` es igual o posterior al `created_at` de ese mensaje;
+  1 en cualquier otro caso. Con el seed queda como antes: el admin ve 0 en
+  las dos conversaciones y el dueño de la tienda 7, 1 en la 1.
 - **Fechas sin zona.** La conversación 6 trae `"2023-03-21 15:00:08"`. El
   generador la fija en **UTC** (le añade la `Z`). El mock, en cambio, la
   interpretaba con la zona del proceso Node: en un equipo en UTC−5 salía

@@ -9,7 +9,7 @@
 **Épico:** ninguno (US standalone). Nace del «NO incluye» de
 [US-56](./46-api-sin-mocks-json/56-conversations-messages-postgres.md).
 **Fecha:** 2026-10-22
-**Status:** Listo para ejecución
+**Status:** ✅ Implementada (2026-10-23)
 **Depende de:** US-56 (crea `conversations`/`messages`, la regla provisional de
 `unseen` y el mapper que esta US cambia). Comparte con el Épico 46
 `db/schema.sql`, `schema.prisma`, `records.ts` y el barrel, así que **no puede
@@ -233,3 +233,148 @@ Feature: Estado de lectura de las conversaciones
   2023, así que cualquier lectura actual los cubre.
 - Mencionar en el reporte `orders/seen` y `notify-log-seen`: son otras dos
   rutas «seen» del admin que dan 404 y quedan fuera.
+
+## Evidencia (2026-10-23)
+
+**Línea base** (API recién arrancada sobre `main` `0ac7c83`):
+
+```
+base store_owner@demo.com: lista [1:1 6:0] · detalle 1 → 1 · mensajes 1 → 1
+base admin@demo.com:       lista [1:0 6:0] · detalle 1 → 0 · mensajes 1 → 0
+POST /messages/seen/1  cuerpo 1   → 400 {"message":"Unexpected token '1', \"1\" is not valid JSON"}
+POST /messages/seen/1  cuerpo "1" → 400
+POST /messages/seen/1  cuerpo {}  → 404
+POST /messages/seen/1  sin cuerpo → 404
+```
+
+**Hallazgo y decisión.** Lo que manda el admin no es un 404 sino un
+**400**:
+
+- `HttpClient` (axios 1.7.7) envía el id desnudo (`1`) con `Content-Type:
+  application/json`.
+- El parser JSON estricto de Nest/Express rechaza un primitivo antes de
+  llegar al enrutado.
+- Una ruta nueva sin más habría dejado la llamada real del admin en 400.
+
+El dueño eligió montar un parser **no estricto solo en
+`/api/messages/seen`**. Va en `main.ts`, antes del estricto, que encuentra
+el cuerpo ya leído y no hace nada. Lo envuelve una función anónima porque
+Nest omite su propio `jsonParser` si encuentra en la pila otra capa con ese
+nombre. El resto de la API sigue estricto:
+
+```
+POST /api/token con cuerpo 1 → 400   (después del cambio)
+```
+
+**CA-1** (`just db-reset` + `psql`):
+
+```
+conversation_reads|0 · conversations|2 · messages|5 · users|11 · ownership_transfers|6
+$ npx prisma validate
+The schema at prisma\schema.prisma is valid 🚀
+$ npx prisma migrate diff --from-config-datasource --to-schema ./prisma/schema.prisma --exit-code
+No difference detected.
+EXIT=0
+```
+
+`ConversationRead` (`@@id([conversationId, userId])`, índice
+`conversation_reads_user_idx`) con inversas `reads` en `Conversation` y
+`conversationReads` en `User`. Seed sin cambios: la tabla arranca vacía.
+
+**CA-2** (token de `store_owner@demo.com`):
+
+```
+seen/1 cuerpo 1     → 201 id 1 unseen 0   psql: 1|1|2026-10-23 23:44:29.241+00
+seen/1 cuerpo "1"   → 201 id 1 unseen 0   psql: 1|1|2026-10-23 23:44:31.239+00 · filas 1
+seen/1 sin cuerpo   → 201
+seen/1 cuerpo {}    → 201 id 1 unseen 0
+seen/1 cuerpo 6     → 201 · filas: 1/1   (cuenta el id de la ruta)
+```
+
+Repetir la llamada mueve `last_seen_at` y no duplica la fila. La respuesta
+es la conversación proyectada con `unseen: 0`; el admin la ignora.
+
+**CA-3** (`unseen` de la conversación 1 en `GET /conversations`, `GET
+/conversations/1` y el `conversation` embebido de `GET
+/messages/conversations/1`):
+
+```
+1. reposo           store_owner: lista [1:1 6:0] · detalle 1 → 1 · mensajes 1 → 1 | admin: 0 · 0 · 0
+POST seen/1 (owner) → 201
+2. tras seen        store_owner: lista [1:0 6:0] · detalle 1 → 0 · mensajes 1 → 0 | admin: 0 · 0 · 0
+POST messages/conversations/1 (admin, "zz-us64") → 201
+3. mensaje nuevo    store_owner: lista [1:1 6:0] · detalle 1 → 1 · mensajes 1 → 1 | admin: 0 · 0 · 0
+POST seen/1 (owner) → 201
+4. tras seen        store_owner: lista [1:0 6:0] · detalle 1 → 0 · mensajes 1 → 0 | admin: 0 · 0 · 0
+psql: 1|1|last_seen_at 23:45:05.751 | último mensaje 23:45:01.312
+```
+
+**CA-4:**
+
+```
+cliente seen/1      → 404 No existe una conversación con id 1.   · filas 0
+admin seen/999      → 404 No existe una conversación con id 999.
+admin seen/abc      → 404 No existe una conversación con id abc.
+sin token seen/1    → 401                                         · filas 0
+```
+
+**Restauración del reposo:** `DELETE FROM messages WHERE id > 5`,
+`DELETE FROM conversation_reads`, `UPDATE conversations SET updated_at =
+'2023-03-11T03:17:23Z' WHERE id = 1` y `setval('messages_id_seq', 5)`.
+Resultado: `messages 5 · conversation_reads 0 · updated_at
+2023-03-11 03:17:23+00`.
+
+**CA-5:**
+
+```
+$ just db-check
+ Test Files  32 passed (32)
+      Tests  399 passed (399)
+$ cd apps/api/rest && npx jest
+Test Suites: 34 passed, 34 total
+Tests:       533 passed, 533 total
+$ npx tsc --noEmit -p tsconfig.json   → exit 0
+$ just build-api                      → Done in 19.87s.
+$ just verify
+OK   API    :9001/api/settings  200  5503B  316ms
+OK   Shop   :3003/en  200  190788B  439ms  cards:30
+OK   Admin  :3002/en/login  200  72821B  42ms  cards:1
+```
+
+Antes (US-63): 396 tests en `db-check` y 530 en jest. Se suman 3 casos en
+`conversations.integration.test.ts`, 1 en `conversations.service.spec.ts` y
+2 en `messages.service.spec.ts`.
+
+Comparación de CA-2 de US-56 (admin, línea base contra después, en reposo):
+
+```
+conversations:  texto idéntico salvo timestamps del db-reset: true · marcas sustituidas 4/4 OK
+conversation-1: texto idéntico salvo timestamps del db-reset: true · marcas sustituidas 2/2 OK
+```
+
+La única diferencia son los `created_at`/`updated_at` 2026 de las tiendas
+embebidas. La línea base se tomó antes del `db-reset`, y el seed les pone el
+`now()` del reset: es la divergencia conocida de `CLAUDE.md`.
+
+**Incidencia durante la verificación:** `just build-api` vacía `dist/`
+mientras la API en modo watch se reinicia. El watch no encuentra
+`dist/main` y no vuelve a arrancar solo. La primera espera de `verify` dio
+la tienda sin API (`ECONNREFUSED`); tras reiniciar `just api-dev`, `verify`
+pasó. Es la misma interacción que anoté en US-63; no es de esta US.
+
+**Decisiones de implementación:**
+
+- `ConversationDetailRecord` gana `lastSeenAt`: la lectura de quien
+  consulta. Sale de una sola consulta por página (`conversationRead.findMany`
+  con los ids de la página y el `userId`), en paralelo con `latestMessage`.
+  No hay N+1.
+- `listMessages` recibe `readerId` para la conversación embebida.
+  `createMessage` usa al autor como lector: su propio mensaje nunca cuenta
+  como sin leer.
+- Ruta nueva en un segundo controlador, `MessageSeenController`
+  (`messages/seen`), dentro del módulo `messages`. El existente no cambia de
+  prefijo. La visibilidad es la de US-56: ajena o inexistente da 404 sin
+  escribir.
+
+**Notas para el reporte:** `orders/seen` y `notify-log-seen` son las otras
+dos rutas «seen» del admin, y siguen dando 404 (NO incluye).

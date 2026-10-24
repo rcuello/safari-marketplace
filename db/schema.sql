@@ -887,8 +887,8 @@ CREATE TABLE IF NOT EXISTS questions (
 -- latest_message y unseen NO son columnas: la API los calcula desde los
 -- mensajes (el mock los traía incoherentes). Escribir un mensaje fija
 -- conversations.updated_at con el reloj de Node, para que la conversación
--- suba al ordenar por updated_at. Sin estado de lectura todavía
--- (messages/seen no existe). Sin triggers (reloj único, ver abajo).
+-- suba al ordenar por updated_at. El estado de lectura vive aparte, en
+-- conversation_reads (US-64). Sin triggers (reloj único, ver abajo).
 -- =====================================================================
 CREATE TABLE IF NOT EXISTS conversations (
     id          bigserial    PRIMARY KEY,
@@ -907,6 +907,27 @@ CREATE TABLE IF NOT EXISTS messages (
     body             text         NOT NULL CHECK (length(btrim(body)) > 0),
     created_at       timestamptz  NOT NULL DEFAULT now(),
     updated_at       timestamptz  NOT NULL DEFAULT now()
+);
+
+
+-- =====================================================================
+-- Estado de lectura de las conversaciones (US-64) — conversation_reads.
+--
+-- Calco de store_notice_read: una fila por (conversación, usuario) con la
+-- última vez que ese participante la leyó (POST /messages/seen/:id). Va por
+-- participante y no como columna de conversations porque la leen al menos
+-- dos personas (el cliente y quien atiende la tienda), cada una con su
+-- propio «sin leer». La API calcula unseen comparando last_seen_at con el
+-- created_at del último mensaje; los dos salen de now() de clock.ts.
+--
+-- Arranca VACÍA: el mock no trae estado de lectura. Las dos FK en CASCADE:
+-- sin conversación o sin usuario, la marca no tiene a quién pertenecer.
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS conversation_reads (
+    conversation_id  bigint       NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+    user_id          bigint       NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    last_seen_at     timestamptz  NOT NULL,
+    PRIMARY KEY (conversation_id, user_id)
 );
 
 
@@ -1232,6 +1253,8 @@ CREATE INDEX IF NOT EXISTS conversations_shop_idx         ON conversations (shop
 CREATE INDEX IF NOT EXISTS messages_conversacion_idx
     ON messages (conversation_id, created_at DESC, id DESC);
 CREATE INDEX IF NOT EXISTS messages_user_idx              ON messages (user_id);
+-- Lecturas (US-64): la PK cubre conversation_id; user_id sirve a su FK.
+CREATE INDEX IF NOT EXISTS conversation_reads_user_idx    ON conversation_reads (user_id);
 
 -- Órdenes (US-58): el listado del cliente filtra customer_id, el de una
 -- tienda shop_id y el detalle embebe hijas por parent_id. order_products

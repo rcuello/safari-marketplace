@@ -4,8 +4,8 @@
  * `types: ["node","express","multer"]` y deja fuera los globals de jest.
  */
 /**
- * Tests unitarios de `MessagesService` (US-56). Solo se mockea el acceso a
- * datos.
+ * Tests unitarios de `MessagesService` (US-56) y de `markSeen` (US-64). Solo
+ * se mockea el acceso a datos.
  */
 import 'reflect-metadata';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
@@ -14,6 +14,7 @@ import {
   findConversationById,
   InvalidFieldValueError,
   listMessages,
+  markConversationSeen,
   type ConversationDetailRecord,
   type MessageDetailRecord,
   type ShopRecord,
@@ -28,11 +29,13 @@ jest.mock('@safari/db', () => ({
   findConversationById: jest.fn(),
   listMessages: jest.fn(),
   createMessage: jest.fn(),
+  markConversationSeen: jest.fn(),
 }));
 
 const findMock = jest.mocked(findConversationById);
 const listMock = jest.mocked(listMessages);
 const createMock = jest.mocked(createMessage);
+const seenMock = jest.mocked(markConversationSeen);
 
 const AT = new Date('2023-03-21T03:18:35.000Z');
 const ADMIN: CurrentUserPayload = {
@@ -43,7 +46,7 @@ const ADMIN: CurrentUserPayload = {
   exp: 0,
 };
 
-function makeConversation(): ConversationDetailRecord {
+function makeConversation(overrides: Partial<ConversationDetailRecord> = {}): ConversationDetailRecord {
   return {
     id: 1,
     userId: 3,
@@ -61,6 +64,8 @@ function makeConversation(): ConversationDetailRecord {
     },
     shop: { id: 7, ownerId: 1, name: 'Gadget Shop', slug: 'gadget-shop', isActive: true } as unknown as ShopRecord,
     latestMessage: { id: 5, conversationId: 1, userId: 3, body: 'New test', createdAt: AT, updatedAt: AT },
+    lastSeenAt: null,
+    ...overrides,
   };
 }
 
@@ -92,7 +97,7 @@ describe('MessagesService', () => {
       const result = JSON.parse(
         JSON.stringify(await service.getMessages('1', { limit: '10' } as unknown as GetConversationsDto, ADMIN)),
       );
-      expect(listMock).toHaveBeenCalledWith(1, { page: 1, limit: 10 });
+      expect(listMock).toHaveBeenCalledWith(1, { page: 1, limit: 10, readerId: 3 });
       expect(result).toMatchObject({ total: 1, current_page: 1, last_page: 1, per_page: '10' });
       expect(result.first_page_url).toBe('http://localhost:5000/api/messages/conversations/1?limit=10&page=1');
       const m = result.data[0];
@@ -140,6 +145,24 @@ describe('MessagesService', () => {
         NotFoundException,
       );
       expect(createMock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('markSeen (US-64)', () => {
+    const OWNER: CurrentUserPayload = { ...ADMIN, sub: 1, permissions: ['store_owner', 'customer'] };
+
+    it('marca con la visibilidad de quien llama y devuelve la conversación con unseen 0', async () => {
+      seenMock.mockResolvedValue(makeConversation({ lastSeenAt: AT }));
+      const dto = await service.markSeen('1', OWNER);
+      expect(seenMock).toHaveBeenCalledWith(1, { userId: 1, seeAll: false });
+      expect(dto).toMatchObject({ id: '1', unseen: 0 });
+    });
+
+    it('ajena, inexistente o id no numérico ⇒ 404', async () => {
+      seenMock.mockResolvedValue(null);
+      await expect(service.markSeen('1', OWNER)).rejects.toBeInstanceOf(NotFoundException);
+      await expect(service.markSeen('abc', OWNER)).rejects.toBeInstanceOf(NotFoundException);
+      expect(seenMock).toHaveBeenCalledTimes(1);
     });
   });
 });

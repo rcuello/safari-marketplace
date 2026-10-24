@@ -315,6 +315,7 @@ model User {
   transfersFrom       OwnershipTransfer[]  @relation("OwnershipTransferPreviousOwner")
   transfersTo         OwnershipTransfer[]  @relation("OwnershipTransferCurrentOwner")
   transfersCreated    OwnershipTransfer[]  @relation("OwnershipTransferCreator")
+  conversationReads   ConversationRead[]
 
   @@map("users")
 }
@@ -769,6 +770,7 @@ model Conversation {
   shop     Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   messages Message[]
+  reads    ConversationRead[]
 
   @@unique([userId, shopId])
   @@index([shopId], map: "conversations_shop_idx")
@@ -947,4 +949,17 @@ model OwnershipTransfer {
   @@index([previousOwnerId], map: "ownership_transfers_previous_idx")
   @@index([shopId], map: "ownership_transfers_shop_idx")
   @@map("ownership_transfers")
+}
+
+model ConversationRead {
+  conversationId BigInt   @map("conversation_id")
+  userId         BigInt   @map("user_id")
+  lastSeenAt     DateTime @map("last_seen_at") @db.Timestamptz(6)
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([conversationId, userId])
+  @@index([userId], map: "conversation_reads_user_idx")
+  @@map("conversation_reads")
 }

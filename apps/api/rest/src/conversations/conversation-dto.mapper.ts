@@ -15,12 +15,16 @@ export function toViewer(user: CurrentUserPayload): ConversationViewer {
 }
 
 /**
- * Regla provisional y declarada (US-56): sin `messages/seen` no hay estado
- * de lectura. `1` si el último mensaje es de otro; `0` si es de quien
- * pregunta o si no hay mensajes.
+ * `unseen` para quien consulta (US-64; reemplaza la regla provisional de
+ * US-56). `0` si no hay mensajes, si el último es suyo o si lo leyó: su
+ * `lastSeenAt` es igual o posterior al `created_at` del último mensaje. `1`
+ * en cualquier otro caso. Las dos marcas salen de `now()` de `clock.ts`.
  */
 function unseen(record: ConversationDetailRecord, viewerId: number): number {
-  return record.latestMessage && record.latestMessage.userId !== viewerId ? 1 : 0;
+  const latest = record.latestMessage;
+  if (!latest || latest.userId === viewerId) return 0;
+  if (record.lastSeenAt && latest.createdAt.getTime() <= record.lastSeenAt.getTime()) return 0;
+  return 1;
 }
 
 /**

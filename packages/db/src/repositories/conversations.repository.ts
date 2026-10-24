@@ -12,7 +12,9 @@
  * si no, las conversaciones propias (`userId`) y las de las tiendas que el
  * usuario posee (`shops.owner_id`). La decide la API; aquí es un filtro.
  *
- * `unseen` no vive aquí: depende de quién consulta y lo calcula la API.
+ * `unseen` no vive aquí: depende de quién consulta y lo calcula la API. Lo
+ * que sí sale de aquí es `lastSeenAt`, la última lectura de ese lector
+ * (`conversation_reads`, US-64), también en una sola consulta por página.
  */
 
 import { Prisma } from '../../generated/prisma/client/client';
@@ -45,6 +47,11 @@ export interface ConversationDetailRecord extends ConversationRecord {
   shop: ShopRecord;
   /** `null` si la conversación no tiene mensajes. */
   latestMessage: MessageRecord | null;
+  /**
+   * Última lectura de quien consulta (US-64). `null` si nunca la marcó o si
+   * la consulta no tiene lector.
+   */
+  lastSeenAt: Date | null;
 }
 
 export interface MessageDetailRecord extends MessageRecord {
@@ -103,8 +110,18 @@ async function _latestMessages(ids: bigint[]): Promise<Map<number, MessageRecord
   );
 }
 
-async function _toDetails(rows: ConversationPayload[]): Promise<ConversationDetailRecord[]> {
-  const latest = await _latestMessages(rows.map((r) => r.id));
+/** Última lectura de `readerId` en cada conversación, en una sola consulta. */
+async function _lastSeen(ids: bigint[], readerId?: number): Promise<Map<number, Date>> {
+  if (ids.length === 0 || readerId === undefined) return new Map();
+  const rows = await prisma.conversationRead.findMany({
+    where: { userId: readerId, conversationId: { in: ids } },
+  });
+  return new Map(rows.map((r) => [Number(r.conversationId), r.lastSeenAt]));
+}
+
+async function _toDetails(rows: ConversationPayload[], readerId?: number): Promise<ConversationDetailRecord[]> {
+  const ids = rows.map((r) => r.id);
+  const [latest, seen] = await Promise.all([_latestMessages(ids), _lastSeen(ids, readerId)]);
   return rows.map((row) => {
     const record = _toConversationRecord(row);
     return {
@@ -112,8 +129,19 @@ async function _toDetails(rows: ConversationPayload[]): Promise<ConversationDeta
       user: _toUserRecord(row.user),
       shop: _toShopRecord(row.shop),
       latestMessage: latest.get(record.id) ?? null,
+      lastSeenAt: seen.get(record.id) ?? null,
     };
   });
+}
+
+/** Una conversación por `where`, con la lectura de `readerId`; `null` si no está. */
+async function _findDetail(
+  where: Prisma.ConversationWhereInput,
+  readerId?: number
+): Promise<ConversationDetailRecord | null> {
+  const row = await prisma.conversation.findFirst({ where, include: CONVERSATION_INCLUDE });
+  if (!row) return null;
+  return (await _toDetails([row], readerId))[0];
 }
 
 export interface ListConversationsInput {
@@ -154,7 +182,7 @@ export async function listConversations(
     }),
     prisma.conversation.count({ where }),
   ]);
-  return { items: await _toDetails(rows), total };
+  return { items: await _toDetails(rows, input.viewer?.userId), total };
 }
 
 /** La conversación si existe y es visible para `viewer`; si no, `null`. */
@@ -162,12 +190,31 @@ export async function findConversationById(
   id: number,
   viewer?: ConversationViewer
 ): Promise<ConversationDetailRecord | null> {
+  return _findDetail({ id, ..._visibleWhere(viewer) }, viewer?.userId);
+}
+
+/**
+ * Marca la conversación como leída por `viewer` (US-64): upsert de
+ * `last_seen_at = now()`, así que repetirla solo mueve la marca. Devuelve la
+ * conversación con esa lectura, o `null` si no existe o no es visible para
+ * él, sin escribir nada.
+ */
+export async function markConversationSeen(
+  id: number,
+  viewer: ConversationViewer
+): Promise<ConversationDetailRecord | null> {
   const row = await prisma.conversation.findFirst({
     where: { id, ..._visibleWhere(viewer) },
     include: CONVERSATION_INCLUDE,
   });
   if (!row) return null;
-  return (await _toDetails([row]))[0];
+  const stamp = now();
+  await prisma.conversationRead.upsert({
+    where: { conversationId_userId: { conversationId: id, userId: viewer.userId } },
+    create: { conversationId: id, userId: viewer.userId, lastSeenAt: stamp },
+    update: { lastSeenAt: stamp },
+  });
+  return (await _toDetails([row], viewer.userId))[0];
 }
 
 /**
@@ -191,14 +238,17 @@ export async function findOrCreateConversation(
   }
 }
 
-/** Mensajes de una conversación, `id DESC`, con la conversación embebida. */
+/**
+ * Mensajes de una conversación, `id DESC`, con la conversación embebida. La
+ * visibilidad la comprueba la API antes; `readerId` solo trae su lectura.
+ */
 export async function listMessages(
   conversationId: number,
-  input: { page?: number; limit?: number } = {}
+  input: { page?: number; limit?: number; readerId?: number } = {}
 ): Promise<{ items: MessageDetailRecord[]; total: number }> {
   const page = Math.max(1, input.page ?? 1);
   const limit = input.limit ?? 15;
-  const conversation = await findConversationById(conversationId);
+  const conversation = await _findDetail({ id: conversationId }, input.readerId);
   if (!conversation) {
     throw new RecordNotFoundError('conversations', conversationId);
   }
@@ -237,7 +287,8 @@ export async function createMessage(input: {
         },
       }),
     ]);
-    const conversation = await findConversationById(input.conversationId);
+    // El lector es el autor: su propio mensaje nunca cuenta como sin leer.
+    const conversation = await _findDetail({ id: input.conversationId }, input.userId);
     if (!conversation) throw new RecordNotFoundError('conversations', input.conversationId);
     return { ..._toMessageRecord(row), conversation };
   } catch (error) {

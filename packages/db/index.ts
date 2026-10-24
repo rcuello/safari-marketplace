@@ -234,6 +234,7 @@ export {
   findOrCreateConversation,
   listConversations,
   listMessages,
+  markConversationSeen,
 } from './src/repositories/conversations.repository';
 export type {
   CreateQuestionInput,

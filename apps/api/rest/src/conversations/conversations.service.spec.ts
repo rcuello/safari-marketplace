@@ -81,6 +81,7 @@ function makeConversation(overrides: Partial<ConversationDetailRecord> = {}): Co
       createdAt: AT,
       updatedAt: AT,
     },
+    lastSeenAt: null,
     ...overrides,
   };
 }
@@ -128,6 +129,18 @@ describe('ConversationsService', () => {
       const dto = await service.getConversation('1', OWNER);
       expect(dto.unseen).toBe(0);
       expect(dto.latest_message).toBeNull();
+    });
+
+    it('US-64: la lectura apaga unseen y un mensaje posterior lo vuelve a encender', async () => {
+      findMock.mockResolvedValue(makeConversation({ lastSeenAt: AT }));
+      expect((await service.getConversation('1', OWNER)).unseen).toBe(0);
+      findMock.mockResolvedValue(makeConversation({ lastSeenAt: new Date(AT.getTime() + 1) }));
+      expect((await service.getConversation('1', OWNER)).unseen).toBe(0);
+      findMock.mockResolvedValue(makeConversation({ lastSeenAt: new Date(AT.getTime() - 1) }));
+      expect((await service.getConversation('1', OWNER)).unseen).toBe(1);
+      // El último mensaje es suyo: 0 aunque nunca la haya leído.
+      findMock.mockResolvedValue(makeConversation());
+      expect((await service.getConversation('1', ADMIN)).unseen).toBe(0);
     });
   });
 
