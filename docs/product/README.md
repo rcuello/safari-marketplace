@@ -211,6 +211,7 @@ US-66    El staff responde preguntas              → standalone ✅ (2026-10-23
 US-67    Mensaje del 409 por clave única          → standalone ✅ (2026-10-23) ← opción (c): mismo code, el mensaje nombra el campo
 US-68    Cupones del seed vigentes                → standalone ✅ (2026-10-23) ← opción (b) +5 años, decidida por el dueño; se aparta de la decisión 6 solo en las fechas
 US-69    Índices trigram que el ILIKE no usa      → standalone ✅ (2026-10-23) ← opción (a): trigram sobre la columna + VACUUM ANALYZE en db-migrate
+US-70    Login con Google opcional en el shop     → standalone ✅ (2026-10-24) ← DA-1..DA-3 (a); sin variables no hay proveedor ni botón; el stub D-11 de social-login-token sigue
 ```
 
 Las US-64 a US-69 salen de los «NO incluye» y hallazgos del Épico 46 (US-52

@@ -1,4 +1,5 @@
-import { signIn } from 'next-auth/react';
+import { getProviders, signIn } from 'next-auth/react';
+import { useEffect, useState } from 'react';
 import Logo from '@/components/ui/logo';
 import Alert from '@/components/ui/alert';
 import Input from '@/components/ui/forms/input';
@@ -33,6 +34,19 @@ function LoginForm() {
   const { mutate: login, isLoading, serverError, setServerError } = useLogin();
 
   const guestCheckout = settings?.guestCheckout;
+
+  // US-70: el botón de Google solo si el servidor registró el proveedor.
+  // Hasta que llega la respuesta (o si falla) no se renderiza.
+  const [googleEnabled, setGoogleEnabled] = useState(false);
+  useEffect(() => {
+    let active = true;
+    getProviders().then((providers) => {
+      if (active) setGoogleEnabled(Boolean(providers?.google));
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   function onSubmit({ email, password }: LoginUserInput) {
     login({
@@ -98,16 +112,18 @@ function LoginForm() {
         </span>
       </div>
       <div className="grid grid-cols-1 gap-4 mt-2">
-        <Button
-          className="!bg-social-google !text-light hover:!bg-social-google-hover"
-          disabled={isLoading}
-          onClick={() => {
-            signIn('google');
-          }}
-        >
-          <GoogleIcon className="w-4 h-4 ltr:mr-3 rtl:ml-3" />
-          {t('text-login-google')}
-        </Button>
+        {googleEnabled && (
+          <Button
+            className="!bg-social-google !text-light hover:!bg-social-google-hover"
+            disabled={isLoading}
+            onClick={() => {
+              signIn('google');
+            }}
+          >
+            <GoogleIcon className="w-4 h-4 ltr:mr-3 rtl:ml-3" />
+            {t('text-login-google')}
+          </Button>
+        )}
 
         <Button
           className="h-11 w-full !bg-gray-500 !text-light hover:!bg-gray-600 sm:h-12"

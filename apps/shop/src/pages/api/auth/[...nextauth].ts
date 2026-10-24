@@ -3,6 +3,20 @@ import NextAuth from 'next-auth';
 import FacebookProvider from 'next-auth/providers/facebook';
 import GoogleProvider from 'next-auth/providers/google';
 
+// Google es opcional (US-70): sin las dos variables no se registra y el
+// formulario de login no ofrece el botón (lo consulta con getProviders()).
+// Se leen de process.env y no con getEnv, que lanza y tumbaría todo
+// /api/auth/*. Si solo llega una, se avisa una vez por arranque, sin valores.
+const googleClientId = process.env.GOOGLE_CLIENT_ID;
+const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
+if (Boolean(googleClientId) !== Boolean(googleClientSecret)) {
+  console.warn(
+    `[next-auth] Login con Google deshabilitado: falta ${
+      googleClientId ? 'GOOGLE_CLIENT_SECRET' : 'GOOGLE_CLIENT_ID'
+    }.`
+  );
+}
+
 // For more information on each option (and a full list of options) go to
 // https://next-auth.js.org/configuration/options
 export default NextAuth({
@@ -12,10 +26,14 @@ export default NextAuth({
     //   clientId: getEnv('FACEBOOK_CLIENT_ID'),
     //   clientSecret: getEnv('FACEBOOK_CLIENT_SECRET'),
     // }),
-    GoogleProvider({
-      clientId: getEnv('GOOGLE_CLIENT_ID'),
-      clientSecret: getEnv('GOOGLE_CLIENT_SECRET'),
-    }),
+    ...(googleClientId && googleClientSecret
+      ? [
+          GoogleProvider({
+            clientId: googleClientId,
+            clientSecret: googleClientSecret,
+          }),
+        ]
+      : []),
   ],
 
   // The secret should be set to a reasonably long random string.

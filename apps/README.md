@@ -64,6 +64,15 @@ NEXTAUTH_URL=http://localhost:3003
 SECRET=<cualquier-cadena-para-desarrollo>
 ```
 
+`GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET` son **opcionales** (US-70). Si
+falta alguna, el shop no registra el proveedor de Google, `/api/auth/*`
+responde con normalidad y el formulario de login no muestra «Login with
+Google»; si solo hay una, el servidor del shop lo avisa al arrancar. Con las
+dos, el botón vuelve, pero el paso final es un stub de la API
+(`POST /api/social-login-token`, decisión 11 del Épico 19): devuelve un token
+fijo que la API no acepta, así que hoy el login con Google no deja al usuario
+autenticado.
+
 ### 2. Instalar dependencias
 
 Son **dos instalaciones separadas**: `api/rest` no forma parte del workspace de
