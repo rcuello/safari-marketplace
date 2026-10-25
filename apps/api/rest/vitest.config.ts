@@ -15,8 +15,9 @@ import { defineConfig } from 'vitest/config';
  *   tipos los da el `/// <reference types="vitest/globals" />` de cada spec,
  *   porque `tsconfig.json` fija `types` y no se toca.
  *
- * Los alias reproducen el `moduleNameMapper` del bloque `jest` que había en
- * `package.json`.
+ * Los alias reproducen el campo `imports` de `package.json` (US-90), pero
+ * apuntando a `src/` y no a `dist/`: la condición `types` de esos `imports`
+ * solo la lee `tsc`, y los tests corren sobre el código fuente.
  */
 export default defineConfig({
   plugins: [
@@ -28,10 +29,13 @@ export default defineConfig({
   resolve: {
     alias: [
       {
-        find: /^@db\/(.*)$/,
-        replacement: resolve(__dirname, 'src/db/pickbazar/$1'),
+        find: /^#db\/(.*)$/,
+        replacement: resolve(import.meta.dirname, 'src/db/pickbazar/$1'),
       },
-      { find: /^src\/(.*)$/, replacement: resolve(__dirname, 'src/$1') },
+      {
+        find: /^#src\/(.*)$/,
+        replacement: resolve(import.meta.dirname, 'src/$1'),
+      },
     ],
   },
   test: {

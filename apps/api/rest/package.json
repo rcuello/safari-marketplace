@@ -5,6 +5,17 @@
   "author": "",
   "private": true,
   "license": "UNLICENSED",
+  "type": "module",
+  "imports": {
+    "#db/*": {
+      "types": "./src/db/pickbazar/*",
+      "default": "./dist/db/pickbazar/*"
+    },
+    "#src/*": {
+      "types": "./src/*",
+      "default": "./dist/*"
+    }
+  },
   "scripts": {
     "prebuild": "rimraf dist",
     "build": "nest build",
@@ -12,7 +23,7 @@
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/main",
+    "start:prod": "node dist/main.js",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "vitest run",
     "test:watch": "vitest",
