@@ -74,7 +74,7 @@ arriba.
 
 | Gate | Cifra hoy |
 |---|---|
-| `cd apps/api/rest && npx jest` | 34 suites / 565 tests |
+| `cd apps/api/rest && npx vitest run` (era `npx jest` hasta US-88) | 34 archivos / 565 tests |
 | `just db-check` | 32 archivos / 412 tests |
 | Lint de la API sin escribir (`npx eslint "{src,apps,libs,test}/**/*.ts"`) | 0 problemas |
 | `cd packages/db && npm run lint` | 0 problemas |
@@ -92,11 +92,11 @@ arriba.
 | [US-81](./81-eslint-9-flat-config.md) | ESLint 9 con flat config y Prettier 3 en las tres apps | Sí | US-80, US-77 | ~250 |
 | [US-82](./82-next-14-a-16.md) | Next 14.2 → 16 en shop y admin, con React 18 | Sí | US-80, US-81 | ~250 |
 | [US-83](./83-react-19.md) | React 19 en shop y admin | Sí | US-82 | ~200 |
-| [US-84](./84-tanstack-query-shop.md) | react-query 3 → @tanstack/react-query 5 en el shop | Sí | US-80 | ~300 |
+| [US-84](./84-tanstack-query-shop.md) ✅ | react-query 3 → @tanstack/react-query 5 en el shop. Implementada el 2026-10-24 (5.104.1; sin el codemod oficial) | Sí | US-80 | ~300 |
 | [US-85](./85-tanstack-query-admin.md) | react-query 3 → @tanstack/react-query 5 en el admin | Sí | US-84 | ~450 |
 | [US-86](./86-tailwind-4.md) | Tailwind 3 → 4 en shop y admin | Sí | US-82 | ~300 |
 | [US-87](./87-stripe-sdks.md) | SDKs de Stripe (servidor y cliente) | Sí | US-78, US-83 | ~150 |
-| [US-88](./88-api-jest-a-vitest.md) | Tests de la API: de jest a Vitest (Nest 11, CommonJS) | Sí | US-78 | ~400 |
+| [US-88](./88-api-jest-a-vitest.md) ✅ | Tests de la API: de jest a Vitest (Nest 11, CommonJS). Implementada el 2026-10-24 (Vitest 4.1.11 + unplugin-swc; la red de tipos pasa a `tsc`) | Sí | US-78 | ~400 |
 | [US-89](./89-api-typescript-6.md) | TypeScript 6 en la API | Sí | US-88 | ~80 |
 | [US-90](./90-api-commonjs-a-esm.md) | La API de CommonJS a ESM | Sí | US-88, US-89 | ~750 |
 | [US-91](./91-nestjs-12-sobre-esm.md) | NestJS 11 → 12 sobre la API ya en ESM | Sí | US-90 | ~120 |
