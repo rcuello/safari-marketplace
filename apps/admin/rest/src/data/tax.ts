@@ -9,7 +9,7 @@ import {
 import { API_ENDPOINTS } from '@/data/client/api-endpoints';
 import { Tax } from '@/types';
 import { toast } from 'react-toastify';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { TaxQueryOptions } from '@/types';
 import { taxClient } from './client/tax';
 

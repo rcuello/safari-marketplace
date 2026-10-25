@@ -1,7 +1,7 @@
 import Button from '@/components/ui/button';
 import PasswordInput from '@/components/ui/forms/password-input';
 import type { ChangePasswordUserInput } from '@/types';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { Form } from '@/components/ui/forms/form';
 import { useChangePassword } from '@/framework/user';
 import * as yup from 'yup';

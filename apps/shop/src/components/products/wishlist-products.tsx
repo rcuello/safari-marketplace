@@ -1,6 +1,6 @@
 import ErrorMessage from '@/components/ui/error-message';
 import Image from 'next/image';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import Link from '@/components/ui/link';
 import Button from '@/components/ui/button';
 import { productPlaceholder } from '@/lib/placeholders';

@@ -1,6 +1,6 @@
 import { Image } from '@/components/ui/image';
 import { MapPin } from '@/components/icons/map-pin';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { formatAddress } from '@/lib/format-address';
 import { Routes } from '@/config/routes';
 import Link from '@/components/ui/link';

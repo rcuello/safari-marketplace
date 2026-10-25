@@ -13,7 +13,7 @@ import {
 import client from './client';
 import { API_ENDPOINTS } from './client/api-endpoints';
 import { toast } from 'react-toastify';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useUser } from '@/framework/user';
 import { useSettings } from '@/framework/settings';
 

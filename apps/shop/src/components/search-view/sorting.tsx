@@ -3,7 +3,7 @@ import Select from '@/components/ui/select/select';
 import { RadioGroup } from '@headlessui/react';
 import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useIsRTL } from '@/lib/locals';
 interface Plan {
   id: number | string;

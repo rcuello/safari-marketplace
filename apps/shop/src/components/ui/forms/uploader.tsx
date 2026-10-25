@@ -1,6 +1,6 @@
 import { useEffect, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { UploadIcon } from '@/components/icons/upload-icon';
 import Spinner from '@/components/ui/loaders/spinner/spinner';
 import { useUploads } from '@/framework/settings';

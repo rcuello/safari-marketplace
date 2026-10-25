@@ -1,4 +1,4 @@
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import Alert from '@/components/ui/alert';
 import { useAtom } from 'jotai';
 import { useOtpLogin, useSendOtpCode } from '@/framework/user';

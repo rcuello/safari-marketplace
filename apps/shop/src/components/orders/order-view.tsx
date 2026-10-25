@@ -5,7 +5,7 @@ import usePrice from '@/lib/use-price';
 import { formatAddress } from '@/lib/format-address';
 import { formatString } from '@/lib/format-string';
 import { Routes } from '@/config/routes';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useCart } from '@/store/quick-cart/cart.context';
 import { CheckMark } from '@/components/icons/checkmark';
 import { OrderItems } from '@/components/orders/order-items';

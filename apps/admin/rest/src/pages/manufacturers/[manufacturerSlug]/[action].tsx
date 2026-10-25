@@ -3,8 +3,8 @@ import ManufacturerCreateOrUpdateForm from '@/components/manufacturer/manufactur
 import ErrorMessage from '@/components/ui/error-message';
 import Loader from '@/components/ui/loader/loader';
 import { useRouter } from 'next/router';
-import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { useTranslation } from 'next-i18next/pages';
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations';
 import { adminOnly } from '@/utils/auth-utils';
 import { useManufacturerQuery } from '@/data/manufacturer';
 import { Config } from '@/config';

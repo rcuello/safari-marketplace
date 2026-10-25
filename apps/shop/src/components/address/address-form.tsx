@@ -4,7 +4,7 @@ import Label from '@/components/ui/forms/label';
 import Radio from '@/components/ui/forms/radio/radio';
 import { Controller } from 'react-hook-form';
 import TextArea from '@/components/ui/forms/text-area';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import * as yup from 'yup';
 import { useModalState } from '@/components/ui/modal/modal.context';
 import { Form } from '@/components/ui/forms/form';

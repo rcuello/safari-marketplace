@@ -1,13 +1,13 @@
 import ShopLayout from '@/components/layouts/shop';
 import StoreNoticeCreateOrUpdateForm from '@/components/store-notice/store-notice-form';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import {
   adminAndOwnerOnly,
   adminOnly,
   getAuthCredentials,
   hasAccess,
 } from '@/utils/auth-utils';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations';
 import { Routes } from '@/config/routes';
 import { useShopQuery } from '@/data/shop';
 import { useMeQuery } from '@/data/user';

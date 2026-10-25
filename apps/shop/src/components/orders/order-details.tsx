@@ -1,6 +1,6 @@
 import usePrice from '@/lib/use-price';
 import { formatAddress } from '@/lib/format-address';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import Link from '@/components/ui/link';
 import { Routes } from '@/config/routes';
 import { Eye } from '@/components/icons/eye-icon';

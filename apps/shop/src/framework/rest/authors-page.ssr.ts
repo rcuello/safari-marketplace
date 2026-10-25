@@ -1,6 +1,6 @@
 import type { SettingsQueryOptions, TypeQueryOptions } from '@/types';
 import type { GetStaticProps } from 'next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations';
 import { QueryClient, useQuery, dehydrate } from '@tanstack/react-query';
 import client from './client';
 import { API_ENDPOINTS } from './client/api-endpoints';

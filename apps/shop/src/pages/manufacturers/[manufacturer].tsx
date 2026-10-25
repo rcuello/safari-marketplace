@@ -11,7 +11,7 @@ import { motion } from 'framer-motion';
 import { useAtom } from 'jotai';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import StickyBox from 'react-sticky-box';
 import useLayout from '@/lib/hooks/use-layout';
 export { getStaticPaths, getStaticProps } from '@/framework/manufacturer.ssr';

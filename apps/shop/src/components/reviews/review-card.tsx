@@ -1,4 +1,4 @@
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { Menu, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 import cn from 'classnames';

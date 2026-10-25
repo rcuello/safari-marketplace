@@ -8,7 +8,7 @@ import { useFlashSale } from '@/framework/flash-sales';
 import { useWindowSize } from '@/lib/use-window-size';
 import type { FlashSale } from '@/types';
 import { isEmpty } from 'lodash';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
 export { getStaticPaths, getStaticProps };

@@ -7,7 +7,7 @@ import {
   keepPreviousData,
 } from '@tanstack/react-query';
 import { API_ENDPOINTS } from '@/data/client/api-endpoints';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { ShippingUpdateInput } from '@/types';
 import { toast } from 'react-toastify';
 import { Shipping } from '@/types';

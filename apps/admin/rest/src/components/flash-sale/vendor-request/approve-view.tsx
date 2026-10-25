@@ -4,7 +4,7 @@ import {
   useModalAction,
   useModalState,
 } from '@/components/ui/modal/modal.context';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useApproveVendorFlashSaleRequestMutation } from '@/data/flash-sale-vendor-request';
 
 const ApproveShopView = () => {

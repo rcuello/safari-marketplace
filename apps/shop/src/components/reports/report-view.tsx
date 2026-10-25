@@ -1,5 +1,5 @@
 import ErrorMessage from '@/components/ui/error-message';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import NotFound from '@/components/ui/not-found';
 import { useMyReports } from '@/framework/report';
 import { useIsRTL } from '@/lib/locals';

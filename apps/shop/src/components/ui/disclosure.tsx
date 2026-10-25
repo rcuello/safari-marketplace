@@ -1,6 +1,6 @@
 import { Disclosure as HeadlessDisclosure } from '@headlessui/react';
 import { ArrowDownIcon } from '@/components/icons/arrow-down';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 
 type DisclosureProps = {
   title: string;

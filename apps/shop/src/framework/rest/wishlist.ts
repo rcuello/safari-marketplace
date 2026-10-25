@@ -1,6 +1,6 @@
 import type { WishlistPaginator, WishlistQueryOptions } from '@/types';
 import axios from 'axios';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import {
   useInfiniteQuery,
   useMutation,

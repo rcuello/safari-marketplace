@@ -1,5 +1,5 @@
 import type { SubmitHandler } from 'react-hook-form';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { SendIcon } from '@/components/icons/send-icon';
 import { Form } from '@/components/ui/forms/form';
 import * as yup from 'yup';

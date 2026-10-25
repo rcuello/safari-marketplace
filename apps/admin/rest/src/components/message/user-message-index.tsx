@@ -1,5 +1,5 @@
 import Loader from '@/components/ui/loader/loader';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useRouter } from 'next/router';
 import cn from 'classnames';
 import isEmpty from 'lodash/isEmpty';

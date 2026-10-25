@@ -1,7 +1,7 @@
 import usePrice from '@/lib/use-price';
 import dayjs from 'dayjs';
 import cn from 'classnames';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import StatusColor from './status-color';
 
 type OrderCardProps = {

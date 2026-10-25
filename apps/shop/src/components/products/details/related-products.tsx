@@ -1,5 +1,5 @@
 import cn from 'classnames';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import ProductCard from '../cards/card';
 interface Props {
   products: any;

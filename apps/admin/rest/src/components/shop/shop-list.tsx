@@ -15,7 +15,7 @@ import {
 } from '@/types';
 import { OWNERSHIP_TRANSFER_STATUS } from '@/utils/constants';
 import { useIsRTL } from '@/utils/locals';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import Image from 'next/image';
 import { useState } from 'react';
 import { getAuthCredentials } from '@/utils/auth-utils';

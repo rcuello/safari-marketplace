@@ -1,7 +1,7 @@
 import Layout from '@/components/layouts/admin';
 import CreateOrUpdateShippingForm from '@/components/shipping/shipping-form';
-import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { useTranslation } from 'next-i18next/pages';
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations';
 
 export default function CreateShippingPage() {
   const { t } = useTranslation();

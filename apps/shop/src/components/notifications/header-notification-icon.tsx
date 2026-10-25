@@ -14,7 +14,7 @@ import rangeMap from '@/lib/range-map';
 import { NotifyLogs } from '@/types';
 import classNames from 'classnames';
 import { isEmpty } from 'lodash';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useCallback, useMemo } from 'react';
 import { useWindowSize } from 'react-use';
 import { twMerge } from 'tailwind-merge';

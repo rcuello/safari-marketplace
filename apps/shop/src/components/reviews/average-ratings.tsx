@@ -1,4 +1,4 @@
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import RatingsBadge from '@/components/ui/rating-badge';
 import RatingProgressBar from '@/components/ui/rating-progress-bar';
 import type { RatingCount } from '@/types';

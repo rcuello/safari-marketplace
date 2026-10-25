@@ -5,8 +5,8 @@ import { LIMIT } from '@/utils/constants';
 import { Fragment, useState } from 'react';
 import ErrorMessage from '@/components/ui/error-message';
 import Loader from '@/components/ui/loader/loader';
-import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { useTranslation } from 'next-i18next/pages';
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations';
 import ShopLayout from '@/components/layouts/shop';
 import { useRouter } from 'next/router';
 import {

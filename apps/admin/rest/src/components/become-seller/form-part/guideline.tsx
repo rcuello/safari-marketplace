@@ -8,7 +8,7 @@ import Input from '@/components/ui/input';
 import TextArea from '@/components/ui/text-area';
 import classNames from 'classnames';
 import { isEmpty } from 'lodash';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useFieldArray } from 'react-hook-form';
 
 const Guideline = ({

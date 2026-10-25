@@ -1,6 +1,6 @@
 import type { Order } from '@/types';
 import Button from '@/components/ui/button';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import Collapse from 'rc-collapse';
 import 'rc-collapse/assets/index.css';
 import OrderCard from './order-card';

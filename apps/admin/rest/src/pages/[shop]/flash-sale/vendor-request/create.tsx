@@ -1,6 +1,6 @@
 import CreateOrUpdateVendorProductsRequestFlashSaleForm from '@/components/flash-sale/vendor-request/flash-sale-vendor-product-request-form';
-import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { useTranslation } from 'next-i18next/pages';
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations';
 import ShopLayout from '@/components/layouts/shop';
 import {
   adminAndOwnerOnly,

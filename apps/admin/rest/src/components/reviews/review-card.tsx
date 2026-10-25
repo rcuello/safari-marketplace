@@ -2,7 +2,7 @@ import Image from 'next/image';
 import { LikeIcon } from '@/components/icons/like-icon';
 import { DislikeIcon } from '@/components/icons/dislike-icon';
 import { useModalAction } from '@/components/ui/modal/modal.context';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { CheckedIcon } from '@/components/icons/checked';
 import isEmpty from 'lodash/isEmpty';
 

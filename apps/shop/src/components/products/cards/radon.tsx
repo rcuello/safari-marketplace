@@ -1,7 +1,7 @@
 import Link from '@/components/ui/link';
 import { Image } from '@/components/ui/image';
 import cn from 'classnames';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { Routes } from '@/config/routes';
 import { Product } from '@/types';
 import { productPlaceholder } from '@/lib/placeholders';

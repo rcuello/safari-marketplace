@@ -7,7 +7,7 @@ import { getErrorMessage } from '@/utils/form-error';
 import Description from '@/components/ui/description';
 import Card from '@/components/common/card';
 import { useRouter } from 'next/router';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import FileInput from '@/components/ui/file-input';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { manufacturerValidationSchema } from './manufacturer-validation-schema';

@@ -17,7 +17,7 @@ import Checkbox from '@/components/ui/checkbox/checkbox';
 import SelectInput from '@/components/ui/select-input';
 import { useEffect } from 'react';
 import { Product, Settings } from '@/types';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useAttributesQuery } from '@/data/attributes';
 import FileInput from '@/components/ui/file-input';
 import ValidationError from '@/components/ui/form-validation-error';

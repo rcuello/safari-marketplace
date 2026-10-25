@@ -1,4 +1,4 @@
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import type { CreateAbuseReportInput } from '@/types';
 import { useCreateAbuseReport } from '@/framework/product';
 import { Form } from '@/components/ui/forms/form';

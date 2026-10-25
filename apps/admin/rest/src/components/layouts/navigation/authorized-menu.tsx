@@ -4,7 +4,7 @@ import { Menu, Transition } from '@headlessui/react';
 import Avatar from '@/components/common/avatar';
 import Link from '@/components/ui/link';
 import { siteSettings } from '@/settings/site.settings';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useMeQuery } from '@/data/user';
 import { getIcon } from '@/utils/get-icon';
 import * as sidebarIcons from '@/components/icons/sidebar';

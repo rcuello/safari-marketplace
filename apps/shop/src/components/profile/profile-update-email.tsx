@@ -1,7 +1,7 @@
 import Button from '@/components/ui/button';
 import Card from '@/components/ui/cards/card';
 import Input from '@/components/ui/forms/input';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import pick from 'lodash/pick';
 import { Form } from '@/components/ui/forms/form';
 import { useUpdateEmail } from '@/framework/user';

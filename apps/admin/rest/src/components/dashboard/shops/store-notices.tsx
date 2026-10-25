@@ -1,5 +1,5 @@
 import ErrorMessage from '@/components/ui/error-message';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useStoreNoticesLoadMoreQuery } from '@/data/store-notice';
 import { SortOrder, StoreNotice } from '@/types';
 import StoreNoticeCard from '@/components/store-notice/store-notice-card';

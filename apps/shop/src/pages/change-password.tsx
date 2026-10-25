@@ -1,5 +1,5 @@
 import Card from '@/components/ui/cards/card';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import Seo from '@/components/seo/seo';
 import ChangePasswordForm from '@/components/auth/change-password-form';
 import DashboardLayout from '@/layouts/_dashboard';

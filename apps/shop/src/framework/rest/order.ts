@@ -17,7 +17,7 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { toast } from 'react-toastify';
 import { useModalAction } from '@/components/ui/modal/modal.context';
 import { API_ENDPOINTS } from './client/api-endpoints';

@@ -2,7 +2,7 @@ import Button from '@/components/ui/button';
 import { useModalAction } from '@/components/ui/modal/modal.context';
 import { customerContactAtom } from '@/contexts/checkout';
 import { useAtom } from 'jotai';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useState } from 'react';
 import PhoneInput from 'react-phone-input-2';
 import 'react-phone-input-2/lib/bootstrap.css';

@@ -1,6 +1,6 @@
 import Pagination from '@/components/ui/pagination';
 import { Table, AlignType } from '@/components/ui/table';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 import TitleWithSort from '@/components/ui/title-with-sort';

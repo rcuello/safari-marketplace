@@ -4,7 +4,7 @@ import usePrice from '@/lib/use-price';
 import { drawerAtom } from '@/store/drawer-atom';
 import { useCart } from '@/store/quick-cart/cart.context';
 import { useAtom } from 'jotai';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 
 const CartCounterButton = () => {
   const { t } = useTranslation();

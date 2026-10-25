@@ -15,7 +15,7 @@ import classNames from 'classnames';
 import { eachMinuteOfInterval, isBefore } from 'date-fns';
 import { useAtom } from 'jotai';
 import { InferGetStaticPropsType } from 'next';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
 import { useCallback, useEffect, useMemo } from 'react';

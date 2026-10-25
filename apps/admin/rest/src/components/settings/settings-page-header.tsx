@@ -2,7 +2,7 @@ import { useRouter } from 'next/router';
 import { siteSettings } from '@/settings/site.settings';
 import Link from '@/components/ui/link';
 import cn from 'classnames';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useScrollableSlider } from '@/utils/use-scrollable-slider';
 import { ChevronRight } from '../icons/chevron-right';
 import { ChevronLeft } from '../icons/chevron-left';

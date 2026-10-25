@@ -1,6 +1,6 @@
 import Link from '@/components/ui/link';
 import { siteSettings } from '@/config/site';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useRouter } from 'next/router';
 import classNames from 'classnames';
 import { useLogout, useUser } from '@/framework/user';

@@ -1,6 +1,6 @@
 import { TrashIcon } from '@/components/icons/trash';
 import Button from '@/components/ui/button';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import cn from 'classnames';
 
 type ConfirmationCardProps = {

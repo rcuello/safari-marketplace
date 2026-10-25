@@ -1,6 +1,6 @@
 import { PlusIcon } from '@/components/icons/plus-icon';
 import CartIcon from '@/components/icons/cart';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import cn from 'classnames';
 
 type Props = {

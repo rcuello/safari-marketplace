@@ -5,8 +5,8 @@ import Loader from '@/components/ui/loader/loader';
 import { useRefundPolicyQuery } from '@/data/refund-policy';
 import { RefundPolicy } from '@/types';
 import { adminOnly } from '@/utils/auth-utils';
-import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { useTranslation } from 'next-i18next/pages';
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations';
 import { useRouter } from 'next/router';
 
 const ViewRefundPolicyPage = () => {

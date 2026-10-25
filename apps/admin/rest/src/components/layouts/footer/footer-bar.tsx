@@ -1,7 +1,7 @@
 import Link from '@/components/ui/link';
 import { Routes } from '@/config/routes';
 import { useSettings } from '@/contexts/settings.context';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 
 export type IFooterProp = {
   className?: string;

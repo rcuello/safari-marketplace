@@ -1,5 +1,5 @@
 import type { GetServerSideProps } from 'next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations';
 import invariant from 'tiny-invariant';
 import { addApolloState, initializeApollo } from './client';
 import { CategoriesDocument } from './gql/categories.graphql';

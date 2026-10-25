@@ -4,7 +4,7 @@ import * as sidebarIcons from '@/components/icons/sidebar';
 import { useUI } from '@/contexts/ui.context';
 import { useRouter } from 'next/router';
 import cn from 'classnames';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { ChevronRight } from '@/components/icons/chevron-right';
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';

@@ -15,7 +15,7 @@ import { siteSettings } from '@/settings/site.settings';
 import { ServerInfo, Settings, Shipping, Tax } from '@/types';
 import { useConfirmRedirectIfDirty } from '@/utils/confirmed-redirect-if-dirty';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useRouter } from 'next/router';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';

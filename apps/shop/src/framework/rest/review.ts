@@ -1,6 +1,6 @@
 import { useModalAction } from '@/components/ui/modal/modal.context';
 import type { Review, ReviewPaginator, ReviewQueryOptions } from '@/types';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import {
   keepPreviousData,
   useMutation,

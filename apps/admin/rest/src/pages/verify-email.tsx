@@ -9,9 +9,9 @@ import { Routes } from '@/config/routes';
 import { useRouter } from 'next/router';
 import AuthPageLayout from '@/components/layouts/auth-layout';
 
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { GetStaticProps } from 'next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations';
 import { getEmailVerified } from '@/utils/auth-utils';
 
 export const getStaticProps: GetStaticProps = async ({ locale }) => ({

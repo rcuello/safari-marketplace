@@ -2,7 +2,7 @@ import ValidationError from '@/components/ui/form-validation-error';
 import TooltipLabel from '@/components/ui/tooltip-label';
 import { Switch } from '@headlessui/react';
 import classNames from 'classnames';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { Control, Controller } from 'react-hook-form';
 import { twMerge } from 'tailwind-merge';
 

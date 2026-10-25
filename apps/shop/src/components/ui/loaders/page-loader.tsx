@@ -1,5 +1,5 @@
 import cn from 'classnames';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 interface PageLoaderProps {
   text?: string;
 }

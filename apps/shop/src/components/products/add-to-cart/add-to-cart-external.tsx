@@ -3,7 +3,7 @@ import { cartAnimation } from '@/lib/cart-animation';
 import { useCart } from '@/store/quick-cart/cart.context';
 import { generateCartItem } from '@/store/quick-cart/generate-cart-item';
 import Button from '@/components/ui/button';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';

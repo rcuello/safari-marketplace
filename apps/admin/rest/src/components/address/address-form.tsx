@@ -3,7 +3,7 @@ import Input from '@/components/ui/input';
 import Label from '@/components/ui/label';
 import Radio from '@/components/ui/radio/radio';
 import TextArea from '@/components/ui/text-area';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import * as yup from 'yup';
 import { useModalState } from '@/components/ui/modal/modal.context';
 import { Form } from '@/components/ui/form/form';

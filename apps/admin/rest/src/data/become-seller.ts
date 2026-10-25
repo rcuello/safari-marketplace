@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { API_ENDPOINTS } from '@/data/client/api-endpoints';
 import { BecomeSeller } from '@/types';
 import { becomeSellerClient } from '@/data/client/become-seller';

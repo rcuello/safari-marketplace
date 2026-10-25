@@ -1,6 +1,6 @@
 import cn from 'classnames';
 import { SelectConversationIcon } from '@/components/icons/select-conversation';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 
 interface Props {
   className?: string;

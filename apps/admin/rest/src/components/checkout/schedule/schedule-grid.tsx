@@ -3,7 +3,7 @@ import { useAtom } from 'jotai';
 import ScheduleCard from './schedule-card';
 import { deliveryTimeAtom } from '@/contexts/checkout';
 import { useEffect } from 'react';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useSettings } from '@/contexts/settings.context';
 
 interface ScheduleProps {

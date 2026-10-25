@@ -1,5 +1,5 @@
 import { FilterIcon } from '@/components/icons/filter-icon';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useAtom } from 'jotai';
 import { drawerAtom } from '@/store/drawer-atom';
 import GroupsDropdownMenu from './menu/groups-menu';

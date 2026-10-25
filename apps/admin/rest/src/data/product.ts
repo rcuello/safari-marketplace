@@ -1,6 +1,6 @@
 import Router, { useRouter } from 'next/router';
 import { toast } from 'react-toastify';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import {
   useQuery,
   useMutation,

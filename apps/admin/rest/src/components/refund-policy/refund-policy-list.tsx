@@ -6,7 +6,7 @@ import { AlignType, Table } from '@/components/ui/table';
 import TitleWithSort from '@/components/ui/title-with-sort';
 import { Routes } from '@/config/routes';
 import { MappedPaginatorInfo, RefundPolicy, SortOrder } from '@/types';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useRouter } from 'next/router';
 import { useState } from 'react';
 import { NoDataFound } from '@/components/icons/no-data-found';

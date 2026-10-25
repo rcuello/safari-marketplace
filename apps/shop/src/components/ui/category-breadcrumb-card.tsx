@@ -3,7 +3,7 @@ import { Image } from '@/components/ui/image';
 import CategoryImg from '@/assets/category-img.png';
 import ArrowForward from '@/assets/arrow-forward.png';
 import BreadcrumbButton from '@/components/ui/breadcrumb-button';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 
 interface BreadcrumbButtonProps {
   text: string;

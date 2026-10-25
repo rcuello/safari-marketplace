@@ -3,7 +3,7 @@ import { QueryClient, dehydrate } from '@tanstack/react-query';
 import { API_ENDPOINTS } from './client/api-endpoints';
 import client from './client';
 import { QueryOptions, SettingsQueryOptions } from '@/types';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations';
 
 export const getStaticProps: GetStaticProps = async ({ locale }) => {
   const queryClient = new QueryClient();

@@ -7,8 +7,8 @@ import AdminsList from '@/components/user/user-admin-list';
 import { useVendorsQuery } from '@/data/user';
 import { SortOrder } from '@/types';
 import { adminOnly } from '@/utils/auth-utils';
-import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { useTranslation } from 'next-i18next/pages';
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations';
 import { useState } from 'react';
 
 export default function Vendors() {

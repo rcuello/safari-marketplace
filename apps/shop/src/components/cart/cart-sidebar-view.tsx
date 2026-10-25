@@ -9,7 +9,7 @@ import { Routes } from '@/config/routes';
 import usePrice from '@/lib/use-price';
 import { useCart } from '@/store/quick-cart/cart.context';
 import { formatString } from '@/lib/format-string';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useAtom } from 'jotai';
 import { drawerAtom } from '@/store/drawer-atom';
 

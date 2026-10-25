@@ -8,7 +8,7 @@ import { mapPaginatorData } from '@/utils/data-mappers';
 import { API_ENDPOINTS } from './client/api-endpoints';
 import { QuestionPaginator, QuestionQueryOptions } from '@/types';
 import { toast } from 'react-toastify';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { questionClient } from '@/data/client/question';
 
 export const useQuestionsQuery = (options: Partial<QuestionQueryOptions>) => {

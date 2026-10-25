@@ -1,5 +1,5 @@
 import Button from '@/components/ui/button';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useGetPaymentIntent } from '@/framework/order';
 import { Order } from '@/types';
 

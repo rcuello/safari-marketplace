@@ -6,7 +6,7 @@ import {
 } from '@/components/ui/modal/modal.context';
 import { useApproveCouponMutation } from '@/data/coupon';
 import { useDisApproveShopMutation } from '@/data/shop';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 
 const ApproveCouponView = () => {
   const { t } = useTranslation();

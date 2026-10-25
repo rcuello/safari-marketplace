@@ -10,7 +10,7 @@ import TextArea from '@/components/ui/text-area';
 import { bytesToMegabytes } from '@/utils/bytes-to-megabytes';
 import classNames from 'classnames';
 import { isEmpty } from 'lodash';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useFieldArray } from 'react-hook-form';
 
 const StartSelling = ({

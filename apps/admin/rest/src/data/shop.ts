@@ -4,7 +4,7 @@ import { API_ENDPOINTS } from '@/data/client/api-endpoints';
 import { Shop, ShopPaginator, ShopQueryOptions } from '@/types';
 import { adminOnly, getAuthCredentials, hasAccess } from '@/utils/auth-utils';
 import { mapPaginatorData } from '@/utils/data-mappers';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import Router, { useRouter } from 'next/router';
 import {
   useMutation,

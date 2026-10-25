@@ -17,7 +17,7 @@ import { FAQs, ItemProps } from '@/types';
 import { getAuthCredentials } from '@/utils/auth-utils';
 import { getErrorMessage } from '@/utils/form-error';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useRouter } from 'next/router';
 import { useCallback, useMemo } from 'react';
 import { useForm } from 'react-hook-form';

@@ -15,7 +15,7 @@ import { useUpdateSettingsMutation } from '@/data/settings';
 import { Settings, SettingsOptionsInput } from '@/types';
 import { useConfirmRedirectIfDirty } from '@/utils/confirmed-redirect-if-dirty';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useRouter } from 'next/router';
 import { useForm } from 'react-hook-form';
 

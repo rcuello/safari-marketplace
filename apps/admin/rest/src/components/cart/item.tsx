@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import Counter from '@/components/ui/counter';
 import { CloseIcon } from '@/components/icons/close-icon';
 import { fadeInOut } from '@/utils/motion/fade-in-out';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useCart } from '@/contexts/quick-cart/cart.context';
 import usePrice from '@/utils/use-price';
 

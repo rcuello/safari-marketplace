@@ -4,7 +4,7 @@ import { useRouter } from 'next/router';
 import { getAuthCredentials, hasAccess } from '@/utils/auth-utils';
 import SidebarItem from '@/components/layouts/navigation/sidebar-item';
 import { siteSettings } from '@/settings/site.settings';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import MobileNavigation from '@/components/layouts/navigation/mobile-navigation';
 import Footer from '@/components/layouts/footer/footer-bar';
 import { useSettingsQuery } from '@/data/settings';

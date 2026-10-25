@@ -1,5 +1,5 @@
 import dynamic from 'next/dynamic';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { getLayout as getSiteLayout } from '@/components/layouts/layout';
 import Seo from '@/components/seo/seo';
 import { useUser } from '@/framework/user';

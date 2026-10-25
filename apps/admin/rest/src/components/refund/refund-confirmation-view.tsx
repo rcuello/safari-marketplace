@@ -7,7 +7,7 @@ import {
 import { useUpdateRefundMutation } from '@/data/refund';
 import SelectInput from '@/components/ui/select-input';
 import { useForm } from 'react-hook-form';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import Alert from '@/components/ui/alert';
 import { animateScroll } from 'react-scroll';
 

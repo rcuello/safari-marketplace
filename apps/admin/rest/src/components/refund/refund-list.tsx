@@ -1,7 +1,7 @@
 import { Table } from '@/components/ui/table';
 import ActionButtons from '@/components/common/action-buttons';
 import { SortOrder } from '@/types';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useState } from 'react';
 import TitleWithSort from '@/components/ui/title-with-sort';
 import Pagination from '@/components/ui/pagination';

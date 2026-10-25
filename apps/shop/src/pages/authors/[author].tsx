@@ -3,7 +3,7 @@ import Details from '@/components/author/details/details';
 import { useWindowSize } from '@/lib/use-window-size';
 import dynamic from 'next/dynamic';
 import ProductsGrid from '@/components/products/grid';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 export { getStaticPaths, getStaticProps } from '@/framework/author.ssr';
 
 const CartCounterButton = dynamic(

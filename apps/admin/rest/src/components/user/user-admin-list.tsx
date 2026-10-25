@@ -11,7 +11,7 @@ import {
   UserPaginator,
 } from '@/types';
 import { useMeQuery } from '@/data/user';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useIsRTL } from '@/utils/locals';
 import { useState } from 'react';
 import { NoDataFound } from '@/components/icons/no-data-found';

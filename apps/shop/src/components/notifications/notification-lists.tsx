@@ -7,7 +7,7 @@ import { useNotificationRead } from '@/framework/notify-logs';
 import dayjs from 'dayjs';
 import { CheckedIconWithCircle } from '@/components/icons/checked';
 import { useCallback, useState } from 'react';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 
 type NotificationListsProps = {
   notifications: NotifyLogs[];

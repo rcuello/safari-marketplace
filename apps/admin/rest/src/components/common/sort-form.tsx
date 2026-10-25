@@ -1,7 +1,7 @@
 import Select from '@/components/ui/select/select';
 import cn from 'classnames';
 import Label from '@/components/ui/label';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { ActionMeta } from 'react-select';
 
 interface Props {

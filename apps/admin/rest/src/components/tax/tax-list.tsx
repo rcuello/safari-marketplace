@@ -2,7 +2,7 @@ import { AlignType, Table } from '@/components/ui/table';
 import ActionButtons from '@/components/common/action-buttons';
 import { SortOrder, Tax } from '@/types';
 import { Routes } from '@/config/routes';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useIsRTL } from '@/utils/locals';
 import { useState } from 'react';
 import TitleWithSort from '@/components/ui/title-with-sort';

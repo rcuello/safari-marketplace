@@ -12,7 +12,7 @@ import Input from '@/components/ui/input';
 import { useModalAction } from '@/components/ui/modal/modal.context';
 import Scrollbar from '@/components/ui/scrollbar';
 import SwitchInput from '@/components/ui/switch-input';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 
 const MultiCommission = ({
   data,

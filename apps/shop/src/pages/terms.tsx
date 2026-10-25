@@ -2,7 +2,7 @@ import Seo from '@/components/seo/seo';
 import NotFound from '@/components/ui/not-found';
 import { useTermsAndConditions } from '@/framework/terms-and-conditions';
 import { LIMIT_HUNDRED } from '@/lib/constants';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import PageBanner from '@/components/banners/page-banner';
 import Terms from '@/components/terms/terms';
 import { getStaticProps } from '@/framework/terms-and-conditions-ssr';

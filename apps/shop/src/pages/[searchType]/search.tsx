@@ -11,7 +11,7 @@ import { useProducts } from '@/framework/product';
 import { drawerAtom } from '@/store/drawer-atom';
 import { motion } from 'framer-motion';
 import { useAtom } from 'jotai';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useRouter } from 'next/router';
 import StickyBox from 'react-sticky-box';
 

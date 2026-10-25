@@ -4,7 +4,7 @@ import {
 } from '@/components/ui/modal/modal.context';
 import { AddressForm } from '@/components/address/address-form';
 import { AddressType } from '@/framework/utils/constants';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useAtom } from 'jotai';
 
 //FIXME: should be in types file

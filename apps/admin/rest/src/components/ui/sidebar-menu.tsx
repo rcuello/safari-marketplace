@@ -7,7 +7,7 @@ import { ExpandMoreIcon } from '@/components/icons/expand-more-icon';
 import { getIcon } from '@/utils/get-icon';
 import * as sidebarIcons from '@/components/icons/sidebar';
 import { useUI } from '@/contexts/ui.context';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 
 function SidebarMenuItem({ className, item, depth = 0 }: any) {
   const router = useRouter();

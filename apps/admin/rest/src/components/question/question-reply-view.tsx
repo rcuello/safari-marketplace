@@ -6,7 +6,7 @@ import {
 } from '@/components/ui/modal/modal.context';
 import TextArea from '@/components/ui/text-area';
 import Image from 'next/image';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { siteSettings } from '@/settings/site.settings';
 import { useReplyQuestionMutation } from '@/data/question';
 

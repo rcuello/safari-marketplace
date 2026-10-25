@@ -1,7 +1,7 @@
 import { ArrowNext, ArrowPrev } from '@/components/icons';
 import { Swiper, SwiperSlide, Navigation } from '@/components/ui/slider';
 import { Image } from '@/components/ui/image';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 
 const offerSliderBreakpoints = {
   320: {

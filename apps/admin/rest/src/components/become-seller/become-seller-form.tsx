@@ -13,7 +13,7 @@ import StickyFooterPanel from '@/components/ui/sticky-footer-panel';
 import { useUpdateBecomeSellerMutation } from '@/data/become-seller';
 import { BecomeSeller, BecomeSellerInput, Settings } from '@/types';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useRouter } from 'next/router';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';

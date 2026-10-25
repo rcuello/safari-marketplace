@@ -1,7 +1,7 @@
 import SelectInput from '@/components/ui/select-input';
 import Label from '@/components/ui/label';
 import { Control, useWatch, useFormState } from 'react-hook-form';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useEffect } from 'react';
 import { useManufacturersQuery } from '@/data/manufacturer';
 import { useRouter } from 'next/router';

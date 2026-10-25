@@ -9,7 +9,7 @@ import Card from '@/components/common/card';
 import Label from '@/components/ui/label';
 import { useRouter } from 'next/router';
 import ValidationError from '@/components/ui/form-validation-error';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { yupResolver } from '@hookform/resolvers/yup';
 import {
   Author,

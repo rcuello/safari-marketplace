@@ -2,7 +2,7 @@ import { useRef, useState, useEffect } from 'react';
 import { Image } from '@/components/ui/image';
 import cn from 'classnames';
 import CopyToClipboard from 'react-copy-to-clipboard';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { couponPlaceholder } from '@/lib/placeholders';
 import { Coupon } from '@/types';
 import { VerifyIcon } from '@/components/icons/verify-icon';

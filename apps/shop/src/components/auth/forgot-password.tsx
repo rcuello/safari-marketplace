@@ -22,7 +22,7 @@ import {
   useVerifyForgotPasswordToken,
   useResetPassword,
 } from '@/framework/user';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import Logo from '@/components/ui/logo';
 import Alert from '../ui/alert';
 import { ArrowPrevIcon } from '../icons/arrow-prev';

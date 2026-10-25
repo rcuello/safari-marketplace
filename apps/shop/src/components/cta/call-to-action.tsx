@@ -1,4 +1,4 @@
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { Image } from '@/components/ui/image';
 import Link from '@/components/ui/link';
 import SectionBlock from '@/components/ui/section-block';

@@ -1,4 +1,4 @@
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import cn from 'classnames';
 import Button from '@/components/ui/button';
 import ProductLoader from '@/components/ui/loaders/product-loader';

@@ -3,8 +3,8 @@ import CreateOrUpdateRefundPolicyForm from '@/components/refund-policy/refund-po
 import CreateOrUpdateRefundReasonForm from '@/components/refund-reason/refund-reason-form';
 import { adminOnly } from '@/utils/auth-utils';
 import { GetStaticProps } from 'next';
-import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { useTranslation } from 'next-i18next/pages';
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations';
 
 export default function CreateRefundPolicyPage() {
   const { t } = useTranslation();

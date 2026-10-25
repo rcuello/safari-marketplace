@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
 import cn from 'classnames';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useModalAction } from '@/components/ui/modal/modal.context';
 import { useUser } from '@/framework/user';
 import { LikeIcon } from '@/components/icons/like-icon';

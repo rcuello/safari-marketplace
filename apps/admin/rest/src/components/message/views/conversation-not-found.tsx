@@ -1,4 +1,4 @@
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { EmptyInbox } from '@/components/icons/empty-inbox';
 import { adminOnly, getAuthCredentials, hasAccess } from '@/utils/auth-utils';
 import classNames from 'classnames';

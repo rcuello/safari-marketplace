@@ -6,8 +6,8 @@ import AdminsList from '@/components/user/user-admin-list';
 import { useAdminsQuery } from '@/data/user';
 import { SortOrder } from '@/types';
 import { adminOnly } from '@/utils/auth-utils';
-import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { useTranslation } from 'next-i18next/pages';
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations';
 import { useState } from 'react';
 import PageHeading from '@/components/common/page-heading';
 export default function Admins() {

@@ -26,7 +26,7 @@ import { getErrorMessage } from '@/utils/form-error';
 import { formatSlug } from '@/utils/use-slug';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { isEmpty } from 'lodash';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useRouter } from 'next/router';
 import { useCallback, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';

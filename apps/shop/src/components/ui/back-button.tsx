@@ -1,6 +1,6 @@
 import ArrowNarrowLeft from '@/components/icons/arrow-narrow-left';
 import { useRouter } from 'next/router';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import cn from 'classnames';
 
 const BackButton = () => {

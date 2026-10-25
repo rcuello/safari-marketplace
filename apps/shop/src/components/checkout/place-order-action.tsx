@@ -12,7 +12,7 @@ import {
   calculatePaidTotal,
   calculateTotal,
 } from '@/store/quick-cart/cart.utils';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useRouter } from 'next/router';
 import { useLogout, useUser } from '@/framework/user';
 import { PaymentGateway } from '@/types';

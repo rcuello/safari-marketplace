@@ -2,7 +2,7 @@ import Link from '@/components/ui/link';
 import { Image } from '@/components/ui/image';
 import cn from 'classnames';
 import usePrice from '@/lib/use-price';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { Routes } from '@/config/routes';
 import { productPlaceholder } from '@/lib/placeholders';
 import { ExternalIcon } from '@/components/icons/external-icon';

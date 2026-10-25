@@ -34,7 +34,7 @@ import cn from 'classnames';
 import { isBefore } from 'date-fns';
 import { motion } from 'framer-motion';
 import { useAtom } from 'jotai';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useRouter } from 'next/router';
 import { useEffect } from 'react';
 import { useWindowSize } from 'react-use';

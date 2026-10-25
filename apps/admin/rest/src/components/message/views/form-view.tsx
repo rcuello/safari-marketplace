@@ -8,7 +8,7 @@ import { adminOnly, getAuthCredentials, hasAccess } from '@/utils/auth-utils';
 import { yupResolver } from '@hookform/resolvers/yup';
 import classNames from 'classnames';
 import { isEmpty } from 'lodash';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useRouter } from 'next/router';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';

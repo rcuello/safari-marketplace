@@ -1,7 +1,7 @@
 import { twMerge } from 'tailwind-merge';
 import styles from './loader.module.css';
 import cn from 'classnames';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 
 interface Props {
   className?: string;

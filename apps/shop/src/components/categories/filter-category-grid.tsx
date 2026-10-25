@@ -6,7 +6,7 @@ import { useRouter } from 'next/router';
 import CategoryBreadcrumb from '@/components/ui/category-breadcrumb-card';
 import Scrollbar from '@/components/ui/scrollbar';
 import isEmpty from 'lodash/isEmpty';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import findNestedData from '@/lib/find-nested-data';
 import type { Category } from '@/types';
 import ProductGridHome from '@/components/products/grids/home';

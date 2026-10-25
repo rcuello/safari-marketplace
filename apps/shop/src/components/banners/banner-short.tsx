@@ -3,7 +3,7 @@ import { Image } from '@/components/ui/image';
 import { productPlaceholder } from '@/lib/placeholders';
 import { useIsRTL } from '@/lib/locals';
 import { ArrowNext, ArrowPrev } from '@/components/icons';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import type { Banner } from '@/types';
 import { useReverse } from '@/lib/reverse';
 

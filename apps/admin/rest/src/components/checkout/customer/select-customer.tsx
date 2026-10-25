@@ -1,7 +1,7 @@
 import { useModalAction } from '@/components/ui/modal/modal.context';
 import { customerAtom } from '@/contexts/checkout';
 import { useAtom } from 'jotai';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import AsyncSelect from 'react-select/async';
 import { selectStyles } from '@/components/ui/select/select.styles';
 import { QueryClient } from '@tanstack/react-query';

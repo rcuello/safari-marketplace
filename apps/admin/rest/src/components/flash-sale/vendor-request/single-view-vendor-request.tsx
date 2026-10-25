@@ -1,4 +1,4 @@
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import dayjs from 'dayjs';
 import { FlashSale, FlashSaleProductsRequest } from '@/types';
 import classNames from 'classnames';

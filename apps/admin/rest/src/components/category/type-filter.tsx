@@ -1,6 +1,6 @@
 import Select from '@/components/ui/select/select';
 import React from 'react';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import cn from 'classnames';
 import { useTypesQuery } from '@/data/type';
 import { useRouter } from 'next/router';

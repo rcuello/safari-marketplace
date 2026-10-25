@@ -4,7 +4,7 @@ import { NavbarIcon } from '@/components/icons/navbar-icon';
 import { HomeIcon } from '@/components/icons/home-icon';
 import { ShoppingBagIcon } from '@/components/icons/shopping-bag-icon';
 import { UserIcon } from '@/components/icons/user-icon';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useCart } from '@/store/quick-cart/cart.context';
 import { useModalAction } from '@/components/ui/modal/modal.context';
 import { useAtom } from 'jotai';

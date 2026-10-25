@@ -3,7 +3,7 @@ import usePrice from '@/utils/use-price';
 import { productPlaceholder } from '@/utils/placeholders';
 import { useModalAction } from '@/components/ui/modal/modal.context';
 import { AddToCart } from '@/components/cart/add-to-cart/add-to-cart';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { PlusIcon } from '@/components/icons/plus-icon';
 import { Product, ProductType } from '@/types';
 

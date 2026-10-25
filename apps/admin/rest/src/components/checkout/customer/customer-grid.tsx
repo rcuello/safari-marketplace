@@ -2,7 +2,7 @@ import { useAtom } from 'jotai';
 import { customerAtom } from '@/contexts/checkout';
 import { useModalAction } from '@/components/ui/modal/modal.context';
 import { PlusIcon } from '@/components/icons/plus-icon';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 
 interface CustomerProps {
   label: string;

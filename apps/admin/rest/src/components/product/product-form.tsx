@@ -21,7 +21,7 @@ import ProductGroupInput from '@/components/product/product-group-input';
 import ProductCategoryInput from '@/components/product/product-category-input';
 import ProductTypeInput from '@/components/product/product-type-input';
 import { ProductType, Product, ProductStatus } from '@/types';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useShopQuery } from '@/data/shop';
 import cn from 'classnames';
 import ProductTagInput from '@/components/product/product-tag-input';

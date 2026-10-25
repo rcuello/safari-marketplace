@@ -25,7 +25,7 @@ import { drawerAtom } from '@/store/drawer-atom';
 import cn from 'classnames';
 import { motion } from 'framer-motion';
 import { useAtom } from 'jotai';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import dynamic from 'next/dynamic';
 import React, { useCallback } from 'react';
 import { useWindowSize } from 'react-use';

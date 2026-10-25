@@ -1,6 +1,6 @@
 import { ArrowDownIcon } from '@/components/icons/arrow-down';
 import Link from '@/components/ui/link';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { siteSettings } from '@/config/site';
 
 const StaticMenu = () => {

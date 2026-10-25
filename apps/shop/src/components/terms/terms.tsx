@@ -3,7 +3,7 @@ import rangeMap from '@/lib/range-map';
 import { Link as AnchorLink, Element } from 'react-scroll';
 import TermsListLoader from '@/components/ui/loaders/terms-list-loader';
 import TermsLoader from '@/components/ui/loaders/terms-loader';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useSanitizeContent } from '@/lib/sanitize-content';
 
 type TermsProps = {

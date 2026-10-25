@@ -2,7 +2,7 @@ import { CloseIcon } from '@/components/icons/close-icon';
 import { PencilIcon } from '@/components/icons/pencil-icon';
 import { formatAddress } from '@/lib/format-address';
 import classNames from 'classnames';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 
 interface AddressProps {
   address: any;

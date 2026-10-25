@@ -1,5 +1,5 @@
 import { CustomDisclosure } from '@/components/ui/disclosure';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import Search from '@/components/ui/search/search';
 import { useRouter } from 'next/router';
 import Sorting from './sorting';

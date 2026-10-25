@@ -6,7 +6,7 @@ import {
   useNotifyLogAllReadMutation,
 } from './gql/notify_log.graphql';
 import { NetworkStatus } from '@apollo/client';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { toast } from 'react-toastify';
 import { UpdateNotifyLogInput } from '__generated__/__types__';
 import { useUser } from '@/framework/user';

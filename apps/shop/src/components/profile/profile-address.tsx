@@ -3,7 +3,7 @@ import { AddressHeader } from '@/components/address/address-header';
 import { useModalAction } from '@/components/ui/modal/modal.context';
 import { AddressType } from '@/framework/utils/constants';
 import { User } from '@/types';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 
 interface AddressesProps {
   addresses: User['address'] | undefined;

@@ -5,7 +5,7 @@ import {
   keepPreviousData,
 } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { API_ENDPOINTS } from '@/data/client/api-endpoints';
 import { mapPaginatorData } from '@/utils/data-mappers';
 import {

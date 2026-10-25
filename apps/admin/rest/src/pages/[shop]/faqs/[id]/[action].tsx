@@ -1,8 +1,8 @@
 import ShopLayout from '@/components/layouts/shop';
 import ErrorMessage from '@/components/ui/error-message';
 import Loader from '@/components/ui/loader/loader';
-import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { useTranslation } from 'next-i18next/pages';
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations';
 import { Config } from '@/config';
 import { useRouter } from 'next/router';
 import CreateOrUpdateFaqsForm from '@/components/faqs/faqs-form';

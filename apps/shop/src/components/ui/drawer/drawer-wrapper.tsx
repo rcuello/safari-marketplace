@@ -2,7 +2,7 @@ import Logo from '@/components/ui/logo';
 import { useAtom } from 'jotai';
 import { drawerAtom } from '@/store/drawer-atom';
 import { CloseIcon } from '@/components/icons/close-icon';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 
 const DrawerWrapper = ({ children }: { children?: React.ReactNode }) => {
   const { t } = useTranslation('common');

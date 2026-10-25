@@ -1,5 +1,5 @@
 import Layout from '@/components/layouts/admin';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations';
 import { adminOnly } from '@/utils/auth-utils';
 import MessagePageIndex from '@/components/message/index';
 

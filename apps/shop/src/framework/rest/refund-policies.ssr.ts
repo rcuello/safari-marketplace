@@ -1,7 +1,7 @@
 import { LIMIT } from '@/lib/constants';
 import { RefundPolicyQueryOptions, SettingsQueryOptions } from '@/types';
 import type { GetStaticProps } from 'next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations';
 import { QueryClient, dehydrate } from '@tanstack/react-query';
 import client from './client';
 import { API_ENDPOINTS } from './client/api-endpoints';

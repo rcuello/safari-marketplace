@@ -1,5 +1,5 @@
 import { GetServerSideProps } from 'next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations';
 import { QueryClient, dehydrate } from '@tanstack/react-query';
 import client from '@/framework/client';
 import { TYPES_PER_PAGE } from '@/framework/client/variables';

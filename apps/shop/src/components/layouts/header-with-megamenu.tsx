@@ -3,7 +3,7 @@ import cn from 'classnames';
 import { useAtom } from 'jotai';
 // import { displayHeaderSearchAtom } from '@/store/display-header-search-atom';
 import { displayMobileHeaderSearchAtom } from '@/store/display-mobile-header-search-atom';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import dynamic from 'next/dynamic';
 import { authorizationAtom } from '@/store/authorization-atom';
 import { useIsHomePage } from '@/lib/use-is-homepage';

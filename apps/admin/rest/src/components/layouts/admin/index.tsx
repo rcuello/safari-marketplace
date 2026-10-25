@@ -3,7 +3,7 @@ import { miniSidebarInitialValue } from '@/utils/constants';
 import Footer from '@/components/layouts/footer/footer-bar';
 import MobileNavigation from '@/components/layouts/navigation/mobile-navigation';
 import { siteSettings } from '@/settings/site.settings';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import SidebarItem from '@/components/layouts/navigation/sidebar-item';
 import { useRouter } from 'next/router';
 import { useAtom } from 'jotai';

@@ -4,7 +4,7 @@ import { getIcon } from '@/utils/get-icon';
 import * as categoriesIcon from '@/components/icons/category';
 import { SortOrder } from '@/types';
 import Image from 'next/image';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useIsRTL } from '@/utils/locals';
 import { useState } from 'react';
 import TitleWithSort from '@/components/ui/title-with-sort';

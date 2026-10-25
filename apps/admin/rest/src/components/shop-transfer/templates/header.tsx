@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import SelectInput from '@/components/ui/select-input';
 import { useUpdateOwnerTransferMutation } from '@/data/ownership-transfer';
 import ValidationError from '@/components/ui/form-validation-error';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import Button from '@/components/ui/button';
 import { isEmpty } from 'lodash';
 import { twMerge } from 'tailwind-merge';

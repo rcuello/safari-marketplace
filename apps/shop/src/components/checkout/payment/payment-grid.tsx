@@ -1,5 +1,5 @@
 import { RadioGroup } from '@headlessui/react';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { Fragment, useEffect, useState } from 'react';
 import Alert from '@/components/ui/alert';
 import CashOnDelivery from '@/components/checkout/payment/cash-on-delivery';

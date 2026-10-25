@@ -8,7 +8,7 @@ import {
   SortOrder,
 } from '@/types';
 import { useIsRTL } from '@/utils/locals';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useState } from 'react';
 
 type IProps = {

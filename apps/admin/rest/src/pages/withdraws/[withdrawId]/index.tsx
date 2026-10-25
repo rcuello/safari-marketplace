@@ -1,5 +1,5 @@
 import { adminOnly } from '@/utils/auth-utils';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations';
 import { GetServerSideProps } from 'next';
 import { useRouter } from 'next/router';
 import Loader from '@/components/ui/loader/loader';
@@ -8,7 +8,7 @@ import Button from '@/components/ui/button';
 import { useForm } from 'react-hook-form';
 import SelectInput from '@/components/ui/select-input';
 import ValidationError from '@/components/ui/form-validation-error';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useEffect } from 'react';
 import AdminLayout from '@/components/layouts/admin';
 import { useWithdrawQuery } from '@/data/withdraw';

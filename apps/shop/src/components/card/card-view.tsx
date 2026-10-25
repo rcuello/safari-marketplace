@@ -9,7 +9,7 @@ import { Image } from '@/components/ui/image';
 import { Table } from '@/components/ui/table';
 import { useIsRTL } from '@/lib/locals';
 import CheckIconWithBg from '@/components/icons/check-icon-with-bg';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import Fallback from '@/assets/cards/fallback-image.png';
 import Action from '@/components/card/action/action';
 

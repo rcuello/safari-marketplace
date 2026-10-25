@@ -1,7 +1,7 @@
 import Seo from '@/components/seo/seo';
 import NotFound from '@/components/ui/not-found';
 import { useFAQs } from '@/framework/faqs';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { getStaticProps } from '@/framework/faq-ssr';
 export { getStaticProps };
 import { LIMIT_HUNDRED } from '@/lib/constants';

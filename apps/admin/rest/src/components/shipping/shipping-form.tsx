@@ -13,7 +13,7 @@ import {
 import { yupResolver } from '@hookform/resolvers/yup';
 import { shippingValidationSchema } from './shipping-validation-schema';
 import { useRouter } from 'next/router';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import StickyFooterPanel from '@/components/ui/sticky-footer-panel';
 
 const defaultValues = {

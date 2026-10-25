@@ -1,6 +1,6 @@
 import { siteSettings } from '@/settings/site.settings';
 import Link from '@/components/ui/link';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { getIcon } from '@/utils/get-icon';
 import * as sidebarIcons from '@/components/icons/sidebar';
 import cn from 'classnames';

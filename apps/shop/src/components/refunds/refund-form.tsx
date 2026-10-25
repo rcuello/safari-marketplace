@@ -8,7 +8,7 @@ import Select from '@/components/ui/select/select';
 import { useModalState } from '@/components/ui/modal/modal.context';
 import { useCreateRefund } from '@/framework/order';
 import { useRefundReason } from '@/framework/refund';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import * as yup from 'yup';
 import { Controller } from 'react-hook-form';
 import { Attachment } from '@/types';

@@ -7,8 +7,8 @@ import Loader from '@/components/ui/loader/loader';
 import { useBecomeSellerQuery } from '@/data/become-seller';
 import { useSettingsQuery } from '@/data/settings';
 import { adminOnly } from '@/utils/auth-utils';
-import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { useTranslation } from 'next-i18next/pages';
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations';
 import { useRouter } from 'next/router';
 
 export default function BecomeSeller() {

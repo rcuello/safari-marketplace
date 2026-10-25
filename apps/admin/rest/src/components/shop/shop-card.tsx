@@ -1,5 +1,5 @@
 import Image from 'next/image';
-// import { useTranslation } from 'next-i18next';
+// import { useTranslation } from 'next-i18next/pages';
 import Link from '@/components/ui/link';
 // import Badge from '@/components/ui/badge/badge';
 import { Shop, UserAddress } from '@/types';
@@ -11,7 +11,7 @@ import { isNumber } from 'lodash';
 import ShopAvatar from '@/components/shop/shop-avatar';
 import { PhoneOutlineIcon } from '@/components/icons/phone';
 // import { useShopQuery } from '@/data/shop';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 
 type ShopCardProps = {
   shop: Shop;

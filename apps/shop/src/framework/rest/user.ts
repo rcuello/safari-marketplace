@@ -26,7 +26,7 @@ import { useAtom } from 'jotai';
 import Cookies from 'js-cookie';
 import { useStateMachine } from 'little-state-machine';
 import { signOut as socialLoginSignOut } from 'next-auth/react';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import {

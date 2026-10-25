@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { MinusIcon } from '@/components/icons/minus-icon';
 import { PlusIcon } from '@/components/icons/plus-icon';
 import { heightCollapse } from '@/lib/motion/height-collapse';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useSanitizeContent } from '@/lib/sanitize-content';
 import classNames from 'classnames';
 import { padStart } from 'lodash';

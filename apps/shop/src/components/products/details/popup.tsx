@@ -1,6 +1,6 @@
 import Spinner from '@/components/ui/loaders/spinner/spinner';
 import dynamic from 'next/dynamic';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import Details from './details';
 import ShortDetails from './short-details';
 import { stickyShortDetailsAtom } from '@/store/sticky-short-details-atom';

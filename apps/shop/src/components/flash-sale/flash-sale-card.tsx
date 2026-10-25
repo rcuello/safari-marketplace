@@ -1,5 +1,5 @@
 import { Image } from '@/components/ui/image';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { Routes } from '@/config/routes';
 import Link from 'next/link';
 import dayjs from 'dayjs';

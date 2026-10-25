@@ -4,7 +4,7 @@ import { useFormContext } from 'react-hook-form';
 import Card from '@/components/common/card';
 import ValidationError from '@/components/ui/form-validation-error';
 import { ProductType } from '@/types';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 
 const productType = [
   { name: 'Simple Product', value: ProductType.Simple },

@@ -1,6 +1,6 @@
 import { Table } from '@/components/ui/table';
 import usePrice from '@/lib/use-price';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useIsRTL } from '@/lib/locals';
 import { useMemo } from 'react';
 import dayjs from 'dayjs';

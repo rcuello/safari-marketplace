@@ -20,7 +20,7 @@ import ValidationError from '@/components/ui/form-validation-error';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Category, ItemProps } from '@/types';
 import { categoryIcons } from './category-icons';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import FileInput from '@/components/ui/file-input';
 import SelectInput from '@/components/ui/select-input';
 import { yupResolver } from '@hookform/resolvers/yup';

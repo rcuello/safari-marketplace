@@ -22,7 +22,7 @@ import { useConfirmRedirectIfDirty } from '@/utils/confirmed-redirect-if-dirty';
 import { formatPrice } from '@/utils/use-price';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { isEmpty } from 'lodash';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useRouter } from 'next/router';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';

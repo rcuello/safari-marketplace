@@ -6,7 +6,7 @@ import { CloseIcon } from '@/components/icons/close-icon';
 import CartItem from '@/components/cart/item';
 import { fadeInOut } from '@/utils/motion/fade-in-out';
 import { formatString } from '@/utils/format-string';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useUI } from '@/contexts/ui.context';
 import { Routes } from '@/config/routes';
 import usePrice from '@/utils/use-price';

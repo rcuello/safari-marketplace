@@ -1,6 +1,6 @@
 import ErrorMessage from '@/components/ui/error-message';
 import Loader from '@/components/ui/loader/loader';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useMeQuery } from '@/data/user';
 import ShopCard from '@/components/shop/shop-card';
 import { adminOnly, getAuthCredentials, hasAccess } from '@/utils/auth-utils';

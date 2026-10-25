@@ -4,7 +4,7 @@ import { Controller } from 'react-hook-form';
 import { Quill } from 'react-quill';
 import ValidationError from '@/components/ui/form-validation-error';
 import { uploadClient } from '@/data/client/upload';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { SnowTheme } from 'quill-color-picker-enhance';
 import ReactQuill from 'react-quill';
 // @ts-ignore

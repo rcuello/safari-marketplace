@@ -1,4 +1,4 @@
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import SuperAdminContactForm from '@/components/settings/super-admin-contact-form';
 import { Image } from '@/components/ui/image';
 import contactIllustration from '@/assets/contact-illustration.svg';

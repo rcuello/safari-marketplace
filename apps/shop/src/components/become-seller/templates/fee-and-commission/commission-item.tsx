@@ -3,7 +3,7 @@ import { Commission } from '@/types';
 import Image from 'next/image';
 import React from 'react';
 import commissionIcon from '@/assets/commission.png';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 
 type CommissionItemProps = {
   commission: Commission;

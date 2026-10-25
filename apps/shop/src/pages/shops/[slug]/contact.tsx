@@ -1,4 +1,4 @@
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { Image } from '@/components/ui/image';
 import contactIllustration from '@/assets/contact-illustration.svg';
 import { formatAddress } from '@/lib/format-address';
@@ -8,7 +8,7 @@ import * as socialIcons from '@/components/icons/social';
 import Seo from '@/components/seo/seo';
 import { useRouter } from 'next/router';
 import { useShop } from '@/framework/shop';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations';
 import VendorContactForm from '@/components/settings/vendor-contact-form';
 import { UserAddress } from '@/types';
 import Link from '@/components/ui/link';

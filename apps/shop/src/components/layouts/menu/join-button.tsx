@@ -1,7 +1,7 @@
 import Button from '@/components/ui/button';
 import { useModalAction } from '@/components/ui/modal/modal.context';
 import { ButtonProps } from '@/types';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 
 export default function JoinButton({
   title = 'join-button',

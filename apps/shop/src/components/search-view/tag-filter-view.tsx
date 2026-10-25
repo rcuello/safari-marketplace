@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo } from 'react';
 import Checkbox from '@/components/ui/forms/checkbox/checkbox';
 import { useRouter } from 'next/router';
 import Scrollbar from '@/components/ui/scrollbar';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import ErrorMessage from '@/components/ui/error-message';
 import { useTags } from '@/framework/tag';
 import Spinner from '@/components/ui/loaders/spinner/spinner';

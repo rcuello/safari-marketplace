@@ -6,8 +6,8 @@ import { useSettingsQuery } from '@/data/settings';
 import { useShippingClassesQuery } from '@/data/shipping';
 import { useTaxesQuery } from '@/data/tax';
 import { adminOnly } from '@/utils/auth-utils';
-import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { useTranslation } from 'next-i18next/pages';
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations';
 import { useRouter } from 'next/router';
 import SettingsPageHeader from '@/components/settings/settings-page-header';
 

@@ -1,5 +1,5 @@
 import Button from '@/components/ui/button';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import Label from '@/components/ui/forms/label';
 import {
   CardNumberElement,

@@ -5,7 +5,7 @@ import { useModalAction } from '@/components/ui/modal/modal.context';
 import { Form } from '@/components/ui/forms/form';
 import { Controller } from 'react-hook-form';
 import * as yup from 'yup';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 
 type OptCodeFormProps = {
   code: string;

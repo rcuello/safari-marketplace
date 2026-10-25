@@ -1,4 +1,4 @@
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import ReviewCard from '@/components/reviews/review-card';
 import Pagination from '@/components/ui/pagination';
 import { useEffect, useState } from 'react';

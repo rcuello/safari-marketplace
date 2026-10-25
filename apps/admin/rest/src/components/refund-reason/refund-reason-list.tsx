@@ -5,7 +5,7 @@ import TitleWithSort from '@/components/ui/title-with-sort';
 import { Routes } from '@/config/routes';
 import { MappedPaginatorInfo, RefundReason, SortOrder } from '@/types';
 import { useIsRTL } from '@/utils/locals';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useRouter } from 'next/router';
 import { useState } from 'react';
 

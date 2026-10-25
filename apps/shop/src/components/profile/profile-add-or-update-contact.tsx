@@ -1,4 +1,4 @@
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useModalState } from '@/components/ui/modal/modal.context';
 import OtpForm from '@/components/otp/otp-form';
 import { useUpdateUser } from '@/framework/user';

@@ -4,7 +4,7 @@ import { Control, useFormState, useWatch } from 'react-hook-form';
 import { useEffect } from 'react';
 import { useTagsQuery } from '@/data/tag';
 import { useRouter } from 'next/router';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 
 interface Props {
   control: Control<any>;

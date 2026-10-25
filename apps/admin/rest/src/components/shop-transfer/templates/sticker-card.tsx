@@ -2,7 +2,7 @@ import StickerCard from '@/components/widgets/sticker-card';
 import { OwnershipTransfer, OrderStickerCardProps } from '@/types';
 import usePrice from '@/utils/use-price';
 import { isEmpty } from 'lodash';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 
 interface OrderCardStickerCardProps {
   title: string;

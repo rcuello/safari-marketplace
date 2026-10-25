@@ -7,7 +7,7 @@ import {
   useSubscribeToNewsletterMutation,
 } from './gql/settings.graphql';
 import { useUploadMutation } from './gql/upload.graphql';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useAtom } from 'jotai';
 import { couponAtom } from '@/store/checkout';
 import { toast } from 'react-toastify';

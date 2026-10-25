@@ -2,7 +2,7 @@ import { Table } from '@/components/ui/table';
 import { Product, Shop, ProductType } from '@/types';
 import usePrice from '@/utils/use-price';
 import { useRouter } from 'next/router';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useIsRTL } from '@/utils/locals';
 import Image from 'next/image';
 import { siteSettings } from '@/settings/site.settings';

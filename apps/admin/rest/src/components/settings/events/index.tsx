@@ -21,7 +21,7 @@ import {
 } from '@/utils/format-event-options';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { split } from 'lodash';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useRouter } from 'next/router';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';

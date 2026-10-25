@@ -16,7 +16,7 @@ import { useApolloClient } from '@apollo/client';
 import { useAtom } from 'jotai';
 import { useStateMachine } from 'little-state-machine';
 import { signOut as socialLoginSignOut } from 'next-auth/react';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useState } from 'react';
 import { toast } from 'react-toastify';
 import {

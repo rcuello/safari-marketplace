@@ -12,8 +12,8 @@ import { Routes } from '@/config/routes';
 import { useShippingClassesQuery } from '@/data/shipping';
 import { SortOrder } from '@/types';
 import { adminOnly } from '@/utils/auth-utils';
-import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { useTranslation } from 'next-i18next/pages';
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations';
 export default function ShippingsPage() {
   const { t } = useTranslation();
   const [searchTerm, setSearch] = useState('');

@@ -1,4 +1,4 @@
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useAtom } from 'jotai';
 import Alert from '@/components/ui/alert';
 import PhoneNumberForm from '@/components/otp/phone-number-form';

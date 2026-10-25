@@ -1,4 +1,4 @@
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useModalAction } from '@/components/ui/modal/modal.context';
 import { OrderStatus, PaymentGateway, PaymentStatus } from '@/types';
 import Button from '@/components/ui/button';

@@ -1,10 +1,10 @@
 import Seo from '@/components/seo/seo';
 import { useTermsAndConditions } from '@/framework/terms-and-conditions';
 import { LIMIT_HUNDRED } from '@/lib/constants';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import PageBanner from '@/components/banners/page-banner';
 import Terms from '@/components/terms/terms';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations';
 import { getLayoutWithFooter } from '@/components/layouts/layout-with-footer';
 import ErrorMessage from '@/components/ui/error-message';
 import { useRouter } from 'next/router';

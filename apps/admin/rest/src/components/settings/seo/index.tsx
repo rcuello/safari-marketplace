@@ -9,7 +9,7 @@ import TextArea from '@/components/ui/text-area';
 import { useUpdateSettingsMutation } from '@/data/settings';
 import { AttachmentInput, Settings } from '@/types';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useRouter } from 'next/router';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';

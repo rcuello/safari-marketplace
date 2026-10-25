@@ -10,7 +10,7 @@ import Radio from '@/components/ui/radio/radio';
 import { useRouter } from 'next/router';
 import ValidationError from '@/components/ui/form-validation-error';
 import { useSettings } from '@/contexts/settings.context';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import FileInput from '@/components/ui/file-input';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { couponValidationSchema } from './coupon-validation-schema';

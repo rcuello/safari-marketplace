@@ -4,7 +4,7 @@ import { MapPinNew } from '@/components/icons/map-pin';
 import Link from '@/components/ui/link';
 import { MobileIconNew } from '@/components/icons/mobile-icon';
 import { HomeIconNew } from '@/components/icons/home-icon-new';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import dynamic from 'next/dynamic';
 const JoinButton = dynamic(
   () => import('@/components/layouts/menu/join-button'),

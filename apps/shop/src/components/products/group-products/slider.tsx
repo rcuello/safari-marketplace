@@ -1,6 +1,6 @@
 import { Swiper, SwiperSlide, Navigation } from '@/components/ui/slider';
 import { ArrowNext, ArrowPrev } from '@/components/icons';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { Product } from '@/types';
 import { Image } from '@/components/ui/image';
 import Link from '@/components/ui/link';

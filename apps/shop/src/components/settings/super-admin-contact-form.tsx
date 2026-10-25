@@ -5,7 +5,7 @@ import { useContact } from '@/framework/user';
 import type { CreateContactUsInput } from '@/types';
 import { yupResolver } from '@hookform/resolvers/yup';
 import classNames from 'classnames';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useForm } from 'react-hook-form';
 import { twMerge } from 'tailwind-merge';
 import * as yup from 'yup';

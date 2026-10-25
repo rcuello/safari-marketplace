@@ -1,6 +1,6 @@
 import usePrice from '@/utils/use-price';
 import cn from 'classnames';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 interface Props {
   item: any;
   notAvailable?: boolean;

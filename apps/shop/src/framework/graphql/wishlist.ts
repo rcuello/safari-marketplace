@@ -1,6 +1,6 @@
 import { WishlistQueryOptions } from '@/types';
 import { NetworkStatus } from '@apollo/client';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useEffect } from 'react';
 
 import { toast } from 'react-toastify';

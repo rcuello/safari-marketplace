@@ -15,7 +15,7 @@ import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import { useSessionStorage } from 'react-use';
 import dayjs from 'dayjs';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 
 dayjs.extend(utc);
 

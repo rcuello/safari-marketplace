@@ -9,7 +9,7 @@ import { useFlashSales } from '@/framework/flash-sales';
 import { LIMIT_HUNDRED } from '@/lib/constants';
 import type { NextPageWithLayout } from '@/types';
 import { isEmpty } from 'lodash';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useRouter } from 'next/router';
 export { getStaticProps } from '@/framework/shops-page.ssr';
 

@@ -1,4 +1,4 @@
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useRouter } from 'next/router';
 import ImportCsv from '@/components/ui/import-csv';
 import { useShopQuery } from '@/data/shop';

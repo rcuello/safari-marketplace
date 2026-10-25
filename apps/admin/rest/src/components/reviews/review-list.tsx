@@ -4,7 +4,7 @@ import ActionButtons from '@/components/common/action-buttons';
 import dayjs from 'dayjs';
 import { MappedPaginatorInfo, Product, Review, SortOrder } from '@/types';
 import Image from 'next/image';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useIsRTL } from '@/utils/locals';
 import { useState } from 'react';
 import relativeTime from 'dayjs/plugin/relativeTime';

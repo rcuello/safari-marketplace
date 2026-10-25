@@ -7,7 +7,7 @@ import PopularProductsGrid from '@/components/products/popular-products';
 import TopAuthorsGrid from '@/components/author/top-authors-grid';
 import Banner from '@/components/banners/banner';
 import TopManufacturersGrid from '@/components/manufacturer/top-manufacturers-grid';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import type { HomePageProps } from '@/types';
 import ProductGridHome from '@/components/products/grids/home';
 import BestSellingProductsGrid from '@/components/products/best-selling-products';

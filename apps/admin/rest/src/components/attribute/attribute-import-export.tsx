@@ -1,6 +1,6 @@
 import Card from '@/components/common/card';
 import { DownloadIcon } from '@/components/icons/download-icon';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import ImportAttributes from '@/components/attribute/import-attributes';
 import { useModalState } from '@/components/ui/modal/modal.context';
 

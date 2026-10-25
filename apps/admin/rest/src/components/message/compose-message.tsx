@@ -8,7 +8,7 @@ import { useAdminsQuery } from '@/data/user';
 import { Shop, SortOrder } from '@/types';
 import { adminOnly, getAuthCredentials, hasAccess } from '@/utils/auth-utils';
 import isEmpty from 'lodash/isEmpty';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import Image from 'next/image';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';

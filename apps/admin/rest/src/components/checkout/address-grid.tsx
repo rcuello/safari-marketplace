@@ -4,7 +4,7 @@ import { useAtom, WritableAtom } from 'jotai';
 import { useEffect } from 'react';
 import AddressCard from '@/components/address/address-card';
 import { AddressHeader } from '@/components/address/address-header';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { Address } from '@/types';
 
 interface AddressesProps {

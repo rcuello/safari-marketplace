@@ -30,7 +30,7 @@ import { getIcon } from '@/utils/get-icon';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { join, split } from 'lodash';
 import omit from 'lodash/omit';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useRouter } from 'next/router';
 import { useCallback, useMemo, useState } from 'react';
 import { Controller, useFieldArray, useForm, useWatch } from 'react-hook-form';

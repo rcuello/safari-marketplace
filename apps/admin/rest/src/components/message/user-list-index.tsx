@@ -1,4 +1,4 @@
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import UserBoxHeaderView from '@/components/message/user-box-header';
 import UserListView from '@/components/message/user-list';
 import Button from '@/components/ui/button';

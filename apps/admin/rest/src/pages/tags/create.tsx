@@ -1,6 +1,6 @@
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import Layout from '@/components/layouts/admin';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations';
 import CreateOrUpdateTagForm from '@/components/tag/tag-form';
 import { adminOnly } from '@/utils/auth-utils';
 

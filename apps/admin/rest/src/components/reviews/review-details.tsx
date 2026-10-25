@@ -4,7 +4,7 @@ import { Table } from '@/components/ui/table';
 import Button from '@/components/ui/button';
 import { siteSettings } from '@/settings/site.settings';
 import usePrice from '@/utils/use-price';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useIsRTL } from '@/utils/locals';
 import { useModalAction } from '@/components/ui/modal/modal.context';
 import dayjs from 'dayjs';

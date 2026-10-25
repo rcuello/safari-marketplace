@@ -17,7 +17,7 @@ import {
 import { useOrdersQuery } from '@/data/order';
 import { useWithdrawsQuery } from '@/data/withdraw';
 import usePrice from '@/utils/use-price';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import cn from 'classnames';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';

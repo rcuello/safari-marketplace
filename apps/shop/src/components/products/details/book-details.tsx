@@ -1,6 +1,6 @@
 import usePrice from '@/lib/use-price';
 import { ThumbsCarousel } from '@/components/ui/thumb-carousel';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { getVariations } from '@/lib/get-variations';
 import { useEffect, useMemo, useRef } from 'react';
 import isEqual from 'lodash/isEqual';

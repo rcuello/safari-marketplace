@@ -3,7 +3,7 @@ import { formatString } from '@/utils/format-string';
 import usePrice from '@/utils/use-price';
 import { useUI } from '@/contexts/ui.context';
 import { useCart } from '@/contexts/quick-cart/cart.context';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 
 const CartCounterButton = () => {
   const { t } = useTranslation();

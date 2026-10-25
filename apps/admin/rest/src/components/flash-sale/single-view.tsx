@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import dayjs from 'dayjs';
 import { FlashSale } from '@/types';
 import classNames from 'classnames';

@@ -2,7 +2,7 @@ import Input from '@/components/ui/input';
 import { SearchIcon } from '@/components/icons/search-icon';
 import cn from 'classnames';
 import { CloseIcon } from '@/components/icons/close-icon';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 
 interface Props {
   className?: string;

@@ -8,7 +8,7 @@ import TextArea from '@/components/ui/text-area';
 import { useTransferShopOwnershipMutation } from '@/data/shop';
 import { Shop, TransferShopOwnershipInput, User } from '@/types';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useForm } from 'react-hook-form';
 import { transferShopOwnershipValidationSchema } from './transfer-shop-ownership-validation-schema';
 import { useCallback } from 'react';

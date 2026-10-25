@@ -1,4 +1,4 @@
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { siteSettings } from '@/config/site';
 import Link from '@/components/ui/link';
 import Logo from '@/components/ui/logo';

@@ -1,4 +1,4 @@
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useRouter } from 'next/router';
 import { useStoreNoticeRead, useStoreNoticesQuery } from '@/data/store-notice';
 import { NotificationIcon } from '@/components/icons/sidebar/notification';

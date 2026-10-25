@@ -1,6 +1,6 @@
 import { useState, Fragment } from 'react';
 import { Listbox, Transition } from '@headlessui/react';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useRouter } from 'next/router';
 import { LangSwitcherIcon } from '@/components/icons/lang-switcher-icon';
 import { languageMenu } from '@/utils/locals';

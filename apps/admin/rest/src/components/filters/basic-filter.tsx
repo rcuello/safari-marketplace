@@ -1,6 +1,6 @@
 import Select from '@/components/ui/select/select';
 import cn from 'classnames';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useRouter } from 'next/router';
 
 type Props = {

@@ -1,5 +1,5 @@
 import { PaymentInfo } from '@/types';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { ContentListVertical } from '@/components/shop-single/content-list';
 
 type PaymentInfoProps = {

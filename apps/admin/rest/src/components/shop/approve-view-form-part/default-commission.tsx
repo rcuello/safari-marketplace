@@ -6,7 +6,7 @@ import { approveShopSchema } from '@/components/shop/shop-validation-schema';
 import Button from '@/components/ui/button';
 import { Form } from '@/components/ui/form/form';
 import Input from '@/components/ui/input';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 
 const DefaultCommission = ({
   onSubmit,

@@ -1,5 +1,5 @@
 import { useCart } from '@/store/quick-cart/cart.context';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import CartItem from './cart-item';
 import EmptyCartIcon from '@/components/icons/empty-cart';
 import usePrice from '@/lib/use-price';

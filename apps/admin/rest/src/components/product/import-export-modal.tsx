@@ -1,7 +1,7 @@
 import Card from '@/components/common/card';
 import { DownloadIcon } from '@/components/icons/download-icon';
 import { useModalState } from '@/components/ui/modal/modal.context';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import ImportProducts from './import-products';
 import ImportVariationOptions from './import-variation-options';
 

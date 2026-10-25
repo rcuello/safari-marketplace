@@ -3,7 +3,7 @@ import { SearchIcon } from '@/components/icons/search-icon';
 import cn from 'classnames';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { twMerge } from 'tailwind-merge';
 
 const classes = {

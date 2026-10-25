@@ -3,7 +3,7 @@ import Description from '@/components/ui/description';
 import FileInput from '@/components/ui/file-input';
 import Input from '@/components/ui/input';
 import TextArea from '@/components/ui/text-area';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { BecomeSellerFormProps } from '@/components/become-seller/type';
 import { bytesToMegabytes } from '@/utils/bytes-to-megabytes';
 

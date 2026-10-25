@@ -1,4 +1,4 @@
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations';
 import { ownerAndStaffOnly } from '@/utils/auth-utils';
 import OwnerLayout from '@/components/layouts/owner';
 import StoreNotices from '@/components/dashboard/shops/store-notices';

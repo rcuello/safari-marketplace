@@ -3,8 +3,8 @@ import AttributeList from '@/components/attribute/attribute-list';
 import ErrorMessage from '@/components/ui/error-message';
 import LinkButton from '@/components/ui/link-button';
 import Loader from '@/components/ui/loader/loader';
-import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { useTranslation } from 'next-i18next/pages';
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations';
 import ShopLayout from '@/components/layouts/shop';
 import router, { useRouter } from 'next/router';
 import {

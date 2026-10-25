@@ -1,5 +1,5 @@
 import type { GetStaticProps } from 'next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations';
 import NotFound from '@/components/404/404';
 
 export default function NotFoundPage() {

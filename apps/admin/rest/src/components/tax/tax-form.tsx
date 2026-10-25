@@ -9,7 +9,7 @@ import {
   useCreateTaxClassMutation,
   useUpdateTaxClassMutation,
 } from '@/data/tax';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { taxValidationSchema } from './tax-validation-schema';
 import StickyFooterPanel from '@/components/ui/sticky-footer-panel';

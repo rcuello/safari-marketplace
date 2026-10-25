@@ -6,7 +6,7 @@ import { getVariations } from '@/lib/get-variations';
 import isEqual from 'lodash/isEqual';
 import isEmpty from 'lodash/isEmpty';
 import VariationPrice from './variation-price';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { Routes } from '@/config/routes';
 import { useModalAction } from '@/components/ui/modal/modal.context';
 import VariationGroups from './variation-groups';

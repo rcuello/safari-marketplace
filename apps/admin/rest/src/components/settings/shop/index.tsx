@@ -17,7 +17,7 @@ import { ContactDetailsInput, Settings } from '@/types';
 import { useConfirmRedirectIfDirty } from '@/utils/confirmed-redirect-if-dirty';
 import { getIcon } from '@/utils/get-icon';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useRouter } from 'next/router';
 import { useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';

@@ -12,7 +12,7 @@ import {
 } from '@/contexts/checkout';
 import Button from '@/components/ui/button';
 import { useCart } from '@/contexts/quick-cart/cart.context';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useVerifyCheckoutMutation } from '@/data/checkout';
 import { Address } from '@/types';
 

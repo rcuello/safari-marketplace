@@ -1,7 +1,7 @@
 import cn from 'classnames';
 import { PlusIcon } from '@/components/icons/plus-icon';
 import { MinusIcon } from '@/components/icons/minus-icon';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 
 type ButtonEvent = (
   e: React.MouseEvent<HTMLButtonElement | MouseEvent>,

@@ -5,7 +5,7 @@ import {
   useModalState,
 } from '@/components/ui/modal/modal.context';
 import Input from '@/components/ui/input';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useAddWalletPointsMutation } from '@/data/user';
 import * as Yup from 'yup';
 

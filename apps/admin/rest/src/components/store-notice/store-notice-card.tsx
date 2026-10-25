@@ -4,7 +4,7 @@ import { StoreNotice, StoreNoticePriorityType } from '@/types';
 // import PriorityColor from '@/components/store-notice/priority-color';
 import { Routes } from '@/config/routes';
 import cn from 'classnames';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useStoreNoticeRead } from '@/data/store-notice';
 // import { CheckMarkCircle } from '@/components/icons/checkmark-circle';
 // import { useRouter } from 'next/router';

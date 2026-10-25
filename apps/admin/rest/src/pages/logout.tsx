@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 import Loader from '@/components/ui/loader/loader';
 import { useLogoutMutation } from '@/data/user';
-import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { useTranslation } from 'next-i18next/pages';
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations';
 
 function SignOut() {
   const { t } = useTranslation();

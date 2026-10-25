@@ -1,5 +1,5 @@
 import cn from 'classnames';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { Image } from '@/components/ui/image';
 import noResult from '@/assets/no-result.svg';
 interface Props {

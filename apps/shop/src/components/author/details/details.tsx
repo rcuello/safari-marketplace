@@ -1,5 +1,5 @@
 import { Image } from '@/components/ui/image';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import Truncate from '@/components/ui/truncate';
 import { avatarPlaceholder } from '@/lib/placeholders';
 import dayjs from 'dayjs';

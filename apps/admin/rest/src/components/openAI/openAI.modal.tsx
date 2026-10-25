@@ -2,7 +2,7 @@ import {
   useModalAction,
   useModalState,
 } from '@/components/ui/modal/modal.context';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import TextArea from '@/components/ui/text-area';
 import Button from '@/components/ui/button';
 import { useGenerateDescriptionMutation } from '@/data/product';

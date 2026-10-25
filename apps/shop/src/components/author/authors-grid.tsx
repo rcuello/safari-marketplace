@@ -1,6 +1,6 @@
 import Button from '@/components/ui/button';
 import NotFound from '@/components/ui/not-found';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import rangeMap from '@/lib/range-map';
 import AuthorLoader from '@/components/ui/loaders/author-loader';
 import { useAuthors } from '@/framework/author';

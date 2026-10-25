@@ -1,5 +1,5 @@
 import SearchBox from '@/components/ui/search/search-box';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useEffect, useState } from 'react';
 import AutoSuggestionBox from '@/components/search-view/suggestion';
 import cn from 'classnames';

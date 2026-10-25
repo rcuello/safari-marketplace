@@ -1,6 +1,6 @@
 import { LIMIT_HUNDRED } from '@/lib/constants';
 import type { GetStaticProps } from 'next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations';
 import { addApolloState, initializeApollo } from './client';
 import { GroupsDocument } from './gql/groups.graphql';
 import { SettingsDocument } from './gql/settings.graphql';

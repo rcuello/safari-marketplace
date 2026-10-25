@@ -1,7 +1,7 @@
 import Layout from '@/components/layouts/admin';
 import CreateOrUpdateTypeForm from '@/components/group/group-form';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import { useTranslation } from 'next-i18next';
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations';
+import { useTranslation } from 'next-i18next/pages';
 import { adminOnly } from '@/utils/auth-utils';
 
 export default function CreateTypePage() {

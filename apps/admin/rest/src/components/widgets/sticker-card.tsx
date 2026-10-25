@@ -1,7 +1,7 @@
 import React from 'react';
 import { IosArrowDown } from '@/components/icons/ios-arrow-down';
 import { IosArrowUp } from '@/components/icons/ios-arrow-up';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { StickerCardProps } from '@/types';
 import { twMerge } from 'tailwind-merge';
 import classNames from 'classnames';

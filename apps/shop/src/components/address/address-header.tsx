@@ -1,5 +1,5 @@
 import { PlusIcon } from '@/components/icons/plus-icon';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 
 interface AddressHeaderProps {
   count: number | boolean;

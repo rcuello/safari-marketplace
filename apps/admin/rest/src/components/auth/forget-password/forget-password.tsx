@@ -7,7 +7,7 @@ import {
 } from '@/data/user';
 import dynamic from 'next/dynamic';
 import Router from 'next/router';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 
 const EnterEmailView = dynamic(() => import('./enter-email-view'));
 const EnterTokenView = dynamic(() => import('./enter-token-view'));

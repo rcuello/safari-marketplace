@@ -8,7 +8,7 @@ import { siteSettings } from '@/settings/site.settings';
 import usePrice from '@/utils/use-price';
 import { formatAddress } from '@/utils/format-address';
 import ValidationError from '@/components/ui/form-validation-error';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import SelectInput from '@/components/ui/select-input';
 import { useIsRTL } from '@/utils/locals';
 import { useUpdateRefundMutation } from '@/data/refund';

@@ -1,5 +1,5 @@
 import { getLayout as getSiteLayout } from '@/components/layouts/layout';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import Search from '@/components/ui/search/search';
 import ManufacturersGrid from '@/components/manufacturer/manufacturers-grid';
 import { getLayoutWithFooter } from '@/components/layouts/layout-with-footer';

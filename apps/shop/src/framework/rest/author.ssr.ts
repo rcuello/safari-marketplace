@@ -1,6 +1,6 @@
 import type { Author, SettingsQueryOptions } from '@/types';
 import { GetStaticPaths, GetStaticProps } from 'next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations';
 import invariant from 'tiny-invariant';
 import client from './client';
 import { PRODUCTS_PER_PAGE } from './client/variables';

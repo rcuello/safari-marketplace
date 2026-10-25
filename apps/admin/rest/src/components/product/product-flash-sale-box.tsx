@@ -5,7 +5,7 @@ import { useProductFlashSaleInfo } from '@/data/flash-sale';
 import { Shop } from '@/types';
 import { adminOnly, getAuthCredentials, hasAccess } from '@/utils/auth-utils';
 import dayjs from 'dayjs';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 
 type IProps = {
   initialValues: any;

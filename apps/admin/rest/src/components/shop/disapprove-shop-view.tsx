@@ -5,7 +5,7 @@ import {
   useModalState,
 } from '@/components/ui/modal/modal.context';
 import { useDisApproveShopMutation } from '@/data/shop';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 
 const ProductDeleteView = () => {
   const { t } = useTranslation();

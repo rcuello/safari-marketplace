@@ -1,7 +1,7 @@
 import { Image } from '@/components/ui/image';
 import cn from 'classnames';
 import usePrice from '@/lib/use-price';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { PlusIcon } from '@/components/icons/plus-icon';
 import { useModalAction } from '@/components/ui/modal/modal.context';
 import { productPlaceholder } from '@/lib/placeholders';

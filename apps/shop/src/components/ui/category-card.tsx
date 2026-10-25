@@ -1,7 +1,7 @@
 import { Image } from '@/components/ui/image';
 import { productPlaceholder } from '@/lib/placeholders';
 import { formatString } from '@/lib/format-string';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 
 interface CategoryItemProps {
   item: any;

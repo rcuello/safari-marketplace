@@ -1,7 +1,7 @@
 import { Autocomplete } from '@react-google-maps/api';
 import { GoogleMapLocation } from '@/types';
 import React, { useEffect, useState } from 'react';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import Loader from '@/components/ui/loader/loader';
 import { MapPin } from '@/components/icons/map-pin';
 import useLocation, { locationAtom } from '@/utils/use-location';

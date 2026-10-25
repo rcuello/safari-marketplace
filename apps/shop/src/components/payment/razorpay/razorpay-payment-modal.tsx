@@ -2,7 +2,7 @@ import { useCallback, useEffect } from 'react';
 import useRazorpay, { RazorpayOptions } from '@/lib/use-razorpay';
 import { formatAddress } from '@/lib/format-address';
 import { PaymentGateway, PaymentIntentInfo } from '@/types';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useModalAction } from '@/components/ui/modal/modal.context';
 import { useSettings } from '@/framework/settings';
 import { useOrder, useOrderPayment } from '@/framework/order';

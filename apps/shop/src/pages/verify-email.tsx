@@ -5,7 +5,7 @@ import {
 } from '@/framework/user';
 import Button from '@/components/ui/button';
 import Card from '@/components/ui/cards/card';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import Logo from '@/components/ui/logo';
 import { useToken } from '@/lib/hooks/use-token';
 import { useRouter } from 'next/router';

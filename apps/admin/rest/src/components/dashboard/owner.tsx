@@ -14,7 +14,7 @@ import {
 } from '@/utils/auth-utils';
 import usePrice from '@/utils/use-price';
 import cn from 'classnames';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
 import { EaringIcon } from '@/components/icons/summary/earning';

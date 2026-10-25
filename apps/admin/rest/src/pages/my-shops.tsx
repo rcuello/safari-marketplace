@@ -2,7 +2,7 @@ import OwnerDashboard from '@/components/dashboard/owner';
 import AdminLayout from '@/components/layouts/admin';
 import { adminOnly } from '@/utils/auth-utils';
 import { GetStaticProps } from 'next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations';
 
 export const getStaticProps: GetStaticProps = async ({ locale }) => ({
   props: {

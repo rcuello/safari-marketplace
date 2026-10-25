@@ -1,7 +1,7 @@
 import Seo from '@/components/seo/seo';
 import Button from '@/components/ui/button';
 import NotFound from '@/components/ui/not-found';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import rangeMap from '@/lib/range-map';
 import CouponLoader from '@/components/ui/loaders/coupon-loader';
 import { useCoupons } from '@/framework/coupon';
@@ -10,7 +10,7 @@ import CouponCard from '@/components/ui/cards/coupon';
 import dynamic from 'next/dynamic';
 import { getLayoutWithFooter } from '@/components/layouts/layout-with-footer';
 import PageBanner from '@/components/banners/page-banner';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations';
 import { useRouter } from 'next/router';
 import { useShop } from '@/framework/shop';
 import { useSettings } from '@/framework/settings';

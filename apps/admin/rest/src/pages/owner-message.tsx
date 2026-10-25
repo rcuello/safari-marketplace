@@ -1,4 +1,4 @@
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations';
 import { GetStaticProps } from 'next';
 import { ownerAndStaffOnly } from '@/utils/auth-utils';
 import MessagePageIndex from '@/components/message/index';

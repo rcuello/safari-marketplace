@@ -1,7 +1,7 @@
 import type { NextPageWithLayout, Shop } from '@/types';
 import Button from '@/components/ui/button';
 import NotFound from '@/components/ui/not-found';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import rangeMap from '@/lib/range-map';
 import { useShops } from '@/framework/shop';
 import ErrorMessage from '@/components/ui/error-message';

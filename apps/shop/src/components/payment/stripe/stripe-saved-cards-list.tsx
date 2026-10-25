@@ -19,7 +19,7 @@ import unionpay from '@/assets/cards/unionpay.svg';
 import visa from '@/assets/cards/visa.svg';
 import CheckIconWithBg from '@/components/icons/check-icon-with-bg';
 import Fallback from '@/assets/cards/fallback-image.png';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 
 interface CardViewProps {
   view?: 'modal' | 'normal';

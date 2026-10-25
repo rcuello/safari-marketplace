@@ -9,7 +9,7 @@ import rangeMap from '@/lib/range-map';
 import { NotifyLogs } from '@/types';
 import { isEmpty } from 'lodash';
 import Button from '@/components/ui/button';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useSettings } from '@/framework/settings';
 import { FeatureNotAvailable } from '@/components/common/feature-not-available';
 export { getStaticProps } from '@/framework/notify-logs.ssr';

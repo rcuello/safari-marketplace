@@ -53,7 +53,7 @@ import { formatPrice } from '@/utils/use-price';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { isEmpty, split } from 'lodash';
 import omit from 'lodash/omit';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useRouter } from 'next/router';
 import { useCallback, useMemo, useState } from 'react';
 import { Controller, useFieldArray, useForm } from 'react-hook-form';

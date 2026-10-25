@@ -25,7 +25,7 @@ import { formatAddress } from '@/utils/format-address';
 import { getIcon } from '@/utils/get-icon';
 import { yupResolver } from '@hookform/resolvers/yup';
 import omit from 'lodash/omit';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useRouter } from 'next/router';
 import { Controller, useFieldArray, useForm } from 'react-hook-form';
 

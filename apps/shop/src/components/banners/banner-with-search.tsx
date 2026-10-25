@@ -9,7 +9,7 @@ import { useIntersection } from 'react-use';
 import { useEffect, useMemo, useRef } from 'react';
 import { useIsRTL } from '@/lib/locals';
 import { ArrowNext, ArrowPrev } from '@/components/icons';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useReverse } from '@/lib/reverse';
 
 interface BannerProps {

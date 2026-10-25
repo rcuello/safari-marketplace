@@ -1,5 +1,5 @@
 import Button from '@/components/ui/button';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useModalAction } from '@/components/ui/modal/modal.context';
 import { Order } from '@/types';
 

@@ -3,7 +3,7 @@ import Card from '@/components/ui/cards/card';
 import FileInput from '@/components/ui/forms/file-input';
 import Input from '@/components/ui/forms/input';
 import TextArea from '@/components/ui/forms/text-area';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import pick from 'lodash/pick';
 import { Form } from '@/components/ui/forms/form';
 import { useUpdateUser } from '@/framework/user';

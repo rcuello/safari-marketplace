@@ -1,7 +1,7 @@
 import { RefundPolicyStatusType } from '@/components/refund-policy/refund-policy-utils';
 import Select from '@/components/ui/select/select';
 import cn from 'classnames';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { ActionMeta } from 'react-select';
 
 type Props = {

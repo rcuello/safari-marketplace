@@ -11,7 +11,7 @@ import type {
   OrderQueryOptions,
   QueryOptions,
 } from '@/types';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { toast } from 'react-toastify';
 import { useModalAction } from '@/components/ui/modal/modal.context';
 import {

@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useModalAction } from '@/components/ui/modal/modal.context';
 import { useDefaultPaymentMethod } from '@/framework/card';
 import Button from '@/components/ui/button';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import {
   offset,
   flip,

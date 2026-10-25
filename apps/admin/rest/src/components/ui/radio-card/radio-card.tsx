@@ -1,5 +1,5 @@
 import React, { InputHTMLAttributes } from 'react';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import styles from './radio-card.module.css';
 import Image from 'next/image';
 

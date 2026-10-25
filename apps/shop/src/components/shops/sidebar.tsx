@@ -1,6 +1,6 @@
 import cn from 'classnames';
 import { Image } from '@/components/ui/image';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { formatAddress } from '@/lib/format-address';
 import isEmpty from 'lodash/isEmpty';
 import ReadMore from '@/components/ui/truncate';

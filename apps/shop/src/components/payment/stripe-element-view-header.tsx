@@ -1,6 +1,6 @@
 import { useModalAction } from '@/components/ui/modal/modal.context';
 import { PlusIcon } from '@/components/icons/plus-icon';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { PaymentGateway, PaymentIntentInfo } from '@/types';
 import Button from '../ui/button';
 import { useSettings } from '@/framework/settings';

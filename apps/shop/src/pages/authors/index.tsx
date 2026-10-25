@@ -1,5 +1,5 @@
 import { getLayout as getSiteLayout } from '@/components/layouts/layout';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import Search from '@/components/ui/search/search';
 import AuthorsGrid from '@/components/author/authors-grid';
 export { getStaticProps } from '@/framework/authors-page.ssr';

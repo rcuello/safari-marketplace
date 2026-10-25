@@ -11,7 +11,7 @@ import Link from '@/components/ui/link';
 import { useModalAction } from '@/components/ui/modal/modal.context';
 import { getAuthCredentials } from '@/utils/auth-utils';
 import { STAFF, SUPER_ADMIN } from '@/utils/constants';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useRouter } from 'next/router';
 import { Routes } from '@/config/routes';
 import { approveModalInitialValues } from '@/utils/constants';

@@ -1,5 +1,5 @@
 import { Controller, SubmitHandler } from 'react-hook-form';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { Form } from '@/components/ui/forms/form';
 import PhoneInput from '@/components/ui/forms/phone-input';
 import Button from '@/components/ui/button';

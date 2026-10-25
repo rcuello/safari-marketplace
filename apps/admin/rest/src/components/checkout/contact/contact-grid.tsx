@@ -4,7 +4,7 @@ import { customerContactAtom } from '@/contexts/checkout';
 import { useModalAction } from '@/components/ui/modal/modal.context';
 import ContactCard from '@/components/ui/contact-card';
 import { PlusIcon } from '@/components/icons/plus-icon';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 
 interface ContactProps {
   contact: string | undefined;

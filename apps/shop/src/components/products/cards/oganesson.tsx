@@ -1,7 +1,7 @@
 import { Image } from '@/components/ui/image';
 import cn from 'classnames';
 import usePrice from '@/lib/use-price';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { productPlaceholder } from '@/lib/placeholders';
 import { Product } from '@/types';
 import dynamic from 'next/dynamic';

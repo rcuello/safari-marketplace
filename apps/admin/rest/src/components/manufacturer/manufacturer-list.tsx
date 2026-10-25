@@ -3,7 +3,7 @@ import Pagination from '@/components/ui/pagination';
 import Image from 'next/image';
 import { Table, AlignType } from '@/components/ui/table';
 import { siteSettings } from '@/settings/site.settings';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import TitleWithSort from '@/components/ui/title-with-sort';
 import { Switch } from '@headlessui/react';
 import { useRouter } from 'next/router';

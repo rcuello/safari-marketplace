@@ -2,7 +2,7 @@ import { useConversationsQuery } from '@/data/conversations';
 import ErrorMessage from '@/components/ui/error-message';
 import Loader from '@/components/ui/loader/loader';
 import React, { useEffect, useRef } from 'react';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import isEmpty from 'lodash/isEmpty';
 import ListView from '@/components/message/views/list-view';
 import Scrollbar from '@/components/ui/scrollbar';

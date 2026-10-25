@@ -1,5 +1,5 @@
 import type { GetStaticProps } from 'next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations';
 import { addApolloState, initializeApollo } from './client';
 import { NotifyLogsDocument } from './gql/notify_log.graphql';
 import { SettingsDocument } from './gql/settings.graphql';

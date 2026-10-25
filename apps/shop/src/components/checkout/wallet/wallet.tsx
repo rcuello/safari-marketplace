@@ -4,7 +4,7 @@ import { useAtom } from 'jotai';
 import { useEffect, useState } from 'react';
 import { payableAmountAtom, walletAtom } from '@/store/checkout';
 import Checkbox from '@/components/ui/forms/checkbox/checkbox';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 interface Props {
   totalPrice: number;
   walletAmount: number;

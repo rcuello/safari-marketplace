@@ -1,5 +1,5 @@
 import classNames from 'classnames';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import Countdown, { CountdownProps } from 'react-countdown';
 import { twMerge } from 'tailwind-merge';
 

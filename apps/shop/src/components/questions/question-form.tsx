@@ -1,4 +1,4 @@
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import * as yup from 'yup';
 import Button from '@/components/ui/button';
 import { useModalState } from '@/components/ui/modal/modal.context';

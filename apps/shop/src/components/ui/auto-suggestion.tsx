@@ -1,6 +1,6 @@
 import { useRouter } from 'next/router';
 import cn from 'classnames';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import Scrollbar from '@/components/ui/scrollbar';
 import Link from '@/components/ui/link';
 import { Image } from '@/components/ui/image';

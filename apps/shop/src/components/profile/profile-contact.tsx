@@ -1,7 +1,7 @@
 import { PlusIcon } from '@/components/icons/plus-icon';
 import Card from '@/components/ui/cards/card';
 import { useModalAction } from '@/components/ui/modal/modal.context';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import PhoneInput from '@/components/ui/forms/phone-input';
 
 interface Props {

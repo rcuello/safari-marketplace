@@ -1,4 +1,4 @@
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import noResult from '@/assets/no-result.svg';
 import { Image } from '@/components/ui/image';
 import Link from '@/components/ui/link';

@@ -5,7 +5,7 @@ import { siteSettings } from '@/settings/site.settings';
 import usePrice from '@/utils/use-price';
 import Badge from '@/components/ui/badge/badge';
 import { Router, useRouter } from 'next/router';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { NoDataFound } from '@/components/icons/no-data-found';
 import {
   Product,

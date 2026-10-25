@@ -6,7 +6,7 @@ import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import ActionButtons from '@/components/common/action-buttons';
 import { MappedPaginatorInfo, Order, OrderStatus, Product } from '@/types';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import Badge from '@/components/ui/badge/badge';
 import StatusColor from '@/components/order/status-color';
 import { useRouter } from 'next/router';

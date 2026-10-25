@@ -1,6 +1,6 @@
 import dynamic from 'next/dynamic';
 import type { GetServerSideProps } from 'next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations';
 import {
   allowedRoles,
   getAuthCredentials,

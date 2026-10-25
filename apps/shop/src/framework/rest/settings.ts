@@ -8,7 +8,7 @@ import { getPreviewImage } from '@/lib/get-preview-image';
 import { useAtom } from 'jotai';
 import { couponAtom } from '@/store/checkout';
 import { toast } from 'react-toastify';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useRouter } from 'next/router';
 import { setMaintenanceDetails } from './utils/maintenance-utils';
 

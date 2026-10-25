@@ -1,6 +1,6 @@
 import type { Product } from '@/types';
 import type { GetStaticPaths, GetStaticProps } from 'next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations';
 import invariant from 'tiny-invariant';
 import client from './client';
 import { dehydrate, QueryClient } from '@tanstack/react-query';

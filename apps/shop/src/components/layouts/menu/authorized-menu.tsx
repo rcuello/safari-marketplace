@@ -3,7 +3,7 @@ import { Menu, Transition } from '@headlessui/react';
 import { siteSettings } from '@/config/site';
 import Avatar from '@/components/ui/avatar';
 import { useRouter } from 'next/router';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import cn from 'classnames';
 import { avatarPlaceholder } from '@/lib/placeholders';
 import { UserOutlinedIcon } from '@/components/icons/user-outlined';

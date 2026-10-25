@@ -1,6 +1,6 @@
 import SubscriptionForm from '@/components/settings/subscription-form';
 import { useSubscription } from '@/framework/settings';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 
 type SubscribeToNewsletterProps = {
   title?: string;

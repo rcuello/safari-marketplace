@@ -2,7 +2,7 @@ import { CheckMark } from '@/components/icons/checkmark';
 import cn from 'classnames';
 import Scrollbar from '@/components/ui/scrollbar';
 import styles from './progress-box.module.css';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 
 type ProgressProps = {
   data: any[] | undefined;

@@ -1,6 +1,6 @@
 import { Table } from '@/components/ui/table';
 import { useRouter } from 'next/router';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import cn from 'classnames';
 import { Product } from '@/types';
 import { useIsRTL } from '@/utils/locals';

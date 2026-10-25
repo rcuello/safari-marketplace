@@ -4,7 +4,7 @@ import TextArea from '@/components/ui/forms/text-area';
 import { useContact } from '@/framework/user';
 import type { CreateContactUsInput, Shop } from '@/types';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useForm } from 'react-hook-form';
 import * as yup from 'yup';
 

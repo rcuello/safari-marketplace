@@ -2,7 +2,7 @@ import { FlashSale, Product, SingleFlashSale } from '@/types';
 import classNames from 'classnames';
 import { twMerge } from 'tailwind-merge';
 import Image from 'next/image';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import dayjs from 'dayjs';
 import { isArray, isEmpty } from 'lodash';
 import Fluorine from '@/components/products/cards/fluorine';

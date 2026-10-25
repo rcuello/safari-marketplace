@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from '@/components/ui/link';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 
 interface MenuItem {
   id: number | string;

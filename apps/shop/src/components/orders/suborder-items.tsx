@@ -1,5 +1,5 @@
 import { useIsRTL } from '@/lib/locals';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import dayjs from 'dayjs';
 import Badge from '@/components/ui/badge';
 import { formatString } from '@/lib/format-string';

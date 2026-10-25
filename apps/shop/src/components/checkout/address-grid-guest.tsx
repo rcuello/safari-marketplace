@@ -4,7 +4,7 @@ import { RadioGroup } from '@headlessui/react';
 import { useAtom, WritableAtom } from 'jotai';
 import AddressCard from '@/components/address/address-card';
 import { AddressHeader } from '@/components/address/address-header';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 
 interface AddressesProps {
   addresses: Address[] | undefined;

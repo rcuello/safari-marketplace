@@ -2,7 +2,7 @@ import Input from '@/components/ui/input';
 import { useForm } from 'react-hook-form';
 import Button from '@/components/ui/button';
 import { useUpdateUserEmailMutation } from '@/data/user';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import pick from 'lodash/pick';
 import Description from '@/components/ui/description';
 import Card from '@/components/common/card';

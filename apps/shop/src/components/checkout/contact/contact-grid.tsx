@@ -3,7 +3,7 @@ import { useAtom } from 'jotai';
 import { customerContactAtom } from '@/store/checkout';
 import { useModalAction } from '@/components/ui/modal/modal.context';
 import { PlusIcon } from '@/components/icons/plus-icon';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import classNames from 'classnames';
 import PhoneInput from '@/components/ui/forms/phone-input';
 

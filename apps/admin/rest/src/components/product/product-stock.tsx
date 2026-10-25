@@ -5,7 +5,7 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import { Shop, ProductType, Product, MappedPaginatorInfo } from '@/types';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import Badge from '@/components/ui/badge/badge';
 import StatusColor from '@/components/order/status-color';
 import { useIsRTL } from '@/utils/locals';

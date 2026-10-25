@@ -1,7 +1,7 @@
 import LoginForm from '@/components/auth/login-form';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import type { GetStaticProps } from 'next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations';
 import { getAuthCredentials, isAuthenticated } from '@/utils/auth-utils';
 import { useRouter } from 'next/router';
 import AuthPageLayout from '@/components/layouts/auth-layout';

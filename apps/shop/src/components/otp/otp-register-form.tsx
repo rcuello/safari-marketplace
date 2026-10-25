@@ -1,4 +1,4 @@
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import MobileOtpInput from 'react-otp-input';
 import Button from '@/components/ui/button';
 import Input from '@/components/ui/forms/input';

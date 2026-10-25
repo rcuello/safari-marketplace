@@ -1,6 +1,6 @@
 import type { GetStaticPaths, GetStaticProps } from 'next';
 import type { Shop } from '__generated__/__types__';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations';
 import invariant from 'tiny-invariant';
 import { addApolloState, initializeApollo } from './client';
 import { PRODUCTS_PER_PAGE } from './client/variables';

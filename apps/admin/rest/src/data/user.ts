@@ -1,7 +1,7 @@
 import { AUTH_CRED } from '@/utils/constants';
 import { Routes } from '@/config/routes';
 import Cookies from 'js-cookie';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useRouter } from 'next/router';
 import {
   useMutation,

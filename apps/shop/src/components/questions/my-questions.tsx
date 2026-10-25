@@ -1,5 +1,5 @@
 import ErrorMessage from '@/components/ui/error-message';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import Button from '@/components/ui/button';
 import NotFound from '@/components/ui/not-found';
 import type { Question } from '@/types';

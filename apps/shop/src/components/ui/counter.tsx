@@ -1,7 +1,7 @@
 import cn from 'classnames';
 import { PlusIcon } from '@/components/icons/plus-icon';
 import { MinusIcon } from '@/components/icons/minus-icon';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { twMerge } from 'tailwind-merge';
 import { PlusIconNew } from '@/components/icons/plus-icon';
 import { MinusIconNew } from '@/components/icons/minus-icon';

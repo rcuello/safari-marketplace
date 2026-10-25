@@ -4,7 +4,7 @@ import {
   useDownloadableProducts,
 } from '@/framework/order';
 import Image from 'next/image';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import dayjs from 'dayjs';
 import Link from '@/components/ui/link';
 import { Routes } from '@/config/routes';

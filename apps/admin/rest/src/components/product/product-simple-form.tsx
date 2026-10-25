@@ -2,7 +2,7 @@ import Input from '@/components/ui/input';
 import Description from '@/components/ui/description';
 import Card from '@/components/common/card';
 import { useFormContext, useWatch } from 'react-hook-form';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import Label from '@/components/ui/label';
 import FileInput from '@/components/ui/file-input';
 import Checkbox from '@/components/ui/checkbox/checkbox';

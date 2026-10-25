@@ -1,6 +1,6 @@
 import cn from 'classnames';
 import { avatarPlaceholder } from '@/lib/placeholders';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { Image } from '@/components/ui/image';
 import Link from '@/components/ui/link';
 import { Routes } from '@/config/routes';

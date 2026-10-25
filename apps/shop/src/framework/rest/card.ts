@@ -4,7 +4,7 @@ import { API_ENDPOINTS } from '@/framework/client/api-endpoints';
 import client from '@/framework/client';
 import { useModalAction } from '@/components/ui/modal/modal.context';
 import { toast } from 'react-toastify';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useUser } from '@/framework/user';
 
 export function useCards(params?: any, options?: any) {

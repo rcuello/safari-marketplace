@@ -2,7 +2,7 @@ import { useState } from 'react';
 import Input from '@/components/ui/input';
 import Button from '@/components/ui/button';
 import { useForm } from 'react-hook-form';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { couponAtom } from '@/contexts/checkout';
 import { useAtom } from 'jotai';
 import { useVerifyCouponMutation } from '@/data/coupon';

@@ -1,5 +1,5 @@
 import React from 'react';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { NoMessageFound } from '@/components/icons/no-message-found';
 import NotFound from '@/components/ui/not-found';
 

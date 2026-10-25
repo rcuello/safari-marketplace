@@ -2,7 +2,7 @@ import SelectInput from '@/components/ui/select-input';
 import Label from '@/components/ui/label';
 import ValidationError from '@/components/ui/form-validation-error';
 import { Control } from 'react-hook-form';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useTypesQuery } from '@/data/type';
 import { useRouter } from 'next/router';
 

@@ -5,7 +5,7 @@ import ProductCard from '@/components/products/cards/card';
 import ErrorMessage from '@/components/ui/error-message';
 import { usePopularProducts } from '@/framework/product';
 import SectionBlock from '@/components/ui/section-block';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import classNames from 'classnames';
 
 interface Props {

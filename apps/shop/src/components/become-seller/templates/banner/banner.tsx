@@ -9,7 +9,7 @@ import dynamic from 'next/dynamic';
 //   () => import('@/components/layouts/menu/join-button'),
 //   { ssr: false },
 // );
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { cn } from '@/lib/cn';
 import Glow from '@/components/ui/glow';
 import Button from '@/components/ui/button';

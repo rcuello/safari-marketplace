@@ -6,8 +6,8 @@ import { useLicenseKeyMutation, useMeQuery } from '@/data/user';
 import { getErrorMessage } from '@/utils/form-error';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { GetStaticProps } from 'next';
-import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { useTranslation } from 'next-i18next/pages';
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations';
 import { useRouter } from 'next/router';
 import { useForm } from 'react-hook-form';
 

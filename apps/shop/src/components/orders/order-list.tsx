@@ -1,6 +1,6 @@
 import Button from '@/components/ui/button';
 import Scrollbar from '@/components/ui/scrollbar';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import OrderCard from './order-card';
 import { atom, useAtom } from 'jotai';
 import { useEffect } from 'react';

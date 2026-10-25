@@ -6,7 +6,7 @@ import Spinner from '@/components/ui/loaders/spinner/spinner';
 import { useOrder, useOrderPayment } from '@/framework/order';
 import { useRouter } from 'next/router';
 import { toast } from 'react-toastify';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useSettings } from '@/framework/settings';
 
 export { getServerSideProps } from '@/framework/order.ssr';

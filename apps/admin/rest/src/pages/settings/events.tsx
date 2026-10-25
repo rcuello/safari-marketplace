@@ -8,8 +8,8 @@ import { adminOnly } from '@/utils/auth-utils';
 import { Settings } from '@/types';
 import { useShippingClassesQuery } from '@/data/shipping';
 import { useTaxesQuery } from '@/data/tax';
-import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { useTranslation } from 'next-i18next/pages';
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations';
 import { useRouter } from 'next/router';
 
 export default function EventsSettings() {

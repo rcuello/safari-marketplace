@@ -1,7 +1,7 @@
 import classNames from 'classnames';
 import { twMerge } from 'tailwind-merge';
 import { useModalAction } from '@/components/ui/modal/modal.context';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 
 type ShortDescriptionProps = {
   content: string;

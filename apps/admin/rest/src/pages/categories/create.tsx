@@ -1,7 +1,7 @@
 import Layout from '@/components/layouts/admin';
 import CreateOrUpdateCategoriesForm from '@/components/category/category-form';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import { useTranslation } from 'next-i18next';
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations';
+import { useTranslation } from 'next-i18next/pages';
 
 export default function CreateCategoriesPage() {
   const { t } = useTranslation();

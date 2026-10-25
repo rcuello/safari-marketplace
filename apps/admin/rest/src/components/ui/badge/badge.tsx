@@ -1,5 +1,5 @@
 import cn from 'classnames';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { twMerge } from 'tailwind-merge';
 
 type BadgeProps = {

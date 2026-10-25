@@ -1,7 +1,7 @@
 import { CloseIcon } from '@/components/icons/close-icon';
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment, useRef } from 'react';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useRouter } from 'next/router';
 import { getDirection } from '@/lib/constants';
 import classNames from 'classnames';

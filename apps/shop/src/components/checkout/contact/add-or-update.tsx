@@ -2,7 +2,7 @@ import { useModalAction } from '@/components/ui/modal/modal.context';
 import OtpForm from '@/components/otp/otp-form';
 import { customerContactAtom } from '@/store/checkout';
 import { useAtom } from 'jotai';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useSettings } from '@/framework/settings';
 import PhoneNumberForm from '@/components/otp/phone-number-form';
 

@@ -13,7 +13,7 @@ import {
 } from '@tanstack/react-query';
 import { useSettingsQuery } from '@/data/settings';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { appWithTranslation } from 'next-i18next';
+import { appWithTranslation } from 'next-i18next/pages';
 import { ModalProvider } from '@/components/ui/modal/modal.context';
 import DefaultSeo from '@/components/ui/default-seo';
 import ManagedModal from '@/components/ui/modal/managed-modal';

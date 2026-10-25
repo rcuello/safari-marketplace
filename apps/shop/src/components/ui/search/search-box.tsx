@@ -2,7 +2,7 @@ import { InputHTMLAttributes } from 'react';
 import cn from 'classnames';
 import { SearchIcon } from '@/components/icons/search-icon';
 import { CloseIcon } from '@/components/icons/close-icon';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 
 export interface Props extends InputHTMLAttributes<HTMLInputElement> {
   className?: string;

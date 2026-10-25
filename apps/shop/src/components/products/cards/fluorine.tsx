@@ -8,7 +8,7 @@ import classNames from 'classnames';
 import { Routes } from '@/config/routes';
 import { useCallback, useMemo } from 'react';
 import dayjs from 'dayjs';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useModalAction } from '@/components/ui/modal/modal.context';
 import { ExternalIconNew } from '@/components/icons/external-icon';
 // import { PlusIcon } from '@/components/icons/plus-icon';

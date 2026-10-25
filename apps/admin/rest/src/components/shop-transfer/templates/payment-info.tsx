@@ -1,7 +1,7 @@
 import { AlignType, Table } from '@/components/ui/table';
 import { PaymentInfo } from '@/types';
 import { useIsRTL } from '@/utils/locals';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 
 type IProps = {
   data: PaymentInfo[];

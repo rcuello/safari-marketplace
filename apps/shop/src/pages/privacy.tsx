@@ -1,7 +1,7 @@
 import { privacyPolicy } from '@/framework/static/privacy';
 import { Link, Element } from 'react-scroll';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import { useTranslation } from 'next-i18next';
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations';
+import { useTranslation } from 'next-i18next/pages';
 import { GetStaticProps } from 'next';
 import Seo from '@/components/seo/seo';
 import { getLayoutWithFooter } from '@/components/layouts/layout-with-footer';

@@ -1,7 +1,7 @@
 import CreateOrUpdateFlashSaleForm from '@/components/flash-sale/flash-sale-form';
 import Layout from '@/components/layouts/admin';
-import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { useTranslation } from 'next-i18next/pages';
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations';
 import { adminOnly } from '@/utils/auth-utils';
 export default function CreateFlashSalePage() {
   const { t } = useTranslation();

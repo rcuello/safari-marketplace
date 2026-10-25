@@ -1,6 +1,6 @@
 import ManufacturerCreateOrUpdateForm from '@/components/manufacturer/manufacturer-form';
-import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { useTranslation } from 'next-i18next/pages';
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations';
 import ShopLayout from '@/components/layouts/shop';
 import {
   adminOnly,

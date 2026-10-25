@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import { CheckMarkFillNew } from '@/components/icons/checkmark-circle-fill';
 // import { CloseFillIcon } from '@/components/icons/close-fill';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import Link from '@/components/ui/link';
 import { Routes } from '@/config/routes';
 import Loader from '@/components/ui/loader/loader';

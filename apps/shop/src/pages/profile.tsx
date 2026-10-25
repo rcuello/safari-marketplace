@@ -1,6 +1,6 @@
 import ProfileAddressGrid from '@/components/profile/profile-address';
 import Card from '@/components/ui/cards/card';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import ProfileForm from '@/components/profile/profile-form';
 import ProfileContact from '@/components/profile/profile-contact';
 import Seo from '@/components/seo/seo';

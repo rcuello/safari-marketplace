@@ -1,7 +1,7 @@
 import classNames from 'classnames';
 import { twMerge } from 'tailwind-merge';
 import Badge from '@/components/ui/badge/badge';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import StatusColor from '@/components/order/status-color';
 
 interface TopBarProps {

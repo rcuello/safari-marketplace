@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { HomeIconNew } from '@/components/icons/home-icon-new';
 import { Routes } from '@/config/routes';
 import { ArrowNext } from '@/components/icons';

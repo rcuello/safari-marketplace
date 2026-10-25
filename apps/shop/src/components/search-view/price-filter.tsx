@@ -1,7 +1,7 @@
 import Slider from '@/components/ui/forms/range-slider';
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/router';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 
 const defaultPriceRange = [0, 1000];
 const PriceFilter = () => {

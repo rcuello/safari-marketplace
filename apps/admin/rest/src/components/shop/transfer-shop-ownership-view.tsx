@@ -10,7 +10,7 @@ import Title from '@/components/ui/title';
 import { useTransferShopOwnershipMutation } from '@/data/shop';
 import { useVendorsQuery } from '@/data/user';
 import { TransferShopOwnershipInput, User } from '@/types';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import TextArea from '@/components/ui/text-area';

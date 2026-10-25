@@ -15,7 +15,7 @@ import { MaintenanceFormValues, Settings } from '@/types';
 import { useConfirmRedirectIfDirty } from '@/utils/confirmed-redirect-if-dirty';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { addDays, addMinutes, isSameDay, isToday } from 'date-fns';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useRouter } from 'next/router';
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';

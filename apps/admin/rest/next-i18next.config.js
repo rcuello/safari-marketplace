@@ -1,4 +1,4 @@
-/** @type {import('next-i18next').UserConfig} */
+/** @type {import('next-i18next/pages').UserConfig} */
 
 const invariant = require('tiny-invariant');
 const path = require('path');

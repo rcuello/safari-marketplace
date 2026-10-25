@@ -4,7 +4,7 @@ import {
   useModalState,
 } from '@/components/ui/modal/modal.context';
 import { useSettings } from '@/framework/settings';
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next/pages';
 import { useGetPaymentIntent } from '@/framework/order';
 import Button from '@/components/ui/button';
 import { RadioGroup } from '@headlessui/react';
