@@ -1081,6 +1081,11 @@
   resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.29.7.tgz#12022450c45a4da6d8d8287b18a4ff2ddb23f768"
   integrity sha512-Nq8OhGWiZIZGV6hLHoyAKLLcJihP/xFeBMGJoUrxTX2psI8dCifzLhZISFb+VWS3wFMRDmCGw5R+dOySCqPLhw==
 
+"@babel/runtime@^7.29.7":
+  version "7.29.10"
+  resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.29.10.tgz#fe9920782f7ee34029165ac6f272984917a1641b"
+  integrity sha512-NpugTzbKgGrNe45Ui32cN8vCFFMxVtP/9rtfwv0nP5FRDAjvYBxJcLVpYA9mr1jxP6cnIT7x9LUzuDTbWYYNRA==
+
 "@babel/runtime@^8.0.0":
   version "8.0.0"
   resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-8.0.0.tgz#d7bd513e6843662346552c2798ab895716cf97f2"
@@ -3154,7 +3159,7 @@
   dependencies:
     "@types/node" "*"
 
-"@types/hoist-non-react-statics@^3.3.4":
+"@types/hoist-non-react-statics@^3.3.4", "@types/hoist-non-react-statics@^3.3.7":
   version "3.3.7"
   resolved "https://registry.yarnpkg.com/@types/hoist-non-react-statics/-/hoist-non-react-statics-3.3.7.tgz#306e3a3a73828522efa1341159da4846e7573a6c"
   integrity sha512-PQTyIulDkIDro8P+IHbKCsw7U2xxBYflVzW/FgWdCAePD9xGSidgA76/GeJ6lBKoblyhf9pBY763gbrN+1dI8g==
@@ -6444,6 +6449,11 @@ html-parse-stringify@^3.0.1:
   dependencies:
     void-elements "3.1.0"
 
+html-parse-stringify@^4.0.1:
+  version "4.0.1"
+  resolved "https://registry.yarnpkg.com/html-parse-stringify/-/html-parse-stringify-4.0.1.tgz#7264be901df0fef8829eb04632191be0aa94f55e"
+  integrity sha512-0zHsZJrK7S3K2aucXWL6ycoYJ/iNtIcFHC/nYQgFklPtrv5LpJctIiSCroWZWeuoXvuyFdzp6KzjJQ+OT5MfFw==
+
 htmlparser2@^8.0.0:
   version "8.0.2"
   resolved "https://registry.yarnpkg.com/htmlparser2/-/htmlparser2-8.0.2.tgz#f002151705b383e62433b5cf466f5b716edaec21"
@@ -6498,12 +6508,24 @@ i18next-fs-backend@^2.3.2:
   resolved "https://registry.yarnpkg.com/i18next-fs-backend/-/i18next-fs-backend-2.6.7.tgz#4cb4aba9d165748bb6b2f19ed0892061a98c1c81"
   integrity sha512-nN2TIycyR/d+OVuLm1ugPyOlMprqPRnQ7QktBgn44F3H8l7TeTH4ffHJ7nUsd4QVJfetWW7/VZ3s+4g7FoAZUA==
 
+i18next-resources-to-backend@^1.2.3:
+  version "1.2.3"
+  resolved "https://registry.yarnpkg.com/i18next-resources-to-backend/-/i18next-resources-to-backend-1.2.3.tgz#f2f58dab29f5514a6010b4e13c76f0714d62134e"
+  integrity sha512-8Y/LLAm5fqZc2ckQxtTWbu75ndjNLzF7mcYl6rhc4g+WBopIsG3YhdYqF5qhJy64tlYhlU2KSSnEgW3gGHLqwg==
+  dependencies:
+    "@babel/runtime" "^7.23.2"
+
 i18next@23.16.4:
   version "23.16.4"
   resolved "https://registry.yarnpkg.com/i18next/-/i18next-23.16.4.tgz#79c07544f6d6fa803fe8427108d547542c1d6cf4"
   integrity sha512-9NIYBVy9cs4wIqzurf7nLXPyf3R78xYbxExVqHLK9od3038rjpyOEzW+XB130kZ1N4PZ9inTtJ471CRJ4Ituyg==
   dependencies:
     "@babel/runtime" "^7.23.2"
+
+i18next@26.4.3:
+  version "26.4.3"
+  resolved "https://registry.yarnpkg.com/i18next/-/i18next-26.4.3.tgz#bb607107a1f5f9fdf6b9ef16dc9ad10bbed6cd7b"
+  integrity sha512-QIIueUYS2giFVIY3hu/X5Dz7/qTzwcXE06H29m1DKVhUGVPCyT0wnsh14wEn/cTy9nZ/B6VhbDItdXotOKSO8A==
 
 iconv-lite@^0.7.0:
   version "0.7.3"
@@ -7778,6 +7800,15 @@ next-i18next@15.3.1:
     hoist-non-react-statics "^3.3.2"
     i18next-fs-backend "^2.3.2"
 
+next-i18next@16.3.1:
+  version "16.3.1"
+  resolved "https://registry.yarnpkg.com/next-i18next/-/next-i18next-16.3.1.tgz#2b8784f82666157aadf6adbb283c92ac9de48f2c"
+  integrity sha512-VVtXI4TYqsKPr5sVq5/kSpNWdjvlMwu2HpgLX4cvXBVB+t3LsjYMH2O8bs7xthBRREv+FIE3ihUg5ijmomzySA==
+  dependencies:
+    "@types/hoist-non-react-statics" "^3.3.7"
+    hoist-non-react-statics "^3.3.2"
+    i18next-resources-to-backend "^1.2.3"
+
 next-pwa@5.6.0:
   version "5.6.0"
   resolved "https://registry.yarnpkg.com/next-pwa/-/next-pwa-5.6.0.tgz#f7b1960c4fdd7be4253eb9b41b612ac773392bf4"
@@ -8744,6 +8775,15 @@ react-i18next@13.3.1:
   dependencies:
     "@babel/runtime" "^7.22.5"
     html-parse-stringify "^3.0.1"
+
+react-i18next@17.0.16:
+  version "17.0.16"
+  resolved "https://registry.yarnpkg.com/react-i18next/-/react-i18next-17.0.16.tgz#72d3cd2f5a484aaf75bd76422dbc23a43bf693f5"
+  integrity sha512-7uImVD9hG5yUOaP5KHVied1x0A004Di/KU031ULR35Ma+9e9H5GdnNZHgQEIByyAz+IAXBkRDTedNVzjPUH8ZA==
+  dependencies:
+    "@babel/runtime" "^7.29.7"
+    html-parse-stringify "^4.0.1"
+    use-sync-external-store "^1.6.0"
 
 react-is@^16.13.1, react-is@^16.7.0:
   version "16.13.1"
@@ -10627,6 +10667,11 @@ use-isomorphic-layout-effect@^1.1.2, use-isomorphic-layout-effect@^1.2.0:
   version "1.2.1"
   resolved "https://registry.yarnpkg.com/use-isomorphic-layout-effect/-/use-isomorphic-layout-effect-1.2.1.tgz#2f11a525628f56424521c748feabc2ffcc962fce"
   integrity sha512-tpZZ+EX0gaghDAiFR37hj5MgY6ZN55kLiPkJsKxBMZ6GZdOSPJXiOzPM984oPYZ5AnehYx5WQp1+ME8I/P/pRA==
+
+use-sync-external-store@^1.6.0:
+  version "1.7.0"
+  resolved "https://registry.yarnpkg.com/use-sync-external-store/-/use-sync-external-store-1.7.0.tgz#6dcb66ef569e02f186af6b3d575f414ce746e18f"
+  integrity sha512-6L+EeigHMQhdaIPNIFUKwfWJSwWFQ8gJbJ2DLOs5sDIegTwR9fRxvnM3uciHKjIZhFz+KAv2emhWMRvDmMcY8A==
 
 util-deprecate@^1.0.1, util-deprecate@^1.0.2:
   version "1.0.2"
