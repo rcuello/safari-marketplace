@@ -1,14 +1,8 @@
-// Flat config de ESLint 9 (US-81). Reproduce el antiguo .eslintrc.json:
-// `next` + `prettier`, sin exhaustive-deps. eslint-config-next 15 todavía se
-// publica en formato eslintrc, así que entra por FlatCompat; con Next 16
-// (US-82) se importa su export flat nativo.
-import { dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { FlatCompat } from '@eslint/eslintrc';
-
-const compat = new FlatCompat({
-  baseDirectory: dirname(fileURLToPath(import.meta.url)),
-});
+// Flat config de ESLint 9 (US-81; export flat nativo de eslint-config-next 16
+// desde US-82). Reproduce el antiguo .eslintrc.json: `next` + `prettier`, sin
+// exhaustive-deps.
+import next from 'eslint-config-next';
+import prettier from 'eslint-config-prettier/flat';
 
 export default [
   // Lo que ignoraba .eslintignore (flat config no lo lee).
@@ -25,7 +19,33 @@ export default [
       '**/*.graphqls.d.ts',
     ],
   },
-  ...compat.extends('next', 'prettier'),
+  ...next,
+  prettier,
+  // Reglas que entran con eslint-config-next 16: las del React Compiler de
+  // eslint-plugin-react-hooks 7 y una nueva de @next/next. Activarlas es
+  // endurecer el lint (fuera de alcance de US-82, igual que en US-81); se
+  // apagan para conservar las mismas reglas activas que con la 15.
+  {
+    rules: Object.fromEntries(
+      [
+        '@next/next/no-location-assign-relative-destination',
+        'react-hooks/config',
+        'react-hooks/error-boundaries',
+        'react-hooks/gating',
+        'react-hooks/globals',
+        'react-hooks/immutability',
+        'react-hooks/incompatible-library',
+        'react-hooks/preserve-manual-memoization',
+        'react-hooks/purity',
+        'react-hooks/refs',
+        'react-hooks/set-state-in-effect',
+        'react-hooks/set-state-in-render',
+        'react-hooks/static-components',
+        'react-hooks/unsupported-syntax',
+        'react-hooks/use-memo',
+      ].map((rule) => [rule, 'off']),
+    ),
+  },
   // ESLint 9 avisa por defecto de los eslint-disable que ya no hacen falta; la
   // 8 no lo hacía. Se apaga para no sumar hallazgos (limpiarlos es otra US).
   { linterOptions: { reportUnusedDisableDirectives: 'off' } },

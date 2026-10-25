@@ -77,7 +77,6 @@
     "yup": "1.4.0"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "3.3.7",
     "@graphql-codegen/cli": "5.0.3",
     "@graphql-codegen/import-types-preset": "3.0.0",
     "@graphql-codegen/typescript": "4.1.1",
@@ -103,7 +102,7 @@
     "@types/sanitize-html": "2.13.0",
     "autoprefixer": "10.4.20",
     "eslint": "9.39.5",
-    "eslint-config-next": "15.5.27",
+    "eslint-config-next": "16.4.0",
     "eslint-config-prettier": "10.1.8",
     "graphql": "16.9.0",
     "graphql-let": "0.18.6",
