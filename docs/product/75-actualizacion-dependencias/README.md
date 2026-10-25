@@ -93,7 +93,7 @@ arriba.
 | [US-82](./82-next-14-a-16.md) | Next 14.2 → 16 en shop y admin, con React 18 | Sí | US-80, US-81 | ~250 |
 | [US-83](./83-react-19.md) | React 19 en shop y admin | Sí | US-82 | ~200 |
 | [US-84](./84-tanstack-query-shop.md) ✅ | react-query 3 → @tanstack/react-query 5 en el shop. Implementada el 2026-10-24 (5.104.1; sin el codemod oficial) | Sí | US-80 | ~300 |
-| [US-85](./85-tanstack-query-admin.md) | react-query 3 → @tanstack/react-query 5 en el admin | Sí | US-84 | ~450 |
+| [US-85](./85-tanstack-query-admin.md) ✅ | react-query 3 → @tanstack/react-query 5 en el admin. Implementada el 2026-10-24; `react-query` sale del workspace | Sí | US-84 | ~450 |
 | [US-86](./86-tailwind-4.md) | Tailwind 3 → 4 en shop y admin | Sí | US-82 | ~300 |
 | [US-87](./87-stripe-sdks.md) | SDKs de Stripe (servidor y cliente) | Sí | US-78, US-83 | ~150 |
 | [US-88](./88-api-jest-a-vitest.md) ✅ | Tests de la API: de jest a Vitest (Nest 11, CommonJS). Implementada el 2026-10-24 (Vitest 4.1.11 + unplugin-swc; la red de tipos pasa a `tsc`) | Sí | US-78 | ~400 |
