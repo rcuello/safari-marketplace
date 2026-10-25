@@ -89,7 +89,7 @@ arriba.
 | [US-78](./78-nestjs-10-a-11.md) ✅ | NestJS 10 → 11 (Express 5). Implementada el 2026-10-24; parser de query `'extended'`; cambio de `/docs-json` aceptado; `uuid` declarado | Sí | US-77 | ~150 |
 | [US-79](./79-nestjs-11-a-12.md) ⛔ | NestJS 11 → 12. **Reemplazada** el 2026-10-24 por US-88 → US-91: Nest 12 es solo ESM y jest no lo carga en Node 22 | — | — | — |
 | [US-80](./80-next-13-a-14.md) ✅ | Next 13.5 → 14.2 en shop y admin, con React 18. Implementada el 2026-10-24; también admin/graphql, para tener un solo Next (decisión del dueño, R-1/R-2); el pin de React 18.2.0 se mantiene (D-3) | Sí | ninguna | ~150 |
-| [US-81](./81-eslint-9-flat-config.md) | ESLint 9 con flat config y Prettier 3 en las tres apps | Sí | US-80, US-77 | ~250 |
+| [US-81](./81-eslint-9-flat-config.md) ✅ | ESLint 9 con flat config y Prettier 3 en las tres apps. Implementada el 2026-10-24; `eslint-config-next` 15.5 de puente; ESLint 9 sin soporte → US-82 | Sí | US-80, US-77 | ~250 |
 | [US-82](./82-next-14-a-16.md) | Next 14.2 → 16 en shop y admin, con React 18 | Sí | US-80, US-81 | ~250 |
 | [US-83](./83-react-19.md) | React 19 en shop y admin | Sí | US-82 | ~200 |
 | [US-84](./84-tanstack-query-shop.md) ✅ | react-query 3 → @tanstack/react-query 5 en el shop. Implementada el 2026-10-24 (5.104.1; sin el codemod oficial) | Sí | US-80 | ~300 |

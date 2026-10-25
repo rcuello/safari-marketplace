@@ -214,7 +214,7 @@ Feature: …
 Épico 33 Contenido y configuración desde Postgres → REEMPLAZADO por el Épico 46 (2026-10-20)
 Épico 40 Identidad extendida desde Postgres      → US-41 ✅, US-42, US-44 ✅   ← US-43 reemplazada por US-63 del Épico 46
 Épico 46 API sin mocks JSON (19 controladores)   → US-47 … US-63 ✅ (completado 2026-10-23) ← SECUENCIAL; cada US trae su DDL + seed + db-reset; levanta la exclusión de db/schema.sql:13-16
-Épico 75 Actualización de dependencias          → US-76, 77, 78, 80, 84, 85, 88 ✅; US-79 reemplazada por US-88 … US-91 (Nest 12 = ESM + Vitest + TS 6); quedan US-81 … US-83, 86, 87, 89 … 91 ← una mayor por US; API (77→79) y frontend (80→83) en paralelo; DA-1..DA-6 con propuesta por defecto
+Épico 75 Actualización de dependencias          → US-76, 77, 78, 80, 81, 84, 85, 88 ✅; US-79 reemplazada por US-88 … US-91 (Nest 12 = ESM + Vitest + TS 6); quedan US-82, 83, 86, 87, 89 … 91 ← una mayor por US; API (77→79) y frontend (80→83) en paralelo; DA-1..DA-6 con propuesta por defecto
 US-31    Guardas de id fuera del rango bigint   → standalone   ← implementada: cubrió `types`/`tags`/`manufacturers`, `users` y las 2 FK de `packages/db`
 US-32    Deriva de reloj `updated_at`/`created_at` → standalone ← PRERREQUISITO de US-34: su elección de reloj es insumo del DDL del Épico 33 (R-3, resuelto 2026-09-14)
 US-64    `messages/seen` y estado de lectura      → standalone ✅ (2026-10-23) ← después de US-56; comparte archivos con el Épico 46, NO en paralelo con sus US
