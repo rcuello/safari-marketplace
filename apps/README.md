@@ -7,8 +7,8 @@ Guía verificada en Windows 11 + Node 22.14 + yarn 1.22.22 (2026-08-24).
 | Servicio | Carpeta | Stack | Puerto |
 |---|---|---|---|
 | API (híbrida: Postgres + mock) | `api/rest` | NestJS 9 | `9001` |
-| Tienda | `shop` | Next.js 13.5 (pages router) | `3003` |
-| Admin | `admin/rest` | Next.js 13.5 (pages router) | `3002` |
+| Tienda | `shop` | Next.js 14.2 (pages router) | `3003` |
+| Admin | `admin/rest` | Next.js 14.2 (pages router) | `3002` |
 
 `shop` y `admin/rest` consumen la API vía `NEXT_PUBLIC_REST_API_ENDPOINT`.
 Existe además una variante GraphQL (`api/graphql` + `dev:gql`) que depende de
@@ -321,8 +321,10 @@ global `Express.Multer.File`.
 
 ### Warnings esperados en consola
 
-Ruido cosmético, no fallos: `fetchPriority` (desajuste Next 13 / React 18.3) y
-`apple-mobile-web-app-capable` deprecado.
+Ruido cosmético, no fallos: `apple-mobile-web-app-capable` deprecado (solo en
+el admin; el shop ya trae también `mobile-web-app-capable`). El aviso de
+`fetchPriority` (Next 13 con React 18.3) ya no aparece: React está fijado en
+18.2.0 y el frontend corre en Next 14.2 (US-80).
 
 ## Notas para el despliegue en nube
 

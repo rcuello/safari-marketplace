@@ -6,7 +6,7 @@
 
 **Épico:** [Épico 75](./README.md)
 **Fecha:** 2026-10-24
-**Status:** Implementada (2026-10-24), salvo el CA-3, pendiente de la integración
+**Status:** Implementada (2026-10-24). El CA-3 se cerró al integrar en `main`, junto con US-80.
 **Depende de:** US-77
 **LOC est.:** ~150
 
@@ -80,9 +80,9 @@ Feature: API en NestJS 11 sobre Express 5
 ## Definición de Done
 
 - [x] Línea base de los `curl` de CA-2, tomada en Nest 10.
-- [x] CA-1 y CA-2 con la salida pegada. CA-3 pendiente de la integración.
+- [x] CA-1 y CA-2 con la salida pegada. CA-3 verificado al integrar (ver CA-3 en el resultado).
 - [x] Lint sin escribir en 0.
-- [x] Status actualizado aquí. La tabla del épico la actualiza quien integra.
+- [x] Status actualizado aquí. También en la tabla del épico, al integrar.
 
 ## Resultado — ejecutado el 2026-10-24
 
@@ -283,10 +283,58 @@ GET http://localhost:9011/docs-json  -> 200, 184441 B, 169 rutas
 
 ### CA-3 — El frontend sigue funcionando
 
-**Pendiente de la integración.** Este worktree no tiene `.env` ni frontend
-instalado, y los puertos 9001, 3002 y 3003 los usa en paralelo US-80. Quien
-integre esta rama tiene que levantar la API de Nest 11 en el 9001 y pegar
-aquí `just verify` y las rutas de humo del épico.
+**Cumple. Verificado al integrar el 2026-10-24.** El worktree no tenía
+`.env` ni frontend, así que este CA se verificó en `main`, ya con US-78 y
+US-80 integradas: la API en Nest 11.2.7 en el 9001 y el shop y el admin en
+Next 14.2.35.
+
+```
+$ cd apps/api/rest && yarn install --frozen-lockfile   # nest 11.2.7, uuid 11.1.1
+$ just build-api                                       # Done in 74.48s
+$ npx jest
+Test Suites: 34 passed, 34 total
+Tests:       565 passed, 565 total
+
+$ just verify
+OK   API    :9001/api/settings  200  5503B  577ms
+OK   Shop   :3003/en  200  190630B  742ms  cards:30
+OK   Admin  :3002/en/login  200  72685B  80ms  cards:1
+```
+
+El shop (190630 B) y el admin (72685 B) dan **los mismos bytes** que midió
+US-80 con la API en Nest 10, así que el frontend no ve ningún cambio de la
+API.
+
+**Rutas de humo, en un contexto del navegador sin sesión previa:**
+
+| Ruta | Resultado |
+|---|---|
+| shop `/shops` | 200, 12 enlaces a tiendas |
+| shop `/shops/grocery-shop` | 200, 30 `product-card` (ver nota) |
+| shop `/products/apples` | 200, `<title>Pickbazar \| Apples</title>` |
+| API `products?search=type.slug:grocery;status:publish` | 200, `total` 436 |
+| API `products?orderBy=price&sortedBy=asc&limit=3` | 200, 3 de 1199 |
+| API `products?limit=10&page=2` | 200, 10 de 1199 |
+| admin login (`admin@demo.com`) | crea la cookie `AUTH_CRED` (JWT con `expiresIn`, ver el ajuste de `jwt-options.ts`) |
+| admin `/` | «Super Admin», Total Revenue $3,538.01, Total Order 20 |
+| admin `/products` | 20 filas; `products?…&orderBy=created_at&sortedBy=desc` y los 4 catálogos de filtros, todos 200 |
+| admin `/orders` | 20 filas; `orders?…&orderBy=created_at&sortedBy=desc` 200 |
+
+**Consola del admin:** solo aparecen mensajes que ya existían antes de esta
+US (ver US-80). Son el WebSocket de Pusher con `your-pusher-app-key`, el
+`Invalid href 'http://localhost:3003//'` y el `expandedRowRender should not
+use with nested Table`.
+
+**Notas:**
+
+- El primer `GET /shops/grocery-shop` dio 500. El shop arrancó a la vez que
+  la API, y su log muestra `GET http://localhost:9001/api/shops failed after
+  3 attempts: ECONNREFUSED`. Con la API arriba, `grocery-shop`, `gadget` y
+  `bakery-shop` dan 200. No es una regresión: es el orden de arranque que
+  ya avisa `CLAUDE.md` («SIEMPRE la API primero»).
+- `search=categories.slug:fruits-vegetables` da `total` 0, pero porque
+  `category_product` tiene 0 filas en el seed (`select count(*) from
+  category_product` → 0), no por el parser de query strings.
 
 ### Decisiones
 

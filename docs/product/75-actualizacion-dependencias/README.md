@@ -32,7 +32,7 @@ salto.
 | react / react-dom | 18.2.0 (fijado por `resolutions`, ver D-3) | 19.3.1 | — |
 | @nestjs/core, common, platform-express, testing | 9.4.3 | 12.2.0 | 10.4.22, 11.2.8 |
 | typescript (API) | 4.9.5 | 7.0.2 | 5.9.3, 6.0.3 |
-| typescript (shop, admin) | 5.2.2 | 7.0.2 | 5.9.3, 6.0.3 |
+| typescript (shop, admin/rest) | 5.6.3 (admin/graphql: 5.2.2) | 7.0.2 | 5.9.3, 6.0.3 |
 | eslint (las tres apps) | 8.53 / 8.57 | 10.13.0 | — |
 | react-query | 3.39.3 (sin versiones nuevas) | sucesor: `@tanstack/react-query` 5.104.5 | — |
 | tailwindcss | 3.4.14 | 4.3.3 | — |
@@ -86,9 +86,9 @@ arriba.
 |----|--------|-----------------|------------|----------|
 | [US-76](./76-parches-menores-dependencias.md) ✅ | Parches y versiones menores (db, scraper, axios, next-auth). Implementada el 2026-10-24; vitest sigue en 4.1.11 | Sí | ninguna | ~30 (manifiestos y lockfiles) |
 | [US-77](./77-nestjs-9-a-10.md) ✅ | NestJS 9 → 10 y TypeScript 5 en la API. Implementada el 2026-10-24; sin cambios de código; los errores HTTP cambian el orden de sus claves (aceptado) | Sí | ninguna | ~150 |
-| [US-78](./78-nestjs-10-a-11.md) | NestJS 10 → 11 (Express 5) | Sí | US-77 | ~150 |
+| [US-78](./78-nestjs-10-a-11.md) ✅ | NestJS 10 → 11 (Express 5). Implementada el 2026-10-24; parser de query `'extended'`; cambio de `/docs-json` aceptado; `uuid` declarado | Sí | US-77 | ~150 |
 | [US-79](./79-nestjs-11-a-12.md) | NestJS 11 → 12 | Sí | US-78, DA-2 | ~100 |
-| [US-80](./80-next-13-a-14.md) | Next 13.5 → 14.2 en shop y admin, con React 18 | Sí | ninguna | ~150 |
+| [US-80](./80-next-13-a-14.md) ✅ | Next 13.5 → 14.2 en shop y admin, con React 18. Implementada el 2026-10-24; también admin/graphql, para tener un solo Next (decisión del dueño, R-1/R-2); el pin de React 18.2.0 se mantiene (D-3) | Sí | ninguna | ~150 |
 | [US-81](./81-eslint-9-flat-config.md) | ESLint 9 con flat config y Prettier 3 en las tres apps | Sí | US-80, US-77 | ~250 |
 | [US-82](./82-next-14-a-16.md) | Next 14.2 → 16 en shop y admin, con React 18 | Sí | US-80, US-81 | ~250 |
 | [US-83](./83-react-19.md) | React 19 en shop y admin | Sí | US-82 | ~200 |
