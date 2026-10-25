@@ -206,7 +206,7 @@ describe('WithdrawsService', () => {
         shop_id: '3',
         payment_method: 'cash',
         ...over,
-      } as unknown as CreateWithdrawDto);
+      }) as unknown as CreateWithdrawDto;
 
     it('crea con los campos proyectados; el status del body no viaja', async () => {
       ownerMock.mockResolvedValue(1);

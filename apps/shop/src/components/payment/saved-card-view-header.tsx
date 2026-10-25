@@ -19,7 +19,6 @@ const SavedCardViewHeader: React.FC<Props> = ({
   const { t } = useTranslation('common');
   const { settings } = useSettings();
 
-  
   const handleAddNewCard = () => {
     openModal('USE_NEW_PAYMENT', {
       paymentIntentInfo,

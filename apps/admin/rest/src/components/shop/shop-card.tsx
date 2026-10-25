@@ -46,7 +46,7 @@ const ShopCard: React.FC<ShopCardProps> = ({ shop }) => {
     >
       <div
         className={classNames(
-          'relative flex h-22 justify-end overflow-hidden'
+          'relative flex h-22 justify-end overflow-hidden',
           // shop?.cover_image?.original ? '' : 'flex justify-end'
         )}
       >

@@ -18,7 +18,7 @@ const Spinner = (props: Props) => {
         <span
           className={cn(
             'flex h-screen w-full flex-col items-center justify-center',
-            className
+            className,
           )}
         >
           <span className={styles.loading} />
@@ -42,7 +42,7 @@ export const SpinnerLoader = (props: SpinnerPops) => {
     <span
       className={cn(
         'inline-flex h-5 w-5 animate-spin rounded-full border-2 border-t-2 border-transparent border-t-accent',
-        className
+        className,
       )}
     />
   );

@@ -1,9 +1,4 @@
-import {
-  FAQs,
-  FAQsInput,
-  FAQsQueryOptions,
-  FAQsPaginator,
-} from '@/types';
+import { FAQs, FAQsInput, FAQsQueryOptions, FAQsPaginator } from '@/types';
 import { API_ENDPOINTS } from './api-endpoints';
 import { crudFactory } from './curd-factory';
 import { HttpClient } from './http-client';

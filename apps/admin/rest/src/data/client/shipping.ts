@@ -11,7 +11,7 @@ import { HttpClient } from '@/data/client/http-client';
 
 export const shippingClient = {
   ...crudFactory<Shipping, QueryOptions, ShippingInput>(
-    API_ENDPOINTS.SHIPPINGS
+    API_ENDPOINTS.SHIPPINGS,
   ),
   get({ id }: { id: string }) {
     return HttpClient.get<Shipping>(`${API_ENDPOINTS.SHIPPINGS}/${id}`);

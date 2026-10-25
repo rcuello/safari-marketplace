@@ -77,7 +77,7 @@ export const useUpdateManufacturerMutation = () => {
         undefined,
         {
           locale: Config.defaultLanguage,
-        }
+        },
       );
       toast.success(t('common:successfully-updated'));
     },
@@ -124,7 +124,7 @@ export const useManufacturerQuery = ({ slug, language }: GetParams) => {
 };
 
 export const useManufacturersQuery = (
-  options: Partial<ManufacturerQueryOptions>
+  options: Partial<ManufacturerQueryOptions>,
 ) => {
   const { data, error, isLoading } = useQuery<ManufacturerPaginator, Error>({
     queryKey: [API_ENDPOINTS.MANUFACTURERS, options],

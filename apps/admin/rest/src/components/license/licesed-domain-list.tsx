@@ -2,7 +2,11 @@ import ActionButtons from '@/components/common/action-buttons';
 import { NoDataFound } from '@/components/icons/no-data-found';
 import Pagination from '@/components/ui/pagination';
 import { Table } from '@/components/ui/table';
-import { LicensedDomainPaginator, MappedPaginatorInfo, SortOrder } from '@/types';
+import {
+  LicensedDomainPaginator,
+  MappedPaginatorInfo,
+  SortOrder,
+} from '@/types';
 import { useIsRTL } from '@/utils/locals';
 import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
@@ -36,7 +40,9 @@ const LicensedDomainList = ({
   const onHeaderClick = (column: string | null) => ({
     onClick: () => {
       onSort((currentSortDirection: SortOrder) =>
-        currentSortDirection === SortOrder.Desc ? SortOrder.Asc : SortOrder.Desc
+        currentSortDirection === SortOrder.Desc
+          ? SortOrder.Asc
+          : SortOrder.Desc,
       );
       onOrder(column!);
 

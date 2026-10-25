@@ -23,7 +23,7 @@ export function useSettings() {
     queryKey: [API_ENDPOINTS.SETTINGS, formattedOptions],
     queryFn: ({ queryKey }) =>
       client.settings.all(
-        Object.assign({}, queryKey[1] as SettingsQueryOptions)
+        Object.assign({}, queryKey[1] as SettingsQueryOptions),
       ),
   });
   const { isUnderMaintenance = false, maintenance = {} } = data?.options! ?? {};
@@ -38,7 +38,7 @@ export function useSettings() {
 
 export const useUploads = ({ onChange, defaultFiles }: any) => {
   const [files, setFiles] = useState<FileWithPath[]>(
-    getPreviewImage(defaultFiles)
+    getPreviewImage(defaultFiles),
   );
 
   const { mutate: upload, isPending: isLoading } = useMutation({
@@ -46,7 +46,7 @@ export const useUploads = ({ onChange, defaultFiles }: any) => {
     onSuccess: (data) => {
       if (onChange) {
         const dataAfterRemoveTypename = data?.map(
-          ({ __typename, ...rest }: any) => rest
+          ({ __typename, ...rest }: any) => rest,
         );
         onChange(dataAfterRemoveTypename);
         setFiles(getPreviewImage(dataAfterRemoveTypename));

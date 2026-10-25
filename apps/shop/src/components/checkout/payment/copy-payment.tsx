@@ -36,7 +36,7 @@ const PaymentGroupOption: React.FC<PaymentGroupOptionProps> = ({
             checked && '!border-accent bg-light shadow-600',
             {
               '!border-gray-800 bg-light shadow-600': theme === 'bw' && checked,
-            }
+            },
           )}
         >
           {icon ? (
@@ -114,7 +114,7 @@ const PaymentGrid: React.FC<{ className?: string; theme?: 'bw' }> = ({
     if (settings?.paymentGateway) {
       setGateway(
         //@ts-ignore
-        settings?.paymentGateway[0]?.name.toUpperCase() as PaymentGateway
+        settings?.paymentGateway[0]?.name.toUpperCase() as PaymentGateway,
       );
     } else {
       setGateway(PaymentGateway.COD);

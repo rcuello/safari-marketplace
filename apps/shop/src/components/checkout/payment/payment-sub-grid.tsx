@@ -37,7 +37,7 @@ const PaymentSubGridComponent: React.FC<AvailableMethodOptionProps> = ({
             checked && '!border-accent bg-light shadow-600',
             {
               '!border-gray-800 bg-light shadow-600': theme === 'bw' && checked,
-            }
+            },
           )}
         >
           <span className="text-xs font-semibold text-heading">{name}</span>
@@ -63,7 +63,7 @@ const PaymentSubGrid: React.FC<{
       setSubGateway('');
     }
   }, [gateway, subGateway]);
-  
+
   return (
     <Fragment>
       {gateway && gateway === 'PAYMONGO' ? (

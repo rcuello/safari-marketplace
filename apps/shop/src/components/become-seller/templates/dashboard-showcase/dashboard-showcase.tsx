@@ -6,8 +6,10 @@ import Image from 'next/image';
 import Link from 'next/link';
 import React from 'react';
 
-interface DashboardShowcaseProps
-  extends Pick<BecomeSellerPageOptions, 'dashboard'> {
+interface DashboardShowcaseProps extends Pick<
+  BecomeSellerPageOptions,
+  'dashboard'
+> {
   className?: string;
 }
 

@@ -10,14 +10,17 @@ import { OrderStatus, PaymentGateway, PaymentStatus } from '@/types';
 export function isPaymentPending(
   paymentGateway: PaymentGateway,
   orderStatus: OrderStatus,
-  paymentStatus: PaymentStatus
+  paymentStatus: PaymentStatus,
 ) {
   const isPaymentCOD = ![
     PaymentGateway.COD,
     PaymentGateway.CASH,
     PaymentGateway.FULL_WALLET_PAYMENT,
   ].includes(paymentGateway);
-  const isOrderPending = ![OrderStatus.CANCELLED, OrderStatus.REFUNDED].includes(orderStatus);
+  const isOrderPending = ![
+    OrderStatus.CANCELLED,
+    OrderStatus.REFUNDED,
+  ].includes(orderStatus);
   return (
     isPaymentCOD &&
     isOrderPending &&

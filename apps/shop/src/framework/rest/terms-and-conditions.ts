@@ -9,7 +9,7 @@ import client from './client';
 import { API_ENDPOINTS } from './client/api-endpoints';
 
 export function useTermsAndConditions(
-  options?: Partial<TermsAndConditionsQueryOptions>
+  options?: Partial<TermsAndConditionsQueryOptions>,
 ) {
   const { locale } = useRouter();
 

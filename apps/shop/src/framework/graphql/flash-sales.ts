@@ -1,9 +1,10 @@
-import type {
-  FlashSaleQueryOptions
-} from '@/types';
+import type { FlashSaleQueryOptions } from '@/types';
 import { NetworkStatus } from '@apollo/client';
 import { useRouter } from 'next/router';
-import { useFlashSaleQuery, useFlashSalesQuery } from './gql/flash_sales.graphql';
+import {
+  useFlashSaleQuery,
+  useFlashSalesQuery,
+} from './gql/flash_sales.graphql';
 
 export function useFlashSales(options?: Partial<FlashSaleQueryOptions>) {
   const { query, locale } = useRouter();
@@ -41,7 +42,6 @@ export function useFlashSales(options?: Partial<FlashSaleQueryOptions>) {
   };
 }
 
-
 export function useFlashSale({
   slug,
   language,
@@ -49,7 +49,6 @@ export function useFlashSale({
   slug: string;
   language: string;
 }) {
-  
   const {
     data,
     loading: isLoading,

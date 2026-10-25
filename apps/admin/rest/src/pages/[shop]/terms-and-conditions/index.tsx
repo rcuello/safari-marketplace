@@ -43,7 +43,6 @@ export default function TermsAndConditions() {
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
 
-
   const { settings, loading: settingsLoading } = useSettingsQuery({
     language: locale!,
   });
@@ -104,7 +103,7 @@ export default function TermsAndConditions() {
   if (currentUser === 'vendor') {
     const isEnableTermsRoute = settings?.options?.enableTerms;
     const routePermission = isEnableTermsRoute ? adminAndOwnerOnly : adminOnly;
-    const isSuperAdmin = hasAccess(adminOnly, permissions)
+    const isSuperAdmin = hasAccess(adminOnly, permissions);
     const hasPermission = hasAccess(routePermission, permissions);
     const vendorHasShop =
       me?.shops?.map((shop: any) => shop.id).includes(shopId) ?? true;

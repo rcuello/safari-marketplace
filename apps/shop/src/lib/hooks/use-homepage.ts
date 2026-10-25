@@ -13,6 +13,6 @@ export default function useHomepage() {
     };
   }
   return {
-    homePage: types.find((type:any) => type?.settings?.isHome) ?? types[0],
+    homePage: types.find((type: any) => type?.settings?.isHome) ?? types[0],
   };
 }

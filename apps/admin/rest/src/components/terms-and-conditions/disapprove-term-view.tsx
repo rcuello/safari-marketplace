@@ -7,7 +7,8 @@ import {
 import { useDisApproveTermAndConditionMutation } from '@/data/terms-and-condition';
 
 const ProductDeleteView = () => {
-  const { mutate: disApproveTermById, isPending: loading } = useDisApproveTermAndConditionMutation();
+  const { mutate: disApproveTermById, isPending: loading } =
+    useDisApproveTermAndConditionMutation();
 
   const { data: modalData } = useModalState();
   const { closeModal } = useModalAction();
@@ -19,7 +20,7 @@ const ProductDeleteView = () => {
         onSettled: () => {
           closeModal();
         },
-      }
+      },
     );
   }
 

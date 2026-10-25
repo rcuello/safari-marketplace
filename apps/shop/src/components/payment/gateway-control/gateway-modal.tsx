@@ -90,7 +90,7 @@ const PaymentGateways: React.FC<{
                   disabledSelection || isLoading
                     ? 'pointer-events-none cursor-not-allowed opacity-60'
                     : '',
-                  disabledSelection ? '!border-accent shadow-md' : ''
+                  disabledSelection ? '!border-accent shadow-md' : '',
                 )}
               >
                 <span className="block w-full pb-[52%]">

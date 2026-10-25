@@ -53,7 +53,7 @@ const Xenon: React.FC<XenonProps> = ({ product, className }) => {
     <article
       className={cn(
         'product-card cart-type-xenon h-full transform overflow-hidden rounded border border-border-200 border-opacity-70 bg-light transition-all duration-200 hover:-translate-y-0.5 hover:border-transparent hover:shadow',
-        className
+        className,
       )}
     >
       <div
@@ -63,7 +63,7 @@ const Xenon: React.FC<XenonProps> = ({ product, className }) => {
             ? query?.pages?.includes('medicine')
               ? 'm-4 mb-0'
               : ''
-            : ''
+            : '',
         )}
         onClick={handleProductQuickView}
       >

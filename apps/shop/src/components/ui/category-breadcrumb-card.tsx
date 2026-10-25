@@ -51,7 +51,7 @@ const CategoryBreadcrumb: React.FC<CategoryBreadcrumbProps> = ({
       undefined,
       {
         scroll: false,
-      }
+      },
     );
   };
 
@@ -65,7 +65,7 @@ const CategoryBreadcrumb: React.FC<CategoryBreadcrumbProps> = ({
       undefined,
       {
         scroll: false,
-      }
+      },
     );
   };
 

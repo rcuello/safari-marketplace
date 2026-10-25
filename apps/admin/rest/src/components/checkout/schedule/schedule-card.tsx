@@ -11,7 +11,7 @@ const ScheduleCard: React.FC<ScheduleProps> = ({ checked, schedule }) => (
       {
         'border-accent shadow-sm': checked,
         'bg-gray-100 border-transparent': !checked,
-      }
+      },
     )}
   >
     <span className="text-sm text-heading font-semibold block mb-2">

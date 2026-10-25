@@ -84,7 +84,7 @@ const CreateMessageForm = ({ className, shop, ...rest }: Props) => {
           });
           reset();
         },
-      }
+      },
     );
   };
   useEffect(() => {
@@ -115,7 +115,7 @@ const CreateMessageForm = ({ className, shop, ...rest }: Props) => {
                     : shop?.user?.profile?.avatar?.original
                 )
                   ? ''
-                  : 'bg-muted-black text-base font-medium text-white'
+                  : 'bg-muted-black text-base font-medium text-white',
               )}
             />
           </div>

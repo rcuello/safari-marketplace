@@ -19,8 +19,8 @@ const BlockQuote: React.FC<BlockQuoteProps> = ({
       className={twMerge(
         classNames(
           'relative pl-2 text-xs font-normal leading-[180%] text-muted-black',
-          className
-        )
+          className,
+        ),
       )}
     >
       {quote ? (

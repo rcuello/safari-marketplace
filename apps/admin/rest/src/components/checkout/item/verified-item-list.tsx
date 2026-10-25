@@ -44,26 +44,26 @@ const VerifiedItemList: React.FC<Props> = ({ className }) => {
   });
 
   const available_items = items?.filter(
-    (item) => !verifiedResponse?.unavailable_products?.includes(item.id)
+    (item) => !verifiedResponse?.unavailable_products?.includes(item.id),
   );
 
   const { price: tax } = usePrice(
     verifiedResponse && {
       amount: verifiedResponse.total_tax ?? 0,
-    }
+    },
   );
 
   const { price: shipping } = usePrice(
     verifiedResponse && {
       amount: verifiedResponse.shipping_charge ?? 0,
-    }
+    },
   );
 
   const base_amount = calculateTotal(available_items);
   const { price: sub_total } = usePrice(
     verifiedResponse && {
       amount: base_amount,
-    }
+    },
   );
 
   // Calculate Discount base on coupon type
@@ -86,7 +86,7 @@ const VerifiedItemList: React.FC<Props> = ({ className }) => {
     //@ts-ignore
     discount && {
       amount: Number(calculateDiscount),
-    }
+    },
   );
   let freeShippings =
     options?.freeShipping && Number(options?.freeShippingAmount) <= base_amount;
@@ -97,13 +97,13 @@ const VerifiedItemList: React.FC<Props> = ({ className }) => {
           tax: verifiedResponse?.total_tax,
           shipping_charge: verifiedResponse?.shipping_charge,
         },
-        Number(calculateDiscount)
+        Number(calculateDiscount),
       )
     : 0;
   const { price: total } = usePrice(
     verifiedResponse && {
       amount: totalPrice <= 0 ? 0 : totalPrice,
-    }
+    },
   );
   return (
     <div className={className}>
@@ -116,7 +116,7 @@ const VerifiedItemList: React.FC<Props> = ({ className }) => {
         {!isEmptyCart ? (
           items?.map((item) => {
             const notAvailable = verifiedResponse?.unavailable_products?.find(
-              (d: any) => d === item.id
+              (d: any) => d === item.id,
             );
             return (
               <ItemCard

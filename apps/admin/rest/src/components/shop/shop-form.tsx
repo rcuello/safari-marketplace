@@ -692,7 +692,7 @@ const ShopForm = ({ initialValues }: { initialValues?: Shop }) => {
         ) : (
           ''
         )}
-           {!permissions?.includes(SUPER_ADMIN) &&
+        {!permissions?.includes(SUPER_ADMIN) &&
         !permissions?.includes(STAFF) &&
         !Boolean(initialValues?.is_active) &&
         Boolean(options?.isMultiCommissionRate) ? (

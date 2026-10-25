@@ -1,22 +1,22 @@
-export function zoomInBottom (duration:number = 0.2) {
+export function zoomInBottom(duration: number = 0.2) {
   return {
-    from: { 
+    from: {
       y: 8,
       opacity: 0,
       scale: 0.99,
       transition: {
         type: 'easeOut',
-				duration: duration,
-      } 
+        duration: duration,
+      },
     },
-    to: { 
+    to: {
       y: 0,
       opacity: 1,
       scale: 1,
       transition: {
         type: 'easeOut',
-				duration: duration,
-      } 
+        duration: duration,
+      },
     },
-  }
+  };
 }

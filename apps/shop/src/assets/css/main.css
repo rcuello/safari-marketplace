@@ -287,32 +287,32 @@
     /*
     40px base 16px
     */
-    --h1 : 2.5rem;
+    --h1: 2.5rem;
 
     /*
     32px base 16px
     */
-    --h2 : 2rem;
+    --h2: 2rem;
 
     /*
     24px base 16px
     */
-    --h3 : 1.5rem;
+    --h3: 1.5rem;
 
     /*
     20px base 16px
     */
-    --h4 : 1.25rem;
+    --h4: 1.25rem;
 
     /*
     18px base 16px
     */
-    --h5 : 1.125rem;
+    --h5: 1.125rem;
 
     /*
     16px base 16px
     */
-    --h6 : 1rem;
+    --h6: 1rem;
   }
 
   html {

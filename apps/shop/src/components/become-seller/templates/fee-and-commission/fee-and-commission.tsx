@@ -4,11 +4,10 @@ import { BecomeSellerPageOptions, Commission } from '@/types';
 import React from 'react';
 import CommissionItem from './commission-item';
 
-interface FeeAndCommissionProps
-  extends Pick<
-    BecomeSellerPageOptions,
-    'commissionTitle' | 'commissionDescription'
-  > {
+interface FeeAndCommissionProps extends Pick<
+  BecomeSellerPageOptions,
+  'commissionTitle' | 'commissionDescription'
+> {
   isMultiCommissionRate: boolean;
   commissions?: Commission[];
   className?: string;

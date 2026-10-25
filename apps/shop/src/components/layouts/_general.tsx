@@ -5,7 +5,7 @@ const MobileNavigation = dynamic(
   () => import('@/components/layouts/mobile-navigation'),
   {
     ssr: false,
-  }
+  },
 );
 export default function GeneralLayout({
   children,

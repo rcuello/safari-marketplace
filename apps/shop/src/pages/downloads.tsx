@@ -25,7 +25,7 @@ const DownloadableProductsPage = () => {
 DownloadableProductsPage.authenticationRequired = true;
 
 DownloadableProductsPage.getLayout = function getLayout(
-  page: React.ReactElement
+  page: React.ReactElement,
 ) {
   return <DashboardLayout>{page}</DashboardLayout>;
 };

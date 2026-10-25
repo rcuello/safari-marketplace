@@ -62,7 +62,7 @@ const Coupon = ({ theme, subtotal }: { theme?: 'dark'; subtotal: number }) => {
     const data = verifyCoupon({
       code: code?.code,
       sub_total: subtotal,
-      item: items
+      item: items,
     });
   }
 

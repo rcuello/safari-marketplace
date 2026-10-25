@@ -98,7 +98,7 @@ export const useFlashSaleLoadMoreQuery = (
   config?: Omit<
     UseInfiniteQueryOptions<FlashSalePaginator, Error>,
     'queryKey' | 'queryFn' | 'initialPageParam' | 'getNextPageParam'
-  >
+  >,
 ) => {
   const {
     data,

@@ -50,7 +50,7 @@ const Sorting: React.FC<Props> = ({ variant = 'radio' }) => {
   const { isRTL } = useIsRTL();
   const [selected, setSelected] = useState(
     () =>
-      plans.find((plan) => plan.orderBy === router.query.orderBy) ?? plans[0]
+      plans.find((plan) => plan.orderBy === router.query.orderBy) ?? plans[0],
   );
 
   useEffect(() => {

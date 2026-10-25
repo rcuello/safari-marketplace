@@ -56,7 +56,7 @@ export default function AttributePage() {
     },
     {
       enabled: Boolean(shopId),
-    }
+    },
   );
   if (loading || fetchingShop)
     return <Loader text={t('common:text-loading')} />;
@@ -93,7 +93,7 @@ export default function AttributePage() {
           <button
             onClick={handleImportModal}
             className={cn(
-              'hidden h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gray-50 transition duration-300 ms-6 hover:bg-gray-100 md:flex'
+              'hidden h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gray-50 transition duration-300 ms-6 hover:bg-gray-100 md:flex',
             )}
           >
             <MoreIcon className="w-3.5 text-body" />

@@ -26,8 +26,8 @@ const CategoryCard: React.FC<CategoryItemProps> = ({ item, onClick }) => {
                   : t('text-category')
               }`
             : item?.children?.length
-            ? formatString(item?.products_count, 'Item')
-            : ''}
+              ? formatString(item?.products_count, 'Item')
+              : ''}
         </span>
 
         <button className="mt-auto flex text-sm font-semibold text-accent underline opacity-100 transition-opacity group-hover:opacity-100 lg:opacity-0">

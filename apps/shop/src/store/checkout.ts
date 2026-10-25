@@ -58,28 +58,28 @@ export const billingAddressAtom = atom(
   (get, set, data: Address) => {
     const prev = get(checkoutAtom);
     return set(checkoutAtom, { ...prev, billing_address: data });
-  }
+  },
 );
 export const shippingAddressAtom = atom(
   (get) => get(checkoutAtom).shipping_address,
   (get, set, data: Address) => {
     const prev = get(checkoutAtom);
     return set(checkoutAtom, { ...prev, shipping_address: data });
-  }
+  },
 );
 export const deliveryTimeAtom = atom(
   (get) => get(checkoutAtom).delivery_time,
   (get, set, data: DeliveryTime) => {
     const prev = get(checkoutAtom);
     return set(checkoutAtom, { ...prev, delivery_time: data });
-  }
+  },
 );
 export const paymentGatewayAtom = atom(
   (get) => get(checkoutAtom).payment_gateway,
   (get, set, data: PaymentGateway) => {
     const prev = get(checkoutAtom);
     return set(checkoutAtom, { ...prev, payment_gateway: data });
-  }
+  },
 );
 
 export const paymentSubGatewayAtom = atom(
@@ -87,7 +87,7 @@ export const paymentSubGatewayAtom = atom(
   (get, set, data: string) => {
     const prev = get(checkoutAtom);
     return set(checkoutAtom, { ...prev, payment_sub_gateway: data });
-  }
+  },
 );
 
 export const verifiedTokenAtom = atom(
@@ -95,42 +95,42 @@ export const verifiedTokenAtom = atom(
   (get, set, data: string) => {
     const prev = get(checkoutAtom);
     return set(checkoutAtom, { ...prev, token: data });
-  }
+  },
 );
 export const customerContactAtom = atom(
   (get) => get(checkoutAtom).customer_contact,
   (get, set, data: string) => {
     const prev = get(checkoutAtom);
     return set(checkoutAtom, { ...prev, customer_contact: data });
-  }
+  },
 );
 export const guestNameAtom = atom(
   (get) => get(checkoutAtom).customer_name,
   (get, set, data: string) => {
     const prev = get(checkoutAtom);
     return set(checkoutAtom, { ...prev, customer_name: data });
-  }
+  },
 );
 export const orderNoteAtom = atom(
   (get) => get(checkoutAtom).note,
   (get, set, data: string) => {
     const prev = get(checkoutAtom);
     return set(checkoutAtom, { ...prev, note: data });
-  }
+  },
 );
 export const verifiedResponseAtom = atom(
   (get) => get(checkoutAtom).verified_response,
   (get, set, data: VerifiedResponse | null) => {
     const prev = get(checkoutAtom);
     return set(checkoutAtom, { ...prev, verified_response: data });
-  }
+  },
 );
 export const couponAtom = atom(
   (get) => get(checkoutAtom).coupon,
   (get, set, data: Coupon | null) => {
     const prev = get(checkoutAtom);
     return set(checkoutAtom, { ...prev, coupon: data });
-  }
+  },
 );
 export const discountAtom = atom((get) => get(checkoutAtom).coupon?.amount);
 
@@ -139,12 +139,12 @@ export const walletAtom = atom(
   (get, set) => {
     const prev = get(checkoutAtom);
     return set(checkoutAtom, { ...prev, use_wallet: !prev.use_wallet });
-  }
+  },
 );
 export const payableAmountAtom = atom(
   (get) => get(checkoutAtom).payable_amount,
   (get, set, data: number) => {
     const prev = get(checkoutAtom);
     return set(checkoutAtom, { ...prev, payable_amount: data });
-  }
+  },
 );

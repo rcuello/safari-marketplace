@@ -8,7 +8,7 @@ export function formatAddress(address: UserAddress) {
   if (!address) return;
   const temp = ['street_address', 'city', 'state', 'zip', 'country'].reduce(
     (acc, k) => ({ ...acc, [k]: (address as any)[k] }),
-    {}
+    {},
   );
   const formattedAddress = removeFalsy(temp);
   return Object.values(formattedAddress).join(', ');

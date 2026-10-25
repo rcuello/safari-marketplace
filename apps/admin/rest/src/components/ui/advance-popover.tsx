@@ -177,7 +177,7 @@ export default function AdvancePopover({
     <div onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
       {cloneElement(
         children,
-        getReferenceProps({ ref: refs.setReference, ...children.props })
+        getReferenceProps({ ref: refs.setReference, ...children.props }),
       )}
       {(isMounted || open) && (
         <FloatingPortal>
@@ -191,7 +191,7 @@ export default function AdvancePopover({
               tooltipClasses.variant.solid.base,
               tooltipClasses.variant.solid.color[color],
               tooltipClasses.shadow[shadow],
-              className
+              className,
             )}
             style={{
               position: strategy,
@@ -216,7 +216,7 @@ export default function AdvancePopover({
                   data-testid="tooltip-arrow"
                   className={cn(
                     tooltipClasses.arrow.color[color],
-                    tooltipArrowClassName
+                    tooltipArrowClassName,
                   )}
                   style={{ strokeDasharray: '0,14, 5' }}
                 />

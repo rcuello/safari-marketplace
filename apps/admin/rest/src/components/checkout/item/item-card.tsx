@@ -20,7 +20,7 @@ const ItemCard = ({ item, notAvailable }: Props) => {
           <span
             className={cn(
               'text-sm font-bold',
-              notAvailable ? 'text-red-500' : 'text-heading'
+              notAvailable ? 'text-red-500' : 'text-heading',
             )}
           >
             {item.quantity}

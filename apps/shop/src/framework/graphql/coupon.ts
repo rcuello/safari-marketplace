@@ -4,7 +4,6 @@ import { useCouponsQuery } from './gql/coupons.graphql';
 import { useRouter } from 'next/router';
 
 export function useCoupons(options?: Partial<CouponQueryOptions>) {
-
   const { locale } = useRouter();
 
   const localeOptions = {
@@ -12,7 +11,6 @@ export function useCoupons(options?: Partial<CouponQueryOptions>) {
     ...options,
     first: 16,
   };
-
 
   const {
     data,

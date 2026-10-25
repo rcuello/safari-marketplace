@@ -195,13 +195,12 @@ export function filterAttributes(attributes: any, variations: any) {
 
 export function getCartesianProduct(values: any) {
   const formattedValues = values
-    ?.map(
-      (v: any) =>
-        v?.value?.map((a: any) => ({
-          name: v?.attribute?.name,
-          value: a?.value,
-          id: a?.id,
-        })),
+    ?.map((v: any) =>
+      v?.value?.map((a: any) => ({
+        name: v?.attribute?.name,
+        value: a?.value,
+        id: a?.id,
+      })),
     )
     .filter((i: any) => i !== undefined);
   if (isEmpty(formattedValues)) return [];
@@ -280,9 +279,8 @@ export function getProductInputValues(
     },
     ...(product_type?.value === ProductType?.Variable && {
       quantity: calculateQuantity(variation_options),
-      variations: variations?.flatMap(
-        ({ value }: any) =>
-          value?.map(({ id }: any) => ({ attribute_value_id: id })),
+      variations: variations?.flatMap(({ value }: any) =>
+        value?.map(({ id }: any) => ({ attribute_value_id: id })),
       ),
       variation_options: {
         // @ts-ignore

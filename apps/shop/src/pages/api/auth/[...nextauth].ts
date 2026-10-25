@@ -13,7 +13,7 @@ if (Boolean(googleClientId) !== Boolean(googleClientSecret)) {
   console.warn(
     `[next-auth] Login con Google deshabilitado: falta ${
       googleClientId ? 'GOOGLE_CLIENT_SECRET' : 'GOOGLE_CLIENT_ID'
-    }.`
+    }.`,
   );
 }
 

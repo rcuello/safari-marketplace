@@ -4,11 +4,10 @@ import React from 'react';
 import SellingStep from './selling-step';
 import SectionHeading from '@/components/ui/section-heading';
 
-interface StartSellingProps
-  extends Pick<
-    BecomeSellerPageOptions,
-    'sellingStepsItem' | 'sellingStepsTitle' | 'sellingStepsDescription'
-  > {
+interface StartSellingProps extends Pick<
+  BecomeSellerPageOptions,
+  'sellingStepsItem' | 'sellingStepsTitle' | 'sellingStepsDescription'
+> {
   className?: string;
 }
 

@@ -12,7 +12,6 @@ export const MyShopIcon: React.FC<React.SVGAttributes<{}>> = (props) => (
   </svg>
 );
 
-
 export const MyShopOwnerIcon: React.FC<React.SVGAttributes<{}>> = (props) => {
   return (
     <svg
@@ -33,5 +32,5 @@ export const MyShopOwnerIcon: React.FC<React.SVGAttributes<{}>> = (props) => {
         fill="currentColor"
       />
     </svg>
-  )
-}
+  );
+};

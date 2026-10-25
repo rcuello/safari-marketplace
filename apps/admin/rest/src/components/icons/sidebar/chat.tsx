@@ -33,4 +33,4 @@ export const ChatOwnerIcon: React.FC<React.SVGAttributes<{}>> = (props) => {
       />
     </svg>
   );
-}
+};

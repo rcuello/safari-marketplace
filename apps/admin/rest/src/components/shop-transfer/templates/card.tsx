@@ -163,4 +163,3 @@ const ShopDetailsCard = ({
 };
 
 export { ShopDetailsCard };
-

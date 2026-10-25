@@ -6,6 +6,6 @@ export const attributeValidationSchema = yup.object().shape({
     yup.object().shape({
       value: yup.string().required('form:error-value-required'),
       meta: yup.string().required('form:error-meta-required'),
-    })
+    }),
   ),
 });

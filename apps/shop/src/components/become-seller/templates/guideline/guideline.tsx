@@ -5,11 +5,10 @@ import GuidelineItem from './guideline-item';
 import Button from '@/components/ui/button';
 import { BecomeSellerPageOptions } from '@/types';
 
-interface GuidelineProps
-  extends Pick<
-    BecomeSellerPageOptions,
-    'guidelineTitle' | 'guidelineDescription' | 'guidelineItems'
-  > {
+interface GuidelineProps extends Pick<
+  BecomeSellerPageOptions,
+  'guidelineTitle' | 'guidelineDescription' | 'guidelineItems'
+> {
   className?: string;
 }
 

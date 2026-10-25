@@ -26,7 +26,12 @@ export const refundClient = {
       shop_id,
       with: 'order;customer;refund_policy',
       ...params,
-      search: HttpClient.formatSearchParams({ type, name, shop_id, refund_reason }),
+      search: HttpClient.formatSearchParams({
+        type,
+        name,
+        shop_id,
+        refund_reason,
+      }),
     });
   },
 };

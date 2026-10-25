@@ -121,7 +121,7 @@ export const ContactPage = () => {
                       </Link>
                     ) : (
                       ''
-                    )
+                    ),
                 )}
               </div>
             </div>

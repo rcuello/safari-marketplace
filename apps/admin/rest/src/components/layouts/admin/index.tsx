@@ -56,7 +56,7 @@ const SidebarItemMap = ({ menuItems }: any) => {
             childMenu={childMenu}
             miniSidebar={miniSidebar && width >= RESPONSIVE_WIDTH}
           />
-        )
+        ),
       )}
     </div>
   );
@@ -78,14 +78,14 @@ const SideBarGroup = () => {
             'flex flex-col px-5',
             miniSidebar && width >= RESPONSIVE_WIDTH
               ? 'border-b border-dashed border-gray-200 py-5'
-              : 'pt-6 pb-3'
+              : 'pt-6 pb-3',
           )}
           key={index}
         >
           <div
             className={cn(
               'px-3 pb-5 text-xs font-semibold uppercase tracking-[0.05em] text-body/60',
-              miniSidebar && width >= RESPONSIVE_WIDTH ? 'hidden' : ''
+              miniSidebar && width >= RESPONSIVE_WIDTH ? 'hidden' : '',
             )}
           >
             {t(menuItems[menu]?.label)}
@@ -126,7 +126,7 @@ const AdminLayout: React.FC<{ children?: React.ReactNode }> = ({
               (underMaintenance || underMaintenanceStart)
               ? 'lg:pt-[8.75rem]'
               : 'pt-20',
-            miniSidebar && width >= RESPONSIVE_WIDTH ? 'lg:w-24' : 'lg:w-76'
+            miniSidebar && width >= RESPONSIVE_WIDTH ? 'lg:w-24' : 'lg:w-76',
           )}
         >
           <div className="sidebar-scrollbar h-full w-full overflow-x-hidden">
@@ -151,7 +151,7 @@ const AdminLayout: React.FC<{ children?: React.ReactNode }> = ({
               : 'pt-[72px] lg:pt-20',
             miniSidebar && width >= RESPONSIVE_WIDTH
               ? 'ltr:lg:pl-24 rtl:lg:pr-24'
-              : 'ltr:xl:pl-76 rtl:xl:pr-76 ltr:lg:pl-72 rtl:lg:pr-72 rtl:lg:pl-0'
+              : 'ltr:xl:pl-76 rtl:xl:pr-76 ltr:lg:pl-72 rtl:lg:pr-72 rtl:lg:pl-0',
           )}
         >
           <div className="h-full p-5 md:p-8">{children}</div>

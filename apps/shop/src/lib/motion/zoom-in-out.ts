@@ -1,18 +1,18 @@
-export function zoomInOut (duration:number = 0.2) {
+export function zoomInOut(duration: number = 0.2) {
   return {
-    from: { 
+    from: {
       scale: 0.9,
       transition: {
         type: 'easeOut',
-				duration: duration,
-      } 
+        duration: duration,
+      },
     },
-    to: { 
+    to: {
       scale: 1,
       transition: {
         type: 'easeOut',
-				duration: duration,
-      } 
+        duration: duration,
+      },
     },
-  }
+  };
 }

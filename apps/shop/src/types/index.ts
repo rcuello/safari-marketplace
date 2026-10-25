@@ -1075,8 +1075,7 @@ export interface ManufacturerPaginator extends PaginatorInfo<Manufacturer> {}
 
 export interface FaqsPaginator extends PaginatorInfo<FAQS> {}
 
-export interface TermsAndConditionsPaginator
-  extends PaginatorInfo<TermsAndConditions> {}
+export interface TermsAndConditionsPaginator extends PaginatorInfo<TermsAndConditions> {}
 
 export interface CouponPaginator extends PaginatorInfo<Coupon> {}
 
@@ -1098,8 +1097,7 @@ export interface QuestionPaginator extends PaginatorInfo<Question> {}
 
 export interface ReportsPaginator extends PaginatorInfo<Question> {}
 
-export interface DownloadableFilePaginator
-  extends PaginatorInfo<DownloadableFile> {}
+export interface DownloadableFilePaginator extends PaginatorInfo<DownloadableFile> {}
 
 export interface WishlistPaginator extends PaginatorInfo<Wishlist> {}
 

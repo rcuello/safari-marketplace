@@ -22,14 +22,14 @@ const ManufacturerCard: React.FC<ManufacturerProps> = ({ item, className }) => {
     <div
       className={cn(
         'relative flex cursor-pointer items-center rounded border border-gray-200 bg-white p-5 shadow-md',
-        className
+        className,
       )}
       title={item?.name}
       onClick={() => router.push(Routes.manufacturer(item?.slug))}
     >
       <span
         className={cn(
-          'relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-300'
+          'relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-300',
         )}
       >
         <Image

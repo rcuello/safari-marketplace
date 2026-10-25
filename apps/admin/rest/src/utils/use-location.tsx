@@ -124,7 +124,7 @@ export default function useLocation({
         },
         (error) => {
           console.error('Error getting current location:', error);
-        }
+        },
       );
     } else {
       console.error('Geolocation is not supported by this browser.');

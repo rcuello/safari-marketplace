@@ -12,7 +12,7 @@ export default function LanguageSwitcher() {
   const { asPath, locale, locales } = router;
 
   let filterItem = languageMenu?.filter((element) =>
-    locales?.includes(element?.id)
+    locales?.includes(element?.id),
   );
 
   const currentSelectedItem = locale

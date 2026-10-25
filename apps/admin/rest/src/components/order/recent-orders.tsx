@@ -139,7 +139,7 @@ const RecentOrders = ({
       <div
         className={cn(
           'overflow-hidden rounded-lg bg-white p-6 md:p-7',
-          className
+          className,
         )}
       >
         <div className="flex items-center justify-between pb-6 md:pb-7">

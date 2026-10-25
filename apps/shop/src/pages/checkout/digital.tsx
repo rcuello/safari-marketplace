@@ -8,7 +8,7 @@ export { getStaticProps } from '@/framework/general.ssr';
 
 const CheckoutCart = dynamic(
   () => import('@/components/checkout/digital/checkout-cart'),
-  { ssr: false }
+  { ssr: false },
 );
 
 const CheckoutDigitalPage = () => {

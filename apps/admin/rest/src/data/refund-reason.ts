@@ -83,7 +83,7 @@ export const useUpdateRefundReasonMutation = () => {
         undefined,
         {
           locale: Config.defaultLanguage,
-        }
+        },
       );
       toast.success(t('common:successfully-updated'));
     },
@@ -112,7 +112,7 @@ export const useRefundReasonQuery = ({ slug, language }: GetParams) => {
 };
 
 export const useRefundReasonsQuery = (
-  options: Partial<RefundReasonQueryOptions>
+  options: Partial<RefundReasonQueryOptions>,
 ) => {
   const { data, error, isLoading } = useQuery<RefundReasonPaginator, Error>({
     queryKey: [API_ENDPOINTS.REFUND_REASONS, options],

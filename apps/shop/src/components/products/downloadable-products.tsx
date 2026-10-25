@@ -83,8 +83,8 @@ const DownloadableProducts: React.FC = () => {
                 src={
                   isVariableProduct(item)
                     ? item?.file?.fileable?.product?.image?.original!
-                    : item?.file?.fileable?.image?.original! ??
-                      productPlaceholder
+                    : (item?.file?.fileable?.image?.original! ??
+                      productPlaceholder)
                 }
                 alt="text"
                 layout="fill"

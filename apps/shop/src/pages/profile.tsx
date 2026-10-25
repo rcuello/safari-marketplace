@@ -6,13 +6,13 @@ import ProfileContact from '@/components/profile/profile-contact';
 import Seo from '@/components/seo/seo';
 import { useUser } from '@/framework/user';
 import DashboardLayout from '@/layouts/_dashboard';
-import Email from "next-auth/providers/email";
-import ProfileUpdateEmail from "@/components/profile/profile-update-email";
+import Email from 'next-auth/providers/email';
+import ProfileUpdateEmail from '@/components/profile/profile-update-email';
 export { getStaticProps } from '@/framework/general.ssr';
 
 const ProfilePage = () => {
   const { t } = useTranslation('common');
-  const { me } : any = useUser();
+  const { me }: any = useUser();
   if (!me) return null;
   return (
     <>

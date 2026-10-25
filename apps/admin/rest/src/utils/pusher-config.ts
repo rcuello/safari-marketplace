@@ -31,7 +31,7 @@ export const PusherConfig = new Pusher(
         Accept: 'application/json',
       },
     },
-  }
+  },
 );
 
 if (process.env.NEXT_PUBLIC_API_BROADCAST_DRIVER !== 'pusher') {

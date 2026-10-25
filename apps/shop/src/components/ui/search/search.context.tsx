@@ -30,7 +30,7 @@ export const SearchProvider: FC<{ children?: React.ReactNode }> = (props) => {
       searchTerm,
       updateSearchTerm,
     }),
-    [searchTerm]
+    [searchTerm],
   );
 
   return <SearchContext.Provider value={value} {...props} />;

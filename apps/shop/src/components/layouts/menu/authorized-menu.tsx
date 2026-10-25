@@ -52,7 +52,7 @@ const AuthorizedMenu: React.FC<{ minimal?: boolean }> = ({ minimal }) => {
             'absolute mt-5 w-48 rounded bg-white pb-4 shadow-700 focus:outline-none ltr:right-0 ltr:origin-top-right rtl:left-0 rtl:origin-top-left',
             {
               '!mt-2': minimal,
-            }
+            },
           )}
         >
           <Menu.Item>
@@ -69,7 +69,7 @@ const AuthorizedMenu: React.FC<{ minimal?: boolean }> = ({ minimal }) => {
                     onClick={() => handleClick(href)}
                     className={cn(
                       'block w-full py-2.5 px-6 text-sm font-semibold capitalize text-heading transition duration-200 hover:text-accent focus:outline-0 ltr:text-left rtl:text-right',
-                      active ? 'text-accent' : 'text-heading'
+                      active ? 'text-accent' : 'text-heading',
                     )}
                   >
                     {t(label)}
@@ -83,7 +83,7 @@ const AuthorizedMenu: React.FC<{ minimal?: boolean }> = ({ minimal }) => {
               <button
                 onClick={() => logout()}
                 className={cn(
-                  'block w-full py-2.5 px-6 text-sm font-semibold capitalize text-heading transition duration-200 hover:text-accent focus:outline-0 ltr:text-left rtl:text-right'
+                  'block w-full py-2.5 px-6 text-sm font-semibold capitalize text-heading transition duration-200 hover:text-accent focus:outline-0 ltr:text-left rtl:text-right',
                 )}
               >
                 {t('auth-menu-logout')}

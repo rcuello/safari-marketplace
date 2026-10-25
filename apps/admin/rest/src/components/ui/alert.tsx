@@ -46,8 +46,8 @@ const Alert: React.FC<AlertProps> = ({
         cn(
           'relative flex items-center justify-between rounded py-4 px-5 shadow-sm',
           variantClasses[variant],
-          className
-        )
+          className,
+        ),
       )}
       role="alert"
     >

@@ -79,7 +79,7 @@ export const useUpdateAuthorMutation = () => {
         undefined,
         {
           locale: Config.defaultLanguage,
-        }
+        },
       );
       toast.success(t('common:successfully-updated'));
     },

@@ -35,7 +35,7 @@ export const useRefundQuery = (id: string) => {
 
 export const useRefundsQuery = (
   params: Partial<OrderQueryOptions>,
-  options: any = {}
+  options: any = {},
 ) => {
   const { data, error, isLoading } = useQuery<OrderPaginator, Error>({
     queryKey: [API_ENDPOINTS.REFUNDS, params],

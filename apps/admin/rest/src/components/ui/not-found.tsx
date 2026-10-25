@@ -23,8 +23,8 @@ const NotFound: React.FC<Props> = ({
         className={twMerge(
           cn(
             'relative flex h-full min-h-[380px] w-full items-center justify-center md:min-h-[450px]',
-            imageParentClassName
-          )
+            imageParentClassName,
+          ),
         )}
       >
         <Image

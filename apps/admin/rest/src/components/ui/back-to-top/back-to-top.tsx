@@ -4,8 +4,7 @@ import classNames from 'classnames';
 import React, { useEffect, useState } from 'react';
 import { twMerge } from 'tailwind-merge';
 
-export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   asChild?: boolean;
   offset?: number;
 }

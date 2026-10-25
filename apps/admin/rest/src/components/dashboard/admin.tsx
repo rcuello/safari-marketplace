@@ -45,9 +45,7 @@ const OrderStatusWidget = dynamic(
 
 const ProductCountByCategory = dynamic(
   () =>
-    import(
-      '@/components/dashboard/widgets/table/widget-product-count-by-category'
-    ),
+    import('@/components/dashboard/widgets/table/widget-product-count-by-category'),
 );
 
 const TopRatedProducts = dynamic(

@@ -4,13 +4,9 @@ import Seo from '@/components/seo/seo';
 import ErrorMessage from '@/components/ui/error-message';
 import Spinner from '@/components/ui/loaders/spinner/spinner';
 import { getStaticPaths, getStaticProps } from '@/framework/flash-sale.ssr';
-import {
-  useFlashSale
-} from '@/framework/flash-sales';
+import { useFlashSale } from '@/framework/flash-sales';
 import { useWindowSize } from '@/lib/use-window-size';
-import type {
-  FlashSale
-} from '@/types';
+import type { FlashSale } from '@/types';
 import { isEmpty } from 'lodash';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
@@ -18,7 +14,7 @@ import { useRouter } from 'next/router';
 export { getStaticPaths, getStaticProps };
 const CartCounterButton = dynamic(
   () => import('@/components/cart/cart-counter-button'),
-  { ssr: false }
+  { ssr: false },
 );
 
 const FlashSalePage = () => {

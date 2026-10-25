@@ -1,7 +1,7 @@
 import dynamic from 'next/dynamic';
 import ErrorMessage from '@/components/ui/error-message';
 import { useProducts } from '@/framework/product';
-import { useRouter } from "next/router";
+import { useRouter } from 'next/router';
 
 const AutoSuggestion = dynamic(() => import('@/components/ui/auto-suggestion'));
 
@@ -22,7 +22,7 @@ const AutoSuggestionBox: React.FC<AutoSuggestionProps> = ({
   const { query } = useRouter();
   const { isLoading, products, error } = useProducts({
     type: query?.pages?.[0] as string,
-    searchQuery
+    searchQuery,
   });
 
   if (error) return <ErrorMessage message={error.message} />;

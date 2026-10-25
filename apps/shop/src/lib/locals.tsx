@@ -22,47 +22,47 @@ export function useIsRTL() {
   return { isRTL: false, alignLeft: 'left', alignRight: 'right' };
 }
 
-export let languageMenu =[
+export let languageMenu = [
   {
-    id: "ar",
-    name: "عربى",
-    value: "ar",
+    id: 'ar',
+    name: 'عربى',
+    value: 'ar',
     icon: <SAFlag width="20px" height="15px" />,
-    iconMobile: <SAFlagRound />
+    iconMobile: <SAFlagRound />,
   },
   {
-    id: "zh",
-    name: "中国人",
-    value: "zh",
+    id: 'zh',
+    name: '中国人',
+    value: 'zh',
     icon: <CNFlag width="20px" height="15px" />,
-    iconMobile: <CNFlagRound />
+    iconMobile: <CNFlagRound />,
   },
   {
-    id: "en",
-    name: "English",
-    value: "en",
+    id: 'en',
+    name: 'English',
+    value: 'en',
     icon: <USFlag width="20px" height="15px" />,
-    iconMobile: <USFlagRound />
+    iconMobile: <USFlagRound />,
   },
   {
-    id: "de",
-    name: "Deutsch",
-    value: "de",
+    id: 'de',
+    name: 'Deutsch',
+    value: 'de',
     icon: <DEFlag width="20px" height="15px" />,
-    iconMobile: <DEFlagRound />
+    iconMobile: <DEFlagRound />,
   },
   {
-    id: "he",
-    name: "rעברית",
-    value: "he",
+    id: 'he',
+    name: 'rעברית',
+    value: 'he',
     icon: <ILFlag width="20px" height="15px" />,
-    iconMobile: <ILFlagRound />
+    iconMobile: <ILFlagRound />,
   },
   {
-    id: "es",
-    name: "Español",
-    value: "es",
+    id: 'es',
+    name: 'Español',
+    value: 'es',
     icon: <ESFlag width="20px" height="15px" />,
-    iconMobile: <ESFlagRound />
+    iconMobile: <ESFlagRound />,
   },
-]
+];

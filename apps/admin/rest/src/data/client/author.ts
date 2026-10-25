@@ -11,7 +11,7 @@ import { HttpClient } from './http-client';
 
 export const AuthorClient = {
   ...crudFactory<Author, QueryOptions, CreateAuthorInput>(
-    API_ENDPOINTS.AUTHORS
+    API_ENDPOINTS.AUTHORS,
   ),
   paginated: ({
     type,

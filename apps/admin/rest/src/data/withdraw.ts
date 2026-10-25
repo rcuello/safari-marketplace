@@ -65,7 +65,7 @@ export const useWithdrawQuery = ({ id }: { id: string }) => {
 
 export const useWithdrawsQuery = (
   params: Partial<WithdrawQueryOptions>,
-  options: any = {}
+  options: any = {},
 ) => {
   const { data, error, isLoading } = useQuery<WithdrawPaginator, Error>({
     queryKey: [API_ENDPOINTS.WITHDRAWS, params],

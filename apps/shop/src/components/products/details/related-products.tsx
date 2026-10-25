@@ -22,7 +22,7 @@ const RelatedProducts = ({
       <div
         className={cn(
           'grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4',
-          gridClassName
+          gridClassName,
         )}
       >
         {products?.map((item: any, idx: number) => {

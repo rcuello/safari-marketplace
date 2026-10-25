@@ -78,7 +78,7 @@ export const useAttributeQuery = ({ slug, language }: GetParams) => {
 
 export const useAttributesQuery = (
   params: Partial<AttributeQueryOptions>,
-  options: any = {}
+  options: any = {},
 ) => {
   const { data, error, isLoading } = useQuery<Attribute[], Error>({
     queryKey: [API_ENDPOINTS.ATTRIBUTES, params],

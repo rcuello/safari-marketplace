@@ -11,7 +11,7 @@ import { HttpClient } from '@/data/client/http-client';
 
 export const attributeClient = {
   ...crudFactory<Attribute, QueryOptions, CreateAttributeInput>(
-    API_ENDPOINTS.ATTRIBUTES
+    API_ENDPOINTS.ATTRIBUTES,
   ),
   paginated: ({
     type,

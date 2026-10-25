@@ -42,7 +42,7 @@ export default function RangeSlider({
         rangeStyles.base,
         rangeStyles.size[size],
         rangeStyles.color[color],
-        className
+        className,
       )}
       {...props}
     />

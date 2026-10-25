@@ -9,7 +9,6 @@ export const ChevronRight: React.FC<React.SVGAttributes<{}>> = (props) => (
   </svg>
 );
 
-
 export const ChevronRightNew: React.FC<React.SVGAttributes<{}>> = (props) => {
   return (
     <svg

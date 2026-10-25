@@ -20,7 +20,7 @@ export const ExternalLinkIcon: React.FC<React.SVGAttributes<{}>> = (props) => {
 };
 
 export const ExternalLinkIconNew: React.FC<React.SVGAttributes<{}>> = (
-  props
+  props,
 ) => {
   return (
     <svg

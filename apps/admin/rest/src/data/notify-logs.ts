@@ -17,7 +17,7 @@ import { notifyClient } from '@/data/client/notify-logs';
 // get all by receiver ID
 export const useNotifyLogsQuery = (
   params: Partial<NotifyLogsQueryOptions>,
-  options: any = {}
+  options: any = {},
 ) => {
   const { data, error, isLoading } = useQuery<NotifyLogsPaginator, Error>({
     queryKey: [API_ENDPOINTS.NOTIFY_LOGS, params],

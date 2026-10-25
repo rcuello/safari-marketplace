@@ -34,7 +34,7 @@ const BannerWithoutSlider: React.FC<BannerProps> = ({ banners, layout }) => {
             'absolute inset-0 flex w-full flex-col items-center justify-center p-5 text-center md:px-20 lg:space-y-10',
             {
               'mt-24 space-y-5 md:mt-0 md:!space-y-8': layout === 'minimal',
-            }
+            },
           )}
         >
           <h1
@@ -42,7 +42,7 @@ const BannerWithoutSlider: React.FC<BannerProps> = ({ banners, layout }) => {
               'text-2xl font-bold tracking-tight text-heading md:text-3xl lg:text-4xl xl:text-5xl',
               {
                 '!text-accent': layout === 'minimal',
-              }
+              },
             )}
           >
             {banners![0]?.title}

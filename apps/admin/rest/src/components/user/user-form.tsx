@@ -64,7 +64,7 @@ const CustomerCreateForm = () => {
             router.push(Routes.user.list);
           }
         },
-      }
+      },
     );
   }
 

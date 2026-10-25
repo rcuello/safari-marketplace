@@ -41,7 +41,7 @@ const StoreNoticeCard: React.FC<NoticeCardProps> = ({ noticeData }) => {
           'border-l-accent': StoreNoticePriorityType.High === priority,
           'border-l-[#43A5FF]': StoreNoticePriorityType.Medium === priority,
           'border-l-[#F75159]': StoreNoticePriorityType.Low === priority,
-        }
+        },
       )}
       onClick={onClickHandel}
     >
@@ -75,7 +75,7 @@ const StoreNoticeCard: React.FC<NoticeCardProps> = ({ noticeData }) => {
                         StoreNoticePriorityType.Medium === priority,
                       'bg-[#F75159] text-[#F75159]':
                         StoreNoticePriorityType.Low === priority,
-                    }
+                    },
                   )}
                 />
               </div>
@@ -84,11 +84,15 @@ const StoreNoticeCard: React.FC<NoticeCardProps> = ({ noticeData }) => {
             ''
           )}
           <div
-            className={cn('hidden text-xl lg:block', {
-              'text-accent': StoreNoticePriorityType.High === priority,
-              'text-[#43A5FF]': StoreNoticePriorityType.Medium === priority,
-              'text-[#F75159]': StoreNoticePriorityType.Low === priority,
-            }, is_read ? 'text-opacity-50' : '')}
+            className={cn(
+              'hidden text-xl lg:block',
+              {
+                'text-accent': StoreNoticePriorityType.High === priority,
+                'text-[#43A5FF]': StoreNoticePriorityType.Medium === priority,
+                'text-[#F75159]': StoreNoticePriorityType.Low === priority,
+              },
+              is_read ? 'text-opacity-50' : '',
+            )}
           >
             <CheckMarkGhost />
           </div>

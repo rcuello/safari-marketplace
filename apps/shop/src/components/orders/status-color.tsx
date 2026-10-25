@@ -32,9 +32,11 @@ const StatusColor = (status: string) => {
   ) {
     bg_class = 'bg-rose-400 bg-opacity-10 text-status-pending';
   } else if (status?.toLowerCase() === 'order-at-local-facility') {
-    bg_class = 'bg-status-out-for-delivery bg-opacity-[.15] text-status-out-for-delivery';
+    bg_class =
+      'bg-status-out-for-delivery bg-opacity-[.15] text-status-out-for-delivery';
   } else if (status?.toLowerCase() === 'order-out-for-delivery') {
-    bg_class = 'bg-status-out-for-delivery bg-opacity-[.15] text-status-out-for-delivery';
+    bg_class =
+      'bg-status-out-for-delivery bg-opacity-[.15] text-status-out-for-delivery';
   } else {
     bg_class = 'bg-accent bg-opacity-[.15] !text-accent';
   }

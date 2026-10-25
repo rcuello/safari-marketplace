@@ -79,7 +79,7 @@ const MessageBar = ({ user }: IProps) => {
         <Menu.Button
           className={cn(
             'relative flex h-9 w-9 items-center justify-center gap-2 rounded-full border border-gray-200 bg-gray-50 text-gray-600 before:absolute before:top-0 before:right-0 before:h-2 before:w-2 before:rounded-full focus:outline-none data-[headlessui-state=open]:bg-white data-[headlessui-state=open]:text-accent',
-            activeStatus?.unseen ? 'before:bg-accent' : null
+            activeStatus?.unseen ? 'before:bg-accent' : null,
           )}
         >
           <MessageIcon
@@ -145,7 +145,7 @@ const MessageBar = ({ user }: IProps) => {
                         >
                           <div
                             className={cn(
-                              'flex gap-2 rounded-md py-3.5 px-5 text-sm font-semibold capitalize transition duration-200 hover:text-accent group-hover:bg-gray-100/70'
+                              'flex gap-2 rounded-md py-3.5 px-5 text-sm font-semibold capitalize transition duration-200 hover:text-accent group-hover:bg-gray-100/70',
                             )}
                             onClick={() => {
                               router.push(`${routes}`);
@@ -191,8 +191,8 @@ const MessageBar = ({ user }: IProps) => {
                                     <p className="truncate text-xs font-normal text-[#686D73]">
                                       {dayjs().to(
                                         dayjs.utc(
-                                          item?.latest_message?.created_at
-                                        )
+                                          item?.latest_message?.created_at,
+                                        ),
                                       )}
                                     </p>
                                   ) : (

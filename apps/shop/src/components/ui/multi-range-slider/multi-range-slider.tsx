@@ -17,7 +17,7 @@ const MultiRangeSlider: React.FC<Props> = ({ min, max, onChange }) => {
   // Convert to percentage
   const getPercent = useCallback(
     (value: number) => Math.round(((value - min) / (max - min)) * 100),
-    [min, max]
+    [min, max],
   );
 
   // Set width of the range to decrease from the left side
@@ -68,7 +68,7 @@ const MultiRangeSlider: React.FC<Props> = ({ min, max, onChange }) => {
             'thumb absolute z-[3] h-0 w-full outline-none',
             {
               'z-[5]': minVal > max - 100,
-            }
+            },
           )}
         />
         <input

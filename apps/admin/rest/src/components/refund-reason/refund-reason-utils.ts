@@ -9,7 +9,7 @@ export interface IRefundPolicyEnumerable {
 }
 
 export const RefundPolicyType: Array<IRefundPolicyEnumerable> = Object.keys(
-  RefundPolicyEnum
+  RefundPolicyEnum,
 ).map((target: string) => ({
   name: target.toLocaleUpperCase(),
   value: target,

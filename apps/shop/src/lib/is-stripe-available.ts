@@ -1,6 +1,5 @@
 import { PaymentGateway } from '@/types';
 
-
 /**
  *
  *  Utility method to find out is stripe is available as a active payment gateway
@@ -11,7 +10,9 @@ export function isStripeAvailable(props: any) {
   let processPaymentGatewayName: string[] = [];
 
   if (Boolean(paymentGateway) && Array.isArray(paymentGateway)) {
-    const PaymentGatewaysName: string[] = [...paymentGateway].map(p => p.name.toUpperCase());
+    const PaymentGatewaysName: string[] = [...paymentGateway].map((p) =>
+      p.name.toUpperCase(),
+    );
     processPaymentGatewayName = [...PaymentGatewaysName];
   }
 

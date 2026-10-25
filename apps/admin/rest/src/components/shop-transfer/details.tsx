@@ -172,4 +172,3 @@ const Details: React.FC<ShopTransferDetailsProps> = ({ data, userId }) => {
 };
 
 export { Details };
-

@@ -8,7 +8,7 @@ const initialState = {
   siteSubtitle: '',
   currency: 'USD',
   currencyOptions: {
-    formation: "en-US",
+    formation: 'en-US',
     fractions: 2,
   },
   logo: {
@@ -32,7 +32,7 @@ export const SettingsProvider: React.FC<{ initialValue: any }> = ({
       ...state,
       updateSettings,
     }),
-    [state]
+    [state],
   );
   return <SettingsContext.Provider value={value} {...props} />;
 };

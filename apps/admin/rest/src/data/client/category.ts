@@ -11,9 +11,14 @@ import { HttpClient } from './http-client';
 
 export const categoryClient = {
   ...crudFactory<Category, QueryOptions, CreateCategoryInput>(
-    API_ENDPOINTS.CATEGORIES
+    API_ENDPOINTS.CATEGORIES,
   ),
-  paginated: ({ type, name, self, ...params }: Partial<CategoryQueryOptions>) => {
+  paginated: ({
+    type,
+    name,
+    self,
+    ...params
+  }: Partial<CategoryQueryOptions>) => {
     return HttpClient.get<CategoryPaginator>(API_ENDPOINTS.CATEGORIES, {
       searchJoin: 'and',
       self,

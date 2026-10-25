@@ -61,14 +61,14 @@ const NotifyLogItem = ({ item }: any) => {
         onClick={() => handleClickOnNotification(item)}
         className={cn(
           "relative flex gap-2 rounded-md py-3.5 px-6 text-sm font-semibold capitalize transition duration-200 before:absolute before:top-5 before:h-2 before:w-2 before:rounded-full before:bg-accent before:opacity-0 before:content-[''] before:start-2 hover:text-accent group-hover:bg-gray-100/70",
-          item?.is_read == false ? 'before:opacity-100' : null
+          item?.is_read == false ? 'before:opacity-100' : null,
         )}
       >
         <div className="overflow-hidden">
           <h3
             className={cn(
               'truncate text-sm font-medium',
-              item?.is_read ? 'text-[#666]' : ''
+              item?.is_read ? 'text-[#666]' : '',
             )}
           >
             {t('text-order')}:{' '}
@@ -132,7 +132,7 @@ const RecentOrderBar = ({ user }: IProps) => {
           toast.success(data?.message, {
             toastId: 'orderSuccess',
           });
-        }
+        },
       );
       return () => {
         PusherConfig.unsubscribe(channelName);
@@ -148,7 +148,7 @@ const RecentOrderBar = ({ user }: IProps) => {
         <Menu.Button
           className={cn(
             'relative flex h-9 w-9 items-center justify-center gap-2 rounded-full border border-gray-200 bg-gray-50 text-gray-600 before:absolute before:top-0 before:right-0 before:h-2 before:w-2 before:rounded-full focus:outline-none data-[headlessui-state=open]:bg-white data-[headlessui-state=open]:text-accent',
-            activeStatus.length > 0 ? 'before:bg-[#3080F8]' : ''
+            activeStatus.length > 0 ? 'before:bg-[#3080F8]' : '',
           )}
         >
           <ShoppingBagIcon

@@ -6,7 +6,7 @@ function formatSearchParams(params: Partial<SearchParamOptions>) {
     .map(([k, v]) =>
       ['type', 'categories', 'tags', 'author', 'manufacturer'].includes(k)
         ? `${k}.slug:${v}`
-        : `${k}:${v}`
+        : `${k}:${v}`,
     )
     .join(';');
 }

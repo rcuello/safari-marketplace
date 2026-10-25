@@ -3,18 +3,27 @@ import type { GetStaticPaths, GetStaticProps } from 'next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import invariant from 'tiny-invariant';
 import { addApolloState, initializeApollo } from './client';
-import { FlashSaleDocument, FlashSaleQuery, FlashSalesDocument, FlashSalesQuery } from './gql/flash_sales.graphql';
+import {
+  FlashSaleDocument,
+  FlashSaleQuery,
+  FlashSalesDocument,
+  FlashSalesQuery,
+} from './gql/flash_sales.graphql';
 import { SettingsDocument } from './gql/settings.graphql';
 import { LIMIT_HUNDRED, SHOPS_LIMIT } from '@/lib/constants';
-
 
 type ParsedQueryParams = {
   slug: string;
 };
-export const getStaticPaths: GetStaticPaths<ParsedQueryParams> = async ({ locales, defaultLocale }) => {
+export const getStaticPaths: GetStaticPaths<ParsedQueryParams> = async ({
+  locales,
+  defaultLocale,
+}) => {
   invariant(!!locales, 'locales is not defined');
   const apolloClient = initializeApollo();
-  const { data: { flashSales } } = await apolloClient.query<FlashSalesQuery>({
+  const {
+    data: { flashSales },
+  } = await apolloClient.query<FlashSalesQuery>({
     query: FlashSalesDocument,
     variables: {
       language: defaultLocale,
@@ -23,7 +32,7 @@ export const getStaticPaths: GetStaticPaths<ParsedQueryParams> = async ({ locale
   });
   invariant(flashSales, 'flashSales is not defined');
   const paths = flashSales?.data.flatMap((flashSale) =>
-    locales.map((locale) => ({ params: { slug: flashSale.slug! }, locale }))
+    locales.map((locale) => ({ params: { slug: flashSale.slug! }, locale })),
   );
   return {
     paths,
@@ -35,7 +44,6 @@ type PageProps = {
   flashSale: FlashSale;
 };
 
-
 export const getStaticProps: GetStaticProps<
   PageProps,
   ParsedQueryParams
@@ -46,7 +54,7 @@ export const getStaticProps: GetStaticProps<
     query: SettingsDocument,
     variables: {
       language: locale,
-      first: LIMIT_HUNDRED
+      first: LIMIT_HUNDRED,
     },
   });
   const {

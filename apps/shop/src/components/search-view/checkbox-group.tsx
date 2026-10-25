@@ -20,7 +20,7 @@ const CheckboxGroup: React.FC<Props> = ({ children, values, onChange }) => {
         : [...values, value];
       onChange(newValues);
     },
-    [values, onChange]
+    [values, onChange],
   );
 
   return (

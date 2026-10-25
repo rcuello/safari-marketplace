@@ -46,7 +46,7 @@ export default function TransactionsPage() {
     },
     {
       enabled: !!shop,
-    }
+    },
   );
   const shopId = shopData?.id!;
   const { orders, loading, paginatorInfo, error } = useOrdersQuery({
@@ -61,7 +61,7 @@ export default function TransactionsPage() {
     {
       ...(shopId && { shop_id: shopId }),
     },
-    { enabled: false }
+    { enabled: false },
   );
 
   if (loading) return <Loader text={t('common:text-loading')} />;
@@ -109,7 +109,7 @@ export default function TransactionsPage() {
               <Menu.Items
                 as="ul"
                 className={classNames(
-                  'shadow-700 absolute z-50 mt-2 w-52 overflow-hidden rounded border border-border-200 bg-light py-2 focus:outline-none ltr:right-0 ltr:origin-top-right rtl:left-0 rtl:origin-top-left'
+                  'shadow-700 absolute z-50 mt-2 w-52 overflow-hidden rounded border border-border-200 bg-light py-2 focus:outline-none ltr:right-0 ltr:origin-top-right rtl:left-0 rtl:origin-top-left',
                 )}
               >
                 <Menu.Item>
@@ -118,7 +118,7 @@ export default function TransactionsPage() {
                       onClick={handleExportOrder}
                       className={classNames(
                         'flex w-full items-center space-x-3 px-5 py-2.5 text-sm font-semibold capitalize transition duration-200 hover:text-accent focus:outline-none rtl:space-x-reverse',
-                        active ? 'text-accent' : 'text-body'
+                        active ? 'text-accent' : 'text-body',
                       )}
                     >
                       <DownloadIcon className="w-5 shrink-0" />

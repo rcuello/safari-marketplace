@@ -29,7 +29,7 @@ const Checkbox = React.forwardRef<HTMLInputElement, Props>(
         {error && <p className="my-2 text-xs text-red-500 text-end">{error}</p>}
       </div>
     );
-  }
+  },
 );
 
 Checkbox.displayName = 'Checkbox';

@@ -8,7 +8,7 @@ import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 const JoinButton = dynamic(
   () => import('@/components/layouts/menu/join-button'),
-  { ssr: false }
+  { ssr: false },
 );
 import { CloseIcon } from '@/components/icons/close-icon';
 import { drawerAtom } from '@/store/drawer-atom';

@@ -25,7 +25,7 @@ export function useToggleWishlist(product_id: string) {
     onSuccess: (data) => {
       queryClient.setQueryData(
         [`${API_ENDPOINTS.WISHLIST}/in_wishlist`, product_id],
-        (old: any) => !old
+        (old: any) => !old,
       );
     },
     onError: (error) => {
@@ -81,7 +81,7 @@ export function useWishlist(options?: WishlistQueryOptions) {
     queryKey: [API_ENDPOINTS.USERS_WISHLIST, formattedOptions],
     queryFn: ({ queryKey, pageParam }) =>
       client.wishlist.all(
-        Object.assign({}, queryKey[1] as WishlistQueryOptions, pageParam)
+        Object.assign({}, queryKey[1] as WishlistQueryOptions, pageParam),
       ),
     initialPageParam: undefined,
     getNextPageParam: ({ current_page, last_page }) =>

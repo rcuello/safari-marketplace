@@ -5,11 +5,10 @@ import React from 'react';
 import BusinessPurposeItem from './business-purpose-item';
 import classNames from 'classnames';
 
-interface BusinessPurposeProps
-  extends Pick<
-    BecomeSellerPageOptions,
-    'purposeItems' | 'purposeTitle' | 'purposeDescription'
-  > {
+interface BusinessPurposeProps extends Pick<
+  BecomeSellerPageOptions,
+  'purposeItems' | 'purposeTitle' | 'purposeDescription'
+> {
   className?: string;
 }
 

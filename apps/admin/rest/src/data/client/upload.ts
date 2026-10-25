@@ -16,7 +16,7 @@ export const uploadClient = {
     return HttpClient.post<Attachment>(
       API_ENDPOINTS.ATTACHMENTS,
       formData,
-      options
+      options,
     );
   },
 };

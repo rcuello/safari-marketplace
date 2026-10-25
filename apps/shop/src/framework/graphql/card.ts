@@ -7,14 +7,14 @@ import {
 import { useTranslation } from 'next-i18next';
 import { toast } from 'react-toastify';
 import { useModalAction } from '@/components/ui/modal/modal.context';
-import {AddNewCardInput} from '../../../__generated__/__types__';
+import { AddNewCardInput } from '../../../__generated__/__types__';
 import { useUser } from '@/framework/user';
 
 export function useCards() {
   const { isAuthorized } = useUser();
 
   const { data, loading, error } = useCardsQuery({
-    skip: !isAuthorized
+    skip: !isAuthorized,
   });
 
   return {
@@ -55,36 +55,36 @@ export function useAddCards() {
   const { closeModal } = useModalAction();
   const [addNewCardMutation, { loading, error }] = useAddNewCardMutation({
     refetchQueries: ['Cards'],
-      onCompleted: () => {
-        closeModal();
-        toast.success(t('common:card-successfully-add'), {
-          toastId: 'success',
-        });
-      },
-      onError: (error) => {
-        const {
-          response: { data },
-        }: any = error ?? {};
+    onCompleted: () => {
+      closeModal();
+      toast.success(t('common:card-successfully-add'), {
+        toastId: 'success',
+      });
+    },
+    onError: (error) => {
+      const {
+        response: { data },
+      }: any = error ?? {};
 
-        toast.error(t(data?.message), {
-          toastId: 'error',
-        });
-      },
+      toast.error(t(data?.message), {
+        toastId: 'error',
+      });
+    },
   });
 
-  function addNewCard(input: AddNewCardInput){
+  function addNewCard(input: AddNewCardInput) {
     addNewCardMutation({
       variables: {
-        input
-      }
-    })
+        input,
+      },
+    });
   }
 
   return {
     addNewCard,
     isLoading: loading,
-    error
-  }
+    error,
+  };
 }
 
 export function useDefaultPaymentMethod() {
@@ -99,7 +99,7 @@ export function useDefaultPaymentMethod() {
       },
     });
 
-  function setDefaultPayment({method_id}: {method_id: string}) {
+  function setDefaultPayment({ method_id }: { method_id: string }) {
     setDefaultPaymentMethodMutation({
       variables: {
         method_id,

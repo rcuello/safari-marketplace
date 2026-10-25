@@ -56,8 +56,8 @@ const MaintenanceMode = ({
   const router = useRouter();
   const { locale, asPath, locales, reload } = router;
 
-  let filterItem = languageMenu?.filter(
-    (element) => locales?.includes(element?.value),
+  let filterItem = languageMenu?.filter((element) =>
+    locales?.includes(element?.value),
   );
 
   const currentSelectedItem = locale

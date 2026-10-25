@@ -16,7 +16,7 @@ const SearchFilterView = dynamic(
   () => import('@/components/search-view/sidebar-filter'),
 );
 const MaintenanceMoreInfo = dynamic(
-  () => import('@/components/maintenance/more-info')
+  () => import('@/components/maintenance/more-info'),
 );
 
 export default function ManagedDrawer() {

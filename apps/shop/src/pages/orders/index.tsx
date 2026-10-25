@@ -60,9 +60,9 @@ export default function OrdersPage() {
         />
         {selectedOrder && (
           <OrderDetails
-            order={
-              ordersItem.find((order: any) => order.id === selectedOrder.id)!
-            }
+            order={ordersItem.find(
+              (order: any) => order.id === selectedOrder.id,
+            )!}
             loadingStatus={isLoadingStatus}
           />
         )}
@@ -83,7 +83,7 @@ const getLayout = (page: React.ReactElement) =>
     <div className="flex flex-col items-start w-full px-5 py-10 mx-auto max-w-1920 bg-light lg:bg-gray-100 xl:flex-row xl:py-14 xl:px-8 2xl:px-14">
       <DashboardSidebar className="hidden shrink-0 ltr:mr-8 rtl:ml-8 xl:block xl:w-80" />
       {page}
-    </div>
+    </div>,
   );
 
 // OrdersPage.authenticationRequired = true;

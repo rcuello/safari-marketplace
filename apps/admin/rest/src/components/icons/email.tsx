@@ -18,7 +18,6 @@ export const EmailIcon: React.FC<React.SVGAttributes<{}>> = (props) => {
   );
 };
 
-
 export const EmailAtIcon: React.FC<React.SVGAttributes<{}>> = (props) => {
   return (
     <svg

@@ -18,7 +18,7 @@ const BreadcrumbButton: React.FC<BreadcrumbButtonProps> = ({
       'relative h-14 rounded-lg bg-light px-7 text-base font-semibold text-heading shadow-downfall-xs transition-shadow hover:shadow-downfall-sm',
       {
         'ltr:pr-[5.5rem] rtl:pl-[5.5rem]': image,
-      }
+      },
     )}
     onClick={onClick}
   >

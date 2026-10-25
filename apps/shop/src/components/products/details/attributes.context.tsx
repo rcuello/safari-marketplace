@@ -11,7 +11,7 @@ export const AttributesProvider: React.FC<{
   const [state, dispatch] = React.useState(initialState);
   const value = React.useMemo(
     () => ({ attributes: state, setAttributes: dispatch }),
-    [state]
+    [state],
   );
   return <AttributesContext.Provider value={value} {...props} />;
 };

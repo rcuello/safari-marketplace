@@ -53,7 +53,7 @@ const StarFilter = () => {
   const { t } = useTranslation('common');
   const { isRTL } = useIsRTL();
   const [selected, setSelected] = useState(
-    () => plans.find((plan) => plan.value === router.query.rating) ?? plans[0]
+    () => plans.find((plan) => plan.value === router.query.rating) ?? plans[0],
   );
 
   useEffect(() => {
@@ -74,7 +74,7 @@ const StarFilter = () => {
         },
       },
       undefined,
-      { scroll: false }
+      { scroll: false },
     );
     setSelected(values);
   }

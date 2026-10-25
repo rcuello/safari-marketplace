@@ -34,7 +34,7 @@ const ProgressBox: React.FC<ProgressProps> = ({
             <div
               className={cn(
                 styles.progress_wrapper,
-                index <= filledIndex ? styles.checked : ''
+                index <= filledIndex ? styles.checked : '',
               )}
             >
               <div className={styles.status_wrapper}>

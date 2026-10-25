@@ -29,15 +29,15 @@ const ShopAvatar: React.FC<ShopAvatarProps> = ({
           size === 'small'
             ? 'h-[5.75rem] w-[5.75rem]'
             : 'h-32 w-32 lg:h-[12.125rem] lg:w-[12.125rem]',
-          className
-        )
+          className,
+        ),
       )}
       {...rest}
     >
       <div
         className={classNames(
           'relative p-1.5',
-          logo?.original ? '' : 'flex h-full'
+          logo?.original ? '' : 'flex h-full',
         )}
       >
         {logo?.original ? (
@@ -50,8 +50,8 @@ const ShopAvatar: React.FC<ShopAvatarProps> = ({
                 'rounded-full object-cover',
                 size === 'small'
                   ? 'h-[4.75rem] w-[4.75rem]'
-                  : 'h-28 w-28 lg:h-[11.125rem] lg:w-[11.125rem]'
-              )
+                  : 'h-28 w-28 lg:h-[11.125rem] lg:w-[11.125rem]',
+              ),
             )}
             width={80}
             height={80}
@@ -63,7 +63,7 @@ const ShopAvatar: React.FC<ShopAvatarProps> = ({
             sizes="(max-width: 768px) 100vw"
             className={classNames(
               'm-auto',
-              size === 'small' ? 'w-10' : 'w-14 lg:w-20'
+              size === 'small' ? 'w-10' : 'w-14 lg:w-20',
             )}
             width={80}
             height={80}
@@ -75,7 +75,7 @@ const ShopAvatar: React.FC<ShopAvatarProps> = ({
             is_active ? 'bg-accent' : 'bg-[#F75159]',
             size === 'small'
               ? 'top-2 right-[0.625rem] h-2 w-2'
-              : 'top-4 right-[4px] h-4 w-4 lg:right-[1.4375rem]'
+              : 'top-4 right-[4px] h-4 w-4 lg:right-[1.4375rem]',
           )}
         />
       </div>

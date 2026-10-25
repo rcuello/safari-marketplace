@@ -1,12 +1,14 @@
-import type {
-  RefundPolicyQueryOptions
-} from '@/types';
+import type { RefundPolicyQueryOptions } from '@/types';
 import { NetworkStatus } from '@apollo/client';
 import { useRouter } from 'next/router';
 import { useRefundPoliciesQuery } from './gql/refund-policies.graphql';
 import { formatSearchParams } from './utils/query-helpers';
 
-export function useRefundPolicies({ target, status, ...params }: Partial<RefundPolicyQueryOptions>) {
+export function useRefundPolicies({
+  target,
+  status,
+  ...params
+}: Partial<RefundPolicyQueryOptions>) {
   const { query, locale } = useRouter();
   const formattedOptions = {
     language: locale,

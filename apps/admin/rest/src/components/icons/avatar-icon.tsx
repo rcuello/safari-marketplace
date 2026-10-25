@@ -14,4 +14,4 @@ export const AvatarIcon: React.FC<React.SVGAttributes<{}>> = (props) => {
       />
     </svg>
   );
-}
+};

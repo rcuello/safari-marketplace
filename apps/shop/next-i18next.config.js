@@ -3,7 +3,7 @@ const path = require('path');
 
 invariant(
   process.env.NEXT_PUBLIC_DEFAULT_LANGUAGE,
-  'NEXT_PUBLIC_DEFAULT_LANGUAGE is required, but not set, check your .env file'
+  'NEXT_PUBLIC_DEFAULT_LANGUAGE is required, but not set, check your .env file',
 );
 
 const isMultilangEnable =

@@ -18,7 +18,7 @@ type EnvVariables = {
   readonly FACEBOOK_CLIENT_SECRET: string;
 };
 export function getEnv(
-  name: keyof EnvVariables
+  name: keyof EnvVariables,
 ): EnvVariables[keyof EnvVariables] {
   const val = process.env[name];
   if (!val) {

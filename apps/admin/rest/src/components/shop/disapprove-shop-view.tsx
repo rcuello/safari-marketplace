@@ -22,7 +22,7 @@ const ProductDeleteView = () => {
         onSettled: () => {
           closeModal();
         },
-      }
+      },
     );
   }
 

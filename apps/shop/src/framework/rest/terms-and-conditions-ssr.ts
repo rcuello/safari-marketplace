@@ -36,7 +36,7 @@ export const getStaticProps: GetStaticProps = async ({ locale }) => {
     ],
     queryFn: ({ queryKey }) =>
       client.termsAndConditions.all(
-        queryKey[1] as TermsAndConditionsQueryOptions
+        queryKey[1] as TermsAndConditionsQueryOptions,
       ),
     initialPageParam: undefined,
   });

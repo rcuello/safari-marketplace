@@ -66,7 +66,7 @@ const SidebarFilter: React.FC<{
     <div
       className={classNames(
         'flex h-full w-full flex-col rounded-xl border-gray-200 bg-white lg:h-auto lg:border',
-        className
+        className,
       )}
     >
       <div className="sticky top-0 z-10 flex items-center justify-between rounded-tl-xl rounded-tr-xl border-b border-gray-200 bg-white px-5 py-6 lg:static">

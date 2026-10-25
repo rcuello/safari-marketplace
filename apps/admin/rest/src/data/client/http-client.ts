@@ -111,8 +111,8 @@ export class HttpClient {
         ].includes(k)
           ? `${k}.slug:${v}`
           : ['is_approved'].includes(k)
-          ? formatBooleanSearchParam(k, v as boolean)
-          : `${k}:${v}`,
+            ? formatBooleanSearchParam(k, v as boolean)
+            : `${k}:${v}`,
       )
       .join(';');
   }

@@ -129,7 +129,7 @@ export const useStoreNoticesQuery = (
   config: Omit<
     UseQueryOptions<StoreNoticePaginator, Error>,
     'queryKey' | 'queryFn'
-  > = {}
+  > = {},
 ) => {
   const { data, error, isLoading } = useQuery<StoreNoticePaginator, Error>({
     queryKey: [API_ENDPOINTS.STORE_NOTICES, options],
@@ -152,7 +152,7 @@ export const useStoreNoticesLoadMoreQuery = (
   config?: Omit<
     UseInfiniteQueryOptions<StoreNoticePaginator, Error>,
     'queryKey' | 'queryFn' | 'initialPageParam' | 'getNextPageParam'
-  >
+  >,
 ) => {
   const {
     data,
@@ -189,13 +189,13 @@ export const useStoreNoticesLoadMoreQuery = (
 };
 
 export const useStoreNoticeTypeQuery = (
-  options: Partial<{ type: string }> = {}
+  options: Partial<{ type: string }> = {},
 ) => {
   const { data, error, isLoading } = useQuery<any, Error>({
     queryKey: [API_ENDPOINTS.STORE_NOTICE_GET_STORE_NOTICE_TYPE, options],
     queryFn: ({ queryKey }) =>
       storeNoticeClient.getTypeList(
-        Object.assign({}, queryKey[1] as { type: string })
+        Object.assign({}, queryKey[1] as { type: string }),
       ),
     placeholderData: keepPreviousData,
   });
@@ -207,13 +207,13 @@ export const useStoreNoticeTypeQuery = (
   };
 };
 export const useUsersOrShopsQuery = (
-  options: Partial<{ type: string }> = {}
+  options: Partial<{ type: string }> = {},
 ) => {
   const { data, error, isLoading } = useQuery<any, Error>({
     queryKey: [API_ENDPOINTS.STORE_NOTICES_USER_OR_SHOP_LIST, options],
     queryFn: ({ queryKey }) =>
       storeNoticeClient.getUserOrShopList(
-        Object.assign({}, queryKey[1] as { type: string })
+        Object.assign({}, queryKey[1] as { type: string }),
       ),
     placeholderData: keepPreviousData,
   });

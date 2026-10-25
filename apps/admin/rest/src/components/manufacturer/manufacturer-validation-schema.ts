@@ -11,6 +11,6 @@ export const manufacturerValidationSchema = yup.object().shape({
         }
         return yup.string().nullable();
       }),
-    })
+    }),
   ),
 });

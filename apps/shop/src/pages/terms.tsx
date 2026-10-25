@@ -38,7 +38,10 @@ export default function TermsPage() {
               <NotFound text="text-no-faq" className="h-96" />
             </div>
           ) : (
-            <Terms isLoading terms={termsAndConditions as TermsAndConditions[]} />
+            <Terms
+              isLoading
+              terms={termsAndConditions as TermsAndConditions[]}
+            />
           )}
         </div>
       </section>

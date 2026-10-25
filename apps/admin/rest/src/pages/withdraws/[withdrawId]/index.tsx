@@ -59,7 +59,7 @@ const Withdraw = () => {
     if (withdraw?.status) {
       setValue(
         'status',
-        WithdrawStatus?.find((status) => status.id === withdraw?.status)
+        WithdrawStatus?.find((status) => status.id === withdraw?.status),
       );
     }
   }, [withdraw?.status]);
@@ -150,7 +150,7 @@ const Withdraw = () => {
               <span className="w-full text-sm font-semibold text-heading">
                 {
                   WithdrawStatus?.find(
-                    (status) => status.id === withdraw?.status
+                    (status) => status.id === withdraw?.status,
                   )?.name
                 }
               </span>

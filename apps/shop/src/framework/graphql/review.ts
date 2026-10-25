@@ -44,7 +44,7 @@ export function useCreateReview() {
   const { t } = useTranslation('common');
   const { closeModal } = useModalAction();
   const [create, { loading: isLoading }] = useCreateReviewMutation({
-    onCompleted: (data:any) => {
+    onCompleted: (data: any) => {
       toast.success(t('text-review-request-submitted'));
       closeModal();
     },
@@ -69,7 +69,7 @@ export function useUpdateReview() {
   const { t } = useTranslation('common');
   const { closeModal } = useModalAction();
   const [update, { loading: isLoading }] = useUpdateReviewMutation({
-    onCompleted: (data:any) => {
+    onCompleted: (data: any) => {
       toast.success(t('text-review-request-update-submitted'));
       closeModal();
     },

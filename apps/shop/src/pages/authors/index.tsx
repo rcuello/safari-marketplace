@@ -35,7 +35,7 @@ const getLayout = (page: React.ReactElement) =>
       <div className="min-h-screen px-5 pt-10 pb-16 mx-auto max-w-1920 xl:py-14 xl:px-16">
         {page}
       </div>
-    </div>
+    </div>,
   );
 
 AuthorsPage.getLayout = getLayout;

@@ -11,7 +11,7 @@ import { QuestionQueryOptions } from '@/types';
 
 export const questionClient = {
   ...crudFactory<Question, QueryOptions, ReplyQuestion>(
-    API_ENDPOINTS.QUESTIONS
+    API_ENDPOINTS.QUESTIONS,
   ),
   get({ id }: { id: string }) {
     return HttpClient.get<Question>(`${API_ENDPOINTS.QUESTIONS}/${id}`);

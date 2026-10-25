@@ -11,7 +11,7 @@ import { HttpClient } from '@/data/client/http-client';
 
 export const manufacturerClient = {
   ...crudFactory<Manufacturer, QueryOptions, CreateManufacturerInput>(
-    API_ENDPOINTS.MANUFACTURERS
+    API_ENDPOINTS.MANUFACTURERS,
   ),
   paginated: ({
     name,

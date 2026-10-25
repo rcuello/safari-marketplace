@@ -11,7 +11,8 @@ const AddNewPaymentModal = () => {
   const {
     data: { paymentGateway, paymentIntentInfo, trackingNumber },
   } = useModalState();
-  const PaymentMethod = ADD_PAYMENTS_FORM_COMPONENTS[paymentGateway?.toUpperCase()];
+  const PaymentMethod =
+    ADD_PAYMENTS_FORM_COMPONENTS[paymentGateway?.toUpperCase()];
   const PaymentComponent = PaymentMethod?.component;
 
   return (

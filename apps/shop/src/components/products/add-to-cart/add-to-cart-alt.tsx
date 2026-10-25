@@ -9,13 +9,7 @@ import { useState } from 'react';
 interface Props {
   data: any;
   variant?:
-    | 'helium'
-    | 'neon'
-    | 'argon'
-    | 'oganesson'
-    | 'single'
-    | 'big'
-    | 'bordered';
+    'helium' | 'neon' | 'argon' | 'oganesson' | 'single' | 'big' | 'bordered';
   counterVariant?:
     | 'helium'
     | 'neon'
@@ -47,7 +41,7 @@ export const AddToCartAlt = ({
     setQuantity((prev) => prev + 1);
   };
   const handleAddClick = (
-    e: React.MouseEvent<HTMLButtonElement | MouseEvent>
+    e: React.MouseEvent<HTMLButtonElement | MouseEvent>,
   ) => {
     e.stopPropagation();
     // Check language and update

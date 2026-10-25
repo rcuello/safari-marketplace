@@ -62,7 +62,7 @@ const PaymentMethodCard = ({
       className={cn(
         isDefault || disable
           ? 'pointer-events-none cursor-not-allowed opacity-60'
-          : 'cursor-pointer'
+          : 'cursor-pointer',
       )}
     >
       <input

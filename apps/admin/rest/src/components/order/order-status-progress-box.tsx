@@ -9,11 +9,12 @@ interface Props {
 }
 
 const OrderStatusProgressBox = ({ paymentStatus, orderStatus }: Props) => {
-  const currentStatusIndex = ORDER_STATUS.findIndex((o) => o.status === orderStatus) ?? 0;
+  const currentStatusIndex =
+    ORDER_STATUS.findIndex((o) => o.status === orderStatus) ?? 0;
   const filterStatus = filterOrderStatus(
     ORDER_STATUS,
     paymentStatus!,
-    currentStatusIndex
+    currentStatusIndex,
   );
 
   return (

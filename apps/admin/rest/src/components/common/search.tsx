@@ -69,7 +69,7 @@ const Search: React.FC<SearchProps> = ({
     {
       [classes.shadow]: shadow,
     },
-    inputClassName
+    inputClassName,
   );
 
   function clear() {

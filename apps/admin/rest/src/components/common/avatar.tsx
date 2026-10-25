@@ -65,7 +65,7 @@ const Avatar: React.FC<AvatarProps> = ({
       customSize?.match(CHECK_VALID_CUSTOM_SIZE) ?? [];
     if (checkedCustomSizeValue[0] === '') {
       console.warn(
-        'customSize prop value is not valid. Please set customSize prop like -> customSize="50px"'
+        'customSize prop value is not valid. Please set customSize prop like -> customSize="50px"',
       );
     }
   }
@@ -78,8 +78,8 @@ const Avatar: React.FC<AvatarProps> = ({
             classes.base,
             classes.rounded[rounded],
             onClick && 'cursor-pointer',
-            className
-          )
+            className,
+          ),
         )}
         style={{
           width: customSize ?? classes.size[size],
@@ -109,8 +109,8 @@ const Avatar: React.FC<AvatarProps> = ({
           classes.rounded[rounded],
           'font-semibold',
           onClick && 'cursor-pointer',
-          className
-        )
+          className,
+        ),
       )}
       style={{
         width: customSize ?? classes.size[size],

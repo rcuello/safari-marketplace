@@ -42,10 +42,13 @@ export const shopClient = {
   disapprove: (variables: { id: string }) => {
     return HttpClient.post<{ id: string }>(
       API_ENDPOINTS.DISAPPROVE_SHOP,
-      variables
+      variables,
     );
   },
   transferShopOwnership: (variables: TransferShopOwnershipInput) => {
-    return HttpClient.post<any>(API_ENDPOINTS.TRANSFER_SHOP_OWNERSHIP, variables);
+    return HttpClient.post<any>(
+      API_ENDPOINTS.TRANSFER_SHOP_OWNERSHIP,
+      variables,
+    );
   },
 };

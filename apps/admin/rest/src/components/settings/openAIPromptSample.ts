@@ -43,7 +43,6 @@ export const chatbotAutoSuggestion = ({ name }: { name: string }) => {
   ];
 };
 
-
 export const chatbotAutoSuggestion1 = ({ name }: { name: string }) => {
   return [
     {

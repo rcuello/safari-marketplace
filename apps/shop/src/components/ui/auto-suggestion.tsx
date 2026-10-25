@@ -48,7 +48,7 @@ const AutoSuggestion: React.FC<Props> = ({
       <div
         className={cn(
           'absolute top-11 left-0 mt-2 w-full lg:top-16 lg:mt-1',
-          className
+          className,
         )}
       >
         <div className="h-full w-full rounded-lg bg-white py-2 shadow-downfall-lg">

@@ -47,7 +47,9 @@ const AdminsList = ({
   const onHeaderClick = (column: any | null) => ({
     onClick: () => {
       onSort((currentSortDirection: SortOrder) =>
-        currentSortDirection === SortOrder.Desc ? SortOrder.Asc : SortOrder.Desc
+        currentSortDirection === SortOrder.Desc
+          ? SortOrder.Asc
+          : SortOrder.Desc,
       );
 
       onOrder(column);
@@ -98,7 +100,7 @@ const AdminsList = ({
       onHeaderCell: () => onHeaderClick('name'),
       render: (
         name: string,
-        { profile, email }: { profile: any; email: string }
+        { profile, email }: { profile: any; email: string },
       ) => (
         <div className="flex items-center">
           <Avatar name={name} src={profile?.avatar?.thumbnail} />
@@ -128,7 +130,7 @@ const AdminsList = ({
                 >
                   {name}
                 </span>
-              )
+              ),
             )}
           </div>
         );

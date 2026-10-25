@@ -9,7 +9,10 @@ type Props = {
   className?: string;
 };
 
-export default function RefundPolicyStatusFilter({ onStatusFilter, className }: Props) {
+export default function RefundPolicyStatusFilter({
+  onStatusFilter,
+  className,
+}: Props) {
   const { t } = useTranslation();
 
   return (

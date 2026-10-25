@@ -47,7 +47,7 @@ export default function WithdrawsPage() {
     },
     {
       enabled: Boolean(shopId),
-    }
+    },
   );
 
   if (loading) return <Loader text={t('common:text-loading')} />;

@@ -35,7 +35,7 @@ const PaymentGroupOption: React.FC<PaymentGroupOptionProps> = ({
           checked && '!border-accent bg-light shadow-600',
           {
             '!border-gray-800 bg-light shadow-600': theme === 'bw' && checked,
-          }
+          },
         )}
       >
         {icon ? (

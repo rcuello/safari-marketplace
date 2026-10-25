@@ -10,18 +10,15 @@ import { HttpClient } from './http-client';
 
 export const storeNoticeClient = {
   ...crudFactory<StoreNotice, any, StoreNoticeInput>(
-    API_ENDPOINTS.STORE_NOTICES
+    API_ENDPOINTS.STORE_NOTICES,
   ),
-  all: ({
-    notice,
-    ...params
-  }: Partial<StoreNoticeQueryOptions> = {}) =>
+  all: ({ notice, ...params }: Partial<StoreNoticeQueryOptions> = {}) =>
     HttpClient.get<StoreNoticePaginator>(API_ENDPOINTS.STORE_NOTICES, {
       searchJoin: 'and',
       ...params,
       search: HttpClient.formatSearchParams({
         notice,
-        'users.id': params['users.id']
+        'users.id': params['users.id'],
       }),
     }),
   get({ id, language }: { id: string; language: string }) {
@@ -37,7 +34,11 @@ export const storeNoticeClient = {
     return HttpClient.get<StoreNoticePaginator>(API_ENDPOINTS.STORE_NOTICES, {
       searchJoin: 'and',
       ...params,
-      search: HttpClient.formatSearchParams({ notice, shops, 'users.id': params['users.id'] }),
+      search: HttpClient.formatSearchParams({
+        notice,
+        shops,
+        'users.id': params['users.id'],
+      }),
     });
   },
 

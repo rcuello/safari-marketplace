@@ -68,7 +68,7 @@ const AddToCartBtn: React.FC<Props> = ({ variant, onClick, disabled }) => {
             {
               'cursor-not-allowed border border-border-400 !bg-gray-300 !text-body hover:!bg-gray-300':
                 disabled,
-            }
+            },
           )}
         >
           <span>{t('text-add-cart')}</span>

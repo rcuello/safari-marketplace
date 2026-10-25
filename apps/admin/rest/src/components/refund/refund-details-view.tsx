@@ -77,7 +77,7 @@ export default function RefundDetailsView({
             message: error?.response?.data?.message,
           });
         },
-      }
+      },
     );
   }
 
@@ -96,34 +96,35 @@ export default function RefundDetailsView({
   } = useForm<FormValues>({
     defaultValues: {
       status: RefundStatus.find(
-        (status) => refund?.status?.toUpperCase() === status.value.toUpperCase()
+        (status) =>
+          refund?.status?.toUpperCase() === status.value.toUpperCase(),
       ),
     },
   });
   const { price: subtotal } = usePrice(
     refund && {
       amount: refund?.amount!,
-    }
+    },
   );
   const { price: total } = usePrice(
     refund && {
       amount: refund?.order?.paid_total!,
-    }
+    },
   );
   const { price: discount } = usePrice(
     refund && {
       amount: refund?.order?.discount!,
-    }
+    },
   );
   const { price: delivery_fee } = usePrice(
     refund && {
       amount: refund?.order?.delivery_fee!,
-    }
+    },
   );
   const { price: sales_tax } = usePrice(
     refund && {
       amount: refund?.order?.sales_tax!,
-    }
+    },
   );
 
   const columns = [
@@ -176,10 +177,7 @@ export default function RefundDetailsView({
           <span className="mb-2 block lg:mb-0 lg:inline-block lg:ltr:mr-4 lg:rtl:ml-4">
             {t('text-refund-status')} :
           </span>
-          <Badge
-            text={t(refund?.status)}
-            color={StatusColor(refund?.status)}
-          />
+          <Badge text={t(refund?.status)} color={StatusColor(refund?.status)} />
         </div>
       </div>
       <div className="flex flex-col items-center lg:flex-row">
@@ -204,13 +202,9 @@ export default function RefundDetailsView({
                   required: t('common:text-status-required'),
                 }}
               />
-              {errors?.status?.message &&
-                <ValidationError
-                  message={
-                    t(`${errors?.status?.message}`)
-                  }
-                />
-              }
+              {errors?.status?.message && (
+                <ValidationError message={t(`${errors?.status?.message}`)} />
+              )}
             </div>
             <Button
               loading={updating}
@@ -253,21 +247,27 @@ export default function RefundDetailsView({
               {t('table:table-item-tracking-number')}
             </span>
             <span className="mx-2 hidden sm:block">: </span>
-            <span className="md:pl-10 capitalize">{refund?.order?.tracking_number}</span>
+            <span className="md:pl-10 capitalize">
+              {refund?.order?.tracking_number}
+            </span>
           </p>
           <p className="flex flex-col text-sm text-sub-heading sm:flex-row sm:items-center">
             <span className="mb-2 min-w-[180px] font-medium sm:mb-0">
               {t('common:text-customer-email')}
             </span>
             <span className="mx-2 hidden sm:block">: </span>
-            <span className="md:pl-10 capitalize">{refund?.customer?.email}</span>
+            <span className="md:pl-10 capitalize">
+              {refund?.customer?.email}
+            </span>
           </p>
           <p className="flex flex-col text-sm text-sub-heading sm:flex-row sm:items-center">
             <span className="mb-2 min-w-[180px] font-medium sm:mb-0">
               {t('form:input-label-contact')}
             </span>
             <span className="mx-2 hidden sm:block">: </span>
-            <span className="md:pl-10 capitalize">{refund?.order?.customer_contact}</span>
+            <span className="md:pl-10 capitalize">
+              {refund?.order?.customer_contact}
+            </span>
           </p>
         </div>
       </div>
@@ -275,8 +275,12 @@ export default function RefundDetailsView({
       {/* Reason with description */}
       <div className="mb-10 flex flex-col">
         <p className="mb-9 flex flex-col text-sub-heading">
-          <span className="mb-3 text-lg font-semibold">{t('common:text-reason')}</span>
-          <span className="text-sm">{refund?.title ?? refund?.refund_reason?.name}</span>
+          <span className="mb-3 text-lg font-semibold">
+            {t('common:text-reason')}
+          </span>
+          <span className="text-sm">
+            {refund?.title ?? refund?.refund_reason?.name}
+          </span>
         </p>
         <p className="mb-9 flex flex-col text-sub-heading">
           <span className="mb-3 text-lg font-semibold">
@@ -345,19 +349,21 @@ export default function RefundDetailsView({
         <div className="flex w-full flex-col space-y-2 py-4 ms-auto sm:w-1/2 sm:px-4 md:w-1/3 border-t-4 border-double border-border-200">
           <div className="flex items-center justify-between text-sm text-body">
             <span>{t('common:order-sub-total')}</span>
-            <span className='text-sub-heading font-semibold'>{subtotal}</span>
+            <span className="text-sub-heading font-semibold">{subtotal}</span>
           </div>
           <div className="flex items-center justify-between text-sm text-body">
             <span>{t('common:order-tax')}</span>
-            <span className='text-sub-heading font-semibold'>{sales_tax}</span>
+            <span className="text-sub-heading font-semibold">{sales_tax}</span>
           </div>
           <div className="flex items-center justify-between text-sm text-body">
             <span>{t('common:order-delivery-fee')}</span>
-            <span className='text-sub-heading font-semibold'>{delivery_fee}</span>
+            <span className="text-sub-heading font-semibold">
+              {delivery_fee}
+            </span>
           </div>
           <div className="flex items-center justify-between text-sm text-body">
             <span>{t('common:order-discount')}</span>
-            <span className='text-sub-heading font-semibold'>{discount}</span>
+            <span className="text-sub-heading font-semibold">{discount}</span>
           </div>
           <div className="flex items-center justify-between font-semibold text-sub-heading">
             <span>{t('common:order-total')}</span>

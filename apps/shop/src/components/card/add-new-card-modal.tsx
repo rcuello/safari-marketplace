@@ -33,7 +33,7 @@ const AddNewCardModal = () => {
   const { settings } = useSettings();
 
   // At first it will check if default payment gateway is stripe or not? if yes then it will directly work on if condition. No need to run else condition.
-  
+
   const isStripeGatewayAvailable = isStripeAvailable(settings);
 
   let gatewayName: string = 'non-stripe';

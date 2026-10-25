@@ -11,7 +11,7 @@ import { HttpClient } from './http-client';
 
 export const notifyClient = {
   ...crudFactory<NotifyLogs, QueryOptions, CreateNotifyLogsInput>(
-    API_ENDPOINTS.NOTIFY_LOGS
+    API_ENDPOINTS.NOTIFY_LOGS,
   ),
   get: ({ id, language }: { id: string; language: string }) => {
     return HttpClient.get<NotifyLogs>(`${API_ENDPOINTS.NOTIFY_LOGS}/${id}`, {

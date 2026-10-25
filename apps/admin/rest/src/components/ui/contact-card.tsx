@@ -13,7 +13,7 @@ const ContactCard: React.FC<PhoneNumberProps> = ({ checked, number }) => {
         {
           'border-accent shadow-sm bg-light': checked,
           'bg-gray-100 border-transparent': !checked,
-        }
+        },
       )}
     >
       <p className="text-sm text-heading font-semibold capitalize">{number}</p>

@@ -34,7 +34,7 @@ export const getStaticPaths: GetStaticPaths<ParsedQueryParams> = async ({
   });
   invariant(authors, 'authors is not defined');
   const paths = authors?.data.flatMap((shop) =>
-    locales?.map((locale) => ({ params: { author: shop.slug }, locale }))
+    locales?.map((locale) => ({ params: { author: shop.slug }, locale })),
   );
   return {
     paths,

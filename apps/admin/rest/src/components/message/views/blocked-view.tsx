@@ -13,7 +13,7 @@ const BlockedView = ({ className, name, ...rest }: Props) => {
       <div
         className={cn(
           'space-y-3 rounded bg-[#ebebeb] px-4 py-5 text-center',
-          className
+          className,
         )}
         {...rest}
       >

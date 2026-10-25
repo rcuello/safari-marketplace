@@ -38,7 +38,8 @@ export default function UpdateTermsAndConditionsPage() {
     language: locale as string,
   });
 
-  if (loading || isLoading || settingsLoading) return <Loader text={t('common:text-loading')} />;
+  if (loading || isLoading || settingsLoading)
+    return <Loader text={t('common:text-loading')} />;
 
   // if (
   //   !hasAccess(adminOnly, permissions) &&
@@ -53,7 +54,7 @@ export default function UpdateTermsAndConditionsPage() {
   if (currentUser === 'vendor') {
     const isEnableTermsRoute = settings?.options?.enableTerms;
     const routePermission = isEnableTermsRoute ? adminAndOwnerOnly : adminOnly;
-    const isSuperAdmin = hasAccess(adminOnly, permissions)
+    const isSuperAdmin = hasAccess(adminOnly, permissions);
     const hasPermission = hasAccess(routePermission, permissions);
     const vendorHasShop =
       me?.shops?.map((shop: any) => shop.id).includes(shopId) ?? true;

@@ -8,7 +8,7 @@ import { useDeleteRefundPolicyMutation } from '@/data/refund-policy';
 
 const RefundPolicyDeleteView = () => {
   const { mutate: deleteRefundPolicy, isPending: loading } =
-  useDeleteRefundPolicyMutation();
+    useDeleteRefundPolicyMutation();
 
   const { data } = useModalState();
   const { closeModal } = useModalAction();

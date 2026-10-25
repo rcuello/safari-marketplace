@@ -109,7 +109,7 @@ const OwnerStoreNoticePage = () => {
                     StoreNoticePriorityType.Medium === data?.priority,
                   'bg-[#F75159] text-[#F75159]':
                     StoreNoticePriorityType.Low === data?.priority,
-                }
+                },
               )}
             />
           </div>
@@ -169,7 +169,7 @@ const OwnerStoreNoticePage = () => {
                 ) : (
                   ''
                 );
-              }
+              },
             )}
           </ul>
         </div>

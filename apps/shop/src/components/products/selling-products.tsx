@@ -39,7 +39,7 @@ export default function SellingProductsGrid({ className, limit = 6 }: Props) {
       <div
         className={classNames(
           'grid w-full grid-cols-4 gap-6 xl:gap-8',
-          className
+          className,
         )}
       >
         <Link

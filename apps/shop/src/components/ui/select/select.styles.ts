@@ -12,8 +12,8 @@ export const selectStyles = {
     backgroundColor: state.isSelected
       ? '#efefef'
       : state.isFocused
-      ? '#F9FAFB'
-      : '#ffffff',
+        ? '#F9FAFB'
+        : '#ffffff',
   }),
   control: (_: any, state: any) => ({
     width: state.selectProps.width,

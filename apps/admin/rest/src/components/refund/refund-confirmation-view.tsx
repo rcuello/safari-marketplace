@@ -61,7 +61,7 @@ const UpdateRefundConfirmationView = () => {
           setErrorMessage(error?.response?.data?.message);
           animateScroll.scrollToTop();
         },
-      }
+      },
     );
     closeModal();
   }

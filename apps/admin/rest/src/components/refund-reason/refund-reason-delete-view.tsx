@@ -8,7 +8,7 @@ import { useDeleteRefundReasonMutation } from '@/data/refund-reason';
 
 const RefundReasonDeleteView = () => {
   const { mutate: deleteReasonPolicy, isPending: loading } =
-  useDeleteRefundReasonMutation();
+    useDeleteRefundReasonMutation();
 
   const { data } = useModalState();
   const { closeModal } = useModalAction();

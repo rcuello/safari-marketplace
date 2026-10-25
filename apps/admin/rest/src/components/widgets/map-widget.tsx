@@ -19,7 +19,7 @@ const MapWidget = ({ data, totalText }: any) => {
 
           <span className="text-xl text-heading font-semibold">
             {numberWithCommas(
-              data.reduce((a: any, { value }: any) => a + value, 0)
+              data.reduce((a: any, { value }: any) => a + value, 0),
             )}
           </span>
         </div>
@@ -41,7 +41,7 @@ const MapWidget = ({ data, totalText }: any) => {
               <Line
                 percent={numberToPercent(
                   item.value,
-                  data.reduce((a: any, { value }: any) => a + value, 0)
+                  data.reduce((a: any, { value }: any) => a + value, 0),
                 )}
                 strokeWidth={2}
                 strokeColor={item.color}

@@ -62,7 +62,7 @@ export const useUpdateTypeMutation = () => {
         undefined,
         {
           locale: Config.defaultLanguage,
-        }
+        },
       );
       toast.success(t('common:successfully-updated'));
     },

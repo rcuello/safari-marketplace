@@ -64,7 +64,7 @@ export const useUpdateTagMutation = () => {
         undefined,
         {
           locale: Config.defaultLanguage,
-        }
+        },
       );
       toast.success(t('common:successfully-updated'));
     },

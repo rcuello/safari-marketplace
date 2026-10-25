@@ -11,7 +11,7 @@ const AddToCartBtn = dynamic(
   () => import('@/components/products/add-to-cart/add-to-cart-btn'),
   {
     ssr: false,
-  }
+  },
 );
 const Counter = dynamic(() => import('@/components/ui/counter'), {
   ssr: false,
@@ -61,7 +61,7 @@ export const AddToCart = ({
   } = useCart();
   const item = generateCartItem(data, variation);
   const handleAddClick = (
-    e: React.MouseEvent<HTMLButtonElement | MouseEvent>
+    e: React.MouseEvent<HTMLButtonElement | MouseEvent>,
   ) => {
     e.stopPropagation();
     // Check language and update
@@ -97,7 +97,7 @@ export const AddToCart = ({
                 'p-2 text-base',
                 disabledState || !isInCart(item?.id)
                   ? 'cursor-not-allowed text-[#c1c1c1]'
-                  : 'text-accent'
+                  : 'text-accent',
               )}
               disabled={disabledState || !isInCart(item?.id)}
               onClick={handleRemoveClick}
@@ -111,7 +111,7 @@ export const AddToCart = ({
                 'p-2 text-base',
                 disabledState
                   ? 'cursor-not-allowed text-[#c1c1c1]'
-                  : 'text-accent'
+                  : 'text-accent',
               )}
               disabled={disabledState}
               onClick={handleAddClick}

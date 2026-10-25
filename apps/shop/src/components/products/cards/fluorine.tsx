@@ -28,7 +28,6 @@ const AddToCart = dynamic(
   { ssr: false },
 );
 
-
 type FluorineProps = {
   product: Product;
   type: string;
@@ -157,7 +156,7 @@ const Fluorine: React.FC<FluorineProps> = ({
   return (
     <div
       className={twMerge(
-        classNames('relative overflow-hidden rounded-xl bg-white', className)
+        classNames('relative overflow-hidden rounded-xl bg-white', className),
       )}
     >
       <div className="relative w-auto cursor-pointer md:h-[22.75rem]">
@@ -184,7 +183,7 @@ const Fluorine: React.FC<FluorineProps> = ({
         <h2
           className={classNames(
             'mb-2 gap-2 text-lg font-semibold text-muted-black',
-            product?.is_external ? 'flex items-center' : 'truncate'
+            product?.is_external ? 'flex items-center' : 'truncate',
           )}
         >
           <Link

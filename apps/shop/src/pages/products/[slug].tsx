@@ -15,14 +15,14 @@ export { getStaticPaths, getStaticProps };
 //FIXME: typescript and layout
 const Details = dynamic(() => import('@/components/products/details/details'));
 const BookDetails = dynamic(
-  () => import('@/components/products/details/book-details')
+  () => import('@/components/products/details/book-details'),
 );
 const RelatedProducts = dynamic(
-  () => import('@/components/products/details/related-products')
+  () => import('@/components/products/details/related-products'),
 );
 const CartCounterButton = dynamic(
   () => import('@/components/cart/cart-counter-button'),
-  { ssr: false }
+  { ssr: false },
 );
 
 const ProductPage: NextPageWithLayout<

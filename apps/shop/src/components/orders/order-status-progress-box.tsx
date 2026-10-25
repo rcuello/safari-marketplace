@@ -13,7 +13,7 @@ const OrderStatusProgressBox = ({ paymentStatus, orderStatus }: Props) => {
   const filterStatus = filterOrderStatus(
     ORDER_STATUS,
     paymentStatus!,
-    currentStatusIndex
+    currentStatusIndex,
   );
 
   return (

@@ -67,7 +67,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ className }) => {
                       'block border-l-4 border-transparent py-2 px-10 font-semibold text-heading transition-colors hover:text-accent focus:text-accent',
                       {
                         '!border-accent text-accent': pathname === item.href,
-                      }
+                      },
                     )}
                   >
                     {t(item.label)}
@@ -83,7 +83,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ className }) => {
             <button
               onClick={() => logout()}
               className={classNames(
-                'font-semibold text-heading transition-colors hover:text-accent focus:text-accent'
+                'font-semibold text-heading transition-colors hover:text-accent focus:text-accent',
               )}
             >
               {t('profile-sidebar-logout')}

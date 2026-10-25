@@ -26,7 +26,7 @@ export default function Uploader({
     (acceptedFiles: any) => {
       upload(acceptedFiles);
     },
-    [upload]
+    [upload],
   );
   const { getRootProps, getInputProps } = useDropzone({
     //@ts-ignore
@@ -62,7 +62,7 @@ export default function Uploader({
       // Make sure to revoke the data uris to avoid memory leaks
       files.forEach((file: any) => URL.revokeObjectURL(file.preview));
     },
-    [files]
+    [files],
   );
 
   return (

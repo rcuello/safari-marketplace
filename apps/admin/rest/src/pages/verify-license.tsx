@@ -2,10 +2,7 @@ import AuthPageLayout from '@/components/layouts/auth-layout';
 import Button from '@/components/ui/button';
 import Input from '@/components/ui/input';
 import { licenseKeyValidationSchema } from '@/components/user/license-key-validation-schema';
-import {
-  useLicenseKeyMutation,
-  useMeQuery
-} from '@/data/user';
+import { useLicenseKeyMutation, useMeQuery } from '@/data/user';
 import { getErrorMessage } from '@/utils/form-error';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { GetStaticProps } from 'next';
@@ -28,7 +25,6 @@ export default function VerifyLicenseKeyActions() {
   const { t } = useTranslation('common');
   useMeQuery();
 
-
   const { mutate: verifyLicenseKey, isPending: isLoading } =
     useLicenseKeyMutation();
   const router = useRouter();
@@ -45,11 +41,9 @@ export default function VerifyLicenseKeyActions() {
     shouldUnregister: true,
     resolver: yupResolver(licenseKeyValidationSchema),
     defaultValues: {
-      license_key: "",
+      license_key: '',
     } as FormValues,
-
   });
-
 
   const onSubmit = async (values: FormValues) => {
     const input = {
@@ -82,29 +76,22 @@ export default function VerifyLicenseKeyActions() {
               htmlFor="licenseKey"
               className="mb-5 cursor-pointer"
               title={t('form:for-help-contact-support-portal')}
-            >{`${t('form:input-label-license-key')}*`}
+            >
+              {`${t('form:input-label-license-key')}*`}
             </label>
             <Input
               {...register('license_key')}
-              placeholder={t(
-                'form:input-label-license-key-placeholder'
-              )}
-              id='licenseKey'
+              placeholder={t('form:input-label-license-key-placeholder')}
+              id="licenseKey"
               error={t(errors.license_key?.message!)}
               variant="outline"
               className="mb-5"
             />
 
-            <Button
-              disabled={isLoading}
-              className="w-full"
-            >
+            <Button disabled={isLoading} className="w-full">
               {t('common:authorized-nav-item-submit')}
             </Button>
-
-
           </form>
-
         </div>
       </AuthPageLayout>
     </>

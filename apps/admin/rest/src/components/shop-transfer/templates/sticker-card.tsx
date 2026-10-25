@@ -58,7 +58,13 @@ const OrderStickerCard = ({
       {contents && !isEmpty(contents) ? (
         <div className="mt-5 grid w-full grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {contents.map((content, key) => {
-            return <OrderInfoCard orderInfo={orderInfo} content={content} key={key} />;
+            return (
+              <OrderInfoCard
+                orderInfo={orderInfo}
+                content={content}
+                key={key}
+              />
+            );
           })}
         </div>
       ) : (

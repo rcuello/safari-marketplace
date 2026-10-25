@@ -55,13 +55,17 @@ const LoginForm = () => {
           }
         },
         onError: () => {},
-      }
+      },
     );
   }
 
   return (
     <>
-      <Form<LoginInput> validationSchema={loginFormSchema} onSubmit={onSubmit} useFormProps={{ defaultValues }}>
+      <Form<LoginInput>
+        validationSchema={loginFormSchema}
+        onSubmit={onSubmit}
+        useFormProps={{ defaultValues }}
+      >
         {({ register, formState: { errors } }) => (
           <>
             <Input

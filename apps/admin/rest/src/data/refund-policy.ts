@@ -83,7 +83,7 @@ export const useUpdateRefundPolicyMutation = () => {
         undefined,
         {
           locale: Config.defaultLanguage,
-        }
+        },
       );
       toast.success(t('common:successfully-updated'));
     },
@@ -112,7 +112,7 @@ export const useRefundPolicyQuery = ({ slug, language }: GetParams) => {
 };
 
 export const useRefundPoliciesQuery = (
-  options: Partial<RefundPolicyQueryOptions>
+  options: Partial<RefundPolicyQueryOptions>,
 ) => {
   const { data, error, isLoading } = useQuery<RefundPolicyPaginator, Error>({
     queryKey: [API_ENDPOINTS.REFUND_POLICIES, options],

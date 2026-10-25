@@ -36,7 +36,7 @@ export default function LocationBasedShopForm({
       Routes?.nearByShop({
         lat: values?.location?.lat?.toString() as string,
         lng: values?.location?.lng?.toString() as string,
-      })
+      }),
     );
 
     setLocation(values?.location);
@@ -62,7 +62,7 @@ export default function LocationBasedShopForm({
     <div
       className={cn(
         'w-full border border-border-200 bg-light p-5 shadow-[-8px_8px_16px_rgba(0,0,0,0.18)] md:min-h-0 md:w-[650px] md:rounded-xl xl:w-[1076px]',
-        className
+        className,
       )}
     >
       {/* <h1 className="mb-4 text-center text-lg font-semibold text-heading sm:mb-6">

@@ -17,14 +17,14 @@ import { useUserQuery } from '@/data/user';
 import { AddressType } from '@/types';
 
 const ScheduleGrid = dynamic(
-  () => import('@/components/checkout/schedule/schedule-grid')
+  () => import('@/components/checkout/schedule/schedule-grid'),
 );
 const AddressGrid = dynamic(() => import('@/components/checkout/address-grid'));
 const ContactGrid = dynamic(
-  () => import('@/components/checkout/contact/contact-grid')
+  () => import('@/components/checkout/contact/contact-grid'),
 );
 const RightSideView = dynamic(
-  () => import('@/components/checkout/right-side-view')
+  () => import('@/components/checkout/right-side-view'),
 );
 
 export default function CheckoutPage() {
@@ -70,7 +70,7 @@ export default function CheckoutPage() {
             count={2}
             //@ts-ignore
             addresses={user?.address?.filter(
-              (address) => address?.type === AddressType.Billing
+              (address) => address?.type === AddressType.Billing,
             )}
             //@ts-ignore
             atom={billingAddressAtom}
@@ -83,7 +83,7 @@ export default function CheckoutPage() {
             count={3}
             //@ts-ignore
             addresses={user?.address?.filter(
-              (address) => address?.type === AddressType.Shipping
+              (address) => address?.type === AddressType.Shipping,
             )}
             //@ts-ignore
             atom={shippingAddressAtom}

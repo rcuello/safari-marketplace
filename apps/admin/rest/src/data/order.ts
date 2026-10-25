@@ -21,7 +21,7 @@ import { Routes } from '@/config/routes';
 
 export const useOrdersQuery = (
   params: Partial<OrderQueryOptions>,
-  options: any = {}
+  options: any = {},
 ) => {
   const { data, error, isLoading } = useQuery<OrderPaginator, Error>({
     queryKey: [API_ENDPOINTS.ORDERS, params],
@@ -129,7 +129,7 @@ export const useDownloadInvoiceMutation = (
     isRTL,
     language,
   }: { order_id: string; isRTL: boolean; language: string },
-  options: any = {}
+  options: any = {},
 ) => {
   const { t } = useTranslation();
   const formattedInput = {

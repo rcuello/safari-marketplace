@@ -60,7 +60,7 @@ const ShortDetails: React.FC<ShortDetailsProps> = ({ product, isSticky }) => {
     () =>
       product_type?.toLowerCase() === 'variable' &&
       getVariations(product?.variations),
-    [product?.variations, product_type]
+    [product?.variations, product_type],
   );
 
   const isSelected = isVariationSelected(variations, attributes);
@@ -70,8 +70,8 @@ const ShortDetails: React.FC<ShortDetailsProps> = ({ product, isSticky }) => {
     selectedVariation = product?.variation_options?.find((o: any) =>
       isEqual(
         o.options.map((v: any) => v.value).sort(),
-        Object.values(attributes).sort()
-      )
+        Object.values(attributes).sort(),
+      ),
     );
   }
   const hasVariations =
@@ -84,8 +84,8 @@ const ShortDetails: React.FC<ShortDetailsProps> = ({ product, isSticky }) => {
           {
             'invisible -translate-y-1/2 opacity-0 md:hidden': !isSticky,
             'visible sticky translate-y-0 opacity-100': isSticky,
-          }
-        )
+          },
+        ),
       )}
     >
       <div className="flex items-center">
@@ -95,7 +95,7 @@ const ShortDetails: React.FC<ShortDetailsProps> = ({ product, isSticky }) => {
             {
               'h-28 w-28': !hasVariations,
               'h-40 w-40 lg:h-52 lg:w-52': hasVariations,
-            }
+            },
           )}
         >
           <Image

@@ -1,7 +1,6 @@
 export const AI = [
-    {
-      name: 'openai',
-      value:'openai',
-    }, 
-  ];
-  
+  {
+    name: 'openai',
+    value: 'openai',
+  },
+];

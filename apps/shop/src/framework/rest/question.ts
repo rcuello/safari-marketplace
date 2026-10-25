@@ -17,7 +17,7 @@ export function useMyQuestions(options?: MyQuestionQueryOptions) {
     queryKey: [API_ENDPOINTS.MY_QUESTIONS, options],
     queryFn: ({ queryKey, pageParam }) =>
       client.myQuestions.all(
-        Object.assign({}, queryKey[1] as MyQuestionQueryOptions, pageParam)
+        Object.assign({}, queryKey[1] as MyQuestionQueryOptions, pageParam),
       ),
     initialPageParam: undefined,
     getNextPageParam: ({ current_page, last_page }) =>

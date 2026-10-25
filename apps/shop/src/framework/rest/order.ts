@@ -134,7 +134,7 @@ export function useRefunds(options: Pick<QueryOptions, 'limit'>) {
 }
 
 export const useDownloadableProducts = (
-  options: Pick<QueryOptions, 'limit'>
+  options: Pick<QueryOptions, 'limit'>,
 ) => {
   const { locale } = useRouter();
 
@@ -155,7 +155,7 @@ export const useDownloadableProducts = (
     queryKey: [API_ENDPOINTS.ORDERS_DOWNLOADS, formattedOptions],
     queryFn: ({ queryKey, pageParam }) =>
       client.orders.downloadable(
-        Object.assign({}, queryKey[1] as OrderQueryOptions, pageParam)
+        Object.assign({}, queryKey[1] as OrderQueryOptions, pageParam),
       ),
     initialPageParam: undefined,
     getNextPageParam: ({ current_page, last_page }) =>
@@ -229,7 +229,7 @@ export function useCreateOrder() {
         tracking_number,
         payment_gateway,
         payment_intent,
-        'create order'
+        'create order',
       );
 
       if (tracking_number) {
@@ -245,7 +245,7 @@ export function useCreateOrder() {
 
         if (payment_intent?.payment_intent_info?.is_redirect) {
           return router.push(
-            payment_intent?.payment_intent_info?.redirect_url as string
+            payment_intent?.payment_intent_info?.redirect_url as string,
           );
         } else {
           return router.push(`${Routes.order(tracking_number)}/payment`);

@@ -4,7 +4,7 @@ import FlashSaleItem from '@/components/flash-sale/flash-sale-card';
 interface FlashSaleCardProps {
   flashSales: FlashSale[];
   className?: string;
-};
+}
 
 const FlashSaleCard: React.FC<FlashSaleCardProps> = ({
   flashSales,

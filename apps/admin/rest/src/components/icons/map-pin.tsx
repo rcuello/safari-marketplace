@@ -9,7 +9,6 @@ export const MapPin = ({ ...props }) => {
   );
 };
 
-
 export const MapPinIcon: React.FC<React.SVGAttributes<{}>> = (props) => {
   return (
     <svg
@@ -34,7 +33,7 @@ export const MapPinIcon: React.FC<React.SVGAttributes<{}>> = (props) => {
 };
 
 export const MapPinIconWithPlatform: React.FC<React.SVGAttributes<{}>> = (
-  props
+  props,
 ) => {
   return (
     <svg

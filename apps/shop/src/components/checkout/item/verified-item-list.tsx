@@ -41,61 +41,65 @@ const VerifiedItemList: React.FC<Props> = ({ className }) => {
   const freeShipping = settings?.freeShipping;
 
   const available_items = items?.filter(
-    (item) => !verifiedResponse?.unavailable_products?.includes(item.id)
+    (item) => !verifiedResponse?.unavailable_products?.includes(item.id),
   );
 
   const { price: tax } = usePrice(
     verifiedResponse && {
       amount: verifiedResponse.total_tax ?? 0,
-    }
+    },
   );
 
   const { price: shipping } = usePrice(
     verifiedResponse && {
       amount: verifiedResponse.shipping_charge ?? 0,
-    }
+    },
   );
   const base_amount = calculateTotal(available_items);
   const { price: sub_total } = usePrice(
     verifiedResponse && {
       amount: base_amount,
-    }
+    },
   );
   // Calculate Discount base on coupon type
   let calculateDiscount = 0;
 
   switch (coupon?.type) {
     case CouponType.PERCENTAGE:
-      calculateDiscount = (base_amount * Number(discount)) / 100
+      calculateDiscount = (base_amount * Number(discount)) / 100;
       break;
     case CouponType.FREE_SHIPPING:
-      calculateDiscount =  verifiedResponse ? verifiedResponse.shipping_charge : 0
+      calculateDiscount = verifiedResponse
+        ? verifiedResponse.shipping_charge
+        : 0;
       break;
     default:
-      calculateDiscount = Number(discount)
+      calculateDiscount = Number(discount);
   }
 
   const { price: discountPrice } = usePrice(
     //@ts-ignore
     discount && {
       amount: Number(calculateDiscount),
-    }
+    },
   );
-  let freeShippings = freeShipping && Number(freeShippingAmount) <= base_amount
+  let freeShippings = freeShipping && Number(freeShippingAmount) <= base_amount;
   const totalPrice = verifiedResponse
     ? calculatePaidTotal(
-      {
-        totalAmount: base_amount,
-        tax: verifiedResponse?.total_tax,
-        shipping_charge: freeShippings ? 0 : verifiedResponse?.shipping_charge,
-      },
-      Number(calculateDiscount)
-    )
+        {
+          totalAmount: base_amount,
+          tax: verifiedResponse?.total_tax,
+          shipping_charge: freeShippings
+            ? 0
+            : verifiedResponse?.shipping_charge,
+        },
+        Number(calculateDiscount),
+      )
     : 0;
   const { price: total } = usePrice(
     verifiedResponse && {
       amount: totalPrice,
-    }
+    },
   );
   return (
     <div className={className}>
@@ -103,7 +107,7 @@ const VerifiedItemList: React.FC<Props> = ({ className }) => {
         {!isEmptyCart ? (
           items?.map((item) => {
             const notAvailable = verifiedResponse?.unavailable_products?.find(
-              (d: any) => d === item.id
+              (d: any) => d === item.id,
             );
             return (
               <ItemCard
@@ -122,13 +126,22 @@ const VerifiedItemList: React.FC<Props> = ({ className }) => {
         <ItemInfoRow title={t('text-sub-total')} value={sub_total} />
         <ItemInfoRow title={t('text-tax')} value={tax} />
         <div className="flex justify-between">
-          <p className="text-sm text-body">{t('text-shipping')} <span className='text-xs font-semibold text-accent'>{freeShippings && `(${t('text-free-shipping')})`}</span></p>
+          <p className="text-sm text-body">
+            {t('text-shipping')}{' '}
+            <span className="text-xs font-semibold text-accent">
+              {freeShippings && `(${t('text-free-shipping')})`}
+            </span>
+          </p>
           <span className="text-sm text-body"> {shipping}</span>
         </div>
         {discount && coupon ? (
           <div className="flex justify-between">
             <p className="flex items-center gap-1 text-sm text-body ltr:mr-2 rtl:ml-2">
-              {t('text-discount')} <span className='-mt-px text-xs font-semibold text-accent'>{coupon?.type === CouponType.FREE_SHIPPING && `(${t('text-free-shipping')})` }</span>
+              {t('text-discount')}{' '}
+              <span className="-mt-px text-xs font-semibold text-accent">
+                {coupon?.type === CouponType.FREE_SHIPPING &&
+                  `(${t('text-free-shipping')})`}
+              </span>
             </p>
             <span className="flex items-center text-xs font-semibold text-red-500 ltr:mr-auto rtl:ml-auto">
               ({coupon?.code})
@@ -136,7 +149,12 @@ const VerifiedItemList: React.FC<Props> = ({ className }) => {
                 <CloseIcon className="w-3 h-3 ltr:ml-2 rtl:mr-2 mt-0.5" />
               </button>
             </span>
-            <span className="flex items-center gap-1 text-sm text-body">{calculateDiscount > 0 ? <span className='-mt-0.5'>-</span>: null} {discountPrice}</span>
+            <span className="flex items-center gap-1 text-sm text-body">
+              {calculateDiscount > 0 ? (
+                <span className="-mt-0.5">-</span>
+              ) : null}{' '}
+              {discountPrice}
+            </span>
           </div>
         ) : (
           <div className="mt-5 !mb-4 flex justify-between">

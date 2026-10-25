@@ -1,5 +1,5 @@
-export const DEFlag = ({ width = "640px", height = "480px" }) => {
-	return (
+export const DEFlag = ({ width = '640px', height = '480px' }) => {
+  return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 640 480"

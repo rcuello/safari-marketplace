@@ -62,7 +62,7 @@ export const useFaqsLoadMoreQuery = (
   config?: Omit<
     UseInfiniteQueryOptions<FAQsPaginator, Error>,
     'queryKey' | 'queryFn' | 'initialPageParam' | 'getNextPageParam'
-  >
+  >,
 ) => {
   const {
     data,

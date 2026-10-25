@@ -4,11 +4,10 @@ import { cn } from '@/lib/cn';
 import { BecomeSellerPageOptions } from '@/types';
 import React from 'react';
 
-interface FaqSectionProps
-  extends Pick<
-    BecomeSellerPageOptions,
-    'faqTitle' | 'faqDescription' | 'faqItems'
-  > {
+interface FaqSectionProps extends Pick<
+  BecomeSellerPageOptions,
+  'faqTitle' | 'faqDescription' | 'faqItems'
+> {
   className?: string;
 }
 

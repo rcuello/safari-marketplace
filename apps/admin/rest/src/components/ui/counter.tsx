@@ -4,7 +4,7 @@ import { MinusIcon } from '@/components/icons/minus-icon';
 import { useTranslation } from 'next-i18next';
 
 type ButtonEvent = (
-  e: React.MouseEvent<HTMLButtonElement | MouseEvent>
+  e: React.MouseEvent<HTMLButtonElement | MouseEvent>,
 ) => void;
 
 type CounterProps = {
@@ -63,7 +63,7 @@ const Counter: React.FC<CounterProps> = ({
             'px-3 py-3 sm:px-2': variant === 'single',
             'px-5': variant === 'big',
             'hover:!bg-gray-100': variant === 'pillVertical',
-          }
+          },
         )}
       >
         <span className="sr-only">{t('text-minus')}</span>
@@ -72,7 +72,7 @@ const Counter: React.FC<CounterProps> = ({
       <div
         className={cn(
           'flex flex-1 items-center justify-center text-sm font-semibold',
-          variant === 'pillVertical' && 'text-heading'
+          variant === 'pillVertical' && 'text-heading',
         )}
       >
         {value}
@@ -86,7 +86,7 @@ const Counter: React.FC<CounterProps> = ({
             'px-3 py-3 sm:px-2': variant === 'single',
             'px-5': variant === 'big',
             'hover:!bg-gray-100': variant === 'pillVertical',
-          }
+          },
         )}
         title={disabled ? t('text-out-of-stock') : ''}
       >

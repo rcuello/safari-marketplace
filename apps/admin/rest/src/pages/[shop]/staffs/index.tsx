@@ -52,7 +52,7 @@ export default function StaffsPage() {
     },
     {
       enabled: Boolean(shopId),
-    }
+    },
   );
   if (fetchingShopId || loading)
     return <Loader text={t('common:text-loading')} />;

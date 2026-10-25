@@ -23,7 +23,7 @@ const ManufacturerFilterView = ({ manufacturers }: Props) => {
       router.query.manufacturer
         ? (router.query.manufacturer as string).split(',')
         : [],
-    [router.query.manufacturer]
+    [router.query.manufacturer],
   );
   const [state, setState] = useState<string[]>(selectedValues);
   useEffect(() => {

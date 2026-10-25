@@ -26,7 +26,7 @@ const AddressCard: React.FC<AddressProps> = ({
         {
           'border-accent shadow-sm': checked,
           'border-transparent bg-gray-100': !checked,
-        }
+        },
       )}
     >
       <p className="mb-3 text-sm font-semibold capitalize text-heading">

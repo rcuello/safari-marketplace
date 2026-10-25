@@ -363,7 +363,7 @@ export default function GeneralSettingsForm({
           <SwitchInput
             name="isMultiCommissionRate"
             control={control}
-            label='Enable Multi Commission Rate'
+            label="Enable Multi Commission Rate"
             // disabled={isNotDefaultSettingsPage}
           />
         </Card>

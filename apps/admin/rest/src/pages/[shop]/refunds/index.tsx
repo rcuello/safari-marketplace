@@ -47,7 +47,7 @@ export default function RefundsPage() {
     },
     {
       enabled: Boolean(shopId),
-    }
+    },
   );
 
   if (loading || fetchingShop)

@@ -22,14 +22,14 @@ export { getStaticPaths, getStaticProps };
 //FIXME: typescript and layout
 const Details = dynamic(() => import('@/components/products/details/details'));
 const BookDetails = dynamic(
-  () => import('@/components/products/details/book-details')
+  () => import('@/components/products/details/book-details'),
 );
 const RelatedProducts = dynamic(
-  () => import('@/components/products/details/related-products')
+  () => import('@/components/products/details/related-products'),
 );
 const CartCounterButton = dynamic(
   () => import('@/components/cart/cart-counter-button'),
-  { ssr: false }
+  { ssr: false },
 );
 
 const ProductPage: NextPageWithLayout<
@@ -88,7 +88,7 @@ const ProductPage: NextPageWithLayout<
             <button
               className={cn(
                 'inline-flex rounded  px-5 py-2.5 text-center font-semibold capitalize text-white',
-                product.status === 'draft' ? 'bg-yellow-400' : 'bg-accent'
+                product.status === 'draft' ? 'bg-yellow-400' : 'bg-accent',
               )}
             >
               {product.status === 'publish' ? 'Published' : 'Drafted'}

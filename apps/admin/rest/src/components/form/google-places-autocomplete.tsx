@@ -22,7 +22,7 @@ export default function GooglePlacesAutocomplete({
   icon?: boolean;
 }) {
   const { t } = useTranslation();
-  const [inputValue, setInputValue] = useState("");
+  const [inputValue, setInputValue] = useState('');
   const [
     onLoad,
     onUnmount,
@@ -65,8 +65,9 @@ export default function GooglePlacesAutocomplete({
           placeholder={t('form:placeholder-search-location')}
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
-          className={`flex h-12 w-full appearance-none items-center rounded border border-border-base text-sm text-heading transition duration-300 ease-in-out  focus:border-accent focus:outline-none focus:ring-0 ${disabled ? 'cursor-not-allowed border-[#D4D8DD] bg-[#EEF1F4]' : ''
-            } ${icon ? 'pe-4 ps-9' : 'px-4'}`}
+          className={`flex h-12 w-full appearance-none items-center rounded border border-border-base text-sm text-heading transition duration-300 ease-in-out  focus:border-accent focus:outline-none focus:ring-0 ${
+            disabled ? 'cursor-not-allowed border-[#D4D8DD] bg-[#EEF1F4]' : ''
+          } ${icon ? 'pe-4 ps-9' : 'px-4'}`}
           disabled={disabled}
         />
       </Autocomplete>

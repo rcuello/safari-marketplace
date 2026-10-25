@@ -33,7 +33,7 @@ const UserDetails: React.FC = () => {
     <div
       className={classNames(
         'relative mt-11 pb-10',
-        miniSidebar && width >= RESPONSIVE_WIDTH ? 'px-4' : 'px-8'
+        miniSidebar && width >= RESPONSIVE_WIDTH ? 'px-4' : 'px-8',
       )}
     >
       <div className="flex flex-wrap gap-3">
@@ -43,7 +43,7 @@ const UserDetails: React.FC = () => {
             data?.profile?.avatar?.original
               ? ''
               : 'flex bg-[#2B2C2E] text-[#F0F0F0]',
-            miniSidebar && width >= RESPONSIVE_WIDTH ? 'm-auto' : ''
+            miniSidebar && width >= RESPONSIVE_WIDTH ? 'm-auto' : '',
           )}
         >
           <div
@@ -51,7 +51,7 @@ const UserDetails: React.FC = () => {
               'relative overflow-hidden',
               data?.profile?.avatar?.original
                 ? 'h-full w-full'
-                : 'mx-auto self-end'
+                : 'mx-auto self-end',
             )}
           >
             {data?.profile?.avatar?.original ? (
@@ -72,7 +72,7 @@ const UserDetails: React.FC = () => {
           <div
             className={classNames(
               'absolute top-0 -right-0.5 text-base',
-              data?.is_active ? 'text-accent' : 'text-red-500'
+              data?.is_active ? 'text-accent' : 'text-red-500',
             )}
           >
             <CheckMarkFillNew />

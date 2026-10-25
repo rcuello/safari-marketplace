@@ -21,7 +21,7 @@ const CategoryFilterView = ({ categories }: Props) => {
   const selectedValues = useMemo(
     () =>
       router.query.category ? (router.query.category as string).split(',') : [],
-    [router.query.category]
+    [router.query.category],
   );
   const [state, setState] = useState<string[]>(() => selectedValues);
   useEffect(() => {

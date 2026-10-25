@@ -55,7 +55,7 @@ const StoreNoticeList = ({
       onSort((currentSortDirection: SortOrder) =>
         currentSortDirection === SortOrder?.Desc
           ? SortOrder?.Asc
-          : SortOrder?.Desc
+          : SortOrder?.Desc,
       );
       onOrder(column!);
 
@@ -232,7 +232,7 @@ const StoreNoticeList = ({
                   shop
                     ? Routes?.storeNotice?.editWithoutLang(
                         data?.id,
-                        shop as string
+                        shop as string,
                       )
                     : Routes?.storeNotice?.editWithoutLang(data?.id)
                 }

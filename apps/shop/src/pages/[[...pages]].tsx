@@ -49,7 +49,11 @@ const Home: NextPageWithLayout<
   const Component = MAP_LAYOUT_TO_GROUP[layout];
   return (
     <>
-      <Seo title={type?.name as string} url={type?.slug as string} images={type?.banners} />
+      <Seo
+        title={type?.name as string}
+        url={type?.slug as string}
+        images={type?.banners}
+      />
       <Component variables={variables} />
       {!['compact', 'minimal'].includes(layout) && width > 1023 && (
         <CartCounterButton />

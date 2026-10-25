@@ -133,7 +133,7 @@ const BarChart = ({
             <span className="text-sm text-heading ms-1">
               <span
                 className={cn(
-                  position === 'down' ? 'text-red-400' : 'text-green-500'
+                  position === 'down' ? 'text-red-400' : 'text-green-500',
                 )}
               >
                 {percentage}

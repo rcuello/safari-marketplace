@@ -33,7 +33,7 @@ function Attribute({
             'flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border-2 border-transparent p-0.5',
             {
               '!border-accent': isActive,
-            }
+            },
           )}
         >
           <span
@@ -55,7 +55,7 @@ function Attribute({
               '!border-accent !text-accent': isActive && variant === 'outline',
               'border-2 font-semibold': variant === 'outline',
               border: variant === 'normal',
-            }
+            },
           )}
         >
           {value}

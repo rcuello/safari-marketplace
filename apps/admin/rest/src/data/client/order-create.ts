@@ -11,7 +11,7 @@ import { HttpClient } from './http-client';
 
 export const OrderCreateClient = {
   ...crudFactory<Order, QueryOptions, CreateOrderInput>(
-    API_ENDPOINTS.ORDER_CREATE
+    API_ENDPOINTS.ORDER_CREATE,
   ),
   paginated: ({ type, name, ...params }: Partial<OrderQueryOptions>) => {
     return HttpClient.get<OrderPaginator>(API_ENDPOINTS.ORDER_CREATE, {

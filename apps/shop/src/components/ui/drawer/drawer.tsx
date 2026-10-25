@@ -57,7 +57,7 @@ const Drawer: React.FC<DrawerProps> = ({
                   onClick={onClose}
                   className={cn(
                     'absolute inset-0 bg-dark bg-opacity-40',
-                    useBlurBackdrop && 'use-blur-backdrop'
+                    useBlurBackdrop && 'use-blur-backdrop',
                   )}
                 />
                 <div
@@ -65,12 +65,12 @@ const Drawer: React.FC<DrawerProps> = ({
                     'absolute inset-y-0 flex max-w-full outline-none',
                     variant === 'right'
                       ? 'ltr:right-0 rtl:right-0'
-                      : 'ltr:left-0 rtl:left-0'
+                      : 'ltr:left-0 rtl:left-0',
                   )}
                 >
                   <div
                     className={twMerge(
-                      cn('h-full w-screen max-w-md', className)
+                      cn('h-full w-screen max-w-md', className),
                     )}
                   >
                     <div className="drawer flex h-full flex-col bg-light text-base shadow-xl">

@@ -8,7 +8,7 @@ import DashboardLayout from '@/layouts/_dashboard';
 export { getStaticProps } from '@/framework/general.ssr';
 const CartCounterButton = dynamic(
   () => import('@/components/cart/cart-counter-button'),
-  { ssr: false }
+  { ssr: false },
 );
 const MyWishlistPage = () => {
   const { width } = useWindowSize();

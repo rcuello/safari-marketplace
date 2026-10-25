@@ -63,7 +63,7 @@ export default function OrderDetailsPage() {
       language: locale!,
       isRTL,
     },
-    { enabled: false }
+    { enabled: false },
   );
 
   const {
@@ -95,27 +95,27 @@ export default function OrderDetailsPage() {
   const { price: subtotal } = usePrice(
     order && {
       amount: order?.amount!,
-    }
+    },
   );
   const { price: total } = usePrice(
     order && {
       amount: order?.paid_total!,
-    }
+    },
   );
   const { price: discount } = usePrice(
     order && {
       amount: order?.discount!,
-    }
+    },
   );
   const { price: delivery_fee } = usePrice(
     order && {
       amount: order?.delivery_fee!,
-    }
+    },
   );
   const { price: sales_tax } = usePrice(
     order && {
       amount: order?.sales_tax!,
-    }
+    },
   );
 
   const phoneNumber = useFormatPhoneNumber({
@@ -197,7 +197,11 @@ export default function OrderDetailsPage() {
             {t('form:input-label-order-id')} - {order?.tracking_number}
           </h3>
 
-          {![OrderStatus.FAILED, OrderStatus.CANCELLED, OrderStatus.REFUNDED].includes(order?.order_status! as OrderStatus) && (
+          {![
+            OrderStatus.FAILED,
+            OrderStatus.CANCELLED,
+            OrderStatus.REFUNDED,
+          ].includes(order?.order_status! as OrderStatus) && (
             <form
               onSubmit={handleSubmit(ChangeStatus)}
               className="flex w-full items-start ms-auto lg:w-2/4"

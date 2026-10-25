@@ -1,7 +1,7 @@
 const findNestedData: any = (
   array: any[] | undefined,
   query: any,
-  nestingKey?: string
+  nestingKey?: string,
 ) =>
   array?.reduce((prev, curr) => {
     if (prev) return prev;

@@ -1,6 +1,4 @@
-import type {
-  RefundQueryOptions
-} from '@/types';
+import type { RefundQueryOptions } from '@/types';
 import { NetworkStatus } from '@apollo/client';
 import { useRouter } from 'next/router';
 import { useRefundReasonsQuery } from './gql/refunds.graphql';

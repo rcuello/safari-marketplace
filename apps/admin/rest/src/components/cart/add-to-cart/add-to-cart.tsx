@@ -8,12 +8,7 @@ interface Props {
   data: any;
   variant?: 'helium' | 'neon' | 'argon' | 'oganesson' | 'single' | 'big';
   counterVariant?:
-    | 'helium'
-    | 'neon'
-    | 'argon'
-    | 'oganesson'
-    | 'single'
-    | 'details';
+    'helium' | 'neon' | 'argon' | 'oganesson' | 'single' | 'details';
   counterClass?: string;
   variation?: any;
   disabled?: boolean;
@@ -36,7 +31,7 @@ export const AddToCart = ({
   } = useCart();
   const item = generateCartItem(data, variation);
   const handleAddClick = (
-    e: React.MouseEvent<HTMLButtonElement | MouseEvent>
+    e: React.MouseEvent<HTMLButtonElement | MouseEvent>,
   ) => {
     e.stopPropagation();
     addItemToCart(item, 1);

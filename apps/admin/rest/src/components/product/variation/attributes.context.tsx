@@ -7,12 +7,12 @@ export const AttributesContext = React.createContext<State | any>(initialState);
 AttributesContext.displayName = 'AttributesContext';
 
 export const AttributesProvider: React.FC<{ children?: React.ReactNode }> = (
-  props
+  props,
 ) => {
   const [state, dispatch] = React.useState(initialState);
   const value = React.useMemo(
     () => ({ attributes: state, setAttributes: dispatch }),
-    [state]
+    [state],
   );
   return <AttributesContext.Provider value={value} {...props} />;
 };

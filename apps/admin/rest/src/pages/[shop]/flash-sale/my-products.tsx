@@ -53,7 +53,7 @@ export default function VendorFlashSalePage() {
     },
     {
       enabled: Boolean(shop_id),
-    }
+    },
   );
 
   if (loading) return <Loader text={t('common:text-loading')} />;

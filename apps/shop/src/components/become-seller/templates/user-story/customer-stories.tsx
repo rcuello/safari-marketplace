@@ -5,11 +5,10 @@ import { Swiper, SwiperSlide, Pagination } from '@/components/ui/slider';
 import CustomerStory from './customer-story';
 import { BecomeSellerPageOptions } from '@/types';
 
-interface CustomerStoriesProps
-  extends Pick<
-    BecomeSellerPageOptions,
-    'userStoryTitle' | 'userStoryDescription' | 'userStories'
-  > {
+interface CustomerStoriesProps extends Pick<
+  BecomeSellerPageOptions,
+  'userStoryTitle' | 'userStoryDescription' | 'userStories'
+> {
   className?: string;
 }
 

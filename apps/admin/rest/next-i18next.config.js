@@ -5,11 +5,11 @@ const path = require('path');
 
 invariant(
   process.env.NEXT_PUBLIC_DEFAULT_LANGUAGE,
-  'NEXT_PUBLIC_DEFAULT_LANGUAGE is required, but not set, check your .env file'
+  'NEXT_PUBLIC_DEFAULT_LANGUAGE is required, but not set, check your .env file',
 );
 invariant(
   process.env.NEXT_PUBLIC_AVAILABLE_LANGUAGES,
-  'NEXT_PUBLIC_AVAILABLE_LANGUAGES is required, but not set, check your .env file'
+  'NEXT_PUBLIC_AVAILABLE_LANGUAGES is required, but not set, check your .env file',
 );
 
 const isMultilangEnable =
@@ -26,7 +26,7 @@ function generateLocales() {
 
 module.exports = {
   i18n: {
-    defaultLocale: process.env.NEXT_PUBLIC_DEFAULT_LANGUAGE ?? "en",
+    defaultLocale: process.env.NEXT_PUBLIC_DEFAULT_LANGUAGE ?? 'en',
     locales: generateLocales(),
   },
   localePath: path.resolve('./public/locales'),

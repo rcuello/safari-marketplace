@@ -1,8 +1,5 @@
-import {
-  useModalState,
-} from '@/components/ui/modal/modal.context';
+import { useModalState } from '@/components/ui/modal/modal.context';
 import StripeElementForm from './stripe/stripe-element-form';
-
 
 const PAYMENTS_FORM_COMPONENTS: any = {
   STRIPE: {

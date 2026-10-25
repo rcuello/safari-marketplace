@@ -34,7 +34,7 @@ const Krypton: React.FC<KryptonProps> = ({ product, className }) => {
       <article
         className={cn(
           'product-card cart-type-krypton h-full cursor-pointer overflow-hidden rounded border border-border-200 bg-light transition-shadow duration-200 hover:shadow-sm',
-          className
+          className,
         )}
       >
         <div
@@ -44,7 +44,7 @@ const Krypton: React.FC<KryptonProps> = ({ product, className }) => {
               ? query?.pages?.includes('medicine')
                 ? 'm-4 mb-0'
                 : ''
-              : ''
+              : '',
           )}
         >
           <span className="sr-only">{t('text-product-image')}</span>

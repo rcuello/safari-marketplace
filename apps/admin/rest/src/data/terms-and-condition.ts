@@ -77,7 +77,7 @@ export const useTermsAndConditionQuery = ({ slug, language }: GetParams) => {
 // Read All Terms And Conditions
 
 export const useTermsAndConditionsQuery = (
-  options: Partial<TermsAndConditionsQueryOptions>
+  options: Partial<TermsAndConditionsQueryOptions>,
 ) => {
   const { data, error, isLoading } = useQuery<
     TermsAndConditionsPaginator,

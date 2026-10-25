@@ -150,12 +150,15 @@ function toHttpError(error: AxiosError): HttpError {
   } else if (code === 'EAI_AGAIN') {
     hint = ' — DNS lookup failed (temporary). Check network/DNS.';
   }
-  return new HttpError(`${method} ${url} failed${attemptsNote}: ${code}${hint}`, {
-    method,
-    url,
-    code,
-    attempts,
-  });
+  return new HttpError(
+    `${method} ${url} failed${attemptsNote}: ${code}${hint}`,
+    {
+      method,
+      url,
+      code,
+      attempts,
+    },
+  );
 }
 
 const Axios = axios.create({
@@ -241,9 +244,16 @@ export class HttpClient {
     return Object.entries(params)
       .filter(([, value]) => Boolean(value))
       .map(([k, v]) =>
-        ['type', 'categories', 'tags', 'author', 'manufacturer','shops'].includes(k)
+        [
+          'type',
+          'categories',
+          'tags',
+          'author',
+          'manufacturer',
+          'shops',
+        ].includes(k)
           ? `${k}.slug:${v}`
-          : `${k}:${v}`
+          : `${k}:${v}`,
       )
       .join(';');
   }

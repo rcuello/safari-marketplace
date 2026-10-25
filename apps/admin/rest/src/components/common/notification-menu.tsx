@@ -102,7 +102,7 @@ const NotificationMenu: React.FC<MenuType> = ({ data }) => {
               </a>
             </motion.div>
           )}
-        </AnimatePresence>
+        </AnimatePresence>,
       )}
     </>
   );

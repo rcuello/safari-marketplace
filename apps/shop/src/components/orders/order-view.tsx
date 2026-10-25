@@ -246,7 +246,7 @@ function OrderView({ order, language, settings, loadingStatus }: any) {
                 orderStatus={order?.order_status}
                 refund={Boolean(
                   order?.refund?.status ===
-                    RefundStatus?.APPROVED?.toLowerCase(),
+                  RefundStatus?.APPROVED?.toLowerCase(),
                 )}
                 settings={settings}
               />

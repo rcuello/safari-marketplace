@@ -14,7 +14,7 @@ export const SendMessageIcon: React.FC<React.SVGAttributes<{}>> = (props) => (
 );
 
 export const SendMessageGhostIcon: React.FC<React.SVGAttributes<{}>> = (
-  props
+  props,
 ) => {
   return (
     <svg

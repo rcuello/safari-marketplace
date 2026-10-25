@@ -14,7 +14,7 @@ import ProductGridHome from '@/components/products/grids/home';
 function findParentCategories(
   treeItems: any[],
   parentId: number | null = null,
-  link = 'id'
+  link = 'id',
 ): any[] {
   let itemList: any[] = [];
   if (parentId) {
@@ -52,7 +52,7 @@ const FilterCategoryGrid: React.FC<FilterCategoryGridProps> = ({
     findNestedData(categories, query.category, 'children');
   const parentCategories = findParentCategories(
     categories,
-    selectedCategory?.parent_id
+    selectedCategory?.parent_id,
   );
   const renderCategories = Boolean(selectedCategory)
     ? selectedCategory?.children
@@ -67,7 +67,7 @@ const FilterCategoryGrid: React.FC<FilterCategoryGridProps> = ({
       undefined,
       {
         scroll: false,
-      }
+      },
     );
   };
 
@@ -103,7 +103,6 @@ const FilterCategoryGrid: React.FC<FilterCategoryGridProps> = ({
               <CategoryBreadcrumb
                 categories={[...parentCategories, selectedCategory]}
               />
-              
             </div>
           </Scrollbar>
         ) : (

@@ -57,7 +57,6 @@ export function useRemoveFromWishlist() {
 }
 
 export function useWishlist(options?: WishlistQueryOptions) {
-
   const { locale } = useRouter();
 
   const {
@@ -66,18 +65,18 @@ export function useWishlist(options?: WishlistQueryOptions) {
     error,
     fetchMore,
     networkStatus,
-    refetch
+    refetch,
   } = useWishlistsQuery({
-    variables: { 
+    variables: {
       ...options,
-      page: 1
+      page: 1,
     },
     notifyOnNetworkStatusChange: true,
   });
 
   useEffect(() => {
     refetch();
-  }, [locale])
+  }, [locale]);
 
   function handleLoadMore() {
     if (data?.wishlists?.paginatorInfo.hasMorePages) {

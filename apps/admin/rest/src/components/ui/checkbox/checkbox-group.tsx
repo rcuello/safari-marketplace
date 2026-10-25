@@ -25,7 +25,7 @@ export default function CheckboxGroup({
         : [...values, name];
       onChange(newValues);
     },
-    [values, onChange]
+    [values, onChange],
   );
 
   return (

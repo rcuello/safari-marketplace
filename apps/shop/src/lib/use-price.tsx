@@ -54,7 +54,7 @@ export default function usePrice(
     amount: number;
     baseAmount?: number;
     currencyCode?: string;
-  } | null
+  } | null,
 ) {
   const { settings } = useSettings();
   const currency = settings?.currency;
@@ -64,8 +64,8 @@ export default function usePrice(
     currencyCode: currency ?? 'USD',
     currencyOptionsFormat: currencyOptions ?? {
       formation: 'en-US',
-      fractions: 2
-    }
+      fractions: 2,
+    },
   };
   const { formation = 'en-US', fractions = 2 } = currencyOptionsFormat!;
 
@@ -80,18 +80,18 @@ export default function usePrice(
 
     return baseAmount
       ? formatVariantPrice({
-        amount,
-        baseAmount,
-        currencyCode,
-        locale: currentLocale,
-        fractions: fractionalDigit,
-      })
+          amount,
+          baseAmount,
+          currencyCode,
+          locale: currentLocale,
+          fractions: fractionalDigit,
+        })
       : formatPrice({
-        amount,
-        currencyCode,
-        locale: currentLocale,
-        fractions: fractionalDigit,
-      });
+          amount,
+          currencyCode,
+          locale: currentLocale,
+          fractions: fractionalDigit,
+        });
   }, [amount, baseAmount, currencyCode, locale]);
 
   return typeof value === 'string'

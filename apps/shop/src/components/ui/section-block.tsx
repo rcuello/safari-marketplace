@@ -27,7 +27,7 @@ const SectionBlock: React.FC<SectionProps> = ({
     <div
       className={cn(
         'flex w-full flex-col px-5 pb-[40px] lg:px-7 xl:px-10 xl:pb-[54px] 3xl:pb-[60px]',
-        className
+        className,
       )}
     >
       {title && (

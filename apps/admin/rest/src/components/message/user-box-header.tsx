@@ -24,7 +24,7 @@ const UserBoxHeaderView = ({
       <form
         className={cn(
           'relative h-14 border-b border-solid border-b-[#E7E7E7] sm:h-[5.625rem]',
-          className
+          className,
         )}
         {...rest}
         onSubmit={(e) => e.preventDefault()}

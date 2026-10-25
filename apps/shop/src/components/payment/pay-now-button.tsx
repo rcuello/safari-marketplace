@@ -1,8 +1,6 @@
 import Button from '@/components/ui/button';
 import { useTranslation } from 'next-i18next';
-import {
-  useGetPaymentIntent,
-} from '@/framework/order';
+import { useGetPaymentIntent } from '@/framework/order';
 import { Order } from '@/types';
 
 interface Props {

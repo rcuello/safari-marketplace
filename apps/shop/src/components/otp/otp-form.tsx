@@ -25,7 +25,7 @@ export default function OtpForm({
     serverError,
     setServerError,
   } = useSendOtpCode({
-    verifyOnly: true
+    verifyOnly: true,
   });
 
   function onSendCodeSubmission({ phone_number }: { phone_number: string }) {

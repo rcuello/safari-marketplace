@@ -150,7 +150,7 @@ export const UIProvider: FC<{ children?: React.ReactNode }> = (props) => {
       setModalView,
       setModalData,
     }),
-    [state]
+    [state],
   );
 
   return <UIContext.Provider value={value} {...props} />;

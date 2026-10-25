@@ -24,7 +24,7 @@ const Attribute: React.FC<AttributeProps> = ({
         className === 'color',
       '!border-accent': active && className === 'color',
     },
-    'cursor-pointer'
+    'cursor-pointer',
   );
   return (
     <div className={classes} {...props}>

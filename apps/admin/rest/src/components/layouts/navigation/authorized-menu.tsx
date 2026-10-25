@@ -91,7 +91,7 @@ export default function AuthorizedMenu() {
                           <>
                             <li
                               className={cn(
-                                'cursor-pointer border-dashed border-gray-200 px-2 last:!mt-2.5 last:border-t last:pt-2'
+                                'cursor-pointer border-dashed border-gray-200 px-2 last:!mt-2.5 last:border-t last:pt-2',
                               )}
                             >
                               <Link
@@ -100,7 +100,7 @@ export default function AuthorizedMenu() {
                                   'group flex items-center gap-2 rounded-md py-2.5 px-3 text-sm capitalize transition duration-200 hover:text-accent',
                                   active
                                     ? 'border-transparent bg-gray-100 text-accent'
-                                    : 'text-heading'
+                                    : 'text-heading',
                                 )}
                               >
                                 <span className="text-gray-600 group-hover:text-accent">
@@ -119,7 +119,7 @@ export default function AuthorizedMenu() {
                     )}
                   </Fragment>
                 );
-              }
+              },
             )}
           </div>
         </Menu.Items>

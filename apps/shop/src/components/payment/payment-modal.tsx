@@ -8,7 +8,7 @@ import dynamic from 'next/dynamic';
 
 const RazorpayPaymentModal = dynamic(
   () => import('@/components/payment/razorpay/razorpay-payment-modal'),
-  { ssr: false }
+  { ssr: false },
 );
 
 const PAYMENTS_FORM_COMPONENTS: any = {

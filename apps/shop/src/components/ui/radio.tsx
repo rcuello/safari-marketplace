@@ -23,7 +23,7 @@ const Radio = React.forwardRef<HTMLInputElement, Props>(
       theme = 'primary',
       ...rest
     },
-    ref
+    ref,
   ) => {
     return (
       <div className={className}>
@@ -45,7 +45,7 @@ const Radio = React.forwardRef<HTMLInputElement, Props>(
                 primary: theme === 'primary',
                 secondary: theme === 'secondary',
               },
-              labelClassName
+              labelClassName,
             )}
           >
             {label}
@@ -59,7 +59,7 @@ const Radio = React.forwardRef<HTMLInputElement, Props>(
         )}
       </div>
     );
-  }
+  },
 );
 
 Radio.displayName = 'Radio';

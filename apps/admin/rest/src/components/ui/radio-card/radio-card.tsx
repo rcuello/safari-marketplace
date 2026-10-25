@@ -16,7 +16,7 @@ export interface Props extends InputHTMLAttributes<HTMLInputElement> {
 const RadioCard = React.forwardRef<HTMLInputElement, Props>(
   (
     { className, label, labelKey, name, id, src, error, errorKey, ...rest },
-    ref
+    ref,
   ) => {
     const { t } = useTranslation();
     return (
@@ -54,7 +54,7 @@ const RadioCard = React.forwardRef<HTMLInputElement, Props>(
         )}
       </div>
     );
-  }
+  },
 );
 
 RadioCard.displayName = 'RadioCard';

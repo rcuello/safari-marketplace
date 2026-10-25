@@ -20,7 +20,7 @@ const OrderListMobile: React.FC<OrdersWithLoaderProps> = ({
   isLoadingMore,
   onLoadMore,
   orders,
-  loadingStatus
+  loadingStatus,
 }) => {
   const { t } = useTranslation('common');
   const [selectedOrder, setSelectedOrder] = useSelectedOrder();

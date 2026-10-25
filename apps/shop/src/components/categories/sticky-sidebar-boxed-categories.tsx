@@ -30,7 +30,7 @@ const StickySidebarBoxedCategories: React.FC<
     <aside
       className={classNames(
         `hidden h-full w-full bg-light lg:sticky lg:w-[380px] lg:bg-gray-100 xl:block ${className}`,
-        underMaintenanceIsComing ? '' : 'lg:top-22'
+        underMaintenanceIsComing ? '' : 'lg:top-22',
       )}
     >
       <Scrollbar style={{ maxHeight: 'calc(100vh - 88px)' }}>

@@ -7,6 +7,6 @@ export const shopValidationSchema = yup.object().shape({
     .of(
       yup.object().shape({
         title: yup.string().required('form:error-title-required'),
-      })
+      }),
     ),
 });

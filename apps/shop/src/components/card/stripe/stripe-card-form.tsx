@@ -43,7 +43,7 @@ const CardForm = () => {
         method_key: paymentMethod?.id as string,
         default_card: defaultCard as boolean,
         //@ts-ignore
-        payment_gateway: 'stripe' as string
+        payment_gateway: 'stripe' as string,
       });
     }
   };

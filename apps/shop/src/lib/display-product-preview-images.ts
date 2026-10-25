@@ -3,7 +3,7 @@ import { Attachment } from '@/types';
 export function displayImage(
   selectedVariationImage: Attachment | undefined,
   gallery: Attachment[] | undefined | null,
-  image: Attachment | undefined
+  image: Attachment | undefined,
 ) {
   if (selectedVariationImage) {
     return [selectedVariationImage];

@@ -57,7 +57,7 @@ export const useImportVariationOptionsMutation = () => {
     mutationFn: (input: Input) => {
       return importClient.importCsv(
         API_ENDPOINTS.IMPORT_VARIATION_OPTIONS,
-        input
+        input,
       );
     },
     onSuccess: () => {

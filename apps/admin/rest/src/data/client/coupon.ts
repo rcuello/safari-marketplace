@@ -28,20 +28,20 @@ export const couponClient = {
     {
       return HttpClient.post<VerifyCouponResponse>(
         API_ENDPOINTS.VERIFY_COUPONS,
-        input
+        input,
       );
     }
   },
   approve: (variables: { id: string }) => {
     return HttpClient.post<{ id: string }>(
       API_ENDPOINTS.APPROVE_COUPON,
-      variables
+      variables,
     );
   },
   disapprove: (variables: { id: string }) => {
     return HttpClient.post<{ id: string }>(
       API_ENDPOINTS.DISAPPROVE_COUPON,
-      variables
+      variables,
     );
   },
 };

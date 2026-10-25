@@ -16,7 +16,7 @@ interface InputType {
 
 export const reviewClient = {
   ...crudFactory<Review, QueryOptions, CreateAbuseReportInput>(
-    API_ENDPOINTS.REVIEWS
+    API_ENDPOINTS.REVIEWS,
   ),
   reportAbuse: (data: CreateAbuseReportInput) => {
     return HttpClient.post<Review>(API_ENDPOINTS.ABUSIVE_REPORTS, data);

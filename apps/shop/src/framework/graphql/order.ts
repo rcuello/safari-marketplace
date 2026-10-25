@@ -136,7 +136,7 @@ export function useRefunds(options: Pick<QueryOptions, 'limit'>) {
 }
 
 export const useDownloadableProducts = (
-  options: Pick<QueryOptions, 'limit'>
+  options: Pick<QueryOptions, 'limit'>,
 ) => {
   const { locale } = useRouter();
 
@@ -222,7 +222,7 @@ export function useCreateOrder() {
 
         if (payment_intent?.payment_intent_info?.is_redirect) {
           return router.push(
-            payment_intent?.payment_intent_info?.redirect_url as string
+            payment_intent?.payment_intent_info?.redirect_url as string,
           );
         } else {
           return router.push(`${Routes.order(tracking_number)}/payment`);
@@ -349,7 +349,7 @@ export function useSavePaymentMethod() {
 
   function savePaymentMethod(
     input: SavePaymentMethodInput,
-    { onSuccess }: { onSuccess: any }
+    { onSuccess }: { onSuccess: any },
   ) {
     savePaymentMethodMutation({
       variables: {

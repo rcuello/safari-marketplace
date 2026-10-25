@@ -12,7 +12,7 @@ const UnverifiedItemList = () => {
   const { price: subtotal } = usePrice(
     items && {
       amount: total,
-    }
+    },
   );
   return (
     <div className="w-full">

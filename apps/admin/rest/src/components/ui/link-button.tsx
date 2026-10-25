@@ -46,7 +46,7 @@ const LinkButton: React.FC<NextLinkProps & ButtonProps> = ({
       [classes.medium]: size === 'medium',
       [classes.big]: size === 'big',
     },
-    className
+    className,
   );
 
   return (

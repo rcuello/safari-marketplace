@@ -60,7 +60,7 @@ const SearchBox: React.FC<Props> = ({
               'placeholder:text-slate-400': variant === 'flat',
             },
             inputClassName,
-            classes[variant]
+            classes[variant],
           )}
           {...rest}
         />
@@ -73,7 +73,7 @@ const SearchBox: React.FC<Props> = ({
               {
                 'ltr:right-36 rtl:left-36': variant === 'normal',
                 'ltr:right-0 rtl:left-0': variant !== 'normal',
-              }
+              },
             )}
           >
             <span className="sr-only">{t('common:text-close')}</span>

@@ -12,8 +12,8 @@ export const selectStyles = {
     backgroundColor: state.isSelected
       ? '#E5E7EB'
       : state.isFocused
-      ? '#F9FAFB'
-      : '#ffffff',
+        ? '#F9FAFB'
+        : '#ffffff',
   }),
   control: (_: any, state: any) => ({
     display: 'flex',
@@ -22,7 +22,11 @@ export const selectStyles = {
     backgroundColor: state?.isDisabled ? '#EEF1F4' : '#ffffff',
     borderRadius: 5,
     border: '1px solid #D1D5DB',
-    borderColor: state?.isDisabled ? '#D4D8DD' : state.isFocused ? 'rgb(var(--color-accent-500))' : '#D1D5DB',
+    borderColor: state?.isDisabled
+      ? '#D4D8DD'
+      : state.isFocused
+        ? 'rgb(var(--color-accent-500))'
+        : '#D1D5DB',
     boxShadow:
       state.menuIsOpen &&
       '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
@@ -102,7 +106,6 @@ export const selectStyles = {
   }),
 };
 
-
 export const selectStylesModern = {
   option: (provided: any, state: any) => ({
     ...provided,
@@ -121,8 +124,8 @@ export const selectStylesModern = {
     backgroundColor: state.isSelected
       ? '#EEF1F4'
       : state.isFocused
-      ? '#EEF1F4'
-      : '#ffffff',
+        ? '#EEF1F4'
+        : '#ffffff',
   }),
   control: (_: any, state: any) => ({
     display: 'flex',
@@ -134,8 +137,8 @@ export const selectStylesModern = {
     borderColor: state?.isDisabled
       ? '#D4D8DD'
       : state.isFocused
-      ? 'rgb(var(--color-accent-500))'
-      : '#D1D5DB',
+        ? 'rgb(var(--color-accent-500))'
+        : '#D1D5DB',
     boxShadow: state.menuIsOpen && '0px 2px 6px rgba(59, 74, 92, 0.1)',
   }),
   indicatorSeparator: () => ({

@@ -17,7 +17,7 @@ export function useMyReports(options?: MyReportsQueryOptions) {
     queryKey: [API_ENDPOINTS.MY_REPORTS, options],
     queryFn: ({ queryKey, pageParam }) =>
       client.myReports.all(
-        Object.assign({}, queryKey[1] as MyReportsQueryOptions, pageParam)
+        Object.assign({}, queryKey[1] as MyReportsQueryOptions, pageParam),
       ),
     initialPageParam: undefined,
     getNextPageParam: ({ current_page, last_page }) =>

@@ -51,8 +51,8 @@ const UserListView = ({ conversation, className, ...rest }: Props) => {
           Number(router?.query?.id) === Number(conversation?.id)
             ? 'border-l-[#F3F3F3] bg-[#F3F3F3]'
             : '',
-          className
-        )
+          className,
+        ),
       )}
     >
       <div className="h-10 w-10 shrink-0">
@@ -63,7 +63,7 @@ const UserListView = ({ conversation, className, ...rest }: Props) => {
             'relative h-full w-full border-0',
             conversation?.shop?.logo?.original
               ? ''
-              : 'bg-muted-black text-base font-medium text-white'
+              : 'bg-muted-black text-base font-medium text-white',
           )}
         />
       </div>

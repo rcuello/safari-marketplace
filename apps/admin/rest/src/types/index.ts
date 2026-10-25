@@ -2021,8 +2021,7 @@ export interface FAQsPaginator extends PaginatorInfo<FAQs> {}
 
 export interface FlashSalePaginator extends PaginatorInfo<FlashSale> {}
 
-export interface TermsAndConditionsPaginator
-  extends PaginatorInfo<TermsAndConditions> {}
+export interface TermsAndConditionsPaginator extends PaginatorInfo<TermsAndConditions> {}
 
 export interface ProductPaginator extends PaginatorInfo<Product> {}
 
@@ -2036,8 +2035,7 @@ export interface TagPaginator extends PaginatorInfo<Tag> {}
 
 export interface AttributePaginator extends PaginatorInfo<Attribute> {}
 
-export interface AttributeValuePaginator
-  extends PaginatorInfo<AttributeValue> {}
+export interface AttributeValuePaginator extends PaginatorInfo<AttributeValue> {}
 
 export interface ShippingPaginator extends PaginatorInfo<Shipping> {}
 
@@ -2083,13 +2081,11 @@ export interface FlashSaleProductsRequestQueryOptions extends QueryOptions {
   shop_id?: string;
 }
 
-export interface FlashSaleRequestedProductsQueryOptions
-  extends ProductQueryOptions {
+export interface FlashSaleRequestedProductsQueryOptions extends ProductQueryOptions {
   vendor_request_id: string;
 }
 
-export interface FlashSaleProductsRequestPaginator
-  extends PaginatorInfo<FlashSaleProductsRequest> {}
+export interface FlashSaleProductsRequestPaginator extends PaginatorInfo<FlashSaleProductsRequest> {}
 
 export interface MessagePaginator extends PaginatorInfo<Message> {}
 
@@ -2159,7 +2155,7 @@ export interface BusinessPurposeItem {
   };
 }
 
-export interface SellingStepItem{
+export interface SellingStepItem {
   id?: string;
   description: string;
   title: string;
@@ -2284,8 +2280,7 @@ export interface OwnershipTransferInput {
   deleted_at: string;
 }
 
-export interface OwnershipTransferPaginator
-  extends PaginatorInfo<OwnershipTransfer> {}
+export interface OwnershipTransferPaginator extends PaginatorInfo<OwnershipTransfer> {}
 
 export interface OwnershipTransferQueryOptions extends QueryOptions {
   transaction_identifier?: string;

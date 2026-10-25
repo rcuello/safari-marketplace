@@ -16,7 +16,7 @@ const CartItem = ({ item, notAvailable }: Props) => {
   return (
     <div
       className={cn(
-        'flex w-full space-x-3 py-3 first:pt-0 last:pb-0 rtl:space-x-reverse'
+        'flex w-full space-x-3 py-3 first:pt-0 last:pb-0 rtl:space-x-reverse',
       )}
       key={item.id}
     >
@@ -37,7 +37,7 @@ const CartItem = ({ item, notAvailable }: Props) => {
           <span
             className={cn(
               'mt-1.5 text-xs font-semibold',
-              notAvailable ? 'text-red-500' : 'text-gray-500'
+              notAvailable ? 'text-red-500' : 'text-gray-500',
             )}
           >
             X {item.quantity}
@@ -47,7 +47,7 @@ const CartItem = ({ item, notAvailable }: Props) => {
         <span
           className={cn(
             'text-sm font-semibold',
-            notAvailable ? 'text-red-500' : 'text-gray-800'
+            notAvailable ? 'text-red-500' : 'text-gray-800',
           )}
         >
           {!notAvailable ? price : t('text-unavailable')}

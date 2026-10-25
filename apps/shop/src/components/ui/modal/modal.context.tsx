@@ -37,8 +37,7 @@ interface State {
   isOpen: boolean;
 }
 type Action =
-  | { type: 'open'; view?: MODAL_VIEWS; payload?: any }
-  | { type: 'close' };
+  { type: 'open'; view?: MODAL_VIEWS; payload?: any } | { type: 'close' };
 
 const initialState: State = {
   view: undefined,

@@ -31,7 +31,9 @@ const UserList = ({ className, filterText, permission, ...rest }: Props) => {
     isLoadingMore,
   } = useConversationsQuery({
     search:
-      filterText?.length >= 3 ? filterText?.trim()?.toLowerCase() ?? '' : null,
+      filterText?.length >= 3
+        ? (filterText?.trim()?.toLowerCase() ?? '')
+        : null,
     limit: LIMIT,
     sortedBy: SortOrder.Desc,
     orderBy: 'updated_at',

@@ -32,11 +32,11 @@ const Wallet = ({ totalPrice, walletAmount, walletCurrency }: Props) => {
       if (isNegative(calculatedCurrentWalletCurrencyAfterPayment)) {
         setCalculateCurrentWalletCurrency(0);
         setCalculatePayableAmount(
-          Math.abs(calculatedCurrentWalletCurrencyAfterPayment)
+          Math.abs(calculatedCurrentWalletCurrencyAfterPayment),
         );
       } else {
         setCalculateCurrentWalletCurrency(
-          calculatedCurrentWalletCurrencyAfterPayment
+          calculatedCurrentWalletCurrencyAfterPayment,
         );
         setCalculatePayableAmount(0);
       }

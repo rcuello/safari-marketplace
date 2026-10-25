@@ -40,7 +40,7 @@ const Coupon = ({ subtotal }: { subtotal: number }) => {
     verifyCoupon(
       {
         code: code,
-        sub_total: subtotal
+        sub_total: subtotal,
       },
       {
         onSuccess: (data: any) => {
@@ -57,7 +57,7 @@ const Coupon = ({ subtotal }: { subtotal: number }) => {
             });
           }
         },
-      }
+      },
     );
   }
 

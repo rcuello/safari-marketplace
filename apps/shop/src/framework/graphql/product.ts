@@ -68,7 +68,7 @@ export function useProducts(options: Partial<ProductQueryOptions>) {
 }
 
 export const usePopularProducts = (
-  options: Partial<PopularProductQueryOptions>
+  options: Partial<PopularProductQueryOptions>,
 ) => {
   const { locale } = useRouter();
 
@@ -93,7 +93,7 @@ export const usePopularProducts = (
 };
 
 export const useBestSellingProducts = (
-  options?: Partial<BestSellingProductQueryOptions>
+  options?: Partial<BestSellingProductQueryOptions>,
 ) => {
   const { locale } = useRouter();
 

@@ -12,7 +12,7 @@ import { HttpClient } from './http-client';
 
 export const withdrawClient = {
   ...crudFactory<Withdraw, QueryOptions, CreateWithdrawInput>(
-    API_ENDPOINTS.WITHDRAWS
+    API_ENDPOINTS.WITHDRAWS,
   ),
   get({ id }: { id: string }) {
     return HttpClient.get<Withdraw>(`${API_ENDPOINTS.WITHDRAWS}/${id}`);

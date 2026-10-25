@@ -47,7 +47,7 @@ export const userClient = {
   verifyForgetPasswordToken: (variables: VerifyForgetPasswordTokenInput) => {
     return HttpClient.post<any>(
       API_ENDPOINTS.VERIFY_FORGET_PASSWORD_TOKEN,
-      variables
+      variables,
     );
   },
   resetPassword: (variables: ResetPasswordInput) => {
@@ -66,7 +66,10 @@ export const userClient = {
     return HttpClient.post<any>(API_ENDPOINTS.ADD_WALLET_POINTS, variables);
   },
   addLicenseKey: (variables: KeyInput) => {
-    return HttpClient.post<any>(API_ENDPOINTS.ADD_LICENSE_KEY_VERIFY, variables);
+    return HttpClient.post<any>(
+      API_ENDPOINTS.ADD_LICENSE_KEY_VERIFY,
+      variables,
+    );
   },
 
   fetchUsers: ({ name, ...params }: Partial<UserQueryOptions>) => {
@@ -108,12 +111,17 @@ export const userClient = {
       ...params,
     });
   },
-  getMyStaffs: ({ is_active, shop_id, name, ...params }: Partial<UserQueryOptions & { shop_id: string }>) => {
+  getMyStaffs: ({
+    is_active,
+    shop_id,
+    name,
+    ...params
+  }: Partial<UserQueryOptions & { shop_id: string }>) => {
     return HttpClient.get<UserPaginator>(API_ENDPOINTS.MY_STAFFS, {
       searchJoin: 'and',
       shop_id,
       ...params,
-      search: HttpClient.formatSearchParams({ name, is_active })
+      search: HttpClient.formatSearchParams({ name, is_active }),
     });
   },
   getAllStaffs: ({ is_active, name, ...params }: Partial<UserQueryOptions>) => {
@@ -123,5 +131,4 @@ export const userClient = {
       search: HttpClient.formatSearchParams({ name, is_active }),
     });
   },
-  
 };

@@ -15,7 +15,8 @@ const EnterNewPasswordView = dynamic(() => import('./enter-new-password-view'));
 
 const ForgotPassword = () => {
   const { t } = useTranslation();
-  const { mutate: forgetPassword, isPending: isLoading } = useForgetPasswordMutation();
+  const { mutate: forgetPassword, isPending: isLoading } =
+    useForgetPasswordMutation();
   const { mutate: verifyToken, isPending: verifying } =
     useVerifyForgetPasswordTokenMutation();
   const { mutate: resetPassword, isPending: resetting } =
@@ -37,7 +38,7 @@ const ForgotPassword = () => {
             setErrorMsg(data?.message);
           }
         },
-      }
+      },
     );
   }
 
@@ -55,7 +56,7 @@ const ForgotPassword = () => {
             setErrorMsg(data?.message);
           }
         },
-      }
+      },
     );
   }
 
@@ -74,7 +75,7 @@ const ForgotPassword = () => {
             setErrorMsg(data?.message);
           }
         },
-      }
+      },
     );
   }
 

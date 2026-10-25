@@ -11,9 +11,7 @@ const FaqsDeleteView = dynamic(
 );
 const TermsAndConditionsDeleteView = dynamic(
   () =>
-    import(
-      '@/components/terms-and-conditions/terms-and-conditions-delete-view'
-    ),
+    import('@/components/terms-and-conditions/terms-and-conditions-delete-view'),
 );
 const TagDeleteView = dynamic(() => import('@/components/tag/tag-delete-view'));
 const TaxDeleteView = dynamic(() => import('@/components/tax/tax-delete-view'));
@@ -144,9 +142,7 @@ const DisApproveCouponView = dynamic(
 
 const FlashSaleRequestDeleteView = dynamic(
   () =>
-    import(
-      '@/components/flash-sale/vendor-request/flash-sale-vendor-request-delete-view'
-    ),
+    import('@/components/flash-sale/vendor-request/flash-sale-vendor-request-delete-view'),
 );
 const ApproveVendorFSRequestView = dynamic(
   () => import('@/components/flash-sale/vendor-request/approve-view'),

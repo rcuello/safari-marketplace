@@ -47,7 +47,7 @@ export const ContentListHorizontal: React.FC<ContentListHorizontalProps> = ({
   return (
     <div
       className={twMerge(
-        classNames('flex items-center gap-2 text-base', className)
+        classNames('flex items-center gap-2 text-base', className),
       )}
       {...rest}
     >

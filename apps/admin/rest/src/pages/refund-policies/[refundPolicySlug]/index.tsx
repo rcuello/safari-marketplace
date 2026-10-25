@@ -21,11 +21,7 @@ const ViewRefundPolicyPage = () => {
   if (loading) return <Loader text={t('common:text-loading')} />;
   if (error) return <ErrorMessage message={error.message} />;
 
-  return (
-    <RefundPolicyDetails
-      refundPolicy={refundPolicy as RefundPolicy}
-    />
-  );
+  return <RefundPolicyDetails refundPolicy={refundPolicy as RefundPolicy} />;
 };
 
 ViewRefundPolicyPage.authenticate = {

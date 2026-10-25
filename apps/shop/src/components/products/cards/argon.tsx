@@ -55,7 +55,7 @@ const Argon: React.FC<ArgonProps> = ({ product, className }) => {
     <article
       className={cn(
         'product-card cart-type-argon h-full transform overflow-hidden rounded bg-light shadow-downfall-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-downfall-lg',
-        className
+        className,
       )}
       onClick={handleProductQuickView}
       role="button"
@@ -67,7 +67,7 @@ const Argon: React.FC<ArgonProps> = ({ product, className }) => {
             ? query?.pages?.includes('medicine')
               ? 'm-4 mb-0'
               : ''
-            : ''
+            : '',
         )}
       >
         <span className="sr-only">{t('text-product-image')}</span>

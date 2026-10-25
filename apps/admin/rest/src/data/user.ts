@@ -332,7 +332,7 @@ export const useCustomersQuery = (params: Partial<UserQueryOptions>) => {
 };
 
 export const useMyStaffsQuery = (
-  params: Partial<UserQueryOptions & { shop_id: string }>
+  params: Partial<UserQueryOptions & { shop_id: string }>,
 ) => {
   const { data, isLoading, error } = useQuery<UserPaginator, Error>({
     queryKey: [API_ENDPOINTS.MY_STAFFS, params],

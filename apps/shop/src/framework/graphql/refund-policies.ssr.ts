@@ -4,7 +4,10 @@ import { addApolloState, initializeApollo } from './client';
 import { GroupsDocument } from './gql/groups.graphql';
 import { SettingsDocument } from './gql/settings.graphql';
 import { LIMIT } from '@/lib/constants';
-import { RefundPoliciesDocument, RefundPoliciesQuery } from './gql/refund-policies.graphql';
+import {
+  RefundPoliciesDocument,
+  RefundPoliciesQuery,
+} from './gql/refund-policies.graphql';
 import { formatSearchParams } from './utils/query-helpers';
 
 export const getCustomerStaticProps: GetStaticProps = async ({ locale }) => {

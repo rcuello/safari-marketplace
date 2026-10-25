@@ -20,7 +20,7 @@ const TagFilterView = ({ tags }: Props) => {
   const router = useRouter();
   const selectedValues = useMemo(
     () => (router.query.tags ? (router.query.tags as string)?.split(',') : []),
-    [router.query.tags]
+    [router.query.tags],
   );
   const [state, setState] = useState<string[]>(selectedValues);
   useEffect(() => {

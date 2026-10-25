@@ -19,7 +19,7 @@ const Search = dynamic(() => import('@/components/ui/search/search'));
 
 const CartCounterIconButton = dynamic(
   () => import('@/components/cart/cart-counter-icon-button'),
-  { ssr: false }
+  { ssr: false },
 );
 const AuthorizedMenu = dynamic(() => import('./menu/authorized-menu'), {
   ssr: false,
@@ -52,12 +52,12 @@ const HeaderWithMegaMenu: React.FC<MenuProps> = ({ data, className }) => {
     <>
       <header
         className={cn(
-          'site-header-with-search w-full h-auto z-50 fixed shadow-sm'
+          'site-header-with-search w-full h-auto z-50 fixed shadow-sm',
         )}
       >
         <div
           className={cn(
-            'flex justify-between items-center w-full h-14 md:h-16 lg:h-22 px-4 ltr:lg:pl-16 rtl:lg:pr-16 ltr:lg:pr-16 rtl:lg:pl-16 py-5 bg-light transition-transform duration-300 relative z-10'
+            'flex justify-between items-center w-full h-14 md:h-16 lg:h-22 px-4 ltr:lg:pl-16 rtl:lg:pr-16 ltr:lg:pr-16 rtl:lg:pl-16 py-5 bg-light transition-transform duration-300 relative z-10',
           )}
         >
           <div className="flex items-center w-full">
@@ -92,7 +92,7 @@ const HeaderWithMegaMenu: React.FC<MenuProps> = ({ data, className }) => {
         <nav
           className={cn(
             `headerMenu flex w-full bg-white relative border-t border-b border-border-200 px-4 lg:px-12`,
-            className
+            className,
           )}
         >
           {data?.map((item: any) => (

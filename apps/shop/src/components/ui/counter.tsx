@@ -7,7 +7,7 @@ import { PlusIconNew } from '@/components/icons/plus-icon';
 import { MinusIconNew } from '@/components/icons/minus-icon';
 
 type ButtonEvent = (
-  e: React.MouseEvent<HTMLButtonElement | MouseEvent>
+  e: React.MouseEvent<HTMLButtonElement | MouseEvent>,
 ) => void;
 
 type CounterProps = {
@@ -68,8 +68,8 @@ const Counter: React.FC<CounterProps> = ({
           ? cn('flex overflow-hidden', variantClasses[variant], className)
           : cn(
               'flex w-24 items-center justify-between rounded-[0.25rem] border border-[#dbdbdb]',
-              className
-            )
+              className,
+            ),
       )}
     >
       <button
@@ -84,9 +84,9 @@ const Counter: React.FC<CounterProps> = ({
                   'border border-gray-300 px-5 hover:border-accent hover:!bg-transparent ltr:rounded-l rtl:rounded-r':
                     variant === 'bordered',
                   'hover:!bg-gray-100': variant === 'pillVertical',
-                }
+                },
               )
-            : cn('p-2 text-base', disabled ? 'text-[#c1c1c1]' : 'text-accent')
+            : cn('p-2 text-base', disabled ? 'text-[#c1c1c1]' : 'text-accent'),
         )}
       >
         <span className="sr-only">{t('text-minus')}</span>
@@ -101,7 +101,7 @@ const Counter: React.FC<CounterProps> = ({
           'flex flex-1 items-center justify-center px-3 text-sm font-semibold',
           variant === 'pillVertical' && '!px-0 text-heading',
           variant === 'bordered' &&
-            'border-t border-b border-gray-300 !px-8 text-heading'
+            'border-t border-b border-gray-300 !px-8 text-heading',
         )}
       >
         {value}
@@ -119,7 +119,7 @@ const Counter: React.FC<CounterProps> = ({
                   'border border-gray-300 px-5 hover:border-accent hover:!bg-transparent hover:!text-accent ltr:rounded-r rtl:rounded-l':
                     variant === 'bordered',
                   'hover:!bg-gray-100': variant === 'pillVertical',
-                }
+                },
               )
             : cn('p-2 text-base', disabled ? 'text-[#c1c1c1]' : 'text-accent')
         }

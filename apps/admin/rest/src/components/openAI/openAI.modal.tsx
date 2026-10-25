@@ -64,7 +64,7 @@ const GenerateDescription = () => {
         closeModal();
       }
     },
-    [data]
+    [data],
   );
 
   const [_, copyToClipboard] = useCopyToClipboard();

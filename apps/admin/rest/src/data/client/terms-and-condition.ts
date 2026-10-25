@@ -11,7 +11,7 @@ import { HttpClient } from './http-client';
 
 export const termsAndConditionClients = {
   ...crudFactory<TermsAndConditions, QueryOptions, TermsAndConditionsInput>(
-    API_ENDPOINTS.TERMS_AND_CONDITIONS
+    API_ENDPOINTS.TERMS_AND_CONDITIONS,
   ),
   paginated: ({
     title,
@@ -25,16 +25,19 @@ export const termsAndConditionClients = {
         shop_id: shop_id,
         ...params,
         search: HttpClient.formatSearchParams({ title, shop_id }),
-      }
+      },
     );
   },
   approve: (variables: { id: string }) => {
-    return HttpClient.post<any>(API_ENDPOINTS.APPROVE_TERMS_AND_CONDITIONS, variables);
+    return HttpClient.post<any>(
+      API_ENDPOINTS.APPROVE_TERMS_AND_CONDITIONS,
+      variables,
+    );
   },
   disapprove: (variables: { id: string }) => {
     return HttpClient.post<{ id: string }>(
       API_ENDPOINTS.DISAPPROVE_TERMS_AND_CONDITIONS,
-      variables
+      variables,
     );
   },
 };

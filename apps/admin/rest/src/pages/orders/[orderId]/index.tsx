@@ -61,7 +61,7 @@ export default function OrderDetailsPage() {
       isRTL,
       language: locale!,
     },
-    { enabled: false }
+    { enabled: false },
   );
 
   const {
@@ -82,28 +82,28 @@ export default function OrderDetailsPage() {
   const { price: subtotal } = usePrice(
     order && {
       amount: order?.amount!,
-    }
+    },
   );
 
   const { price: total } = usePrice(
     order && {
       amount: order?.paid_total!,
-    }
+    },
   );
   const { price: discount } = usePrice(
     order && {
       amount: order?.discount! ?? 0,
-    }
+    },
   );
   const { price: delivery_fee } = usePrice(
     order && {
       amount: order?.delivery_fee!,
-    }
+    },
   );
   const { price: sales_tax } = usePrice(
     order && {
       amount: order?.sales_tax!,
-    }
+    },
   );
   const { price: sub_total } = usePrice({ amount: order?.amount! });
   const { price: shipping_charge } = usePrice({
@@ -123,7 +123,7 @@ export default function OrderDetailsPage() {
   const totalItem = order?.products.reduce(
     // @ts-ignore
     (initial = 0, p) => initial + parseInt(p?.pivot?.order_quantity!),
-    0
+    0,
   );
 
   const phoneNumber = useFormatPhoneNumber({

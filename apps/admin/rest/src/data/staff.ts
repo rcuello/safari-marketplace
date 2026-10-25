@@ -15,7 +15,7 @@ import { Routes } from '@/config/routes';
 
 export const useStaffsQuery = (
   params: Partial<StaffQueryOptions>,
-  options: any = {}
+  options: any = {},
 ) => {
   const { data, error, isLoading } = useQuery<StaffPaginator, Error>({
     queryKey: [API_ENDPOINTS.STAFFS, params],

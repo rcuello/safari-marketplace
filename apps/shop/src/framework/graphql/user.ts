@@ -1,12 +1,17 @@
 import {
-  initialState, updateFormState
+  initialState,
+  updateFormState,
 } from '@/components/auth/forgot-password';
 import { initialOtpState, optAtom } from '@/components/otp/atom';
 import { useModalAction } from '@/components/ui/modal/modal.context';
 import { useToken } from '@/lib/hooks/use-token';
 import { authorizationAtom } from '@/store/authorization-atom';
 import { clearCheckoutAtom } from '@/store/checkout';
-import type { RegisterUserInput, UpdateEmailUserInput, UpdateUserInput } from '@/types';
+import type {
+  RegisterUserInput,
+  UpdateEmailUserInput,
+  UpdateUserInput,
+} from '@/types';
 import { useApolloClient } from '@apollo/client';
 import { useAtom } from 'jotai';
 import { useStateMachine } from 'little-state-machine';
@@ -25,7 +30,7 @@ import {
   ResetPasswordInput,
   SocialLoginInput,
   VerifyForgetPasswordTokenInput,
-  VerifyOtpInput
+  VerifyOtpInput,
 } from '__generated__/__types__';
 import { useDeleteAddressMutation } from './gql/address.graphql';
 import {
@@ -44,7 +49,7 @@ import {
   useUpdateCustomerMutation,
   useUpdateUserEmailMutation,
   useVerifyForgetPasswordTokenMutation,
-  useVerifyOtpCodeMutation
+  useVerifyOtpCodeMutation,
 } from './gql/auth.graphql';
 import { useContactUsMutation } from './gql/settings.graphql';
 import { getErrorMessage } from './utils/form-error';
@@ -440,7 +445,7 @@ export function useChangePassword() {
   const { t } = useTranslation('common');
   const [changePassword, { loading: isLoading }] = useChangePasswordMutation();
   let [formError, setFormError] = useState<Partial<ChangePasswordInput> | null>(
-    null
+    null,
   );
 
   function change(input: ChangePasswordInput) {
@@ -545,21 +550,22 @@ export function useVerifyForgotPasswordToken() {
 }
 export function useResendVerificationEmail() {
   const { t } = useTranslation();
-  const [resendVerificationEmailMutation, { loading }] = useResendVerificationEmailMutation({
-    onCompleted: (data) => {
-      if (data?.resendVerificationEmail?.success) {
-        toast.success(t('common:email-send-successfully'));
-      }
-    },
-    onError: () => toast.error('common:PICKBAZAR_ERROR.SOMETHING_WENT_WRONG')
-  });
+  const [resendVerificationEmailMutation, { loading }] =
+    useResendVerificationEmailMutation({
+      onCompleted: (data) => {
+        if (data?.resendVerificationEmail?.success) {
+          toast.success(t('common:email-send-successfully'));
+        }
+      },
+      onError: () => toast.error('common:PICKBAZAR_ERROR.SOMETHING_WENT_WRONG'),
+    });
   function resendEmail() {
     resendVerificationEmailMutation();
   }
 
   return {
     mutate: resendEmail,
-    isLoading: loading
+    isLoading: loading,
   };
 }
 export function useUpdateEmail() {
@@ -570,20 +576,20 @@ export function useUpdateEmail() {
         toast.success(t('common:successfully-email-updated'));
       }
     },
-    onError: () => toast.error('common:PICKBAZAR_ERROR.SOMETHING_WENT_WRONG')
+    onError: () => toast.error('common:PICKBAZAR_ERROR.SOMETHING_WENT_WRONG'),
   });
   function updateEmail(values: UpdateEmailUserInput) {
     updateUserEmailMutation({
       variables: {
         input: {
-          ...values
-        }
-      }
+          ...values,
+        },
+      },
     });
   }
 
   return {
     mutate: updateEmail,
-    isLoading: loading
+    isLoading: loading,
   };
 }

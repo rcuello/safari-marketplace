@@ -23,7 +23,7 @@ function StoreNotices() {
       },
       {
         enabled: Boolean(data?.id!),
-      }
+      },
     );
   const sortedData = [...storeNotices].reverse();
 

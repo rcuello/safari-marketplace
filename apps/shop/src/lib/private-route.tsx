@@ -13,7 +13,7 @@ import { Routes } from '@/config/routes';
 import NotFound from '@/components/404/404';
 const Loader = dynamic(
   () => import('@/components/ui/loaders/spinner/spinner'),
-  { ssr: false }
+  { ssr: false },
 );
 
 const PrivateRoute: React.FC<{ children?: React.ReactNode }> = ({

@@ -30,7 +30,7 @@ const renderer = (
     completed: boolean;
   },
   // @ts-ignore
-  props
+  props,
 ) => {
   if (completed) {
     // Render a completed state
@@ -42,8 +42,8 @@ const renderer = (
         className={twMerge(
           classNames(
             'flex gap-2 text-lg text-accent [&>p]:rounded [&>p]:bg-accent [&>p]:p-3 [&>p]:text-sm [&>p]:font-semibold [&>p]:text-white [&>span]:self-center',
-            props?.className
-          )
+            props?.className,
+          ),
         )}
       >
         <p>{days}d</p>

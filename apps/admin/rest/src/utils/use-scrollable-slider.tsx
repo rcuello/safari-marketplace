@@ -22,7 +22,7 @@ export function useScrollableSlider() {
     const prevBtn = sliderPrevBtn.current;
     const nextBtn = sliderNextBtn.current;
     const formPageHeaderEl = filterBarEl.classList.contains(
-      'formPageHeaderSliderElJS'
+      'formPageHeaderSliderElJS',
     );
     initNextPrevBtnVisibility();
 

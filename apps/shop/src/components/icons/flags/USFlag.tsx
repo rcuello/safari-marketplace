@@ -1,5 +1,5 @@
-export const USFlag = ({ width = "640px", height = "480px" }) => {
-	return (
+export const USFlag = ({ width = '640px', height = '480px' }) => {
+  return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
       id="flag-icon-css-us"

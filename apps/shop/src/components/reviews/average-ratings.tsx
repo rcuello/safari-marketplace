@@ -39,14 +39,14 @@ const AverageRatings: React.FC<AverageRatingsProps> = ({
         <div className="w-full space-y-3 py-0.5 pt-4 sm:w-auto sm:pt-0 ltr:sm:pl-8 rtl:sm:pr-8">
           <RatingProgressBar
             ratingProgressItem={ratingCount.find(
-              (rating) => Number(rating.rating) === 5
+              (rating) => Number(rating.rating) === 5,
             )}
             ratingId={5}
             totalReviews={totalReviews!}
           />
           <RatingProgressBar
             ratingProgressItem={ratingCount.find(
-              (rating) => Number(rating.rating) === 4
+              (rating) => Number(rating.rating) === 4,
             )}
             ratingId={4}
             totalReviews={totalReviews!}
@@ -54,7 +54,7 @@ const AverageRatings: React.FC<AverageRatingsProps> = ({
           />
           <RatingProgressBar
             ratingProgressItem={ratingCount.find(
-              (rating) => Number(rating.rating) === 3
+              (rating) => Number(rating.rating) === 3,
             )}
             ratingId={3}
             totalReviews={totalReviews!}
@@ -62,7 +62,7 @@ const AverageRatings: React.FC<AverageRatingsProps> = ({
           />
           <RatingProgressBar
             ratingProgressItem={ratingCount.find(
-              (rating) => Number(rating.rating) === 2
+              (rating) => Number(rating.rating) === 2,
             )}
             ratingId={2}
             totalReviews={totalReviews!}
@@ -70,7 +70,7 @@ const AverageRatings: React.FC<AverageRatingsProps> = ({
           />
           <RatingProgressBar
             ratingProgressItem={ratingCount.find(
-              (rating) => Number(rating.rating) === 1
+              (rating) => Number(rating.rating) === 1,
             )}
             ratingId={1}
             totalReviews={totalReviews!}

@@ -68,7 +68,7 @@ const PaymentGrid: React.FC<{ className?: string }> = ({ className }) => {
                       'relative flex h-full w-full cursor-pointer items-center justify-center rounded border py-3 text-center',
                       checked
                         ? 'shadow-600 border-accent bg-light'
-                        : 'border-gray-200 bg-light'
+                        : 'border-gray-200 bg-light',
                     )}
                   >
                     {icon ? (
@@ -84,7 +84,7 @@ const PaymentGrid: React.FC<{ className?: string }> = ({ className }) => {
                   </div>
                 )}
               </RadioGroup.Option>
-            )
+            ),
           )}
         </div>
       </RadioGroup>

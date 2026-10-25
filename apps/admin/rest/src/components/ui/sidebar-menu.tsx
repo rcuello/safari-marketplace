@@ -46,7 +46,7 @@ function SidebarMenuItem({ className, item, depth = 0 }: any) {
           className={cn(
             'text-start flex w-full items-center border-0 text-base outline-none focus:text-accent focus:outline-none focus:ring-0',
             router.pathname === href ? 'text-accent' : 'text-heading',
-            className
+            className,
           )}
         >
           {getIcon({

@@ -11,10 +11,10 @@ export default function VariationPrice({
       amount: Number(
         selectedVariation.sale_price
           ? selectedVariation.sale_price
-          : selectedVariation.price
+          : selectedVariation.price,
       ),
       baseAmount: Number(selectedVariation.price),
-    }
+    },
   );
   const { price: min_price } = usePrice({
     amount: Number(minPrice),

@@ -22,7 +22,7 @@ const FlashSaleCard: React.FC<FlashSaleCardProps> = ({
     <Link
       href={Routes?.flashSaleSingle(flashSale?.slug)}
       className={twMerge(
-        classNames('relative block overflow-hidden', className)
+        classNames('relative block overflow-hidden', className),
       )}
     >
       <div className="relative mb-4 h-52 overflow-hidden rounded-md bg-gray-300 md:mb-6 xl:h-60 2xl:h-[21.6875rem]">

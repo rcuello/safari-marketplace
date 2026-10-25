@@ -16,7 +16,6 @@ const AddToCart = dynamic(
   { ssr: false },
 );
 
-
 type HeliumProps = {
   product: any;
   className?: string;
@@ -58,8 +57,8 @@ const Helium: React.FC<HeliumProps> = ({ product, className }) => {
       className={twMerge(
         cn(
           'product-card cart-type-helium h-full overflow-hidden rounded border border-border-200 bg-light transition-shadow duration-200 hover:shadow-sm',
-          className
-        )
+          className,
+        ),
       )}
     >
       <div
@@ -70,7 +69,7 @@ const Helium: React.FC<HeliumProps> = ({ product, className }) => {
             ? query?.pages?.includes('medicine')
               ? 'm-4 mb-0'
               : ''
-            : ''
+            : '',
         )}
         // role="button"
       >

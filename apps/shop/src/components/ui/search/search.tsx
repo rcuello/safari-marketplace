@@ -37,7 +37,7 @@ const Search: React.FC<Props> = ({
       undefined,
       {
         scroll: false,
-      }
+      },
     );
   };
 
@@ -54,7 +54,7 @@ const Search: React.FC<Props> = ({
         undefined,
         {
           scroll: false,
-        }
+        },
       );
     }
   }

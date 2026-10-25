@@ -65,7 +65,7 @@ const TermsAndConditionsLists = ({
       onSort((currentSortDirection: SortOrder) =>
         currentSortDirection === SortOrder?.Desc
           ? SortOrder?.Asc
-          : SortOrder?.Desc
+          : SortOrder?.Desc,
       );
       onOrder(column!);
 

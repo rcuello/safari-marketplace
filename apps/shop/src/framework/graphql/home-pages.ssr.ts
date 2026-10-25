@@ -34,12 +34,12 @@ export const getStaticPaths: GetStaticPaths<ParsedQueryParams> = async ({
   });
   // Get the paths we want to pre-render based on types
   const paths = types?.flatMap((type) =>
-    locales?.map((locale: any) => ({ params: { pages: [type.slug] }, locale }))
+    locales?.map((locale: any) => ({ params: { pages: [type.slug] }, locale })),
   );
   // We'll pre-render only these paths at build time also with the slash route.
   return {
     paths: paths.concat(
-      locales?.map((locale: any) => ({ params: { pages: [] }, locale }))
+      locales?.map((locale: any) => ({ params: { pages: [] }, locale })),
     ),
     fallback: 'blocking',
   };
@@ -108,7 +108,7 @@ export const getStaticProps: GetStaticProps<
     type: pageType,
     limit: CATEGORIES_PER_PAGE,
     ...(types?.find((t) => t.slug === pageType)?.settings?.layoutType ===
-      'minimal'
+    'minimal'
       ? {}
       : { parent: null }),
     language: locale,

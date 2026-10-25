@@ -44,7 +44,7 @@ const Sorting = () => {
   const { isRTL } = useIsRTL();
   const [selected, setSelected] = useState(
     () =>
-      plans.find((plan) => plan.orderBy === router.query.orderBy) ?? plans[0]
+      plans.find((plan) => plan.orderBy === router.query.orderBy) ?? plans[0],
   );
 
   useEffect(() => {
@@ -65,7 +65,7 @@ const Sorting = () => {
         },
       },
       undefined,
-      { scroll: false }
+      { scroll: false },
     );
     setSelected(values);
   }

@@ -6,13 +6,7 @@ import { PlusIconNew } from '@/components/icons/plus-icon';
 
 type Props = {
   variant?:
-    | 'helium'
-    | 'neon'
-    | 'argon'
-    | 'oganesson'
-    | 'single'
-    | 'big'
-    | 'text';
+    'helium' | 'neon' | 'argon' | 'oganesson' | 'single' | 'big' | 'text';
   onClick(event: React.MouseEvent<HTMLButtonElement | MouseEvent>): void;
   disabled?: boolean;
 };
@@ -76,7 +70,7 @@ const AddToCartBtn: React.FC<Props> = ({ variant, onClick, disabled }) => {
             {
               'cursor-not-allowed border border-border-400 !bg-gray-300 !text-body hover:!bg-gray-300':
                 disabled,
-            }
+            },
           )}
         >
           <span>{t('text-add-cart')}</span>
@@ -91,7 +85,7 @@ const AddToCartBtn: React.FC<Props> = ({ variant, onClick, disabled }) => {
             'whitespace-nowrap text-sm font-semibold text-accent hover:text-accent-hover hover:underline',
             {
               'text-gray-300 hover:text-gray-300': disabled,
-            }
+            },
           )}
         >
           <span>{t('text-add-to-cart')}</span>

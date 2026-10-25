@@ -4,7 +4,7 @@ import { useAtom } from 'jotai';
 
 export function useActiveScroll<T extends HTMLElement = HTMLElement>(
   ref: RefObject<T>,
-  topOffset: number = 80
+  topOffset: number = 80,
 ) {
   const [_, setUnderMaintenanceStart] = useAtom(checkIsScrollingStart);
   useEffect(() => {

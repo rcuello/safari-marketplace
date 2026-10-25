@@ -33,7 +33,7 @@ const UserListIndex = ({ className, ...rest }: Props) => {
             : '',
           'flex h-full max-h-[calc(100%-51px)] flex-1 flex-col overflow-hidden rounded-lg bg-white',
           // adminPermission ? 'pb-6' : '',
-          className
+          className,
         )}
         {...rest}
       >

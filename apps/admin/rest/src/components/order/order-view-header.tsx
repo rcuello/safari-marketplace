@@ -18,9 +18,16 @@ export default function OrderViewHeader({
   buttonSize = 'medium',
 }: OrderViewHeaderProps) {
   const { t } = useTranslation('common');
-  const isPaymentCOD = [PaymentGateway.COD, PaymentGateway.CASH].includes(order?.payment_gateway);
-  const isOrderPending = ![OrderStatus.CANCELLED, OrderStatus.FAILED].includes(order?.order_status);
-  const isPaymentActionPending = !isPaymentCOD && isOrderPending && order?.payment_status !== PaymentStatus.SUCCESS;
+  const isPaymentCOD = [PaymentGateway.COD, PaymentGateway.CASH].includes(
+    order?.payment_gateway,
+  );
+  const isOrderPending = ![OrderStatus.CANCELLED, OrderStatus.FAILED].includes(
+    order?.order_status,
+  );
+  const isPaymentActionPending =
+    !isPaymentCOD &&
+    isOrderPending &&
+    order?.payment_status !== PaymentStatus.SUCCESS;
 
   return (
     <div className={cn(`bg-[#F7F8FA] ${wrapperClassName}`)}>

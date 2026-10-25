@@ -1,5 +1,5 @@
 export const CurrentBalanceIcon: React.FC<React.SVGAttributes<{}>> = (
-  props
+  props,
 ) => {
   return (
     <svg

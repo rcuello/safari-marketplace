@@ -8,7 +8,7 @@ export { getStaticPaths, getStaticProps } from '@/framework/author.ssr';
 
 const CartCounterButton = dynamic(
   () => import('@/components/cart/cart-counter-button'),
-  { ssr: false }
+  { ssr: false },
 );
 
 export default function Author({ author, variables }: any) {
@@ -38,6 +38,6 @@ const getLayout = (page: React.ReactElement) =>
       <div className="mx-auto min-h-screen w-full max-w-1920 px-5 pt-10 pb-16 xl:py-14 xl:px-16">
         {page}
       </div>
-    </div>
+    </div>,
   );
 Author.getLayout = getLayout;

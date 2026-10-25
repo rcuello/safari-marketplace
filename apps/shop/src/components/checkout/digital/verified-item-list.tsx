@@ -35,33 +35,33 @@ const VerifiedItemList: React.FC<Props> = ({ className }) => {
   const [use_wallet] = useAtom(walletAtom);
 
   const available_items = items?.filter(
-    (item) => !verifiedResponse?.unavailable_products?.includes(item.id)
+    (item) => !verifiedResponse?.unavailable_products?.includes(item.id),
   );
 
   const { price: tax } = usePrice(
     verifiedResponse && {
       amount: verifiedResponse.total_tax ?? 0,
-    }
+    },
   );
 
   const { price: shipping } = usePrice(
     verifiedResponse && {
       amount: verifiedResponse.shipping_charge ?? 0,
-    }
+    },
   );
 
   const base_amount = calculateTotal(available_items);
   const { price: sub_total } = usePrice(
     verifiedResponse && {
       amount: base_amount,
-    }
+    },
   );
 
   const { price: discountPrice } = usePrice(
     //@ts-ignore
     discount && {
       amount: Number(discount),
-    }
+    },
   );
   const totalPrice = verifiedResponse
     ? calculatePaidTotal(
@@ -70,13 +70,13 @@ const VerifiedItemList: React.FC<Props> = ({ className }) => {
           tax: verifiedResponse?.total_tax,
           shipping_charge: verifiedResponse?.shipping_charge,
         },
-        Number(discount)
+        Number(discount),
       )
     : 0;
   const { price: total } = usePrice(
     verifiedResponse && {
       amount: totalPrice,
-    }
+    },
   );
   return (
     <div className={className}>
@@ -84,7 +84,7 @@ const VerifiedItemList: React.FC<Props> = ({ className }) => {
         {!isEmptyCart ? (
           items?.map((item) => {
             const notAvailable = verifiedResponse?.unavailable_products?.find(
-              (d: any) => d === item.id
+              (d: any) => d === item.id,
             );
             return (
               <CartItem

@@ -15,8 +15,8 @@ const UserListNotFound = ({ className }: { className?: string }) => {
           classNames(
             'flex h-full flex-auto items-center justify-center',
             adminPermission ? 'pb-6 md:pb-10' : '',
-            className
-          )
+            className,
+          ),
         )}
       >
         <div className="px-5 text-center">

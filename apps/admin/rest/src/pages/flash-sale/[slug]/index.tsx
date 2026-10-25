@@ -59,7 +59,7 @@ const FlashSalePage = () => {
       setLimit(params?.value);
       setPage(1);
     },
-    [setLimit, setPage]
+    [setLimit, setPage],
   );
 
   const handleSearch = useCallback(
@@ -67,14 +67,14 @@ const FlashSalePage = () => {
       setSearchTerm(searchText);
       setPage(1);
     },
-    [setSearchTerm, setPage]
+    [setSearchTerm, setPage],
   );
 
   const handlePagination = useCallback(
     (current: any) => {
       setPage(current);
     },
-    [setPage]
+    [setPage],
   );
 
   if (loading || loadingProducts)

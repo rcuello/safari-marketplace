@@ -6,7 +6,7 @@ interface LanguageParam {
 }
 
 export function crudFactory<Type, QueryParams extends LanguageParam, InputType>(
-  endpoint: string
+  endpoint: string,
 ) {
   return {
     all(params: QueryParams) {

@@ -8,7 +8,7 @@ export const useStoreNotices = (options: Partial<StoreNoticeQueryOptions>) => {
     queryKey: [API_ENDPOINTS.STORE_NOTICES, options],
     queryFn: ({ queryKey }) =>
       client.storeNotice.all(
-        Object.assign({}, queryKey[1] as StoreNoticeQueryOptions)
+        Object.assign({}, queryKey[1] as StoreNoticeQueryOptions),
       ),
     placeholderData: keepPreviousData,
     retry: false,

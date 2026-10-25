@@ -86,7 +86,9 @@ const NotifyLogItem = ({ item }: any) => {
       <div
         className={cn(
           "relative flex cursor-pointer rounded-lg bg-white p-4 border-s-4 before:absolute before:top-1/2 before:h-2.5 before:w-2.5 before:-translate-y-1/2 before:rounded-full before:bg-accent before:opacity-0 before:content-[''] before:end-4 md:before:end-7 xl:p-7",
-          item?.is_read ? 'border-gray-300' : 'border-accent before:opacity-100'
+          item?.is_read
+            ? 'border-gray-300'
+            : 'border-accent before:opacity-100',
         )}
         onClick={() => handleClickOnNotification(item)}
       >
@@ -105,7 +107,7 @@ const NotifyLogItem = ({ item }: any) => {
               <span
                 className={cn(
                   'inline-block font-medium text-accent hover:text-accent',
-                  item?.is_read ? 'text-gray-500/80' : 'text-accent'
+                  item?.is_read ? 'text-gray-500/80' : 'text-accent',
                 )}
               >
                 #{item?.notify_tracker}
@@ -117,7 +119,7 @@ const NotifyLogItem = ({ item }: any) => {
           <span
             className={cn(
               'text-sm font-medium',
-              item?.is_read ? 'text-gray-500/80' : 'text-accent'
+              item?.is_read ? 'text-gray-500/80' : 'text-accent',
             )}
           >
             {dayjs(item?.created_at).format('MMM DD, YYYY')} at{' '}

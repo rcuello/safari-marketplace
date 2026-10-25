@@ -15,7 +15,7 @@ export default function LanguageSwitcher() {
   const { resetCart } = useCart();
 
   let filterItem = languageMenu?.filter((element) =>
-    locales?.includes(element?.id)
+    locales?.includes(element?.id),
   );
 
   const currentSelectedItem = locale

@@ -39,9 +39,9 @@ function FavoriteButton({
         className={twMerge(
           classNames(
             'mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-gray-300',
-            variant === 'minimal' ? "bg-black bg-opacity-20" : '',
-            className
-          )
+            variant === 'minimal' ? 'bg-black bg-opacity-20' : '',
+            className,
+          ),
         )}
       >
         <Spinner
@@ -62,8 +62,8 @@ function FavoriteButton({
             (inWishlist
               ? 'bg-accent text-white'
               : 'bg-black bg-opacity-20 text-white'),
-          className
-        )
+          className,
+        ),
       )}
       onClick={toggle}
     >

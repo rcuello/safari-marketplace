@@ -7,7 +7,7 @@ const PageLoader = () => {
   return (
     <div
       className={cn(
-        'w-full h-screen flex flex-col items-center justify-center'
+        'w-full h-screen flex flex-col items-center justify-center',
       )}
     >
       <div className="flex relative">

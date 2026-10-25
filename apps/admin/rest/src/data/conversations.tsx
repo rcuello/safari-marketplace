@@ -23,7 +23,7 @@ import { useModalAction } from '@/components/ui/modal/modal.context';
 import { adminOnly, getAuthCredentials, hasAccess } from '@/utils/auth-utils';
 
 export const useConversationsQuery = (
-  options: Partial<ConversationQueryOptions>
+  options: Partial<ConversationQueryOptions>,
 ) => {
   const {
     data,
@@ -39,7 +39,7 @@ export const useConversationsQuery = (
     queryKey: [API_ENDPOINTS.CONVERSIONS, options],
     queryFn: ({ queryKey, pageParam }) =>
       conversationsClient.allConversation(
-        Object.assign({}, queryKey[1], pageParam)
+        Object.assign({}, queryKey[1], pageParam),
       ),
     initialPageParam: undefined,
     getNextPageParam: ({ current_page, last_page }) =>
@@ -145,7 +145,7 @@ export const useConversationQuery = ({ id }: { id: string }) => {
       queryKey: [API_ENDPOINTS.CONVERSIONS, id],
       queryFn: () => conversationsClient.getConversion({ id }),
       placeholderData: keepPreviousData,
-    }
+    },
   );
 
   return {

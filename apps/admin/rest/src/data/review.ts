@@ -70,7 +70,7 @@ export const useReviewQuery = (id: string) => {
 
 export const useReviewsQuery = (
   params: Partial<ReviewQueryOptions>,
-  options: any = {}
+  options: any = {},
 ) => {
   const { data, error, isLoading } = useQuery<ReviewPaginator, Error>({
     queryKey: [API_ENDPOINTS.REVIEWS, params],

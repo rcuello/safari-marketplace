@@ -72,7 +72,7 @@ export const useShippingQuery = (id: string) => {
 };
 
 export const useShippingClassesQuery = (
-  options: Partial<ShippingQueryOptions> = {}
+  options: Partial<ShippingQueryOptions> = {},
 ) => {
   const { data, error, isLoading } = useQuery<Shipping[], Error>({
     queryKey: [API_ENDPOINTS.SHIPPINGS, options],

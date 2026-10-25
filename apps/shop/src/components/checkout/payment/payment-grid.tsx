@@ -63,7 +63,7 @@ const PaymentGroupOption: React.FC<PaymentGroupOptionProps> = ({
             checked && '!border-accent bg-light shadow-600',
             {
               '!border-accent bg-light shadow-600': theme === 'bw' && checked,
-            }
+            },
           )}
         >
           {icon ? (
@@ -94,14 +94,14 @@ const PaymentGrid: React.FC<{ className?: string; theme?: 'bw' }> = ({
   // const defaultPaymentGateway = settings?.defaultPaymentGateway.toUpperCase();
 
   const [defaultGateway, setDefaultGateway] = useState(
-    settings?.defaultPaymentGateway?.toUpperCase() || ''
+    settings?.defaultPaymentGateway?.toUpperCase() || '',
   );
   const [cashOnDelivery, setCashOnDelivery] = useState(
     (!settings?.useCashOnDelivery && !settings?.paymentGateway) ||
-      settings?.useCashOnDelivery
+      settings?.useCashOnDelivery,
   );
   const [availableGateway, setAvailableGateway] = useState(
-    settings?.paymentGateway || []
+    settings?.paymentGateway || [],
   );
 
   // FixME
@@ -219,7 +219,7 @@ const PaymentGrid: React.FC<{ className?: string; theme?: 'bw' }> = ({
   useEffect(() => {
     if (settings && availableGateway) {
       setGateway(
-        settings?.defaultPaymentGateway?.toUpperCase() as PaymentGateway
+        settings?.defaultPaymentGateway?.toUpperCase() as PaymentGateway,
       );
     } else {
       setGateway(PaymentGateway.COD);

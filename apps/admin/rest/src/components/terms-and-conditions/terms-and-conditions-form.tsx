@@ -70,7 +70,7 @@ export default function CreateOrUpdateTermsAndConditionsForm({
   } = useForm<FormValues>({
     // @ts-ignore
     defaultValues: initialValues,
-     //@ts-ignore
+    //@ts-ignore
     resolver: yupResolver(termsAndConditionsValidationSchema),
   });
 

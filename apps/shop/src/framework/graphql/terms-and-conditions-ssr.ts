@@ -4,7 +4,10 @@ import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { addApolloState, initializeApollo } from './client';
 import { GroupsDocument } from './gql/groups.graphql';
 import { SettingsDocument } from './gql/settings.graphql';
-import { TermsAndConditionsDocument, TermsAndConditionsQuery } from './gql/terms_and_conditions.graphql';
+import {
+  TermsAndConditionsDocument,
+  TermsAndConditionsQuery,
+} from './gql/terms_and_conditions.graphql';
 import { formatSearchParams } from './utils/query-helpers';
 
 export const getStaticProps: GetStaticProps = async ({ locale, ...rest }) => {
@@ -27,8 +30,8 @@ export const getStaticProps: GetStaticProps = async ({ locale, ...rest }) => {
       first: LIMIT_HUNDRED,
       language: rest.defaultLocale,
       is_approved: true,
-      search: "type:global;issued_by:Super Admin"
-  },
+      search: 'type:global;issued_by:Super Admin',
+    },
   });
   return addApolloState(apolloClient, {
     props: {

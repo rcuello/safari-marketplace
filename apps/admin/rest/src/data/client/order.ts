@@ -28,7 +28,7 @@ export const orderClient = {
   downloadInvoice: (input: GenerateInvoiceDownloadUrlInput) => {
     return HttpClient.post<string>(
       `${API_ENDPOINTS.ORDER_INVOICE_DOWNLOAD}`,
-      input
+      input,
     );
   },
   orderSeen({ id }: { id: string }) {

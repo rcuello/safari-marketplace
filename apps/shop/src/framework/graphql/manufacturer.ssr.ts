@@ -38,7 +38,7 @@ export const getStaticPaths: GetStaticPaths<ParsedQueryParams> = async ({
     locales?.map((locale) => ({
       params: { manufacturer: manufacturer.slug },
       locale,
-    }))
+    })),
   );
   return {
     paths,

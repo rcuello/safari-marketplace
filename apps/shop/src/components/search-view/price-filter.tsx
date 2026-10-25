@@ -12,7 +12,7 @@ const PriceFilter = () => {
       router.query.price
         ? (router.query.price as string).split(',')
         : defaultPriceRange,
-    [router.query.price]
+    [router.query.price],
   );
   const [state, setState] = useState<number[] | string[]>(selectedValues);
 

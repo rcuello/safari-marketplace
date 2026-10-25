@@ -1,5 +1,5 @@
 export const AttributeValueIcon: React.FC<React.SVGAttributes<{}>> = (
-  props
+  props,
 ) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32.986 19.2" {...props}>
     <g

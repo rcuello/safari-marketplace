@@ -7,7 +7,7 @@ export const checkoutClient = {
     {
       return HttpClient.post<VerifyCheckoutInputType>(
         API_ENDPOINTS.CHECKOUT,
-        input
+        input,
       );
     }
   },

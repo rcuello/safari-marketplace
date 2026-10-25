@@ -12,12 +12,12 @@ const AuthorCard: React.FC<AuthorItemProps> = ({ item }) => (
   <Link
     href={Routes.author(item?.slug)}
     className={cn(
-      'group relative flex cursor-pointer flex-col items-center bg-light text-center'
+      'group relative flex cursor-pointer flex-col items-center bg-light text-center',
     )}
   >
     <span
       className={cn(
-        'relative mb-6 flex h-44 w-44 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-gray-100 shadow-350'
+        'relative mb-6 flex h-44 w-44 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-gray-100 shadow-350',
       )}
     >
       <Image

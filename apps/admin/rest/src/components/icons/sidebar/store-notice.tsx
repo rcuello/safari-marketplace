@@ -12,8 +12,9 @@ export const StoreNoticeIcon: React.FC<React.SVGAttributes<{}>> = (props) => (
   </svg>
 );
 
-
-export const StoreNoticeOwnerIcon: React.FC<React.SVGAttributes<{}>> = (props) => {
+export const StoreNoticeOwnerIcon: React.FC<React.SVGAttributes<{}>> = (
+  props,
+) => {
   return (
     <svg
       width="1em"
@@ -34,4 +35,4 @@ export const StoreNoticeOwnerIcon: React.FC<React.SVGAttributes<{}>> = (props) =
       />
     </svg>
   );
-}
+};

@@ -18,7 +18,6 @@ export const EditIcon: React.FC<React.SVGAttributes<{}>> = (props) => (
   </svg>
 );
 
-
 export const EditFillIcon: React.FC<React.SVGAttributes<{}>> = (props) => {
   return (
     <svg

@@ -26,7 +26,7 @@ const BoxedCheckbox = React.forwardRef<HTMLInputElement, Props>(
         </label>
       </div>
     );
-  }
+  },
 );
 
 BoxedCheckbox.displayName = 'Boxed Checkbox';

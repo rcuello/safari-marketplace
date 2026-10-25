@@ -11,7 +11,7 @@ const SearchCount = ({ from, to, total }: Props) => {
 
   return (
     <span className="text-sm font-semibold text-heading">{`${t(
-      'text-showing'
+      'text-showing',
     )} ${from} - ${to} ${t('text-of')} ${total} ${t('text-products')}`}</span>
   );
 };

@@ -1,6 +1,4 @@
-import {
-  Elements,
-} from '@stripe/react-stripe-js';
+import { Elements } from '@stripe/react-stripe-js';
 import { PaymentGateway, PaymentIntentInfo } from '@/types';
 import getStripe from '@/lib/get-stripejs';
 import StripeElementBaseForm from '@/components/payment/stripe/stripe-element-base-form';
@@ -23,7 +21,7 @@ const StripeElementForm: React.FC<Props> = ({
   const options: StripeElementsOptions = {
     clientSecret,
     appearance: {
-      theme: "stripe",
+      theme: 'stripe',
     },
   };
 

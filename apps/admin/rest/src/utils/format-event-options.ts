@@ -1,4 +1,4 @@
-import {camelCase,  startCase} from 'lodash';
+import { camelCase, startCase } from 'lodash';
 
 type EventOptions = {
   label: string;
@@ -17,7 +17,7 @@ export function formatEventOptions(data: EventOptions[]) {
     admin: {},
     vendor: {},
     customer: {},
-    all: {}
+    all: {},
   };
 
   for (const singleData of data) {
@@ -46,12 +46,12 @@ export function formatEventAPIData(Event: any) {
     .map((options) => {
       return Object.keys(Event[options])
         .filter((optionsValue) => Event[options][optionsValue] === true)
-      .map((optionsValue) => {
-        return {
-          value: `${options}-${camelCase(optionsValue)}`,
-          label: `${startCase(optionsValue)}`,
-        };
-      });
+        .map((optionsValue) => {
+          return {
+            value: `${options}-${camelCase(optionsValue)}`,
+            label: `${startCase(optionsValue)}`,
+          };
+        });
     })
     .flat();
 
