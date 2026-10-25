@@ -16,16 +16,16 @@ import {
   type ListTermsAndConditionsInput,
   type TermsAndConditionsRecord,
 } from '@safari/db';
-import { paginate } from 'src/common/pagination/paginate';
-import { parseSearch } from 'src/common/search/parse-search';
-import { toWriteHttpException } from 'src/common/errors/domain-error.mapper';
+import { paginate } from '#src/common/pagination/paginate.js';
+import { parseSearch } from '#src/common/search/parse-search.js';
+import { toWriteHttpException } from '#src/common/errors/domain-error.mapper.js';
 import {
   GetTermsAndConditionsDto,
   TermsAndConditionsPaginator,
-} from './dto/get-terms-and-conditions.dto';
-import { CreateTermsAndConditionsDto } from './dto/create-terms-and-conditions.dto';
-import { UpdateTermsAndConditionsDto } from './dto/update-terms-and-conditions.dto';
-import { TermsAndConditions } from './entities/terms-and-conditions.entity';
+} from './dto/get-terms-and-conditions.dto.js';
+import { CreateTermsAndConditionsDto } from './dto/create-terms-and-conditions.dto.js';
+import { UpdateTermsAndConditionsDto } from './dto/update-terms-and-conditions.dto.js';
+import { TermsAndConditions } from './entities/terms-and-conditions.entity.js';
 
 /**
  * `TermsAndConditionsRecord` → las 9 claves de `terms-and-conditions.json`,

@@ -6,19 +6,19 @@ import {
   updateQuestionText,
   type QuestionDetailRecord,
 } from '@safari/db';
-import { CurrentUserPayload } from 'src/auth/decorators/current-user.decorator';
-import { paginate } from 'src/common/pagination/paginate';
-import { toWriteHttpException } from 'src/common/errors/domain-error.mapper';
-import { CreateQuestionDto } from './dto/create-question.dto';
-import { GetQuestionDto } from './dto/get-questions.dto';
-import { UpdateQuestionDto } from './dto/update-question.dto';
-import { Question } from './entities/question.entity';
-import { toQuestionDto } from './question-dto.mapper';
+import { CurrentUserPayload } from '#src/auth/decorators/current-user.decorator.js';
+import { paginate } from '#src/common/pagination/paginate.js';
+import { toWriteHttpException } from '#src/common/errors/domain-error.mapper.js';
+import { CreateQuestionDto } from './dto/create-question.dto.js';
+import { GetQuestionDto } from './dto/get-questions.dto.js';
+import { UpdateQuestionDto } from './dto/update-question.dto.js';
+import { Question } from './entities/question.entity.js';
+import { toQuestionDto } from './question-dto.mapper.js';
 import {
   assertQuestionId,
   QuestionService,
   readError,
-} from './questions.service';
+} from './questions.service.js';
 
 export const MY_QUESTIONS_URL =
   '/my-questions?with=user&orderBy=created_at&sortedBy=desc';

@@ -9,9 +9,9 @@ import {
   BecomeSeller,
   BecomeSellerOptions,
   CommissionItem,
-} from './entities/become-seller.entity';
-import { CreateBecomeSellerDto } from './dto/create-become-seller.dto';
-import { UpdateBecomeSellerDto } from './dto/update-become-seller.dto';
+} from './entities/become-seller.entity.js';
+import { CreateBecomeSellerDto } from './dto/create-become-seller.dto.js';
+import { UpdateBecomeSellerDto } from './dto/update-become-seller.dto.js';
 
 /**
  * `@safari/db` guarda `pageOptions`/`commissions` como `Prisma.JsonValue` y

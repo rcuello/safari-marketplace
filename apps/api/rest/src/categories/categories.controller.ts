@@ -8,15 +8,15 @@ import {
   Delete,
   Query,
 } from '@nestjs/common';
-import { CategoriesService } from './categories.service';
-import { CreateCategoryDto } from './dto/create-category.dto';
-import { GetCategoriesDto } from './dto/get-categories.dto';
-import { UpdateCategoryDto } from './dto/update-category.dto';
-import { Public } from 'src/auth/decorators/public.decorator';
+import { CategoriesService } from './categories.service.js';
+import { CreateCategoryDto } from './dto/create-category.dto.js';
+import { GetCategoriesDto } from './dto/get-categories.dto.js';
+import { UpdateCategoryDto } from './dto/update-category.dto.js';
+import { Public } from '#src/auth/decorators/public.decorator.js';
 import {
   ADMIN_ONLY,
   Permissions,
-} from 'src/auth/decorators/permissions.decorator';
+} from '#src/auth/decorators/permissions.decorator.js';
 
 @Controller('categories')
 export class CategoriesController {

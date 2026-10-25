@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { CoreEntity } from 'src/common/entities/core.entity';
+import { CoreEntity } from '#src/common/entities/core.entity.js';
 
 /**
  * Forma de adjunto local a este módulo: las 6 imágenes del payload real

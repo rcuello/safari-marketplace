@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { NotifyLogs } from './entities/notify-logs.entity';
+import { NotifyLogs } from './entities/notify-logs.entity.js';
 import { plainToClass } from 'class-transformer';
 import Fuse from 'fuse.js';
-import { paginate } from 'src/common/pagination/paginate';
-import { GetNotifyLogsDto } from './dto/get-notify-logs.dto';
+import { paginate } from '#src/common/pagination/paginate.js';
+import { GetNotifyLogsDto } from './dto/get-notify-logs.dto.js';
 
 const notifyLogs = plainToClass(NotifyLogs, []);
 const options = {

@@ -42,22 +42,22 @@ import {
   type ProductRecord,
   type ShopRecord,
 } from '@safari/db';
-import { AuthService } from 'src/auth/auth.service';
-import { CurrentUserPayload } from 'src/auth/decorators/current-user.decorator';
-import { PaypalPaymentService } from 'src/payment/paypal-payment.service';
-import { StripePaymentService } from 'src/payment/stripe-payment.service';
-import { CreateOrderDto } from './dto/create-order.dto';
-import { GetOrdersDto } from './dto/get-orders.dto';
-import { UpdateOrderDto } from './dto/update-order.dto';
-import { CheckoutVerificationDto } from './dto/verify-checkout.dto';
+import { AuthService } from '#src/auth/auth.service.js';
+import { CurrentUserPayload } from '#src/auth/decorators/current-user.decorator.js';
+import { PaypalPaymentService } from '#src/payment/paypal-payment.service.js';
+import { StripePaymentService } from '#src/payment/stripe-payment.service.js';
+import { CreateOrderDto } from './dto/create-order.dto.js';
+import { GetOrdersDto } from './dto/get-orders.dto.js';
+import { UpdateOrderDto } from './dto/update-order.dto.js';
+import { CheckoutVerificationDto } from './dto/verify-checkout.dto.js';
 import { JwtService } from '@nestjs/jwt';
-import { GetOrderFilesDto } from './dto/get-downloads.dto';
-import { OrderFilesController } from './orders.controller';
+import { GetOrderFilesDto } from './dto/get-downloads.dto.js';
+import { OrderFilesController } from './orders.controller.js';
 import {
   ORDER_EXPORT_URL,
   ORDER_INVOICE_URL,
   OrdersService,
-} from './orders.service';
+} from './orders.service.js';
 
 vi.mock('@safari/db', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@safari/db')>()),

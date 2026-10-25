@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import flashSaleJSON from '@db/flash-sale.json';
-import ProductsByFlashSaleJSON from '@db/products-by-flash-sale.json';
+import flashSaleJSON from '#db/flash-sale.json';
+import ProductsByFlashSaleJSON from '#db/products-by-flash-sale.json';
 import { plainToClass } from 'class-transformer';
 import Fuse from 'fuse.js';
-import { paginate } from 'src/common/pagination/paginate';
-import { FlashSale } from './entities/flash-sale.entity';
-import { GetFlashSaleDto } from './dto/get-flash-sales.dto';
-import { CreateFlashSaleDto } from './dto/create-flash-sale.dto';
-import { UpdateFlashSaleDto } from './dto/update-flash-sale.dto';
-import { Product } from 'src/products/entities/product.entity';
+import { paginate } from '#src/common/pagination/paginate.js';
+import { FlashSale } from './entities/flash-sale.entity.js';
+import { GetFlashSaleDto } from './dto/get-flash-sales.dto.js';
+import { CreateFlashSaleDto } from './dto/create-flash-sale.dto.js';
+import { UpdateFlashSaleDto } from './dto/update-flash-sale.dto.js';
+import { Product } from '#src/products/entities/product.entity.js';
 
 const flashSale = plainToClass(FlashSale, flashSaleJSON);
 const options = {

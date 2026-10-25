@@ -17,21 +17,21 @@ import {
   type OwnershipTransferDetailRecord,
   type OwnershipTransferOwnerRecord,
 } from '@safari/db';
-import { CurrentUserPayload } from 'src/auth/decorators/current-user.decorator';
-import { toWriteHttpException } from 'src/common/errors/domain-error.mapper';
-import { paginate } from 'src/common/pagination/paginate';
-import { parseSearch } from 'src/common/search/parse-search';
-import { toShopDto } from 'src/shops/shops.service';
-import { Shop } from 'src/shops/entities/shop.entity';
-import { toProfileDto } from 'src/users/user-dto.mapper';
-import { CreateOwnershipTransferDto } from './dto/create-ownership-transfer.dto';
+import { CurrentUserPayload } from '#src/auth/decorators/current-user.decorator.js';
+import { toWriteHttpException } from '#src/common/errors/domain-error.mapper.js';
+import { paginate } from '#src/common/pagination/paginate.js';
+import { parseSearch } from '#src/common/search/parse-search.js';
+import { toShopDto } from '#src/shops/shops.service.js';
+import { Shop } from '#src/shops/entities/shop.entity.js';
+import { toProfileDto } from '#src/users/user-dto.mapper.js';
+import { CreateOwnershipTransferDto } from './dto/create-ownership-transfer.dto.js';
 import {
   GetOwnershipTransferDto,
   RefundPolicyPaginator,
-} from './dto/get-ownership-transfer.dto';
-import { TransferShopOwnershipDto } from './dto/transfer-shop-ownership.dto';
-import { UpdateOwnershipTransferDto } from './dto/update-ownership-transfer.dto';
-import { OwnershipTransfer } from './entities/ownership-transfer.entity';
+} from './dto/get-ownership-transfer.dto.js';
+import { TransferShopOwnershipDto } from './dto/transfer-shop-ownership.dto.js';
+import { UpdateOwnershipTransferDto } from './dto/update-ownership-transfer.dto.js';
+import { OwnershipTransfer } from './entities/ownership-transfer.entity.js';
 
 /** Las 10 claves de los owners de `ownership-transfer.json`, en su orden. */
 function toOwnerDto(u: OwnershipTransferOwnerRecord): Record<string, unknown> {

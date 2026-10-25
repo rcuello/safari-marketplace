@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
-import { ManufacturersService } from './manufacturers.service';
+import { ManufacturersService } from './manufacturers.service.js';
 import {
   ManufacturersController,
   TopManufacturersController,
-} from './manufacturers.controller';
+} from './manufacturers.controller.js';
 
 @Module({
   controllers: [ManufacturersController, TopManufacturersController],

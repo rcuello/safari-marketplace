@@ -22,16 +22,16 @@ import {
   type ProductDetail,
   type UpdateProductInput,
 } from '@safari/db';
-import { toWriteHttpException } from 'src/common/errors/domain-error.mapper';
-import { CurrentUserPayload } from 'src/auth/decorators/current-user.decorator';
-import { CreateProductDto } from './dto/create-product.dto';
-import { GetProductsDto, ProductPaginator } from './dto/get-products.dto';
-import { UpdateProductDto } from './dto/update-product.dto';
-import { Product } from './entities/product.entity';
-import { toProductDto } from './product-dto.mapper';
-import { paginate } from 'src/common/pagination/paginate';
-import { GetPopularProductsDto } from './dto/get-popular-products.dto';
-import { GetBestSellingProductsDto } from './dto/get-best-selling-products.dto';
+import { toWriteHttpException } from '#src/common/errors/domain-error.mapper.js';
+import { CurrentUserPayload } from '#src/auth/decorators/current-user.decorator.js';
+import { CreateProductDto } from './dto/create-product.dto.js';
+import { GetProductsDto, ProductPaginator } from './dto/get-products.dto.js';
+import { UpdateProductDto } from './dto/update-product.dto.js';
+import { Product } from './entities/product.entity.js';
+import { toProductDto } from './product-dto.mapper.js';
+import { paginate } from '#src/common/pagination/paginate.js';
+import { GetPopularProductsDto } from './dto/get-popular-products.dto.js';
+import { GetBestSellingProductsDto } from './dto/get-best-selling-products.dto.js';
 
 /**
  * `value` → number solo si es finito; si no (`'abc'`, `''`, `undefined`),

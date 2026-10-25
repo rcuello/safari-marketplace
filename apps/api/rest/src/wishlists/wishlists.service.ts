@@ -16,12 +16,12 @@ import {
   toggleWishlist,
   type ProductRecord,
 } from '@safari/db';
-import { paginate } from 'src/common/pagination/paginate';
-import { toWriteHttpException } from 'src/common/errors/domain-error.mapper';
-import { Product } from 'src/products/entities/product.entity';
-import { toProductDto } from 'src/products/product-dto.mapper';
-import { CreateWishlistDto } from './dto/create-wishlists.dto';
-import { GetWishlistDto } from './dto/get-wishlists.dto';
+import { paginate } from '#src/common/pagination/paginate.js';
+import { toWriteHttpException } from '#src/common/errors/domain-error.mapper.js';
+import { Product } from '#src/products/entities/product.entity.js';
+import { toProductDto } from '#src/products/product-dto.mapper.js';
+import { CreateWishlistDto } from './dto/create-wishlists.dto.js';
+import { GetWishlistDto } from './dto/get-wishlists.dto.js';
 
 export const WISHLISTS_URL =
   '/wishlists?with=shop&orderBy=created_at&sortedBy=desc';

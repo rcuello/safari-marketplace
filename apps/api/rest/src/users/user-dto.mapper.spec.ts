@@ -15,7 +15,7 @@
  */
 import 'reflect-metadata';
 import type { UserWithRelations } from '@safari/db';
-import { toPermissionDto, toProfileDto, toUserDto } from './user-dto.mapper';
+import { toPermissionDto, toProfileDto, toUserDto } from './user-dto.mapper.js';
 
 const FIXED_DATE = new Date('2026-09-02T15:33:36.102Z');
 

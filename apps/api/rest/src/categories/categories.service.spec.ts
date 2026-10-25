@@ -59,9 +59,9 @@ import {
   type CategoryTreeNode,
   type TypeRecord,
 } from '@safari/db';
-import { CategoriesService } from './categories.service';
-import { CreateCategoryDto } from './dto/create-category.dto';
-import { UpdateCategoryDto } from './dto/update-category.dto';
+import { CategoriesService } from './categories.service.js';
+import { CreateCategoryDto } from './dto/create-category.dto.js';
+import { UpdateCategoryDto } from './dto/update-category.dto.js';
 
 vi.mock('@safari/db', async (importOriginal) => ({
   // El barrel es seguro de cargar sin DATABASE_URL (cliente lazy vía Proxy);

@@ -1,7 +1,7 @@
-import { SortOrder } from 'src/common/dto/generic-conditions.dto';
-import { PaginationArgs } from 'src/common/dto/pagination-args.dto';
-import { Paginator } from 'src/common/dto/paginator.dto';
-import { TermsAndConditions } from '../entities/terms-and-conditions.entity';
+import { SortOrder } from '#src/common/dto/generic-conditions.dto.js';
+import { PaginationArgs } from '#src/common/dto/pagination-args.dto.js';
+import { Paginator } from '#src/common/dto/paginator.dto.js';
+import { TermsAndConditions } from '../entities/terms-and-conditions.entity.js';
 
 export class TermsAndConditionsPaginator extends Paginator<TermsAndConditions> {
   data: TermsAndConditions[];

@@ -8,21 +8,21 @@ import {
   Delete,
   Query,
 } from '@nestjs/common';
-import { CouponsService } from './coupons.service';
-import { CreateCouponDto } from './dto/create-coupon.dto';
-import { GetCouponsDto } from './dto/get-coupons.dto';
-import { UpdateCouponDto } from './dto/update-coupon.dto';
-import { VerifyCouponInput } from './dto/verify-coupon.dto';
-import { Public } from 'src/auth/decorators/public.decorator';
+import { CouponsService } from './coupons.service.js';
+import { CreateCouponDto } from './dto/create-coupon.dto.js';
+import { GetCouponsDto } from './dto/get-coupons.dto.js';
+import { UpdateCouponDto } from './dto/update-coupon.dto.js';
+import { VerifyCouponInput } from './dto/verify-coupon.dto.js';
+import { Public } from '#src/auth/decorators/public.decorator.js';
 import {
   ADMIN_ONLY,
   ADMIN_OWNER_AND_STAFF,
   Permissions,
-} from 'src/auth/decorators/permissions.decorator';
+} from '#src/auth/decorators/permissions.decorator.js';
 import {
   CurrentUser,
   CurrentUserPayload,
-} from 'src/auth/decorators/current-user.decorator';
+} from '#src/auth/decorators/current-user.decorator.js';
 
 @Controller('coupons')
 export class CouponsController {

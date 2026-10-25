@@ -1,6 +1,6 @@
 import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { OmitType } from '@nestjs/swagger';
-import { Manufacturer } from '../entities/manufacturer.entity';
+import { Manufacturer } from '../entities/manufacturer.entity.js';
 
 /**
  * `OmitType` sobre la entidad (design.md, DD-9): a diferencia de

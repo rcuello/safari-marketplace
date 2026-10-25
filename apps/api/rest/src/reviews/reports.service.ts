@@ -16,17 +16,17 @@ import {
   updateAbusiveReport,
   type AbusiveReportDetailRecord,
 } from '@safari/db';
-import { CurrentUserPayload } from 'src/auth/decorators/current-user.decorator';
-import { toWriteHttpException } from 'src/common/errors/domain-error.mapper';
-import { CreateReportDto } from './dto/create-report.dto';
-import { RejectReportDto } from './dto/reject-report.dto';
-import { UpdateReportDto } from './dto/update-report.dto';
-import { Report } from './entities/reports.entity';
+import { CurrentUserPayload } from '#src/auth/decorators/current-user.decorator.js';
+import { toWriteHttpException } from '#src/common/errors/domain-error.mapper.js';
+import { CreateReportDto } from './dto/create-report.dto.js';
+import { RejectReportDto } from './dto/reject-report.dto.js';
+import { UpdateReportDto } from './dto/update-report.dto.js';
+import { Report } from './entities/reports.entity.js';
 import {
   REPORTABLE_FQCN,
   toReportDto,
   toShortModelType,
-} from './review-dto.mapper';
+} from './review-dto.mapper.js';
 
 function readError(error: unknown): never {
   if (isPrismaConnectionError(error)) {

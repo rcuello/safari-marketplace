@@ -1,7 +1,7 @@
-import { SortOrder } from 'src/common/dto/generic-conditions.dto';
-import { PaginationArgs } from 'src/common/dto/pagination-args.dto';
-import { Paginator } from 'src/common/dto/paginator.dto';
-import { Manufacturer } from '../entities/manufacturer.entity';
+import { SortOrder } from '#src/common/dto/generic-conditions.dto.js';
+import { PaginationArgs } from '#src/common/dto/pagination-args.dto.js';
+import { Paginator } from '#src/common/dto/paginator.dto.js';
+import { Manufacturer } from '../entities/manufacturer.entity.js';
 
 export class ManufacturerPaginator extends Paginator<Manufacturer> {
   data: Manufacturer[];

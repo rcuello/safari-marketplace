@@ -28,9 +28,9 @@ import {
 import {
   CreateOrderStatusDto,
   UpdateOrderStatusDto,
-} from './dto/create-order-status.dto';
-import { GetOrderStatusesDto } from './dto/get-order-statuses.dto';
-import { OrderStatusesService } from './order-statuses.service';
+} from './dto/create-order-status.dto.js';
+import { GetOrderStatusesDto } from './dto/get-order-statuses.dto.js';
+import { OrderStatusesService } from './order-statuses.service.js';
 
 vi.mock('@safari/db', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@safari/db')>()),

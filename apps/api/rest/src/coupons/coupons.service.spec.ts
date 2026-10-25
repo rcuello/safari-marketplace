@@ -31,12 +31,12 @@ import {
   updateCoupon,
   type CouponRecord,
 } from '@safari/db';
-import { CurrentUserPayload } from 'src/auth/decorators/current-user.decorator';
-import { CouponsService, INVALID_COUPON_MESSAGE } from './coupons.service';
-import { CreateCouponDto } from './dto/create-coupon.dto';
-import { GetCouponsDto } from './dto/get-coupons.dto';
-import { UpdateCouponDto } from './dto/update-coupon.dto';
-import { VerifyCouponInput } from './dto/verify-coupon.dto';
+import { CurrentUserPayload } from '#src/auth/decorators/current-user.decorator.js';
+import { CouponsService, INVALID_COUPON_MESSAGE } from './coupons.service.js';
+import { CreateCouponDto } from './dto/create-coupon.dto.js';
+import { GetCouponsDto } from './dto/get-coupons.dto.js';
+import { UpdateCouponDto } from './dto/update-coupon.dto.js';
+import { VerifyCouponInput } from './dto/verify-coupon.dto.js';
 
 vi.mock('@safari/db', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@safari/db')>()),

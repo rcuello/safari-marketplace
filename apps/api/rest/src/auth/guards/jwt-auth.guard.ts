@@ -7,12 +7,12 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { Reflector } from '@nestjs/core';
 import { Request } from 'express';
-import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
+import { IS_PUBLIC_KEY } from '../decorators/public.decorator.js';
 import {
   AuthenticatedRequest,
   CurrentUserPayload,
   INVALID_TOKEN_MESSAGE,
-} from '../decorators/current-user.decorator';
+} from '../decorators/current-user.decorator.js';
 
 function extractBearerToken(request: Request): string | undefined {
   const header = request.headers.authorization;

@@ -16,10 +16,10 @@ import {
   type ProductRecord,
   type TypeRecord,
 } from '@safari/db';
-import { parseSearch } from 'src/common/search/parse-search';
-import { Product } from 'src/products/entities/product.entity';
-import { toShopDto } from 'src/shops/shops.service';
-import { GetAnalyticsListDto } from './dto/get-analytics-list.dto';
+import { parseSearch } from '#src/common/search/parse-search.js';
+import { Product } from '#src/products/entities/product.entity.js';
+import { toShopDto } from '#src/shops/shops.service.js';
+import { GetAnalyticsListDto } from './dto/get-analytics-list.dto.js';
 
 /**
  * Clave del dashboard → valor de `orders.order_status` (M-8), en el orden

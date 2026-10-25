@@ -1,5 +1,5 @@
-import { CoreEntity } from 'src/common/entities/core.entity';
-import { User } from 'src/users/entities/user.entity';
+import { CoreEntity } from '#src/common/entities/core.entity.js';
+import { User } from '#src/users/entities/user.entity.js';
 
 export enum AddressType {
   BILLING = 'billing',

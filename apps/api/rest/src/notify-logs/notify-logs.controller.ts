@@ -1,7 +1,7 @@
 import { Controller, Delete, Get, Param, Put, Query } from '@nestjs/common';
-import { NotifyLogsService } from './notify-logs.service';
-import { GetNotifyLogsDto } from './dto/get-notify-logs.dto';
-import { Public } from 'src/auth/decorators/public.decorator';
+import { NotifyLogsService } from './notify-logs.service.js';
+import { GetNotifyLogsDto } from './dto/get-notify-logs.dto.js';
+import { Public } from '#src/auth/decorators/public.decorator.js';
 
 @Controller('notify-logs')
 export class NotifyLogsController {

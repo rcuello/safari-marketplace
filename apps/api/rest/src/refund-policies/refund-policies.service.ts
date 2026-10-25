@@ -15,16 +15,16 @@ import {
   type ListRefundPoliciesInput,
   type RefundPolicyRecord,
 } from '@safari/db';
-import { paginate } from 'src/common/pagination/paginate';
-import { parseSearch } from 'src/common/search/parse-search';
-import { toWriteHttpException } from 'src/common/errors/domain-error.mapper';
-import { RefundPolicy } from './entities/refund-policies.entity';
-import { CreateRefundPolicyDto } from './dto/create-refund-policy.dto';
+import { paginate } from '#src/common/pagination/paginate.js';
+import { parseSearch } from '#src/common/search/parse-search.js';
+import { toWriteHttpException } from '#src/common/errors/domain-error.mapper.js';
+import { RefundPolicy } from './entities/refund-policies.entity.js';
+import { CreateRefundPolicyDto } from './dto/create-refund-policy.dto.js';
 import {
   GetRefundPolicyDto,
   RefundPolicyPaginator,
-} from './dto/get-refund-policies.dto';
-import { UpdateRefundPolicyDto } from './dto/update-refund-policy.dto';
+} from './dto/get-refund-policies.dto.js';
+import { UpdateRefundPolicyDto } from './dto/update-refund-policy.dto.js';
 
 /**
  * `RefundPolicyRecord` → las 8 claves de `refund-policies.json`, en su

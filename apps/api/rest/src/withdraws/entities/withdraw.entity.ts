@@ -1,5 +1,5 @@
-import { CoreEntity } from 'src/common/entities/core.entity';
-import { Shop } from 'src/shops/entities/shop.entity';
+import { CoreEntity } from '#src/common/entities/core.entity.js';
+import { Shop } from '#src/shops/entities/shop.entity.js';
 
 export class Withdraw extends CoreEntity {
   amount: number;

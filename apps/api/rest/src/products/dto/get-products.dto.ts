@@ -1,7 +1,7 @@
-import { PaginationArgs } from 'src/common/dto/pagination-args.dto';
-import { Paginator } from 'src/common/dto/paginator.dto';
+import { PaginationArgs } from '#src/common/dto/pagination-args.dto.js';
+import { Paginator } from '#src/common/dto/paginator.dto.js';
 
-import { Product } from '../entities/product.entity';
+import { Product } from '../entities/product.entity.js';
 
 export class ProductPaginator extends Paginator<Product> {
   data: Product[];

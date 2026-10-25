@@ -21,9 +21,9 @@ import {
   type StoreNoticeDetailRecord,
   type UserRecord,
 } from '@safari/db';
-import { StoreNoticesService } from './store-notices.service';
-import { CreateStoreNoticeDto } from './dto/create-store-notice.dto';
-import { GetStoreNoticesDto } from './dto/get-store-notices.dto';
+import { StoreNoticesService } from './store-notices.service.js';
+import { CreateStoreNoticeDto } from './dto/create-store-notice.dto.js';
+import { GetStoreNoticesDto } from './dto/get-store-notices.dto.js';
 
 vi.mock('@safari/db', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@safari/db')>()),

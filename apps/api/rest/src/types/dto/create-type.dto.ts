@@ -1,6 +1,6 @@
 import { PickType } from '@nestjs/swagger';
 import { IsNotEmpty, IsString } from 'class-validator';
-import { Type } from '../entities/type.entity';
+import { Type } from '../entities/type.entity.js';
 
 /**
  * `PickType` sobre la entidad (precedente `create-tag.dto.ts:4-11`).

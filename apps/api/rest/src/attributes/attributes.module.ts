@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { AttributesService } from './attributes.service';
-import { AttributesController } from './attributes.controller';
+import { AttributesService } from './attributes.service.js';
+import { AttributesController } from './attributes.controller.js';
 
 @Module({
   controllers: [AttributesController],

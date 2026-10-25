@@ -39,12 +39,12 @@ import {
   updateShop,
   type ShopRecord,
 } from '@safari/db';
-import { ShopsService, toShopDto } from './shops.service';
-import { GetShopsDto } from './dto/get-shops.dto';
-import { GetStaffsDto } from './dto/get-staffs.dto';
-import { CreateShopDto } from './dto/create-shop.dto';
-import { UpdateShopDto } from './dto/update-shop.dto';
-import type { CurrentUserPayload } from 'src/auth/decorators/current-user.decorator';
+import { ShopsService, toShopDto } from './shops.service.js';
+import { GetShopsDto } from './dto/get-shops.dto.js';
+import { GetStaffsDto } from './dto/get-staffs.dto.js';
+import { CreateShopDto } from './dto/create-shop.dto.js';
+import { UpdateShopDto } from './dto/update-shop.dto.js';
+import type { CurrentUserPayload } from '#src/auth/decorators/current-user.decorator.js';
 
 vi.mock('@safari/db', async (importOriginal) => ({
   // El barrel es seguro de cargar sin DATABASE_URL (cliente lazy vía Proxy);

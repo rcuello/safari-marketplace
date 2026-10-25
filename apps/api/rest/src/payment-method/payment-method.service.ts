@@ -1,20 +1,20 @@
-import paymentGatewayJson from '@db/payment-gateway.json';
-import cards from '@db/payment-methods.json';
+import paymentGatewayJson from '#db/payment-gateway.json';
+import cards from '#db/payment-methods.json';
 import { Injectable } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
-import { AuthService } from 'src/auth/auth.service';
+import { AuthService } from '#src/auth/auth.service.js';
 import {
   StripeCustomer,
   StripePaymentMethod,
-} from 'src/payment/entity/stripe.entity';
-import { StripePaymentService } from 'src/payment/stripe-payment.service';
-import { SettingsService } from 'src/settings/settings.service';
-import { CreatePaymentMethodDto } from './dto/create-payment-method.dto';
-import { DefaultCart } from './dto/set-default-card.dto';
-import { UpdatePaymentMethodDto } from './dto/update-payment-method.dto';
-import { PaymentGateWay } from './entities/payment-gateway.entity';
-import { PaymentMethod } from './entities/payment-method.entity';
-import { PaymentGatewayType } from 'src/orders/entities/order.entity';
+} from '#src/payment/entity/stripe.entity.js';
+import { StripePaymentService } from '#src/payment/stripe-payment.service.js';
+import { SettingsService } from '#src/settings/settings.service.js';
+import { CreatePaymentMethodDto } from './dto/create-payment-method.dto.js';
+import { DefaultCart } from './dto/set-default-card.dto.js';
+import { UpdatePaymentMethodDto } from './dto/update-payment-method.dto.js';
+import { PaymentGateWay } from './entities/payment-gateway.entity.js';
+import { PaymentMethod } from './entities/payment-method.entity.js';
+import { PaymentGatewayType } from '#src/orders/entities/order.entity.js';
 
 const paymentMethods = plainToClass(PaymentMethod, cards);
 const paymentGateways = plainToClass(PaymentGateWay, paymentGatewayJson);

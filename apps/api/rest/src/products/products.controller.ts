@@ -8,23 +8,23 @@ import {
   Query,
   Put,
 } from '@nestjs/common';
-import { ProductsService } from './products.service';
-import { CreateProductDto } from './dto/create-product.dto';
-import { UpdateProductDto } from './dto/update-product.dto';
-import { GetProductsDto, ProductPaginator } from './dto/get-products.dto';
-import { Product } from './entities/product.entity';
-import { GetPopularProductsDto } from './dto/get-popular-products.dto';
-import { GetBestSellingProductsDto } from './dto/get-best-selling-products.dto';
-import { Public } from 'src/auth/decorators/public.decorator';
+import { ProductsService } from './products.service.js';
+import { CreateProductDto } from './dto/create-product.dto.js';
+import { UpdateProductDto } from './dto/update-product.dto.js';
+import { GetProductsDto, ProductPaginator } from './dto/get-products.dto.js';
+import { Product } from './entities/product.entity.js';
+import { GetPopularProductsDto } from './dto/get-popular-products.dto.js';
+import { GetBestSellingProductsDto } from './dto/get-best-selling-products.dto.js';
+import { Public } from '#src/auth/decorators/public.decorator.js';
 import {
   ADMIN_ONLY,
   ADMIN_OWNER_AND_STAFF,
   Permissions,
-} from 'src/auth/decorators/permissions.decorator';
+} from '#src/auth/decorators/permissions.decorator.js';
 import {
   CurrentUser,
   CurrentUserPayload,
-} from 'src/auth/decorators/current-user.decorator';
+} from '#src/auth/decorators/current-user.decorator.js';
 
 @Controller('products')
 export class ProductsController {

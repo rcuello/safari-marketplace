@@ -1,5 +1,5 @@
 import { PickType } from '@nestjs/swagger';
-import { TermsAndConditions } from '../entities/terms-and-conditions.entity';
+import { TermsAndConditions } from '../entities/terms-and-conditions.entity.js';
 
 /**
  * Lo que envía el admin (`terms-and-conditions-form.tsx:126-138`): `slug`

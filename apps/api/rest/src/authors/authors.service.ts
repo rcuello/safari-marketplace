@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import { UpdateAuthorDto } from './dto/update-author.dto';
+import { UpdateAuthorDto } from './dto/update-author.dto.js';
 import { plainToClass } from 'class-transformer';
-import authorsJson from '@db/authors.json';
-import { Author } from './entities/author.entity';
+import authorsJson from '#db/authors.json';
+import { Author } from './entities/author.entity.js';
 import Fuse from 'fuse.js';
-import { GetAuthorDto } from './dto/get-author.dto';
-import { paginate } from '../common/pagination/paginate';
-import { GetTopAuthorsDto } from './dto/get-top-authors.dto';
-import { CreateAuthorDto } from './dto/create-author.dto';
+import { GetAuthorDto } from './dto/get-author.dto.js';
+import { paginate } from '../common/pagination/paginate.js';
+import { GetTopAuthorsDto } from './dto/get-top-authors.dto.js';
+import { CreateAuthorDto } from './dto/create-author.dto.js';
 
 const authors = plainToClass(Author, authorsJson);
 

@@ -1,7 +1,7 @@
 import { PickType } from '@nestjs/swagger';
-import { CreateAddressDto } from 'src/addresses/dto/create-address.dto';
-import { User } from '../entities/user.entity';
-import { CreateProfileDto } from './create-profile.dto';
+import { CreateAddressDto } from '#src/addresses/dto/create-address.dto.js';
+import { User } from '../entities/user.entity.js';
+import { CreateProfileDto } from './create-profile.dto.js';
 
 enum Permission {
   SUPER_ADMIN = 'Super admin',

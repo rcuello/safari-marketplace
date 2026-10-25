@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { CreateAiDto } from './dto/create-ai.dto';
-import { Ai } from './entities/ai.entity';
+import { CreateAiDto } from './dto/create-ai.dto.js';
+import { Ai } from './entities/ai.entity.js';
 
 @Injectable()
 export class AiService {

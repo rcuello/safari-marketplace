@@ -8,14 +8,14 @@ import {
   Delete,
   Query,
 } from '@nestjs/common';
-import { AttributesService } from './attributes.service';
-import { CreateAttributeDto } from './dto/create-attribute.dto';
-import { GetAttributesArgs } from './dto/get-attributes.dto';
-import { UpdateAttributeDto } from './dto/update-attribute.dto';
+import { AttributesService } from './attributes.service.js';
+import { CreateAttributeDto } from './dto/create-attribute.dto.js';
+import { GetAttributesArgs } from './dto/get-attributes.dto.js';
+import { UpdateAttributeDto } from './dto/update-attribute.dto.js';
 import {
   ADMIN_ONLY,
   Permissions,
-} from 'src/auth/decorators/permissions.decorator';
+} from '#src/auth/decorators/permissions.decorator.js';
 
 // Taxonomía global (design.md, Decisión B): ninguna de sus rutas está en el
 // inventario de catálogo público (proposal.md, CA-1) — homogéneo, ADMIN_ONLY.

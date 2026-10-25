@@ -1,11 +1,11 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
-import { CreateSettingDto } from './dto/create-setting.dto';
-import { SettingsService } from './settings.service';
-import { Public } from 'src/auth/decorators/public.decorator';
+import { CreateSettingDto } from './dto/create-setting.dto.js';
+import { SettingsService } from './settings.service.js';
+import { Public } from '#src/auth/decorators/public.decorator.js';
 import {
   ADMIN_ONLY,
   Permissions,
-} from 'src/auth/decorators/permissions.decorator';
+} from '#src/auth/decorators/permissions.decorator.js';
 
 @Controller('settings')
 export class SettingsController {

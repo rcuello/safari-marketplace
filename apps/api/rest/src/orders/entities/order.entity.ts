@@ -1,11 +1,11 @@
-import { UserAddress } from 'src/addresses/entities/address.entity';
-import { CoreEntity } from 'src/common/entities/core.entity';
-import { Coupon } from 'src/coupons/entities/coupon.entity';
-import { PaymentIntent } from 'src/payment-intent/entries/payment-intent.entity';
-import { File, Product } from 'src/products/entities/product.entity';
-import { Shop } from 'src/shops/entities/shop.entity';
-import { User } from 'src/users/entities/user.entity';
-import { OrderStatus } from './order-status.entity';
+import { UserAddress } from '#src/addresses/entities/address.entity.js';
+import { CoreEntity } from '#src/common/entities/core.entity.js';
+import { Coupon } from '#src/coupons/entities/coupon.entity.js';
+import { PaymentIntent } from '#src/payment-intent/entries/payment-intent.entity.js';
+import { File, Product } from '#src/products/entities/product.entity.js';
+import { Shop } from '#src/shops/entities/shop.entity.js';
+import { User } from '#src/users/entities/user.entity.js';
+import { OrderStatus } from './order-status.entity.js';
 
 export enum PaymentGatewayType {
   STRIPE = 'STRIPE',

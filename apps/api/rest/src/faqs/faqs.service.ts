@@ -15,13 +15,13 @@ import {
   type FaqRecord,
   type ListFaqsInput,
 } from '@safari/db';
-import { paginate } from 'src/common/pagination/paginate';
-import { parseSearch } from 'src/common/search/parse-search';
-import { toWriteHttpException } from 'src/common/errors/domain-error.mapper';
-import { GetFaqsDto, FaqPaginator } from './dto/get-faqs.dto';
-import { CreateFaqDto } from './dto/create-faq.dto';
-import { UpdateFaqDto } from './dto/update-faq.dto';
-import { Faq } from './entities/faq.entity';
+import { paginate } from '#src/common/pagination/paginate.js';
+import { parseSearch } from '#src/common/search/parse-search.js';
+import { toWriteHttpException } from '#src/common/errors/domain-error.mapper.js';
+import { GetFaqsDto, FaqPaginator } from './dto/get-faqs.dto.js';
+import { CreateFaqDto } from './dto/create-faq.dto.js';
+import { UpdateFaqDto } from './dto/update-faq.dto.js';
+import { Faq } from './entities/faq.entity.js';
 
 /**
  * `FaqRecord` → las 8 claves de `faqs.json`, en su orden. `shop_id`,

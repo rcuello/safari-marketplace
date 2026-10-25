@@ -1,7 +1,7 @@
-import { PaginationArgs } from 'src/common/dto/pagination-args.dto';
-import { Paginator } from 'src/common/dto/paginator.dto';
+import { PaginationArgs } from '#src/common/dto/pagination-args.dto.js';
+import { Paginator } from '#src/common/dto/paginator.dto.js';
 
-import { Order } from '../entities/order.entity';
+import { Order } from '../entities/order.entity.js';
 
 export class OrderPaginator extends Paginator<Order> {
   data: Order[];

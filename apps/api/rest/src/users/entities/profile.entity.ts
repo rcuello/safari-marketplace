@@ -1,6 +1,6 @@
-import { Attachment } from 'src/common/entities/attachment.entity';
-import { CoreEntity } from 'src/common/entities/core.entity';
-import { User } from './user.entity';
+import { Attachment } from '#src/common/entities/attachment.entity.js';
+import { CoreEntity } from '#src/common/entities/core.entity.js';
+import { User } from './user.entity.js';
 
 export class Profile extends CoreEntity {
   avatar?: Attachment;

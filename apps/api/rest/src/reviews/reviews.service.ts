@@ -17,15 +17,15 @@ import {
   type Prisma,
   type ReviewDetailRecord,
 } from '@safari/db';
-import { CurrentUserPayload } from 'src/auth/decorators/current-user.decorator';
-import { paginate } from 'src/common/pagination/paginate';
-import { parseSearch } from 'src/common/search/parse-search';
-import { toWriteHttpException } from 'src/common/errors/domain-error.mapper';
-import { CreateReviewDto } from './dto/create-review.dto';
-import { GetReviewsDto } from './dto/get-reviews.dto';
-import { UpdateReviewDto } from './dto/update-review.dto';
-import { Review } from './entities/review.entity';
-import { toReviewDto } from './review-dto.mapper';
+import { CurrentUserPayload } from '#src/auth/decorators/current-user.decorator.js';
+import { paginate } from '#src/common/pagination/paginate.js';
+import { parseSearch } from '#src/common/search/parse-search.js';
+import { toWriteHttpException } from '#src/common/errors/domain-error.mapper.js';
+import { CreateReviewDto } from './dto/create-review.dto.js';
+import { GetReviewsDto } from './dto/get-reviews.dto.js';
+import { UpdateReviewDto } from './dto/update-review.dto.js';
+import { Review } from './entities/review.entity.js';
+import { toReviewDto } from './review-dto.mapper.js';
 
 function readError(error: unknown): never {
   if (isPrismaConnectionError(error)) {

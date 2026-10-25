@@ -23,15 +23,15 @@ import {
   type ShopRecord,
   type UpdateShopInput,
 } from '@safari/db';
-import { toWriteHttpException } from 'src/common/errors/domain-error.mapper';
-import { CurrentUserPayload } from 'src/auth/decorators/current-user.decorator';
-import { CreateShopDto } from './dto/create-shop.dto';
-import { UpdateShopDto } from './dto/update-shop.dto';
-import { Shop } from './entities/shop.entity';
-import { GetShopsDto, ShopPaginator } from './dto/get-shops.dto';
-import { paginate } from 'src/common/pagination/paginate';
-import { GetStaffsDto } from './dto/get-staffs.dto';
-import { parseSearch } from 'src/common/search/parse-search';
+import { toWriteHttpException } from '#src/common/errors/domain-error.mapper.js';
+import { CurrentUserPayload } from '#src/auth/decorators/current-user.decorator.js';
+import { CreateShopDto } from './dto/create-shop.dto.js';
+import { UpdateShopDto } from './dto/update-shop.dto.js';
+import { Shop } from './entities/shop.entity.js';
+import { GetShopsDto, ShopPaginator } from './dto/get-shops.dto.js';
+import { paginate } from '#src/common/pagination/paginate.js';
+import { GetStaffsDto } from './dto/get-staffs.dto.js';
+import { parseSearch } from '#src/common/search/parse-search.js';
 
 /**
  * `ShopRecord` (camelCase, `@safari/db`) → proyección de 16 claves

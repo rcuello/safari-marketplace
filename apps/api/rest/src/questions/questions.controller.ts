@@ -8,15 +8,15 @@ import {
   Put,
   Delete,
 } from '@nestjs/common';
-import { CreateQuestionDto } from './dto/create-question.dto';
-import { GetQuestionDto } from './dto/get-questions.dto';
-import { UpdateQuestionDto } from './dto/update-question.dto';
-import { QuestionService } from './questions.service';
-import { Public } from 'src/auth/decorators/public.decorator';
+import { CreateQuestionDto } from './dto/create-question.dto.js';
+import { GetQuestionDto } from './dto/get-questions.dto.js';
+import { UpdateQuestionDto } from './dto/update-question.dto.js';
+import { QuestionService } from './questions.service.js';
+import { Public } from '#src/auth/decorators/public.decorator.js';
 import {
   CurrentUser,
   CurrentUserPayload,
-} from 'src/auth/decorators/current-user.decorator';
+} from '#src/auth/decorators/current-user.decorator.js';
 
 @Controller('questions')
 export class QuestionController {

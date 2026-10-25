@@ -8,8 +8,8 @@ import {
   isPrismaConnectionError,
   listAbusiveReportsByUser,
 } from '@safari/db';
-import { toReportDto } from 'src/reviews/review-dto.mapper';
-import { MyReports } from './entities/report.entity';
+import { toReportDto } from '#src/reviews/review-dto.mapper.js';
+import { MyReports } from './entities/report.entity.js';
 
 /**
  * `/my-reports`: los reportes de abuso del usuario que llama,

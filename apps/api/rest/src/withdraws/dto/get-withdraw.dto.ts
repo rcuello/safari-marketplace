@@ -1,6 +1,6 @@
-import { PaginationArgs } from 'src/common/dto/pagination-args.dto';
-import { Paginator } from 'src/common/dto/paginator.dto';
-import { Withdraw } from '../entities/withdraw.entity';
+import { PaginationArgs } from '#src/common/dto/pagination-args.dto.js';
+import { Paginator } from '#src/common/dto/paginator.dto.js';
+import { Withdraw } from '../entities/withdraw.entity.js';
 
 export class WithdrawPaginator extends Paginator<Withdraw> {
   data: Withdraw[];

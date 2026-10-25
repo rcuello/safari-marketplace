@@ -18,15 +18,15 @@ import {
   listQuestions,
   type QuestionDetailRecord,
 } from '@safari/db';
-import { CurrentUserPayload } from 'src/auth/decorators/current-user.decorator';
-import { paginate } from 'src/common/pagination/paginate';
-import { parseSearch } from 'src/common/search/parse-search';
-import { toWriteHttpException } from 'src/common/errors/domain-error.mapper';
-import { CreateQuestionDto } from './dto/create-question.dto';
-import { GetQuestionDto } from './dto/get-questions.dto';
-import { UpdateQuestionDto } from './dto/update-question.dto';
-import { Question } from './entities/question.entity';
-import { toQuestionDto } from './question-dto.mapper';
+import { CurrentUserPayload } from '#src/auth/decorators/current-user.decorator.js';
+import { paginate } from '#src/common/pagination/paginate.js';
+import { parseSearch } from '#src/common/search/parse-search.js';
+import { toWriteHttpException } from '#src/common/errors/domain-error.mapper.js';
+import { CreateQuestionDto } from './dto/create-question.dto.js';
+import { GetQuestionDto } from './dto/get-questions.dto.js';
+import { UpdateQuestionDto } from './dto/update-question.dto.js';
+import { Question } from './entities/question.entity.js';
+import { toQuestionDto } from './question-dto.mapper.js';
 
 export function readError(error: unknown): never {
   if (isPrismaConnectionError(error)) {

@@ -1,5 +1,5 @@
 import { OmitType } from '@nestjs/swagger';
-import { Setting } from '../entities/setting.entity';
+import { Setting } from '../entities/setting.entity.js';
 
 export class CreateSettingDto extends OmitType(Setting, [
   'created_at',

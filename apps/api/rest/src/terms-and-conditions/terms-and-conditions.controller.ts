@@ -8,19 +8,19 @@ import {
   Put,
   Query,
 } from '@nestjs/common';
-import { TermsAndConditionsService } from './terms-and-conditions.service';
-import { GetTermsAndConditionsDto } from './dto/get-terms-and-conditions.dto';
-import { CreateTermsAndConditionsDto } from './dto/create-terms-and-conditions.dto';
-import { UpdateTermsAndConditionsDto } from './dto/update-terms-and-conditions.dto';
-import { Public } from 'src/auth/decorators/public.decorator';
+import { TermsAndConditionsService } from './terms-and-conditions.service.js';
+import { GetTermsAndConditionsDto } from './dto/get-terms-and-conditions.dto.js';
+import { CreateTermsAndConditionsDto } from './dto/create-terms-and-conditions.dto.js';
+import { UpdateTermsAndConditionsDto } from './dto/update-terms-and-conditions.dto.js';
+import { Public } from '#src/auth/decorators/public.decorator.js';
 import {
   ADMIN_ONLY,
   Permissions,
-} from 'src/auth/decorators/permissions.decorator';
+} from '#src/auth/decorators/permissions.decorator.js';
 import {
   CurrentUser,
   CurrentUserPayload,
-} from 'src/auth/decorators/current-user.decorator';
+} from '#src/auth/decorators/current-user.decorator.js';
 
 @Controller('terms-and-conditions')
 export class TermsAndConditionsController {

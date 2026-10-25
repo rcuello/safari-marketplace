@@ -5,23 +5,23 @@ import {
   markConversationSeen,
   type ConversationDetailRecord,
 } from '@safari/db';
-import { CurrentUserPayload } from 'src/auth/decorators/current-user.decorator';
-import { paginate } from 'src/common/pagination/paginate';
-import { toWriteHttpException } from 'src/common/errors/domain-error.mapper';
+import { CurrentUserPayload } from '#src/auth/decorators/current-user.decorator.js';
+import { paginate } from '#src/common/pagination/paginate.js';
+import { toWriteHttpException } from '#src/common/errors/domain-error.mapper.js';
 import {
   toConversationDto,
   toMessageDto,
   toViewer,
-} from 'src/conversations/conversation-dto.mapper';
+} from '#src/conversations/conversation-dto.mapper.js';
 import {
   findVisibleConversation,
   readError,
   toConversationId,
-} from 'src/conversations/conversations.service';
-import { GetConversationsDto } from 'src/conversations/dto/get-conversations.dto';
-import { CreateMessageDto } from './dto/create-message.dto';
-import { Conversation } from 'src/conversations/entities/conversation.entity';
-import { Message } from './entities/message.entity';
+} from '#src/conversations/conversations.service.js';
+import { GetConversationsDto } from '#src/conversations/dto/get-conversations.dto.js';
+import { CreateMessageDto } from './dto/create-message.dto.js';
+import { Conversation } from '#src/conversations/entities/conversation.entity.js';
+import { Message } from './entities/message.entity.js';
 
 /**
  * Mensajes de una conversación (US-56). Antes las dos rutas ignoraban el id

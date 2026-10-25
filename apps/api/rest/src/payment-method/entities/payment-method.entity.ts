@@ -1,6 +1,6 @@
 import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator';
-import { CoreEntity } from 'src/common/entities/core.entity';
-import { PaymentGateWay } from './payment-gateway.entity';
+import { CoreEntity } from '#src/common/entities/core.entity.js';
+import { PaymentGateWay } from './payment-gateway.entity.js';
 
 export class PaymentMethod extends CoreEntity {
   @IsNotEmpty()

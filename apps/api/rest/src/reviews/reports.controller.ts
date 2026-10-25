@@ -7,18 +7,18 @@ import {
   Post,
   Put,
 } from '@nestjs/common';
-import { CreateReportDto } from './dto/create-report.dto';
-import { RejectReportDto } from './dto/reject-report.dto';
-import { UpdateReportDto } from './dto/update-report.dto';
-import { AbusiveReportService } from './reports.service';
+import { CreateReportDto } from './dto/create-report.dto.js';
+import { RejectReportDto } from './dto/reject-report.dto.js';
+import { UpdateReportDto } from './dto/update-report.dto.js';
+import { AbusiveReportService } from './reports.service.js';
 import {
   ADMIN_ONLY,
   Permissions,
-} from 'src/auth/decorators/permissions.decorator';
+} from '#src/auth/decorators/permissions.decorator.js';
 import {
   CurrentUser,
   CurrentUserPayload,
-} from 'src/auth/decorators/current-user.decorator';
+} from '#src/auth/decorators/current-user.decorator.js';
 
 @Controller('abusive_reports')
 export class AbusiveReportsController {

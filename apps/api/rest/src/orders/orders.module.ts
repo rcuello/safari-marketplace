@@ -1,15 +1,15 @@
 import { Module } from '@nestjs/common';
-import { AuthModule } from 'src/auth/auth.module';
-import { PaymentModule } from 'src/payment/payment.module';
+import { AuthModule } from '#src/auth/auth.module.js';
+import { PaymentModule } from '#src/payment/payment.module.js';
 import {
   DownloadInvoiceController,
   OrderExportController,
   OrderFilesController,
   OrdersController,
   OrderStatusController,
-} from './orders.controller';
-import { OrderStatusesService } from './order-statuses.service';
-import { OrdersService } from './orders.service';
+} from './orders.controller.js';
+import { OrderStatusesService } from './order-statuses.service.js';
+import { OrdersService } from './orders.service.js';
 
 @Module({
   imports: [AuthModule, PaymentModule],

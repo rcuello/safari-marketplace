@@ -18,8 +18,8 @@ import {
   updateTax,
   type TaxRecord,
 } from '@safari/db';
-import { TaxesService } from './taxes.service';
-import { CreateTaxDto } from './dto/create-tax.dto';
+import { TaxesService } from './taxes.service.js';
+import { CreateTaxDto } from './dto/create-tax.dto.js';
 
 vi.mock('@safari/db', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@safari/db')>()),

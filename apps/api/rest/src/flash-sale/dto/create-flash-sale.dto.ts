@@ -1,5 +1,5 @@
 import { PickType } from '@nestjs/swagger';
-import { FlashSale } from '../entities/flash-sale.entity';
+import { FlashSale } from '../entities/flash-sale.entity.js';
 
 export class CreateFlashSaleDto extends PickType(FlashSale, [
   'title',

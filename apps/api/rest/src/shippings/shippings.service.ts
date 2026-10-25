@@ -15,12 +15,12 @@ import {
   type ShippingRecord,
   type UpdateShippingInput,
 } from '@safari/db';
-import { parseSearch } from 'src/common/search/parse-search';
-import { toWriteHttpException } from 'src/common/errors/domain-error.mapper';
-import { CreateShippingDto } from './dto/create-shipping.dto';
-import { GetShippingsDto } from './dto/get-shippings.dto';
-import { UpdateShippingDto } from './dto/update-shipping.dto';
-import { Shipping } from './entities/shipping.entity';
+import { parseSearch } from '#src/common/search/parse-search.js';
+import { toWriteHttpException } from '#src/common/errors/domain-error.mapper.js';
+import { CreateShippingDto } from './dto/create-shipping.dto.js';
+import { GetShippingsDto } from './dto/get-shippings.dto.js';
+import { UpdateShippingDto } from './dto/update-shipping.dto.js';
+import { Shipping } from './entities/shipping.entity.js';
 
 /** `ShippingRecord` → las 7 claves de `shippings.json`, en su orden. */
 function toShippingDto(record: ShippingRecord): Shipping {

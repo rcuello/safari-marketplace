@@ -2,8 +2,8 @@ import { Module } from '@nestjs/common';
 import {
   FlashSaleController,
   ProductsByFlashSaleController,
-} from './flash-sale.controller';
-import { FlashSaleService } from './flash-sale.service';
+} from './flash-sale.controller.js';
+import { FlashSaleService } from './flash-sale.service.js';
 
 @Module({
   controllers: [FlashSaleController, ProductsByFlashSaleController],

@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ShopsService } from './shops.service';
+import { ShopsService } from './shops.service.js';
 import {
   ApproveShopController,
   DisapproveShopController,
@@ -7,7 +7,7 @@ import {
   StaffsController,
   NearByShopController,
   NewShopsController,
-} from './shops.controller';
+} from './shops.controller.js';
 
 @Module({
   controllers: [

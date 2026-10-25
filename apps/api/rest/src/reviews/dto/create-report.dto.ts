@@ -1,5 +1,5 @@
 import { OmitType } from '@nestjs/swagger';
-import { Report } from '../entities/reports.entity';
+import { Report } from '../entities/reports.entity.js';
 
 export class CreateReportDto extends OmitType(Report, [
   'id',

@@ -20,17 +20,17 @@ import {
   type UpdateStoreNoticeInput,
   type UserRecord,
 } from '@safari/db';
-import { paginate } from 'src/common/pagination/paginate';
-import { parseSearch } from 'src/common/search/parse-search';
-import { toWriteHttpException } from 'src/common/errors/domain-error.mapper';
-import { toShopDto } from 'src/shops/shops.service';
-import { CreateStoreNoticeDto } from './dto/create-store-notice.dto';
+import { paginate } from '#src/common/pagination/paginate.js';
+import { parseSearch } from '#src/common/search/parse-search.js';
+import { toWriteHttpException } from '#src/common/errors/domain-error.mapper.js';
+import { toShopDto } from '#src/shops/shops.service.js';
+import { CreateStoreNoticeDto } from './dto/create-store-notice.dto.js';
 import {
   GetStoreNoticesDto,
   StoreNoticePaginator,
-} from './dto/get-store-notices.dto';
-import { UpdateStoreNoticeDto } from './dto/update-store-notice.dto';
-import { StoreNotice } from './entities/store-notices.entity';
+} from './dto/get-store-notices.dto.js';
+import { UpdateStoreNoticeDto } from './dto/update-store-notice.dto.js';
+import { StoreNotice } from './entities/store-notices.entity.js';
 
 /** Literal del contrato heredado de Laravel (`creator.permissions[].pivot`). */
 const USER_MODEL_TYPE = 'Marvel\\Database\\Models\\User';

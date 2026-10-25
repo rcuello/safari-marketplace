@@ -32,11 +32,11 @@ import {
   type OwnershipTransferDetailRecord,
   type OwnershipTransferOwnerRecord,
 } from '@safari/db';
-import { CurrentUserPayload } from 'src/auth/decorators/current-user.decorator';
-import { CreateOwnershipTransferDto } from './dto/create-ownership-transfer.dto';
-import { GetOwnershipTransferDto } from './dto/get-ownership-transfer.dto';
-import { TransferShopOwnershipDto } from './dto/transfer-shop-ownership.dto';
-import { OwnershipTransferService } from './ownership-transfer.service';
+import { CurrentUserPayload } from '#src/auth/decorators/current-user.decorator.js';
+import { CreateOwnershipTransferDto } from './dto/create-ownership-transfer.dto.js';
+import { GetOwnershipTransferDto } from './dto/get-ownership-transfer.dto.js';
+import { TransferShopOwnershipDto } from './dto/transfer-shop-ownership.dto.js';
+import { OwnershipTransferService } from './ownership-transfer.service.js';
 
 vi.mock('@safari/db', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@safari/db')>()),

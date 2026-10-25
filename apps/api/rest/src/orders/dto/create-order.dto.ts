@@ -1,5 +1,5 @@
-import { PaymentIntent } from 'src/payment-intent/entries/payment-intent.entity';
-import { PaymentGatewayType } from '../entities/order.entity';
+import { PaymentIntent } from '#src/payment-intent/entries/payment-intent.entity.js';
+import { PaymentGatewayType } from '../entities/order.entity.js';
 
 export class CreateOrderDto {
   shop_id?: number;

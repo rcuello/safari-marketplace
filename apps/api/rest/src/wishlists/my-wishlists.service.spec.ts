@@ -9,10 +9,10 @@
  */
 import 'reflect-metadata';
 import { listWishlistProducts } from '@safari/db';
-import { Product } from 'src/products/entities/product.entity';
-import { GetWishlistDto } from './dto/get-wishlists.dto';
-import { MyWishlistService } from './my-wishlists.service';
-import { WishlistsService } from './wishlists.service';
+import { Product } from '#src/products/entities/product.entity.js';
+import { GetWishlistDto } from './dto/get-wishlists.dto.js';
+import { MyWishlistService } from './my-wishlists.service.js';
+import { WishlistsService } from './wishlists.service.js';
 
 vi.mock('@safari/db', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@safari/db')>()),

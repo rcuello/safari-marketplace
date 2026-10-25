@@ -7,20 +7,20 @@ import {
   Delete,
   Query,
 } from '@nestjs/common';
-import { WithdrawsService } from './withdraws.service';
-import { CreateWithdrawDto } from './dto/create-withdraw.dto';
-import { ApproveWithdrawDto } from './dto/approve-withdraw.dto';
-import { GetWithdrawsDto, WithdrawPaginator } from './dto/get-withdraw.dto';
-import { Withdraw } from './entities/withdraw.entity';
+import { WithdrawsService } from './withdraws.service.js';
+import { CreateWithdrawDto } from './dto/create-withdraw.dto.js';
+import { ApproveWithdrawDto } from './dto/approve-withdraw.dto.js';
+import { GetWithdrawsDto, WithdrawPaginator } from './dto/get-withdraw.dto.js';
+import { Withdraw } from './entities/withdraw.entity.js';
 import {
   CurrentUser,
   CurrentUserPayload,
-} from 'src/auth/decorators/current-user.decorator';
+} from '#src/auth/decorators/current-user.decorator.js';
 import {
   ADMIN_AND_OWNER,
   ADMIN_ONLY,
   Permissions,
-} from 'src/auth/decorators/permissions.decorator';
+} from '#src/auth/decorators/permissions.decorator.js';
 
 @Permissions(...ADMIN_AND_OWNER)
 @Controller('withdraws')

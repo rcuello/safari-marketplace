@@ -1,8 +1,8 @@
-import { CoreEntity } from 'src/common/entities/core.entity';
-import { Refund } from 'src/refunds/entities/refund.entity';
-import { Balance, Shop } from 'src/shops/entities/shop.entity';
-import { User } from 'src/users/entities/user.entity';
-import { Withdraw } from 'src/withdraws/entities/withdraw.entity';
+import { CoreEntity } from '#src/common/entities/core.entity.js';
+import { Refund } from '#src/refunds/entities/refund.entity.js';
+import { Balance, Shop } from '#src/shops/entities/shop.entity.js';
+import { User } from '#src/users/entities/user.entity.js';
+import { Withdraw } from '#src/withdraws/entities/withdraw.entity.js';
 
 export class OwnershipTransfer extends CoreEntity {
   created_by: string;

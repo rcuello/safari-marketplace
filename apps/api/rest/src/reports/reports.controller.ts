@@ -2,8 +2,8 @@ import { Controller, Get } from '@nestjs/common';
 import {
   CurrentUser,
   CurrentUserPayload,
-} from 'src/auth/decorators/current-user.decorator';
-import { ReportsService } from './reports.service';
+} from '#src/auth/decorators/current-user.decorator.js';
+import { ReportsService } from './reports.service.js';
 
 @Controller('my-reports')
 export class ReportsController {

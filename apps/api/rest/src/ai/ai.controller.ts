@@ -1,10 +1,10 @@
 import { Body, Controller, Post } from '@nestjs/common';
-import { AiService } from './ai.service';
-import { CreateAiDto } from './dto/create-ai.dto';
+import { AiService } from './ai.service.js';
+import { CreateAiDto } from './dto/create-ai.dto.js';
 import {
   ADMIN_ONLY,
   Permissions,
-} from 'src/auth/decorators/permissions.decorator';
+} from '#src/auth/decorators/permissions.decorator.js';
 
 @Permissions(...ADMIN_ONLY)
 @Controller()

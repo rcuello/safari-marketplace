@@ -25,10 +25,10 @@ import {
   updateAbusiveReport,
   type AbusiveReportDetailRecord,
 } from '@safari/db';
-import { CurrentUserPayload } from 'src/auth/decorators/current-user.decorator';
-import { CreateReportDto } from './dto/create-report.dto';
-import { UpdateReportDto } from './dto/update-report.dto';
-import { AbusiveReportService } from './reports.service';
+import { CurrentUserPayload } from '#src/auth/decorators/current-user.decorator.js';
+import { CreateReportDto } from './dto/create-report.dto.js';
+import { UpdateReportDto } from './dto/update-report.dto.js';
+import { AbusiveReportService } from './reports.service.js';
 
 vi.mock('@safari/db', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@safari/db')>()),

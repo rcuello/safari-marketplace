@@ -1,8 +1,8 @@
-import { SortOrder } from 'src/common/dto/generic-conditions.dto';
-import { PaginationArgs } from 'src/common/dto/pagination-args.dto';
-import { Paginator } from 'src/common/dto/paginator.dto';
+import { SortOrder } from '#src/common/dto/generic-conditions.dto.js';
+import { PaginationArgs } from '#src/common/dto/pagination-args.dto.js';
+import { Paginator } from '#src/common/dto/paginator.dto.js';
 
-import { Author } from '../entities/author.entity';
+import { Author } from '../entities/author.entity.js';
 
 export class AuthorPaginator extends Paginator<Author> {
   data: Author[];

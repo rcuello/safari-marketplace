@@ -19,14 +19,14 @@ import {
   setUserActive,
   type UserWithRelations,
 } from '@safari/db';
-import type { CurrentUserPayload } from 'src/auth/decorators/current-user.decorator';
-import { APP_URL } from 'src/common/constants';
-import { parseSearch } from 'src/common/search/parse-search';
-import { CreateUserDto } from './dto/create-user.dto';
-import { GetUsersDto, UserPaginator } from './dto/get-users.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { User } from './entities/user.entity';
-import { toUserDto } from './user-dto.mapper';
+import type { CurrentUserPayload } from '#src/auth/decorators/current-user.decorator.js';
+import { APP_URL } from '#src/common/constants.js';
+import { parseSearch } from '#src/common/search/parse-search.js';
+import { CreateUserDto } from './dto/create-user.dto.js';
+import { GetUsersDto, UserPaginator } from './dto/get-users.dto.js';
+import { UpdateUserDto } from './dto/update-user.dto.js';
+import { User } from './entities/user.entity.js';
+import { toUserDto } from './user-dto.mapper.js';
 
 /**
  * US-25: `UsersService` deja de mantener `this.users` en memoria y pasa a

@@ -1,8 +1,8 @@
-import { Address } from 'src/addresses/entities/address.entity';
-import { CoreEntity } from 'src/common/entities/core.entity';
-// import { Order } from 'src/orders/entities/order.entity';
-import { Shop } from 'src/shops/entities/shop.entity';
-import { Profile } from './profile.entity';
+import { Address } from '#src/addresses/entities/address.entity.js';
+import { CoreEntity } from '#src/common/entities/core.entity.js';
+// import { Order } from '#src/orders/entities/order.entity.js';
+import { Shop } from '#src/shops/entities/shop.entity.js';
+import { Profile } from './profile.entity.js';
 
 export class User extends CoreEntity {
   name: string;

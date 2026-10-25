@@ -1,5 +1,5 @@
 import { PickType } from '@nestjs/swagger';
-import { Category } from '../entities/category.entity';
+import { Category } from '../entities/category.entity.js';
 
 /**
  * `'type'` y `'parent'` salen del `PickType` porque `Category`

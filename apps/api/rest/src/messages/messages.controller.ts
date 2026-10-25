@@ -2,10 +2,10 @@ import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import {
   CurrentUser,
   CurrentUserPayload,
-} from 'src/auth/decorators/current-user.decorator';
-import { GetConversationsDto } from 'src/conversations/dto/get-conversations.dto';
-import { CreateMessageDto } from './dto/create-message.dto';
-import { MessagesService } from './messages.service';
+} from '#src/auth/decorators/current-user.decorator.js';
+import { GetConversationsDto } from '#src/conversations/dto/get-conversations.dto.js';
+import { CreateMessageDto } from './dto/create-message.dto.js';
+import { MessagesService } from './messages.service.js';
 
 // `:id`/`:param` son la conversación (US-56): antes se ignoraban.
 @Controller('messages/conversations')

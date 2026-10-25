@@ -3,8 +3,8 @@ import type {
   ProfileRecord,
   UserWithRelations,
 } from '@safari/db';
-import { User } from './entities/user.entity';
-import { toShopDto } from 'src/shops/shops.service';
+import { User } from './entities/user.entity.js';
+import { toShopDto } from '#src/shops/shops.service.js';
 
 /**
  * `ProfileRecord` (camelCase) → shape Laravel. `id` y `customer_id` no

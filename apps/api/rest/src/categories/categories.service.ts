@@ -20,13 +20,13 @@ import {
   type Prisma,
   type TypeRecord,
 } from '@safari/db';
-import { toWriteHttpException } from 'src/common/errors/domain-error.mapper';
-import { CreateCategoryDto } from './dto/create-category.dto';
-import { GetCategoriesDto } from './dto/get-categories.dto';
-import { UpdateCategoryDto } from './dto/update-category.dto';
-import { Category } from './entities/category.entity';
-import { paginate } from 'src/common/pagination/paginate';
-import { parseSearch } from 'src/common/search/parse-search';
+import { toWriteHttpException } from '#src/common/errors/domain-error.mapper.js';
+import { CreateCategoryDto } from './dto/create-category.dto.js';
+import { GetCategoriesDto } from './dto/get-categories.dto.js';
+import { UpdateCategoryDto } from './dto/update-category.dto.js';
+import { Category } from './entities/category.entity.js';
+import { paginate } from '#src/common/pagination/paginate.js';
+import { parseSearch } from '#src/common/search/parse-search.js';
 
 /**
  * `search=key:value;key:value` → `ListCategoriesInput` de `@safari/db`

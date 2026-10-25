@@ -1,12 +1,12 @@
-import { AttributeValue } from 'src/attributes/entities/attribute-value.entity';
-import { Category } from 'src/categories/entities/category.entity';
-import { Attachment } from 'src/common/entities/attachment.entity';
-import { CoreEntity } from 'src/common/entities/core.entity';
-import { Order } from 'src/orders/entities/order.entity';
-import { Shop } from 'src/shops/entities/shop.entity';
-import { Tag } from 'src/tags/entities/tag.entity';
-import { Type } from 'src/types/entities/type.entity';
-import { Review } from '../../reviews/entities/review.entity';
+import { AttributeValue } from '#src/attributes/entities/attribute-value.entity.js';
+import { Category } from '#src/categories/entities/category.entity.js';
+import { Attachment } from '#src/common/entities/attachment.entity.js';
+import { CoreEntity } from '#src/common/entities/core.entity.js';
+import { Order } from '#src/orders/entities/order.entity.js';
+import { Shop } from '#src/shops/entities/shop.entity.js';
+import { Tag } from '#src/tags/entities/tag.entity.js';
+import { Type } from '#src/types/entities/type.entity.js';
+import { Review } from '../../reviews/entities/review.entity.js';
 
 enum ProductStatus {
   PUBLISH = 'publish',

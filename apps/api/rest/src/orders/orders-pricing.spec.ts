@@ -15,7 +15,7 @@ import {
   type CouponCandidate,
   type PricingInput,
   type PricingProduct,
-} from './orders-pricing';
+} from './orders-pricing.js';
 
 function product(overrides: Partial<PricingProduct> = {}): PricingProduct {
   return {

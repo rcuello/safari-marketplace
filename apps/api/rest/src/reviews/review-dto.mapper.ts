@@ -3,9 +3,9 @@ import type {
   ReviewDetailRecord,
   UserRecord,
 } from '@safari/db';
-import { toProductDto } from 'src/products/product-dto.mapper';
-import { Report } from './entities/reports.entity';
-import { Review } from './entities/review.entity';
+import { toProductDto } from '#src/products/product-dto.mapper.js';
+import { Report } from './entities/reports.entity.js';
+import { Review } from './entities/review.entity.js';
 
 /**
  * Nombre corto que guarda `abusive_reports.model_type` ↔ FQCN de Laravel

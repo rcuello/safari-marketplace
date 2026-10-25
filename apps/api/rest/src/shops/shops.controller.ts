@@ -8,22 +8,22 @@ import {
   Delete,
   Query,
 } from '@nestjs/common';
-import { ShopsService } from './shops.service';
-import { CreateShopDto } from './dto/create-shop.dto';
-import { UpdateShopDto } from './dto/update-shop.dto';
-import { GetShopsDto, ShopPaginator } from './dto/get-shops.dto';
-import { GetStaffsDto } from './dto/get-staffs.dto';
-import { UserPaginator } from 'src/users/dto/get-users.dto';
-import { Public } from 'src/auth/decorators/public.decorator';
+import { ShopsService } from './shops.service.js';
+import { CreateShopDto } from './dto/create-shop.dto.js';
+import { UpdateShopDto } from './dto/update-shop.dto.js';
+import { GetShopsDto, ShopPaginator } from './dto/get-shops.dto.js';
+import { GetStaffsDto } from './dto/get-staffs.dto.js';
+import { UserPaginator } from '#src/users/dto/get-users.dto.js';
+import { Public } from '#src/auth/decorators/public.decorator.js';
 import {
   ADMIN_AND_OWNER,
   ADMIN_ONLY,
   Permissions,
-} from 'src/auth/decorators/permissions.decorator';
+} from '#src/auth/decorators/permissions.decorator.js';
 import {
   CurrentUser,
   CurrentUserPayload,
-} from 'src/auth/decorators/current-user.decorator';
+} from '#src/auth/decorators/current-user.decorator.js';
 
 @Controller('shops')
 export class ShopsController {

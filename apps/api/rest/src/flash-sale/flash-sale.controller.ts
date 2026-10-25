@@ -8,15 +8,15 @@ import {
   Put,
   Query,
 } from '@nestjs/common';
-import { FlashSaleService } from './flash-sale.service';
-import { GetFlashSaleDto } from './dto/get-flash-sales.dto';
-import { CreateFlashSaleDto } from './dto/create-flash-sale.dto';
-import { UpdateFlashSaleDto } from './dto/update-flash-sale.dto';
-import { Public } from 'src/auth/decorators/public.decorator';
+import { FlashSaleService } from './flash-sale.service.js';
+import { GetFlashSaleDto } from './dto/get-flash-sales.dto.js';
+import { CreateFlashSaleDto } from './dto/create-flash-sale.dto.js';
+import { UpdateFlashSaleDto } from './dto/update-flash-sale.dto.js';
+import { Public } from '#src/auth/decorators/public.decorator.js';
 import {
   ADMIN_OWNER_AND_STAFF,
   Permissions,
-} from 'src/auth/decorators/permissions.decorator';
+} from '#src/auth/decorators/permissions.decorator.js';
 
 @Controller('flash-sale')
 export class FlashSaleController {

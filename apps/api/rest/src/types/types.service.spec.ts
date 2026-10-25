@@ -34,9 +34,9 @@ import {
   updateType,
   type TypeRecord,
 } from '@safari/db';
-import { TypesService } from './types.service';
-import { CreateTypeDto } from './dto/create-type.dto';
-import { UpdateTypeDto } from './dto/update-type.dto';
+import { TypesService } from './types.service.js';
+import { CreateTypeDto } from './dto/create-type.dto.js';
+import { UpdateTypeDto } from './dto/update-type.dto.js';
 
 vi.mock('@safari/db', async (importOriginal) => ({
   // El barrel es seguro de cargar sin DATABASE_URL (cliente lazy vía Proxy);

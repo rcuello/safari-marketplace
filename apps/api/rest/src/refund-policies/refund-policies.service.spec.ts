@@ -20,9 +20,9 @@ import {
   updateRefundPolicy,
   type RefundPolicyRecord,
 } from '@safari/db';
-import { RefundPoliciesService } from './refund-policies.service';
-import { CreateRefundPolicyDto } from './dto/create-refund-policy.dto';
-import { GetRefundPolicyDto } from './dto/get-refund-policies.dto';
+import { RefundPoliciesService } from './refund-policies.service.js';
+import { CreateRefundPolicyDto } from './dto/create-refund-policy.dto.js';
+import { GetRefundPolicyDto } from './dto/get-refund-policies.dto.js';
 
 vi.mock('@safari/db', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@safari/db')>()),

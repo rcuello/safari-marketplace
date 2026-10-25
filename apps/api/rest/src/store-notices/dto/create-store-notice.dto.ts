@@ -1,5 +1,5 @@
 import { PickType } from '@nestjs/swagger';
-import { StoreNotice } from '../entities/store-notices.entity';
+import { StoreNotice } from '../entities/store-notices.entity.js';
 
 export class CreateStoreNoticeDto extends PickType(StoreNotice, [
   'notice',

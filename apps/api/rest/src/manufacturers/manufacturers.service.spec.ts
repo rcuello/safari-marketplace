@@ -39,9 +39,9 @@ import {
   type ManufacturerRecord,
   type TypeRecord,
 } from '@safari/db';
-import { ManufacturersService } from './manufacturers.service';
-import { CreateManufacturerDto } from './dto/create-manufacturer.dto';
-import { UpdateManufacturerDto } from './dto/update-manufacturer.dto';
+import { ManufacturersService } from './manufacturers.service.js';
+import { CreateManufacturerDto } from './dto/create-manufacturer.dto.js';
+import { UpdateManufacturerDto } from './dto/update-manufacturer.dto.js';
 
 vi.mock('@safari/db', async (importOriginal) => ({
   // El barrel es seguro de cargar sin DATABASE_URL (cliente lazy vía Proxy);

@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
-import { AnalyticsService } from './analytics.service';
+import { AnalyticsService } from './analytics.service.js';
 import {
   AnalyticsController,
   CategoryWiseProductController,
   LowStockProductsController,
   TopRateProductController,
-} from './analytics.controller';
+} from './analytics.controller.js';
 
 @Module({
   controllers: [

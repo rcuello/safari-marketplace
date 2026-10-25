@@ -30,11 +30,11 @@ import {
   updateWithdrawStatus,
   type WithdrawDetailRecord,
 } from '@safari/db';
-import { CurrentUserPayload } from 'src/auth/decorators/current-user.decorator';
-import { ApproveWithdrawDto } from './dto/approve-withdraw.dto';
-import { CreateWithdrawDto } from './dto/create-withdraw.dto';
-import { GetWithdrawsDto } from './dto/get-withdraw.dto';
-import { WithdrawsService } from './withdraws.service';
+import { CurrentUserPayload } from '#src/auth/decorators/current-user.decorator.js';
+import { ApproveWithdrawDto } from './dto/approve-withdraw.dto.js';
+import { CreateWithdrawDto } from './dto/create-withdraw.dto.js';
+import { GetWithdrawsDto } from './dto/get-withdraw.dto.js';
+import { WithdrawsService } from './withdraws.service.js';
 
 vi.mock('@safari/db', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@safari/db')>()),

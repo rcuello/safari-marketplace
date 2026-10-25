@@ -1,7 +1,7 @@
-import { SortOrder } from 'src/common/dto/generic-conditions.dto';
-import { PaginationArgs } from 'src/common/dto/pagination-args.dto';
-import { Paginator } from 'src/common/dto/paginator.dto';
-import { RefundPolicy } from '../entities/refund-policies.entity';
+import { SortOrder } from '#src/common/dto/generic-conditions.dto.js';
+import { PaginationArgs } from '#src/common/dto/pagination-args.dto.js';
+import { Paginator } from '#src/common/dto/paginator.dto.js';
+import { RefundPolicy } from '../entities/refund-policies.entity.js';
 
 export class RefundPolicyPaginator extends Paginator<RefundPolicy> {
   data: RefundPolicy[];

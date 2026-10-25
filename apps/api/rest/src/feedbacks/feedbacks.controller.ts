@@ -7,10 +7,10 @@ import {
   Post,
   Put,
 } from '@nestjs/common';
-import { CreateFeedBackDto } from './dto/create-feedback.dto';
-import { UpdateFeedBackDto } from './dto/update-feedback.dto';
-import { FeedbackService } from './feedbacks.service';
-import { Public } from 'src/auth/decorators/public.decorator';
+import { CreateFeedBackDto } from './dto/create-feedback.dto.js';
+import { UpdateFeedBackDto } from './dto/update-feedback.dto.js';
+import { FeedbackService } from './feedbacks.service.js';
+import { Public } from '#src/auth/decorators/public.decorator.js';
 
 @Controller('feedbacks')
 export class FeedbackController {

@@ -1,6 +1,6 @@
-import { CoreEntity } from 'src/common/entities/core.entity';
-import { Refund } from 'src/refunds/entities/refund.entity';
-import { Shop } from 'src/shops/entities/shop.entity';
+import { CoreEntity } from '#src/common/entities/core.entity.js';
+import { Refund } from '#src/refunds/entities/refund.entity.js';
+import { Shop } from '#src/shops/entities/shop.entity.js';
 
 export class RefundPolicy extends CoreEntity {
   title: string;

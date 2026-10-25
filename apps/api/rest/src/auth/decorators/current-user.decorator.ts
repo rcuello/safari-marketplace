@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
-import { resolveJwtOptions } from '../jwt-options';
+import { resolveJwtOptions } from '../jwt-options.js';
 
 export const INVALID_TOKEN_MESSAGE =
   'Token de autenticación ausente o inválido.';

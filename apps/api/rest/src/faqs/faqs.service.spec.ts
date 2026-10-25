@@ -25,9 +25,9 @@ import {
   updateFaq,
   type FaqRecord,
 } from '@safari/db';
-import { FaqsService } from './faqs.service';
-import { CreateFaqDto } from './dto/create-faq.dto';
-import { GetFaqsDto } from './dto/get-faqs.dto';
+import { FaqsService } from './faqs.service.js';
+import { CreateFaqDto } from './dto/create-faq.dto.js';
+import { GetFaqsDto } from './dto/get-faqs.dto.js';
 
 vi.mock('@safari/db', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@safari/db')>()),

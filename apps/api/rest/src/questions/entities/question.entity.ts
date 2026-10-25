@@ -1,7 +1,7 @@
-import { CoreEntity } from 'src/common/entities/core.entity';
-import { Product } from 'src/products/entities/product.entity';
-import { User } from 'src/users/entities/user.entity';
-import { Feedback } from '../../feedbacks/entities/feedback.entity';
+import { CoreEntity } from '#src/common/entities/core.entity.js';
+import { Product } from '#src/products/entities/product.entity.js';
+import { User } from '#src/users/entities/user.entity.js';
+import { Feedback } from '../../feedbacks/entities/feedback.entity.js';
 
 export class Question extends CoreEntity {
   user_id: number;

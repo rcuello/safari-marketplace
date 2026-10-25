@@ -9,25 +9,25 @@ import {
   Query,
 } from '@nestjs/common';
 
-import { OwnershipTransferService } from './ownership-transfer.service';
-import { CreateOwnershipTransferDto } from './dto/create-ownership-transfer.dto';
+import { OwnershipTransferService } from './ownership-transfer.service.js';
+import { CreateOwnershipTransferDto } from './dto/create-ownership-transfer.dto.js';
 import {
   GetOwnershipTransferDto,
   RefundPolicyPaginator,
-} from './dto/get-ownership-transfer.dto';
-import { TransferShopOwnershipDto } from './dto/transfer-shop-ownership.dto';
-import { UpdateOwnershipTransferDto } from './dto/update-ownership-transfer.dto';
-import { OwnershipTransfer } from './entities/ownership-transfer.entity';
-import { Shop } from 'src/shops/entities/shop.entity';
+} from './dto/get-ownership-transfer.dto.js';
+import { TransferShopOwnershipDto } from './dto/transfer-shop-ownership.dto.js';
+import { UpdateOwnershipTransferDto } from './dto/update-ownership-transfer.dto.js';
+import { OwnershipTransfer } from './entities/ownership-transfer.entity.js';
+import { Shop } from '#src/shops/entities/shop.entity.js';
 import {
   CurrentUser,
   CurrentUserPayload,
-} from 'src/auth/decorators/current-user.decorator';
+} from '#src/auth/decorators/current-user.decorator.js';
 import {
   ADMIN_AND_OWNER,
   ADMIN_ONLY,
   Permissions,
-} from 'src/auth/decorators/permissions.decorator';
+} from '#src/auth/decorators/permissions.decorator.js';
 
 @Permissions(...ADMIN_AND_OWNER)
 @Controller('ownership-transfer')

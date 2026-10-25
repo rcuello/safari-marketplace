@@ -34,10 +34,10 @@ import {
   setUserActive,
   type UserWithRelations,
 } from '@safari/db';
-import type { CurrentUserPayload } from 'src/auth/decorators/current-user.decorator';
-import { paginate } from 'src/common/pagination/paginate';
-import { UsersService } from './users.service';
-import { GetUsersDto } from './dto/get-users.dto';
+import type { CurrentUserPayload } from '#src/auth/decorators/current-user.decorator.js';
+import { paginate } from '#src/common/pagination/paginate.js';
+import { UsersService } from './users.service.js';
+import { GetUsersDto } from './dto/get-users.dto.js';
 
 vi.mock('@safari/db', async (importOriginal) => ({
   // El barrel es seguro de cargar sin DATABASE_URL (cliente lazy vía Proxy).

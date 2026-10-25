@@ -1,5 +1,5 @@
 import { OmitType } from '@nestjs/swagger';
-import { Tax } from '../entities/tax.entity';
+import { Tax } from '../entities/tax.entity.js';
 
 export class CreateTaxDto extends OmitType(Tax, [
   'id',

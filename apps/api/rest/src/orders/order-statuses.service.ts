@@ -16,18 +16,18 @@ import {
   type OrderStatusRecord,
   type OrderStatusSortField,
 } from '@safari/db';
-import { toWriteHttpException } from 'src/common/errors/domain-error.mapper';
-import { paginate } from 'src/common/pagination/paginate';
-import { parseSearch } from 'src/common/search/parse-search';
+import { toWriteHttpException } from '#src/common/errors/domain-error.mapper.js';
+import { paginate } from '#src/common/pagination/paginate.js';
+import { parseSearch } from '#src/common/search/parse-search.js';
 import {
   CreateOrderStatusDto,
   UpdateOrderStatusDto,
-} from './dto/create-order-status.dto';
+} from './dto/create-order-status.dto.js';
 import {
   GetOrderStatusesDto,
   OrderStatusPaginator,
-} from './dto/get-order-statuses.dto';
-import { OrderStatus } from './entities/order-status.entity';
+} from './dto/get-order-statuses.dto.js';
+import { OrderStatus } from './entities/order-status.entity.js';
 
 /** Enum `orderBy` del DTO (en mayúsculas o no) → campo del repositorio. */
 const SORT_ALIASES: Record<string, OrderStatusSortField> = {

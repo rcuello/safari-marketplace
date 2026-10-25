@@ -4,10 +4,10 @@ import type {
   MessageDetailRecord,
   MessageRecord,
 } from '@safari/db';
-import { CurrentUserPayload } from 'src/auth/decorators/current-user.decorator';
-import { toShopDto } from 'src/shops/shops.service';
-import { Message } from 'src/messages/entities/message.entity';
-import { Conversation } from './entities/conversation.entity';
+import { CurrentUserPayload } from '#src/auth/decorators/current-user.decorator.js';
+import { toShopDto } from '#src/shops/shops.service.js';
+import { Message } from '#src/messages/entities/message.entity.js';
+import { Conversation } from './entities/conversation.entity.js';
 
 /** Visibilidad (US-56): super_admin ve todo; el resto, lo suyo y lo de sus tiendas. */
 export function toViewer(user: CurrentUserPayload): ConversationViewer {

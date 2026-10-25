@@ -15,15 +15,15 @@ import {
   type AttributeRecord,
   type AttributeValueInput,
 } from '@safari/db';
-import { parseSearch } from 'src/common/search/parse-search';
-import { toWriteHttpException } from 'src/common/errors/domain-error.mapper';
+import { parseSearch } from '#src/common/search/parse-search.js';
+import { toWriteHttpException } from '#src/common/errors/domain-error.mapper.js';
 import {
   AttributeValueDto,
   CreateAttributeDto,
-} from './dto/create-attribute.dto';
-import { GetAttributesArgs } from './dto/get-attributes.dto';
-import { UpdateAttributeDto } from './dto/update-attribute.dto';
-import { Attribute } from './entities/attribute.entity';
+} from './dto/create-attribute.dto.js';
+import { GetAttributesArgs } from './dto/get-attributes.dto.js';
+import { UpdateAttributeDto } from './dto/update-attribute.dto.js';
+import { Attribute } from './entities/attribute.entity.js';
 
 /**
  * `AttributeRecord` → la forma de `attributes.json`, con el orden de claves

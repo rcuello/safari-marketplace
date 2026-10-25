@@ -19,9 +19,9 @@ import {
   updateAttribute,
   type AttributeRecord,
 } from '@safari/db';
-import { AttributesService } from './attributes.service';
-import { CreateAttributeDto } from './dto/create-attribute.dto';
-import { UpdateAttributeDto } from './dto/update-attribute.dto';
+import { AttributesService } from './attributes.service.js';
+import { CreateAttributeDto } from './dto/create-attribute.dto.js';
+import { UpdateAttributeDto } from './dto/update-attribute.dto.js';
 
 vi.mock('@safari/db', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@safari/db')>()),

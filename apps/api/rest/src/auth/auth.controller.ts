@@ -1,10 +1,10 @@
 import { Controller, Get, Post, Body } from '@nestjs/common';
-import { AuthService } from './auth.service';
-import { Public } from './decorators/public.decorator';
+import { AuthService } from './auth.service.js';
+import { Public } from './decorators/public.decorator.js';
 import {
   CurrentUser,
   CurrentUserPayload,
-} from './decorators/current-user.decorator';
+} from './decorators/current-user.decorator.js';
 import {
   ChangePasswordDto,
   ForgetPasswordDto,
@@ -16,7 +16,7 @@ import {
   SocialLoginDto,
   VerifyForgetPasswordDto,
   VerifyOtpDto,
-} from './dto/create-auth.dto';
+} from './dto/create-auth.dto.js';
 
 @Controller()
 export class AuthController {

@@ -1,4 +1,4 @@
-import { CoreEntity } from 'src/common/entities/core.entity';
+import { CoreEntity } from '#src/common/entities/core.entity.js';
 
 export class Feedback extends CoreEntity {
   user_id: string;

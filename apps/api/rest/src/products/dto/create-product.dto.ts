@@ -1,5 +1,5 @@
 import { OmitType } from '@nestjs/swagger';
-import { Product } from '../entities/product.entity';
+import { Product } from '../entities/product.entity.js';
 
 /**
  * `manufacturer_id` es el único campo genuinamente ausente del `Product`

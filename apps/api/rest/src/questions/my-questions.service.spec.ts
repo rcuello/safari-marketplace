@@ -17,13 +17,13 @@ import {
   type ProductRecord,
   type QuestionDetailRecord,
 } from '@safari/db';
-import { CurrentUserPayload } from 'src/auth/decorators/current-user.decorator';
-import { CreateQuestionDto } from './dto/create-question.dto';
-import { GetQuestionDto } from './dto/get-questions.dto';
-import { UpdateQuestionDto } from './dto/update-question.dto';
-import { Question } from './entities/question.entity';
-import { MyQuestionsService } from './my-questions.service';
-import { QuestionService } from './questions.service';
+import { CurrentUserPayload } from '#src/auth/decorators/current-user.decorator.js';
+import { CreateQuestionDto } from './dto/create-question.dto.js';
+import { GetQuestionDto } from './dto/get-questions.dto.js';
+import { UpdateQuestionDto } from './dto/update-question.dto.js';
+import { Question } from './entities/question.entity.js';
+import { MyQuestionsService } from './my-questions.service.js';
+import { QuestionService } from './questions.service.js';
 
 vi.mock('@safari/db', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@safari/db')>()),

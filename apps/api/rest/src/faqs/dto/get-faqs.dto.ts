@@ -1,7 +1,7 @@
-import { SortOrder } from 'src/common/dto/generic-conditions.dto';
-import { PaginationArgs } from 'src/common/dto/pagination-args.dto';
-import { Paginator } from 'src/common/dto/paginator.dto';
-import { Faq } from 'src/faqs/entities/faq.entity';
+import { SortOrder } from '#src/common/dto/generic-conditions.dto.js';
+import { PaginationArgs } from '#src/common/dto/pagination-args.dto.js';
+import { Paginator } from '#src/common/dto/paginator.dto.js';
+import { Faq } from '#src/faqs/entities/faq.entity.js';
 
 export class FaqPaginator extends Paginator<Faq> {
   data: Faq[];

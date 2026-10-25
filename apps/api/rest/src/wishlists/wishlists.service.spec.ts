@@ -23,10 +23,10 @@ import {
   toggleWishlist,
   type ProductRecord,
 } from '@safari/db';
-import { toProductDto } from 'src/products/product-dto.mapper';
-import { CreateWishlistDto } from './dto/create-wishlists.dto';
-import { GetWishlistDto } from './dto/get-wishlists.dto';
-import { WishlistsService } from './wishlists.service';
+import { toProductDto } from '#src/products/product-dto.mapper.js';
+import { CreateWishlistDto } from './dto/create-wishlists.dto.js';
+import { GetWishlistDto } from './dto/get-wishlists.dto.js';
+import { WishlistsService } from './wishlists.service.js';
 
 vi.mock('@safari/db', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@safari/db')>()),

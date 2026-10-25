@@ -8,11 +8,11 @@ import {
   Put,
   Query,
 } from '@nestjs/common';
-import { CreatePaymentMethodDto } from './dto/create-payment-method.dto';
-import { GetPaymentMethodsDto } from './dto/get-payment-methods.dto';
-import { DefaultCart } from './dto/set-default-card.dto';
-import { UpdatePaymentMethodDto } from './dto/update-payment-method.dto';
-import { PaymentMethodService } from './payment-method.service';
+import { CreatePaymentMethodDto } from './dto/create-payment-method.dto.js';
+import { GetPaymentMethodsDto } from './dto/get-payment-methods.dto.js';
+import { DefaultCart } from './dto/set-default-card.dto.js';
+import { UpdatePaymentMethodDto } from './dto/update-payment-method.dto.js';
+import { PaymentMethodService } from './payment-method.service.js';
 
 @Controller('cards')
 export class PaymentMethodController {

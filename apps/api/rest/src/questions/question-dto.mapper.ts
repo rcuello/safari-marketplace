@@ -1,7 +1,7 @@
 import type { QuestionDetailRecord } from '@safari/db';
-import { toProductDto } from 'src/products/product-dto.mapper';
-import { toReviewUserDto } from 'src/reviews/review-dto.mapper';
-import { Question } from './entities/question.entity';
+import { toProductDto } from '#src/products/product-dto.mapper.js';
+import { toReviewUserDto } from '#src/reviews/review-dto.mapper.js';
+import { Question } from './entities/question.entity.js';
 
 /**
  * `QuestionDetailRecord` → las 15 claves del mock de preguntas en su orden

@@ -8,20 +8,20 @@ import {
   Delete,
   Query,
 } from '@nestjs/common';
-import { UsersService } from './users.service';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { CreateProfileDto } from './dto/create-profile.dto';
-import { UpdateProfileDto } from './dto/update-profile.dto';
-import { GetUsersDto } from './dto/get-users.dto';
+import { UsersService } from './users.service.js';
+import { CreateUserDto } from './dto/create-user.dto.js';
+import { UpdateUserDto } from './dto/update-user.dto.js';
+import { CreateProfileDto } from './dto/create-profile.dto.js';
+import { UpdateProfileDto } from './dto/update-profile.dto.js';
+import { GetUsersDto } from './dto/get-users.dto.js';
 import {
   ADMIN_ONLY,
   Permissions,
-} from 'src/auth/decorators/permissions.decorator';
+} from '#src/auth/decorators/permissions.decorator.js';
 import {
   CurrentUser,
   type CurrentUserPayload,
-} from 'src/auth/decorators/current-user.decorator';
+} from '#src/auth/decorators/current-user.decorator.js';
 
 // Plataforma (design.md, Decisión B): gestión de usuarios es ADMIN_ONLY.
 @Permissions(...ADMIN_ONLY)

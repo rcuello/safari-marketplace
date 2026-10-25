@@ -8,15 +8,15 @@ import {
   Delete,
   Query,
 } from '@nestjs/common';
-import { TypesService } from './types.service';
-import { CreateTypeDto } from './dto/create-type.dto';
-import { UpdateTypeDto } from './dto/update-type.dto';
-import { GetTypesDto } from './dto/get-types.dto';
-import { Public } from 'src/auth/decorators/public.decorator';
+import { TypesService } from './types.service.js';
+import { CreateTypeDto } from './dto/create-type.dto.js';
+import { UpdateTypeDto } from './dto/update-type.dto.js';
+import { GetTypesDto } from './dto/get-types.dto.js';
+import { Public } from '#src/auth/decorators/public.decorator.js';
 import {
   ADMIN_ONLY,
   Permissions,
-} from 'src/auth/decorators/permissions.decorator';
+} from '#src/auth/decorators/permissions.decorator.js';
 
 @Controller('types')
 export class TypesController {

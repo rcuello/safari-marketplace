@@ -7,13 +7,13 @@ import {
   Param,
   Delete,
 } from '@nestjs/common';
-import { RefundsService } from './refunds.service';
-import { CreateRefundDto } from './dto/create-refund.dto';
-import { UpdateRefundDto } from './dto/update-refund.dto';
+import { RefundsService } from './refunds.service.js';
+import { CreateRefundDto } from './dto/create-refund.dto.js';
+import { UpdateRefundDto } from './dto/update-refund.dto.js';
 import {
   ADMIN_OWNER_AND_STAFF,
   Permissions,
-} from 'src/auth/decorators/permissions.decorator';
+} from '#src/auth/decorators/permissions.decorator.js';
 
 @Controller('refunds')
 export class RefundsController {

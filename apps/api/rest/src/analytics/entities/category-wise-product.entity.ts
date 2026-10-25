@@ -1,4 +1,4 @@
-import { CoreEntity } from 'src/common/entities/core.entity';
+import { CoreEntity } from '#src/common/entities/core.entity.js';
 
 export class CategoryWiseProduct extends CoreEntity {
   totalRevenue?: number;

@@ -19,9 +19,9 @@ import {
   updateTermsAndConditions,
   type TermsAndConditionsRecord,
 } from '@safari/db';
-import { TermsAndConditionsService } from './terms-and-conditions.service';
-import { CreateTermsAndConditionsDto } from './dto/create-terms-and-conditions.dto';
-import { GetTermsAndConditionsDto } from './dto/get-terms-and-conditions.dto';
+import { TermsAndConditionsService } from './terms-and-conditions.service.js';
+import { CreateTermsAndConditionsDto } from './dto/create-terms-and-conditions.dto.js';
+import { GetTermsAndConditionsDto } from './dto/get-terms-and-conditions.dto.js';
 
 vi.mock('@safari/db', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@safari/db')>()),

@@ -6,11 +6,11 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { PERMISSIONS_KEY } from '../decorators/permissions.decorator';
+import { PERMISSIONS_KEY } from '../decorators/permissions.decorator.js';
 import {
   AuthenticatedRequest,
   INVALID_TOKEN_MESSAGE,
-} from '../decorators/current-user.decorator';
+} from '../decorators/current-user.decorator.js';
 
 export const INSUFFICIENT_PERMISSIONS_MESSAGE =
   'No tienes permisos suficientes para esta operación.';

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { CreateRefundDto } from './dto/create-refund.dto';
-import { UpdateRefundDto } from './dto/update-refund.dto';
+import { CreateRefundDto } from './dto/create-refund.dto.js';
+import { UpdateRefundDto } from './dto/update-refund.dto.js';
 
 @Injectable()
 export class RefundsService {

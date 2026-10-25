@@ -8,20 +8,20 @@ import {
   Put,
   Query,
 } from '@nestjs/common';
-import { ManufacturersService } from './manufacturers.service';
-import { GetTopManufacturersDto } from './dto/get-top-manufacturers.dto';
-import { Manufacturer } from './entities/manufacturer.entity';
+import { ManufacturersService } from './manufacturers.service.js';
+import { GetTopManufacturersDto } from './dto/get-top-manufacturers.dto.js';
+import { Manufacturer } from './entities/manufacturer.entity.js';
 import {
   GetManufacturersDto,
   ManufacturerPaginator,
-} from './dto/get-manufactures.dto';
-import { CreateManufacturerDto } from './dto/create-manufacturer.dto';
-import { UpdateManufacturerDto } from './dto/update-manufacturer.dto';
-import { Public } from 'src/auth/decorators/public.decorator';
+} from './dto/get-manufactures.dto.js';
+import { CreateManufacturerDto } from './dto/create-manufacturer.dto.js';
+import { UpdateManufacturerDto } from './dto/update-manufacturer.dto.js';
+import { Public } from '#src/auth/decorators/public.decorator.js';
 import {
   ADMIN_OWNER_AND_STAFF,
   Permissions,
-} from 'src/auth/decorators/permissions.decorator';
+} from '#src/auth/decorators/permissions.decorator.js';
 
 @Controller('manufacturers')
 export class ManufacturersController {

@@ -1,24 +1,24 @@
 import { Injectable } from '@nestjs/common';
-import settingJson from '@db/settings.json';
-import { Setting } from 'src/settings/entities/setting.entity';
+import settingJson from '#db/settings.json';
+import { Setting } from '#src/settings/entities/setting.entity.js';
 import { plainToClass } from 'class-transformer';
 import { InjectStripe } from 'nestjs-stripe';
-import paymentGatewayJson from 'src/db/pickbazar/payment-gateway.json';
-import { Order } from 'src/orders/entities/order.entity';
-import { PaymentGateWay } from 'src/payment-method/entities/payment-gateway.entity';
-import { User } from 'src/users/entities/user.entity';
+import paymentGatewayJson from '#src/db/pickbazar/payment-gateway.json';
+import { Order } from '#src/orders/entities/order.entity.js';
+import { PaymentGateWay } from '#src/payment-method/entities/payment-gateway.entity.js';
+import { User } from '#src/users/entities/user.entity.js';
 import Stripe from 'stripe';
 import {
   CardElementDto,
   CreatePaymentIntentDto,
   StripeCreateCustomerDto,
-} from './dto/stripe.dto';
+} from './dto/stripe.dto.js';
 import {
   StripeCustomer,
   StripeCustomerList,
   StripePaymentIntent,
   StripePaymentMethod,
-} from './entity/stripe.entity';
+} from './entity/stripe.entity.js';
 
 const paymentGateways = plainToClass(PaymentGateWay, paymentGatewayJson);
 const setting = plainToClass(Setting, settingJson);

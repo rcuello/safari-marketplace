@@ -1,5 +1,5 @@
 import { PickType } from '@nestjs/swagger';
-import { Shop } from '../entities/shop.entity';
+import { Shop } from '../entities/shop.entity.js';
 
 /**
  * `ShopsService.create`/`update` (US-30) construyen `CreateShopInput`/

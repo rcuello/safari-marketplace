@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
-import { CouponsService } from './coupons.service';
+import { CouponsService } from './coupons.service.js';
 import {
   ApproveCouponController,
   CouponsController,
   DisapproveCouponController,
-} from './coupons.controller';
+} from './coupons.controller.js';
 
 @Module({
   controllers: [

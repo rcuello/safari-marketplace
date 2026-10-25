@@ -23,15 +23,15 @@ import {
   type Prisma,
   type UpdateCouponInput,
 } from '@safari/db';
-import { CurrentUserPayload } from 'src/auth/decorators/current-user.decorator';
-import { paginate } from 'src/common/pagination/paginate';
-import { parseSearch } from 'src/common/search/parse-search';
-import { toWriteHttpException } from 'src/common/errors/domain-error.mapper';
-import { CreateCouponDto } from './dto/create-coupon.dto';
-import { GetCouponsDto } from './dto/get-coupons.dto';
-import { UpdateCouponDto } from './dto/update-coupon.dto';
-import { VerifyCouponInput } from './dto/verify-coupon.dto';
-import { Coupon } from './entities/coupon.entity';
+import { CurrentUserPayload } from '#src/auth/decorators/current-user.decorator.js';
+import { paginate } from '#src/common/pagination/paginate.js';
+import { parseSearch } from '#src/common/search/parse-search.js';
+import { toWriteHttpException } from '#src/common/errors/domain-error.mapper.js';
+import { CreateCouponDto } from './dto/create-coupon.dto.js';
+import { GetCouponsDto } from './dto/get-coupons.dto.js';
+import { UpdateCouponDto } from './dto/update-coupon.dto.js';
+import { VerifyCouponInput } from './dto/verify-coupon.dto.js';
+import { Coupon } from './entities/coupon.entity.js';
 
 /** La única clave de error de cupón que el shop sabe traducir (`common.json`). */
 export const INVALID_COUPON_MESSAGE = 'error-invalid-coupon';

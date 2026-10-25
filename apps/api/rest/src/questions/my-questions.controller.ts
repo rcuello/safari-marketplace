@@ -8,14 +8,14 @@ import {
   Put,
   Delete,
 } from '@nestjs/common';
-import { CreateQuestionDto } from './dto/create-question.dto';
-import { GetQuestionDto } from './dto/get-questions.dto';
-import { UpdateQuestionDto } from './dto/update-question.dto';
-import { MyQuestionsService } from './my-questions.service';
+import { CreateQuestionDto } from './dto/create-question.dto.js';
+import { GetQuestionDto } from './dto/get-questions.dto.js';
+import { UpdateQuestionDto } from './dto/update-question.dto.js';
+import { MyQuestionsService } from './my-questions.service.js';
 import {
   CurrentUser,
   CurrentUserPayload,
-} from 'src/auth/decorators/current-user.decorator';
+} from '#src/auth/decorators/current-user.decorator.js';
 
 @Controller('my-questions')
 export class MyQuestionsController {

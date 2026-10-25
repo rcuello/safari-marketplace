@@ -8,15 +8,15 @@ import {
   Delete,
   Query,
 } from '@nestjs/common';
-import { TagsService } from './tags.service';
-import { CreateTagDto } from './dto/create-tag.dto';
-import { UpdateTagDto } from './dto/update-tag.dto';
-import { GetTagsDto, TagPaginator } from './dto/get-tags.dto';
-import { Public } from 'src/auth/decorators/public.decorator';
+import { TagsService } from './tags.service.js';
+import { CreateTagDto } from './dto/create-tag.dto.js';
+import { UpdateTagDto } from './dto/update-tag.dto.js';
+import { GetTagsDto, TagPaginator } from './dto/get-tags.dto.js';
+import { Public } from '#src/auth/decorators/public.decorator.js';
 import {
   ADMIN_ONLY,
   Permissions,
-} from 'src/auth/decorators/permissions.decorator';
+} from '#src/auth/decorators/permissions.decorator.js';
 
 @Controller('tags')
 export class TagsController {

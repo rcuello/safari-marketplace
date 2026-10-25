@@ -1,6 +1,6 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import { GetPaymentIntentDto } from './dto/get-payment-intent.dto';
-import { PaymentIntentService } from './payment-intent.service';
+import { GetPaymentIntentDto } from './dto/get-payment-intent.dto.js';
+import { PaymentIntentService } from './payment-intent.service.js';
 
 @Controller('payment-intent')
 export class PaymentIntentController {

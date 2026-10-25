@@ -8,15 +8,15 @@ import {
   Put,
   Query,
 } from '@nestjs/common';
-import { RefundPoliciesService } from './refund-policies.service';
-import { CreateRefundPolicyDto } from './dto/create-refund-policy.dto';
-import { GetRefundPolicyDto } from './dto/get-refund-policies.dto';
-import { UpdateRefundPolicyDto } from './dto/update-refund-policy.dto';
-import { Public } from 'src/auth/decorators/public.decorator';
+import { RefundPoliciesService } from './refund-policies.service.js';
+import { CreateRefundPolicyDto } from './dto/create-refund-policy.dto.js';
+import { GetRefundPolicyDto } from './dto/get-refund-policies.dto.js';
+import { UpdateRefundPolicyDto } from './dto/update-refund-policy.dto.js';
+import { Public } from '#src/auth/decorators/public.decorator.js';
 import {
   ADMIN_ONLY,
   Permissions,
-} from 'src/auth/decorators/permissions.decorator';
+} from '#src/auth/decorators/permissions.decorator.js';
 
 @Controller('refund-policies')
 export class RefundPoliciesController {

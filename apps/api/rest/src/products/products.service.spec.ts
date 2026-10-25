@@ -43,12 +43,12 @@ import {
   type ProductDetail,
   type ProductRecord,
 } from '@safari/db';
-import { ProductsService } from './products.service';
-import { GetProductsDto } from './dto/get-products.dto';
-import { CreateProductDto } from './dto/create-product.dto';
-import { UpdateProductDto } from './dto/update-product.dto';
-import { Product } from './entities/product.entity';
-import type { CurrentUserPayload } from 'src/auth/decorators/current-user.decorator';
+import { ProductsService } from './products.service.js';
+import { GetProductsDto } from './dto/get-products.dto.js';
+import { CreateProductDto } from './dto/create-product.dto.js';
+import { UpdateProductDto } from './dto/update-product.dto.js';
+import { Product } from './entities/product.entity.js';
+import type { CurrentUserPayload } from '#src/auth/decorators/current-user.decorator.js';
 
 vi.mock('@safari/db', async (importOriginal) => ({
   // El barrel es seguro de cargar sin DATABASE_URL (cliente lazy vía Proxy);

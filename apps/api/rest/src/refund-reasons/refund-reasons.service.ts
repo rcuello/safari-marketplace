@@ -14,16 +14,16 @@ import {
   updateRefundReason,
   type RefundReasonRecord,
 } from '@safari/db';
-import { paginate } from 'src/common/pagination/paginate';
-import { parseSearch } from 'src/common/search/parse-search';
-import { toWriteHttpException } from 'src/common/errors/domain-error.mapper';
-import { RefundReason } from './entities/refund-reasons.entity';
-import { UpdateRefundReasonDto } from './dto/update-refund-reasons.dto';
+import { paginate } from '#src/common/pagination/paginate.js';
+import { parseSearch } from '#src/common/search/parse-search.js';
+import { toWriteHttpException } from '#src/common/errors/domain-error.mapper.js';
+import { RefundReason } from './entities/refund-reasons.entity.js';
+import { UpdateRefundReasonDto } from './dto/update-refund-reasons.dto.js';
 import {
   GetRefundReasonDto,
   RefundReasonPaginator,
-} from './dto/get-refund-reasons.dto';
-import { CreateRefundReasonDto } from './dto/create-refund-reasons.dto';
+} from './dto/get-refund-reasons.dto.js';
+import { CreateRefundReasonDto } from './dto/create-refund-reasons.dto.js';
 
 /**
  * `RefundReasonRecord` → las 8 claves de `refund-reasons.json`, en su orden.

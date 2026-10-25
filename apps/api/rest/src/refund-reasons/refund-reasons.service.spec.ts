@@ -17,8 +17,8 @@ import {
   updateRefundReason,
   type RefundReasonRecord,
 } from '@safari/db';
-import { RefundReasonsService } from './refund-reasons.service';
-import { GetRefundReasonDto } from './dto/get-refund-reasons.dto';
+import { RefundReasonsService } from './refund-reasons.service.js';
+import { GetRefundReasonDto } from './dto/get-refund-reasons.dto.js';
 
 vi.mock('@safari/db', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@safari/db')>()),

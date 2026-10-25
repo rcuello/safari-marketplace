@@ -1,5 +1,5 @@
 import { OmitType } from '@nestjs/swagger';
-import { Author } from '../entities/author.entity';
+import { Author } from '../entities/author.entity.js';
 
 export class CreateAuthorDto extends OmitType(Author, [
   'id',

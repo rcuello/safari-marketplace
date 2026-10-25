@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { NewslettersController } from './newsletters.controller';
-import { NewslettersService } from './newsletters.service';
+import { NewslettersController } from './newsletters.controller.js';
+import { NewslettersService } from './newsletters.service.js';
 
 @Module({
   controllers: [NewslettersController],

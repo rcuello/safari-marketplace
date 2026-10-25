@@ -1,10 +1,10 @@
-import taxesJson from '@db/taxes.json';
+import taxesJson from '#db/taxes.json';
 import { Injectable } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
-import { PaymentIntent } from './entries/payment-intent.entity';
-import ordersJson from '@db/orders.json';
-import { Order } from 'src/orders/entities/order.entity';
-import { GetPaymentIntentDto } from './dto/get-payment-intent.dto';
+import { PaymentIntent } from './entries/payment-intent.entity.js';
+import ordersJson from '#db/orders.json';
+import { Order } from '#src/orders/entities/order.entity.js';
+import { GetPaymentIntentDto } from './dto/get-payment-intent.dto.js';
 
 const orders = plainToClass(Order, ordersJson);
 const paymentIntents = plainToClass(PaymentIntent, taxesJson);

@@ -1,5 +1,5 @@
 import { PickType } from '@nestjs/swagger';
-import { Profile } from '../entities/profile.entity';
+import { Profile } from '../entities/profile.entity.js';
 
 export class CreateProfileDto extends PickType(Profile, [
   'avatar',

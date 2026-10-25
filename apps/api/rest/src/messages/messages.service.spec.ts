@@ -19,10 +19,10 @@ import {
   type MessageDetailRecord,
   type ShopRecord,
 } from '@safari/db';
-import { CurrentUserPayload } from 'src/auth/decorators/current-user.decorator';
-import { GetConversationsDto } from 'src/conversations/dto/get-conversations.dto';
-import { CreateMessageDto } from './dto/create-message.dto';
-import { MessagesService } from './messages.service';
+import { CurrentUserPayload } from '#src/auth/decorators/current-user.decorator.js';
+import { GetConversationsDto } from '#src/conversations/dto/get-conversations.dto.js';
+import { CreateMessageDto } from './dto/create-message.dto.js';
+import { MessagesService } from './messages.service.js';
 
 vi.mock('@safari/db', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@safari/db')>()),

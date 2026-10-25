@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { ConversationsController } from './conversations.controller';
-import { ConversationsService } from './conversations.service';
+import { ConversationsController } from './conversations.controller.js';
+import { ConversationsService } from './conversations.service.js';
 
 @Module({
   controllers: [ConversationsController],

@@ -11,10 +11,10 @@ import {
 import {
   CurrentUser,
   CurrentUserPayload,
-} from 'src/auth/decorators/current-user.decorator';
-import { CreateWishlistDto } from './dto/create-wishlists.dto';
-import { GetWishlistDto } from './dto/get-wishlists.dto';
-import { MyWishlistService } from './my-wishlists.service';
+} from '#src/auth/decorators/current-user.decorator.js';
+import { CreateWishlistDto } from './dto/create-wishlists.dto.js';
+import { GetWishlistDto } from './dto/get-wishlists.dto.js';
+import { MyWishlistService } from './my-wishlists.service.js';
 
 // Misma lista por usuario que `wishlists` (US-53); `:id` es un id de producto.
 @Controller('my-wishlists')

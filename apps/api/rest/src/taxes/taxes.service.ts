@@ -15,12 +15,12 @@ import {
   type TaxRecord,
   type UpdateTaxInput,
 } from '@safari/db';
-import { parseSearch } from 'src/common/search/parse-search';
-import { toWriteHttpException } from 'src/common/errors/domain-error.mapper';
-import { CreateTaxDto } from './dto/create-tax.dto';
-import { GetTaxesDto } from './dto/get-taxes.dto';
-import { UpdateTaxDto } from './dto/update-tax.dto';
-import { Tax } from './entities/tax.entity';
+import { parseSearch } from '#src/common/search/parse-search.js';
+import { toWriteHttpException } from '#src/common/errors/domain-error.mapper.js';
+import { CreateTaxDto } from './dto/create-tax.dto.js';
+import { GetTaxesDto } from './dto/get-taxes.dto.js';
+import { UpdateTaxDto } from './dto/update-tax.dto.js';
+import { Tax } from './entities/tax.entity.js';
 
 /**
  * `TaxRecord` → las 12 claves de `taxes.json` en SU orden, que no es el de

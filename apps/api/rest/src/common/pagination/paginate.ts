@@ -1,5 +1,5 @@
-import { APP_URL } from '../constants';
-import { PaginatorInfo } from '../dto/paginator-info.dto';
+import { APP_URL } from '../constants.js';
+import { PaginatorInfo } from '../dto/paginator-info.dto.js';
 
 export function paginate(
   totalItems: number,

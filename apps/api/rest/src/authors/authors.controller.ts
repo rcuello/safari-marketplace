@@ -8,17 +8,17 @@ import {
   Put,
   Query,
 } from '@nestjs/common';
-import { AuthorsService } from './authors.service';
-import { AuthorPaginator, GetAuthorDto } from './dto/get-author.dto';
-import { GetTopAuthorsDto } from './dto/get-top-authors.dto';
-import { Author } from './entities/author.entity';
-import { UpdateAuthorDto } from './dto/update-author.dto';
-import { CreateAuthorDto } from './dto/create-author.dto';
-import { Public } from 'src/auth/decorators/public.decorator';
+import { AuthorsService } from './authors.service.js';
+import { AuthorPaginator, GetAuthorDto } from './dto/get-author.dto.js';
+import { GetTopAuthorsDto } from './dto/get-top-authors.dto.js';
+import { Author } from './entities/author.entity.js';
+import { UpdateAuthorDto } from './dto/update-author.dto.js';
+import { CreateAuthorDto } from './dto/create-author.dto.js';
+import { Public } from '#src/auth/decorators/public.decorator.js';
 import {
   ADMIN_OWNER_AND_STAFF,
   Permissions,
-} from 'src/auth/decorators/permissions.decorator';
+} from '#src/auth/decorators/permissions.decorator.js';
 
 @Controller('authors')
 export class AuthorsController {

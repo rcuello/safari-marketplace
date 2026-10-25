@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { Product } from 'src/products/entities/product.entity';
-import { GetWishlistDto } from './dto/get-wishlists.dto';
-import { WishlistsService } from './wishlists.service';
+import { Product } from '#src/products/entities/product.entity.js';
+import { GetWishlistDto } from './dto/get-wishlists.dto.js';
+import { WishlistsService } from './wishlists.service.js';
 
 export const MY_WISHLISTS_URL =
   '/my-wishlists?with=shop&orderBy=created_at&sortedBy=desc';

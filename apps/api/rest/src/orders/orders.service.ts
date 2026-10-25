@@ -1,5 +1,5 @@
-import paymentGatewayJson from '@db/payment-gateway.json';
-import paymentIntentJson from '@db/payment-intent.json';
+import paymentGatewayJson from '#db/payment-gateway.json';
+import paymentIntentJson from '#db/payment-intent.json';
 import {
   BadRequestException,
   Injectable,
@@ -36,39 +36,39 @@ import {
   type ProductRecord,
 } from '@safari/db';
 import { plainToClass } from 'class-transformer';
-import { toWriteHttpException } from 'src/common/errors/domain-error.mapper';
-import { AuthService } from 'src/auth/auth.service';
-import { ADMIN_OWNER_AND_STAFF } from 'src/auth/decorators/permissions.decorator';
-import { CurrentUserPayload } from 'src/auth/decorators/current-user.decorator';
-import { paginate } from 'src/common/pagination/paginate';
-import { parseSearch } from 'src/common/search/parse-search';
-import { PaymentIntent } from 'src/payment-intent/entries/payment-intent.entity';
-import { PaymentGateWay } from 'src/payment-method/entities/payment-gateway.entity';
-import { PaypalPaymentService } from 'src/payment/paypal-payment.service';
-import { StripePaymentService } from 'src/payment/stripe-payment.service';
-import { CreateOrderDto } from './dto/create-order.dto';
-import { GetOrderFilesDto, OrderFilesPaginator } from './dto/get-downloads.dto';
-import { GetOrdersDto, OrderPaginator } from './dto/get-orders.dto';
-import { UpdateOrderDto } from './dto/update-order.dto';
+import { toWriteHttpException } from '#src/common/errors/domain-error.mapper.js';
+import { AuthService } from '#src/auth/auth.service.js';
+import { ADMIN_OWNER_AND_STAFF } from '#src/auth/decorators/permissions.decorator.js';
+import { CurrentUserPayload } from '#src/auth/decorators/current-user.decorator.js';
+import { paginate } from '#src/common/pagination/paginate.js';
+import { parseSearch } from '#src/common/search/parse-search.js';
+import { PaymentIntent } from '#src/payment-intent/entries/payment-intent.entity.js';
+import { PaymentGateWay } from '#src/payment-method/entities/payment-gateway.entity.js';
+import { PaypalPaymentService } from '#src/payment/paypal-payment.service.js';
+import { StripePaymentService } from '#src/payment/stripe-payment.service.js';
+import { CreateOrderDto } from './dto/create-order.dto.js';
+import { GetOrderFilesDto, OrderFilesPaginator } from './dto/get-downloads.dto.js';
+import { GetOrdersDto, OrderPaginator } from './dto/get-orders.dto.js';
+import { UpdateOrderDto } from './dto/update-order.dto.js';
 import {
   CheckoutVerificationDto,
   VerifiedCheckoutData,
-} from './dto/verify-checkout.dto';
+} from './dto/verify-checkout.dto.js';
 import {
   Order,
   OrderFiles,
   OrderStatusType,
   PaymentGatewayType,
   PaymentStatusType,
-} from './entities/order.entity';
-import { toOrderDto } from './order-dto.mapper';
+} from './entities/order.entity.js';
+import { toOrderDto } from './order-dto.mapper.js';
 import {
   hasAddress,
   isCouponApplicable,
   priceOrder,
   type PricingInput,
-} from './orders-pricing';
-import { toReviewUserDto } from 'src/reviews/review-dto.mapper';
+} from './orders-pricing.js';
+import { toReviewUserDto } from '#src/reviews/review-dto.mapper.js';
 
 // payment-intent.json y payment-gateway.json son el mock permanente de la
 // pasarela (decisión 2 del Épico 46): siguen aquí a propósito.

@@ -17,10 +17,10 @@ import {
   type ConversationDetailRecord,
   type ShopRecord,
 } from '@safari/db';
-import { CurrentUserPayload } from 'src/auth/decorators/current-user.decorator';
-import { ConversationsService } from './conversations.service';
-import { CreateConversationDto } from './dto/create-conversation.dto';
-import { GetConversationsDto } from './dto/get-conversations.dto';
+import { CurrentUserPayload } from '#src/auth/decorators/current-user.decorator.js';
+import { ConversationsService } from './conversations.service.js';
+import { CreateConversationDto } from './dto/create-conversation.dto.js';
+import { GetConversationsDto } from './dto/get-conversations.dto.js';
 
 vi.mock('@safari/db', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@safari/db')>()),

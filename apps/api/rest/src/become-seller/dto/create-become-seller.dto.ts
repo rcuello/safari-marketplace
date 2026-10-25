@@ -1,7 +1,7 @@
 import {
   BecomeSellerOptions,
   CommissionItem,
-} from '../entities/become-seller.entity';
+} from '../entities/become-seller.entity.js';
 
 /**
  * Forma real del body del `POST` (`BecomeSellerInput`,

@@ -27,11 +27,11 @@ import {
   type ProductRecord,
   type ReviewDetailRecord,
 } from '@safari/db';
-import { CurrentUserPayload } from 'src/auth/decorators/current-user.decorator';
-import { CreateReviewDto } from './dto/create-review.dto';
-import { GetReviewsDto } from './dto/get-reviews.dto';
-import { UpdateReviewDto } from './dto/update-review.dto';
-import { ReviewService } from './reviews.service';
+import { CurrentUserPayload } from '#src/auth/decorators/current-user.decorator.js';
+import { CreateReviewDto } from './dto/create-review.dto.js';
+import { GetReviewsDto } from './dto/get-reviews.dto.js';
+import { UpdateReviewDto } from './dto/update-review.dto.js';
+import { ReviewService } from './reviews.service.js';
 
 vi.mock('@safari/db', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@safari/db')>()),

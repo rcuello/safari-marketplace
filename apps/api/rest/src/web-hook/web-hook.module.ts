@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { WebHookController } from './web-hook.controller';
-import { WebHookService } from './web-hook.service';
+import { WebHookController } from './web-hook.controller.js';
+import { WebHookService } from './web-hook.service.js';
 
 @Module({
   controllers: [WebHookController],

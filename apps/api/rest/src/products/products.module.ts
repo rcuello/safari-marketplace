@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
-import { ProductsService } from './products.service';
+import { ProductsService } from './products.service.js';
 import {
   ProductsController,
   PopularProductsController,
   ProductsStockController,
   DraftProductsController,
   BestSellingProductsController,
-} from './products.controller';
+} from './products.controller.js';
 
 @Module({
   controllers: [

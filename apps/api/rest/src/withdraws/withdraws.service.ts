@@ -17,15 +17,15 @@ import {
   updateWithdrawStatus,
   type WithdrawDetailRecord,
 } from '@safari/db';
-import { CurrentUserPayload } from 'src/auth/decorators/current-user.decorator';
-import { toWriteHttpException } from 'src/common/errors/domain-error.mapper';
-import { paginate } from 'src/common/pagination/paginate';
-import { parseSearch } from 'src/common/search/parse-search';
-import { toShopDto } from 'src/shops/shops.service';
-import { CreateWithdrawDto } from './dto/create-withdraw.dto';
-import { ApproveWithdrawDto } from './dto/approve-withdraw.dto';
-import { GetWithdrawsDto, WithdrawPaginator } from './dto/get-withdraw.dto';
-import { Withdraw } from './entities/withdraw.entity';
+import { CurrentUserPayload } from '#src/auth/decorators/current-user.decorator.js';
+import { toWriteHttpException } from '#src/common/errors/domain-error.mapper.js';
+import { paginate } from '#src/common/pagination/paginate.js';
+import { parseSearch } from '#src/common/search/parse-search.js';
+import { toShopDto } from '#src/shops/shops.service.js';
+import { CreateWithdrawDto } from './dto/create-withdraw.dto.js';
+import { ApproveWithdrawDto } from './dto/approve-withdraw.dto.js';
+import { GetWithdrawsDto, WithdrawPaginator } from './dto/get-withdraw.dto.js';
+import { Withdraw } from './entities/withdraw.entity.js';
 
 /** Las 13 primeras claves de `toShopDto`: el snapshot `shop` de `withdraws.json`. */
 const SHOP_SNAPSHOT_KEYS = [

@@ -8,15 +8,15 @@ import {
   Delete,
   Query,
 } from '@nestjs/common';
-import { ShippingsService } from './shippings.service';
-import { CreateShippingDto } from './dto/create-shipping.dto';
-import { UpdateShippingDto } from './dto/update-shipping.dto';
-import { GetShippingsDto } from './dto/get-shippings.dto';
-import { Public } from 'src/auth/decorators/public.decorator';
+import { ShippingsService } from './shippings.service.js';
+import { CreateShippingDto } from './dto/create-shipping.dto.js';
+import { UpdateShippingDto } from './dto/update-shipping.dto.js';
+import { GetShippingsDto } from './dto/get-shippings.dto.js';
+import { Public } from '#src/auth/decorators/public.decorator.js';
 import {
   ADMIN_ONLY,
   Permissions,
-} from 'src/auth/decorators/permissions.decorator';
+} from '#src/auth/decorators/permissions.decorator.js';
 
 @Controller('shippings')
 export class ShippingsController {

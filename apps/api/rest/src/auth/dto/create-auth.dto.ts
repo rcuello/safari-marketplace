@@ -1,6 +1,6 @@
 import { PartialType, PickType } from '@nestjs/swagger';
-import { CoreMutationOutput } from 'src/common/dto/core-mutation-output.dto';
-import { User } from 'src/users/entities/user.entity';
+import { CoreMutationOutput } from '#src/common/dto/core-mutation-output.dto.js';
+import { User } from '#src/users/entities/user.entity.js';
 
 // snake_case (Decisión I, design.md): los tres frontends comparan
 // `permissions[]` contra estos strings, no contra los del Laravel

@@ -19,8 +19,8 @@ import {
   updateShipping,
   type ShippingRecord,
 } from '@safari/db';
-import { ShippingsService } from './shippings.service';
-import { CreateShippingDto } from './dto/create-shipping.dto';
+import { ShippingsService } from './shippings.service.js';
+import { CreateShippingDto } from './dto/create-shipping.dto.js';
 
 vi.mock('@safari/db', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@safari/db')>()),

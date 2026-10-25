@@ -25,7 +25,7 @@ import {
   type DashboardAnalyticsRecord,
   type ProductRecord,
 } from '@safari/db';
-import { AnalyticsService, STATUS_KEYS } from './analytics.service';
+import { AnalyticsService, STATUS_KEYS } from './analytics.service.js';
 
 vi.mock('@safari/db', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@safari/db')>()),

@@ -1,6 +1,6 @@
 import type { OrderDetailRecord, OrderProductRecord } from '@safari/db';
-import { toShopDto } from 'src/shops/shops.service';
-import { Order } from './entities/order.entity';
+import { toShopDto } from '#src/shops/shops.service.js';
+import { Order } from './entities/order.entity.js';
 
 /**
  * Línea → el producto del mock: el snapshot con `pivot` reinsertado justo

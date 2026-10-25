@@ -2,8 +2,8 @@ import { Module } from '@nestjs/common';
 import {
   MessageSeenController,
   MessagesController,
-} from './messages.controller';
-import { MessagesService } from './messages.service';
+} from './messages.controller.js';
+import { MessagesService } from './messages.service.js';
 
 @Module({
   controllers: [MessagesController, MessageSeenController],

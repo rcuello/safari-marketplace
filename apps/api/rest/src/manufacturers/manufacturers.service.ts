@@ -4,7 +4,7 @@ import {
   NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import { Manufacturer } from './entities/manufacturer.entity';
+import { Manufacturer } from './entities/manufacturer.entity.js';
 import {
   createManufacturer,
   deleteManufacturer,
@@ -19,16 +19,16 @@ import {
   type Prisma,
   type TypeRecord,
 } from '@safari/db';
-import { toWriteHttpException } from '../common/errors/domain-error.mapper';
-import { GetTopManufacturersDto } from './dto/get-top-manufacturers.dto';
+import { toWriteHttpException } from '../common/errors/domain-error.mapper.js';
+import { GetTopManufacturersDto } from './dto/get-top-manufacturers.dto.js';
 import {
   GetManufacturersDto,
   ManufacturerPaginator,
-} from './dto/get-manufactures.dto';
-import { paginate } from '../common/pagination/paginate';
-import { CreateManufacturerDto } from './dto/create-manufacturer.dto';
-import { UpdateManufacturerDto } from './dto/update-manufacturer.dto';
-import { parseSearch } from '../common/search/parse-search';
+} from './dto/get-manufactures.dto.js';
+import { paginate } from '../common/pagination/paginate.js';
+import { CreateManufacturerDto } from './dto/create-manufacturer.dto.js';
+import { UpdateManufacturerDto } from './dto/update-manufacturer.dto.js';
+import { parseSearch } from '../common/search/parse-search.js';
 
 /**
  * `ManufacturerRecord` (camelCase, `@safari/db`) → proyección de 13 claves

@@ -1,4 +1,4 @@
-import { PaginationArgs } from 'src/common/dto/pagination-args.dto';
+import { PaginationArgs } from '#src/common/dto/pagination-args.dto.js';
 
 export class GetStaffsDto extends PaginationArgs {
   orderBy?: string;

@@ -3,8 +3,8 @@ import {
   ApproveTermsAndConditionController,
   DisapproveTermsAndConditionController,
   TermsAndConditionsController,
-} from './terms-and-conditions.controller';
-import { TermsAndConditionsService } from './terms-and-conditions.service';
+} from './terms-and-conditions.controller.js';
+import { TermsAndConditionsService } from './terms-and-conditions.service.js';
 
 @Module({
   controllers: [

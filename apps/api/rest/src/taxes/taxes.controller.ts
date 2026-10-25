@@ -8,15 +8,15 @@ import {
   Delete,
   Query,
 } from '@nestjs/common';
-import { TaxesService } from './taxes.service';
-import { CreateTaxDto } from './dto/create-tax.dto';
-import { UpdateTaxDto } from './dto/update-tax.dto';
-import { GetTaxesDto } from './dto/get-taxes.dto';
-import { Public } from 'src/auth/decorators/public.decorator';
+import { TaxesService } from './taxes.service.js';
+import { CreateTaxDto } from './dto/create-tax.dto.js';
+import { UpdateTaxDto } from './dto/update-tax.dto.js';
+import { GetTaxesDto } from './dto/get-taxes.dto.js';
+import { Public } from '#src/auth/decorators/public.decorator.js';
 import {
   ADMIN_ONLY,
   Permissions,
-} from 'src/auth/decorators/permissions.decorator';
+} from '#src/auth/decorators/permissions.decorator.js';
 
 @Controller('taxes')
 export class TaxesController {

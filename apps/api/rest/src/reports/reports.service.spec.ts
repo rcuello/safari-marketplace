@@ -8,7 +8,7 @@
  */
 import 'reflect-metadata';
 import { listAbusiveReportsByUser } from '@safari/db';
-import { ReportsService } from './reports.service';
+import { ReportsService } from './reports.service.js';
 
 vi.mock('@safari/db', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@safari/db')>()),

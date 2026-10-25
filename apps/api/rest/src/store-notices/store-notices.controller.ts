@@ -8,20 +8,20 @@ import {
   Put,
   Query,
 } from '@nestjs/common';
-import { GetUsersDto } from 'src/users/dto/get-users.dto';
-import { UsersService } from 'src/users/users.service';
-import { CreateStoreNoticeDto } from './dto/create-store-notice.dto';
-import { GetStoreNoticesDto } from './dto/get-store-notices.dto';
-import { UpdateStoreNoticeDto } from './dto/update-store-notice.dto';
-import { StoreNoticesService } from './store-notices.service';
+import { GetUsersDto } from '#src/users/dto/get-users.dto.js';
+import { UsersService } from '#src/users/users.service.js';
+import { CreateStoreNoticeDto } from './dto/create-store-notice.dto.js';
+import { GetStoreNoticesDto } from './dto/get-store-notices.dto.js';
+import { UpdateStoreNoticeDto } from './dto/update-store-notice.dto.js';
+import { StoreNoticesService } from './store-notices.service.js';
 import {
   ADMIN_AND_OWNER,
   Permissions,
-} from 'src/auth/decorators/permissions.decorator';
+} from '#src/auth/decorators/permissions.decorator.js';
 import {
   CurrentUser,
   CurrentUserPayload,
-} from 'src/auth/decorators/current-user.decorator';
+} from '#src/auth/decorators/current-user.decorator.js';
 
 // `is_read` es por usuario (US-51): toda ruta que proyecta un aviso necesita
 // saber quién consulta, por eso @CurrentUser va en lecturas y escrituras.

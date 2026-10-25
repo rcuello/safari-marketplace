@@ -8,15 +8,15 @@ import {
   Put,
   Query,
 } from '@nestjs/common';
-import { RefundReasonsService } from './refund-reasons.service';
-import { CreateRefundReasonDto } from './dto/create-refund-reasons.dto';
-import { GetRefundReasonDto } from './dto/get-refund-reasons.dto';
-import { UpdateRefundReasonDto } from './dto/update-refund-reasons.dto';
-import { Public } from 'src/auth/decorators/public.decorator';
+import { RefundReasonsService } from './refund-reasons.service.js';
+import { CreateRefundReasonDto } from './dto/create-refund-reasons.dto.js';
+import { GetRefundReasonDto } from './dto/get-refund-reasons.dto.js';
+import { UpdateRefundReasonDto } from './dto/update-refund-reasons.dto.js';
+import { Public } from '#src/auth/decorators/public.decorator.js';
 import {
   ADMIN_ONLY,
   Permissions,
-} from 'src/auth/decorators/permissions.decorator';
+} from '#src/auth/decorators/permissions.decorator.js';
 
 @Controller('refund-reasons')
 export class RefundReasonsController {

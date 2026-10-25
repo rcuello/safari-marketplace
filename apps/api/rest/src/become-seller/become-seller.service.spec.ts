@@ -32,14 +32,14 @@
 import { getBecomeSeller, updateBecomeSeller } from '@safari/db';
 import type { BecomeSellerRecord } from '@safari/db';
 import { InternalServerErrorException } from '@nestjs/common';
-import becomeSellerJson from '@db/become-seller.json';
-import { BecomeSellerService } from './become-seller.service';
-import { CreateBecomeSellerDto } from './dto/create-become-seller.dto';
+import becomeSellerJson from '#db/become-seller.json';
+import { BecomeSellerService } from './become-seller.service.js';
+import { CreateBecomeSellerDto } from './dto/create-become-seller.dto.js';
 import {
   BecomeSeller,
   BecomeSellerEnvelope,
   BecomeSellerOptions,
-} from './entities/become-seller.entity';
+} from './entities/become-seller.entity.js';
 
 vi.mock('@safari/db', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@safari/db')>()),

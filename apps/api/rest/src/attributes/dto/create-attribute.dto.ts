@@ -1,5 +1,5 @@
 import { PickType } from '@nestjs/swagger';
-import { Attribute } from '../entities/attribute.entity';
+import { Attribute } from '../entities/attribute.entity.js';
 
 /**
  * Lo que envía el admin (`attribute-form.tsx:64-97`): al crear, valores sin

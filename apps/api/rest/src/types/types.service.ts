@@ -15,13 +15,13 @@ import {
   type Prisma,
   type TypeRecord,
 } from '@safari/db';
-import { toWriteHttpException } from 'src/common/errors/domain-error.mapper';
-import { CreateTypeDto } from './dto/create-type.dto';
-import { UpdateTypeDto } from './dto/update-type.dto';
-import { Type } from './entities/type.entity';
+import { toWriteHttpException } from '#src/common/errors/domain-error.mapper.js';
+import { CreateTypeDto } from './dto/create-type.dto.js';
+import { UpdateTypeDto } from './dto/update-type.dto.js';
+import { Type } from './entities/type.entity.js';
 
-import { parseSearch } from 'src/common/search/parse-search';
-import { GetTypesDto } from './dto/get-types.dto';
+import { parseSearch } from '#src/common/search/parse-search.js';
+import { GetTypesDto } from './dto/get-types.dto.js';
 
 /**
  * `TypeRecord` (camelCase, `@safari/db`) → proyección de 9 claves

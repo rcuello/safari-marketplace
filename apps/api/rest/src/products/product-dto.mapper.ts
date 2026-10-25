@@ -1,5 +1,5 @@
 import type { ProductRecord } from '@safari/db';
-import { Product } from './entities/product.entity';
+import { Product } from './entities/product.entity.js';
 
 /**
  * `ProductRecord` (camelCase, `@safari/db`) → proyección de 20 claves

@@ -8,19 +8,19 @@ import {
   Put,
   Query,
 } from '@nestjs/common';
-import { FaqsService } from './faqs.service';
-import { GetFaqsDto } from './dto/get-faqs.dto';
-import { CreateFaqDto } from './dto/create-faq.dto';
-import { UpdateFaqDto } from './dto/update-faq.dto';
-import { Public } from 'src/auth/decorators/public.decorator';
+import { FaqsService } from './faqs.service.js';
+import { GetFaqsDto } from './dto/get-faqs.dto.js';
+import { CreateFaqDto } from './dto/create-faq.dto.js';
+import { UpdateFaqDto } from './dto/update-faq.dto.js';
+import { Public } from '#src/auth/decorators/public.decorator.js';
 import {
   ADMIN_ONLY,
   Permissions,
-} from 'src/auth/decorators/permissions.decorator';
+} from '#src/auth/decorators/permissions.decorator.js';
 import {
   CurrentUser,
   CurrentUserPayload,
-} from 'src/auth/decorators/current-user.decorator';
+} from '#src/auth/decorators/current-user.decorator.js';
 
 @Controller('faqs')
 export class FaqsController {

@@ -1,8 +1,8 @@
-import { SortOrder } from 'src/common/dto/generic-conditions.dto';
-import { PaginationArgs } from 'src/common/dto/pagination-args.dto';
-import { Paginator } from 'src/common/dto/paginator.dto';
+import { SortOrder } from '#src/common/dto/generic-conditions.dto.js';
+import { PaginationArgs } from '#src/common/dto/pagination-args.dto.js';
+import { Paginator } from '#src/common/dto/paginator.dto.js';
 
-import { Coupon } from '../entities/coupon.entity';
+import { Coupon } from '../entities/coupon.entity.js';
 
 export class CouponPaginator extends Paginator<Coupon> {
   data: Coupon[];

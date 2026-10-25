@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
-import { AuthModule } from 'src/auth/auth.module';
-import { PaypalPaymentService } from './paypal-payment.service';
-import { StripePaymentService } from './stripe-payment.service';
+import { AuthModule } from '#src/auth/auth.module.js';
+import { PaypalPaymentService } from './paypal-payment.service.js';
+import { StripePaymentService } from './stripe-payment.service.js';
 
 @Module({
   imports: [AuthModule],

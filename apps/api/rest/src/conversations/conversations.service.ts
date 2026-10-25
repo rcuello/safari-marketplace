@@ -15,13 +15,13 @@ import {
   type ConversationDetailRecord,
   type ConversationSortField,
 } from '@safari/db';
-import { CurrentUserPayload } from 'src/auth/decorators/current-user.decorator';
-import { paginate } from 'src/common/pagination/paginate';
-import { toWriteHttpException } from 'src/common/errors/domain-error.mapper';
-import { CreateConversationDto } from './dto/create-conversation.dto';
-import { GetConversationsDto } from './dto/get-conversations.dto';
-import { Conversation } from './entities/conversation.entity';
-import { toConversationDto, toViewer } from './conversation-dto.mapper';
+import { CurrentUserPayload } from '#src/auth/decorators/current-user.decorator.js';
+import { paginate } from '#src/common/pagination/paginate.js';
+import { toWriteHttpException } from '#src/common/errors/domain-error.mapper.js';
+import { CreateConversationDto } from './dto/create-conversation.dto.js';
+import { GetConversationsDto } from './dto/get-conversations.dto.js';
+import { Conversation } from './entities/conversation.entity.js';
+import { toConversationDto, toViewer } from './conversation-dto.mapper.js';
 
 export function readError(error: unknown): never {
   if (isPrismaConnectionError(error)) {

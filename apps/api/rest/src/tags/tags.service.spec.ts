@@ -39,9 +39,9 @@ import {
   type TagRecord,
   type TypeRecord,
 } from '@safari/db';
-import { TagsService } from './tags.service';
-import { CreateTagDto } from './dto/create-tag.dto';
-import { UpdateTagDto } from './dto/update-tag.dto';
+import { TagsService } from './tags.service.js';
+import { CreateTagDto } from './dto/create-tag.dto.js';
+import { UpdateTagDto } from './dto/update-tag.dto.js';
 
 vi.mock('@safari/db', async (importOriginal) => ({
   // El barrel es seguro de cargar sin DATABASE_URL (cliente lazy vía Proxy);

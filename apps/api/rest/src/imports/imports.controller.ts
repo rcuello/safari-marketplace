@@ -1,10 +1,10 @@
 import { Controller, Post, Body } from '@nestjs/common';
-import { ImportsService } from './imports.service';
-import { ImportDto } from './dto/create-import.dto';
+import { ImportsService } from './imports.service.js';
+import { ImportDto } from './dto/create-import.dto.js';
 import {
   ADMIN_ONLY,
   Permissions,
-} from 'src/auth/decorators/permissions.decorator';
+} from '#src/auth/decorators/permissions.decorator.js';
 
 @Permissions(...ADMIN_ONLY)
 @Controller()

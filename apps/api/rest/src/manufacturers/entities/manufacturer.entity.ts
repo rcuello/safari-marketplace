@@ -1,7 +1,7 @@
-import { CoreEntity } from '../../common/entities/core.entity';
-import { Attachment } from '../../common/entities/attachment.entity';
-import { ShopSocials } from '../../settings/entities/setting.entity';
-import { Type } from '../../types/entities/type.entity';
+import { CoreEntity } from '../../common/entities/core.entity.js';
+import { Attachment } from '../../common/entities/attachment.entity.js';
+import { ShopSocials } from '../../settings/entities/setting.entity.js';
+import { Type } from '../../types/entities/type.entity.js';
 
 export class Manufacturer extends CoreEntity {
   cover_image?: Attachment;

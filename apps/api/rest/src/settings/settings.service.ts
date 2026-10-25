@@ -1,8 +1,8 @@
 import { getSettings } from '@safari/db';
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
-import { CreateSettingDto } from './dto/create-setting.dto';
-import { UpdateSettingDto } from './dto/update-setting.dto';
-import { Setting } from './entities/setting.entity';
+import { CreateSettingDto } from './dto/create-setting.dto.js';
+import { UpdateSettingDto } from './dto/update-setting.dto.js';
+import { Setting } from './entities/setting.entity.js';
 
 /**
  * PRIMER endpoint migrado del mock JSON a Postgres.

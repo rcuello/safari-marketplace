@@ -38,7 +38,7 @@ import {
   RecordNotFoundError,
   SlugConflictError,
 } from '@safari/db';
-import { mapDomainError, toWriteHttpException } from './domain-error.mapper';
+import { mapDomainError, toWriteHttpException } from './domain-error.mapper.js';
 
 describe('mapDomainError — tabla cerrada de 5 códigos (CA-4, CA-7)', () => {
   it('EmptySlug → 400', () => {

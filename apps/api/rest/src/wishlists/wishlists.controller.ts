@@ -11,10 +11,10 @@ import {
 import {
   CurrentUser,
   CurrentUserPayload,
-} from 'src/auth/decorators/current-user.decorator';
-import { CreateWishlistDto } from './dto/create-wishlists.dto';
-import { GetWishlistDto } from './dto/get-wishlists.dto';
-import { WishlistsService } from './wishlists.service';
+} from '#src/auth/decorators/current-user.decorator.js';
+import { CreateWishlistDto } from './dto/create-wishlists.dto.js';
+import { GetWishlistDto } from './dto/get-wishlists.dto.js';
+import { WishlistsService } from './wishlists.service.js';
 
 // La lista es por usuario (US-53): toda ruta lee `@CurrentUser`. `:id` es
 // siempre un id de PRODUCTO (no hay id de pivote); así llama el shop a DELETE.

@@ -8,15 +8,15 @@ import {
   Body,
   Delete,
 } from '@nestjs/common';
-import { CreateReviewDto } from './dto/create-review.dto';
-import { GetReviewsDto } from './dto/get-reviews.dto';
-import { UpdateReviewDto } from './dto/update-review.dto';
-import { ReviewService } from './reviews.service';
-import { Public } from 'src/auth/decorators/public.decorator';
+import { CreateReviewDto } from './dto/create-review.dto.js';
+import { GetReviewsDto } from './dto/get-reviews.dto.js';
+import { UpdateReviewDto } from './dto/update-review.dto.js';
+import { ReviewService } from './reviews.service.js';
+import { Public } from '#src/auth/decorators/public.decorator.js';
 import {
   CurrentUser,
   CurrentUserPayload,
-} from 'src/auth/decorators/current-user.decorator';
+} from '#src/auth/decorators/current-user.decorator.js';
 
 @Controller('reviews')
 export class ReviewController {

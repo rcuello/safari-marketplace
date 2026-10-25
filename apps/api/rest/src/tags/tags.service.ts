@@ -4,7 +4,7 @@ import {
   NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import { paginate } from 'src/common/pagination/paginate';
+import { paginate } from '#src/common/pagination/paginate.js';
 import {
   createTag,
   deleteTag,
@@ -19,12 +19,12 @@ import {
   type TagRecord,
   type TypeRecord,
 } from '@safari/db';
-import { toWriteHttpException } from 'src/common/errors/domain-error.mapper';
-import { CreateTagDto } from './dto/create-tag.dto';
-import { GetTagsDto, TagPaginator } from './dto/get-tags.dto';
-import { UpdateTagDto } from './dto/update-tag.dto';
-import { Tag } from './entities/tag.entity';
-import { parseSearch } from 'src/common/search/parse-search';
+import { toWriteHttpException } from '#src/common/errors/domain-error.mapper.js';
+import { CreateTagDto } from './dto/create-tag.dto.js';
+import { GetTagsDto, TagPaginator } from './dto/get-tags.dto.js';
+import { UpdateTagDto } from './dto/update-tag.dto.js';
+import { Tag } from './entities/tag.entity.js';
+import { parseSearch } from '#src/common/search/parse-search.js';
 
 /**
  * `TagRecord` (camelCase, `@safari/db`) → proyección de 9 claves

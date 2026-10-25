@@ -1,7 +1,7 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { IsIn, IsOptional } from 'class-validator';
-import { OrderStatusType, PaymentStatusType } from '../entities/order.entity';
-import { CreateOrderDto } from './create-order.dto';
+import { OrderStatusType, PaymentStatusType } from '../entities/order.entity.js';
+import { CreateOrderDto } from './create-order.dto.js';
 
 /**
  * V-9 (US-59): el admin cambia el estado con `{ order_status }`

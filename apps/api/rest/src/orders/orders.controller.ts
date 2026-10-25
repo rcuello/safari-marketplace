@@ -15,28 +15,28 @@ import { JwtService } from '@nestjs/jwt';
 import {
   CreateOrderStatusDto,
   UpdateOrderStatusDto,
-} from './dto/create-order-status.dto';
-import { CreateOrderDto } from './dto/create-order.dto';
-import { GetOrderFilesDto, OrderFilesPaginator } from './dto/get-downloads.dto';
-import { GetOrderStatusesDto } from './dto/get-order-statuses.dto';
-import { GetOrdersDto, OrderPaginator } from './dto/get-orders.dto';
-import { OrderPaymentDto } from './dto/order-payment.dto';
-import { UpdateOrderDto } from './dto/update-order.dto';
-import { CheckoutVerificationDto } from './dto/verify-checkout.dto';
-import { Order } from './entities/order.entity';
-import { OrderStatusesService } from './order-statuses.service';
-import { OrdersService } from './orders.service';
-import { Public } from 'src/auth/decorators/public.decorator';
+} from './dto/create-order-status.dto.js';
+import { CreateOrderDto } from './dto/create-order.dto.js';
+import { GetOrderFilesDto, OrderFilesPaginator } from './dto/get-downloads.dto.js';
+import { GetOrderStatusesDto } from './dto/get-order-statuses.dto.js';
+import { GetOrdersDto, OrderPaginator } from './dto/get-orders.dto.js';
+import { OrderPaymentDto } from './dto/order-payment.dto.js';
+import { UpdateOrderDto } from './dto/update-order.dto.js';
+import { CheckoutVerificationDto } from './dto/verify-checkout.dto.js';
+import { Order } from './entities/order.entity.js';
+import { OrderStatusesService } from './order-statuses.service.js';
+import { OrdersService } from './orders.service.js';
+import { Public } from '#src/auth/decorators/public.decorator.js';
 import {
   ADMIN_AND_OWNER,
   ADMIN_ONLY,
   ADMIN_OWNER_AND_STAFF,
   Permissions,
-} from 'src/auth/decorators/permissions.decorator';
+} from '#src/auth/decorators/permissions.decorator.js';
 import {
   CurrentUser,
   CurrentUserPayload,
-} from 'src/auth/decorators/current-user.decorator';
+} from '#src/auth/decorators/current-user.decorator.js';
 
 @Controller('orders')
 export class OrdersController {

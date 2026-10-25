@@ -39,10 +39,10 @@ import {
   OtpResponse,
   VerifyOtpDto,
   OtpDto,
-} from './dto/create-auth.dto';
-import { resolveRecoveryOptions } from './recovery-options';
-import { User } from 'src/users/entities/user.entity';
-import { toUserDto } from 'src/users/user-dto.mapper';
+} from './dto/create-auth.dto.js';
+import { resolveRecoveryOptions } from './recovery-options.js';
+import { User } from '#src/users/entities/user.entity.js';
+import { toUserDto } from '#src/users/user-dto.mapper.js';
 
 // Un solo mensaje para los tres casos que no deben distinguirse (D-4 del
 // épico, extendido por el spec): contraseña mala, email inexistente,
