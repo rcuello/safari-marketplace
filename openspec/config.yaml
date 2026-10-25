@@ -25,25 +25,27 @@ context: |
 strict_tdd: false   # no hay runner de tests repo-wide todavia (ver testing.test_command)
 
 testing:
-  framework: mixed             # vitest (packages/db), jest con 34 suites (apps/api/rest), script Python (scraper)
+  framework: mixed             # vitest (packages/db y apps/api/rest, 34 archivos), script Python (scraper)
   # PENDIENTE: no existe un comando de test repo-wide. Los tests reales hoy (medidos 2026-10-24,
   # rama lint-formato-api-db):
   #   - packages/db: `npm test` (vitest; 10 archivos: 9 *.integration.test.ts + products.repository.test.ts;
   #     requiere `just db-up` antes) -> envuelto en `just db-check` (typecheck + tests)
-  #   - apps/api/rest: `cd apps/api/rest && npx jest` (34 suites / 565 tests; mockean @safari/db,
+  #   - apps/api/rest: `cd apps/api/rest && npx vitest run` (34 archivos / 565 tests; mockean @safari/db,
   #     no requieren Postgres). SIN receta de `just` que lo envuelva.
-  #     Su package.json resuelve `@db/*` y `src/*` via moduleNameMapper y excluye packages/db/dist
-  #     del transform (requiere `just db-build` antes). No hay suite de auth.
+  #     Su vitest.config.ts (unplugin-swc, US-88) resuelve `@db/*` y `src/*` con alias; consume el
+  #     packages/db/dist construido (requiere `just db-build` antes). No hay suite de auth.
+  #     SWC transpila sin comprobar tipos: las redes de tipos de los specs (p. ej. KeyDrift de
+  #     become-seller) las dispara `npx tsc --noEmit -p tsconfig.json`, no `vitest run`.
   #   - scraper: `just db-test` (services/scraper-worker/test_pipeline.py; requiere `just db-up`).
   #     El pipeline ya upserta en `products` (US-6); lo que sigue consultando `productos` es
   #     `just db-count` (US-8, pendiente).
   # Crear el gate agregador (`just check`) es una US del backlog (Epico 9 / US-10).
-  test_command: "just db-check"   # el unico gate envuelto en una receta de `just` (requiere just db-up); el jest de la API se corre aparte
+  test_command: "just db-check"   # el unico gate envuelto en una receta de `just` (requiere just db-up); el vitest de la API se corre aparte
   coverage_command: ""            # not yet configured
   build_command: "just build"     # build de produccion shop + admin (build-api aparte; exige la API arriba)
   coverage_threshold: 0
   layers:
-    unit: true                 # apps/api/rest: jest con @safari/db mockeado (34 suites / 565 tests); packages/db: products.repository.test.ts
+    unit: true                 # apps/api/rest: vitest con @safari/db mockeado (34 archivos / 565 tests); packages/db: products.repository.test.ts
     integration: true          # packages/db/src/**/*.integration.test.ts (9 archivos; vitest + Postgres real)
     e2e: false                 # `just verify` comprueba los 3 servicios levantados, pero es manual, no una suite
   quality:
@@ -84,7 +86,7 @@ rules:
     # Inner loop por paquete (elegir segun el area tocada):
     #   packages/db  -> cd packages/db && npm test          (vitest; requiere just db-up)
     #   scraper      -> just db-test                        (hoy roto: ver testing.test_command)
-    #   apps/api     -> cd apps/api/rest && npx jest      (34 suites / 565 tests; sin receta de just) + build + curl contra el endpoint
+    #   apps/api     -> cd apps/api/rest && npx vitest run (34 archivos / 565 tests; sin receta de just) + build + curl contra el endpoint
     test_command: "just db-check"
     follow_existing_patterns: true
     # Formato y lint (docs/product/README.md, paso 5 del protocolo). El hook PostToolUse
