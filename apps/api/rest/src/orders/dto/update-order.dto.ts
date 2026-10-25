@@ -1,6 +1,9 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { IsIn, IsOptional } from 'class-validator';
-import { OrderStatusType, PaymentStatusType } from '../entities/order.entity.js';
+import {
+  OrderStatusType,
+  PaymentStatusType,
+} from '../entities/order.entity.js';
 import { CreateOrderDto } from './create-order.dto.js';
 
 /**

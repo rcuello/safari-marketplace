@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import * as Paypal from '@paypal/checkout-server-sdk';
+import Paypal from '@paypal/checkout-server-sdk';
 import { Order } from '#src/orders/entities/order.entity.js';
 import { v4 as uuidv4 } from 'uuid';
 

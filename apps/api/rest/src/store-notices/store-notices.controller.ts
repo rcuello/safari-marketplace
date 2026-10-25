@@ -20,7 +20,7 @@ import {
 } from '#src/auth/decorators/permissions.decorator.js';
 import {
   CurrentUser,
-  CurrentUserPayload,
+  type CurrentUserPayload,
 } from '#src/auth/decorators/current-user.decorator.js';
 
 // `is_read` es por usuario (US-51): toda ruta que proyecta un aviso necesita

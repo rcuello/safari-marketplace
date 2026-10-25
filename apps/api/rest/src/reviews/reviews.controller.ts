@@ -15,7 +15,7 @@ import { ReviewService } from './reviews.service.js';
 import { Public } from '#src/auth/decorators/public.decorator.js';
 import {
   CurrentUser,
-  CurrentUserPayload,
+  type CurrentUserPayload,
 } from '#src/auth/decorators/current-user.decorator.js';
 
 @Controller('reviews')

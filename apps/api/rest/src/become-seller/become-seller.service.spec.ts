@@ -32,7 +32,7 @@
 import { getBecomeSeller, updateBecomeSeller } from '@safari/db';
 import type { BecomeSellerRecord } from '@safari/db';
 import { InternalServerErrorException } from '@nestjs/common';
-import becomeSellerJson from '#db/become-seller.json';
+import becomeSellerJson from '#db/become-seller.json' with { type: 'json' };
 import { BecomeSellerService } from './become-seller.service.js';
 import { CreateBecomeSellerDto } from './dto/create-become-seller.dto.js';
 import {

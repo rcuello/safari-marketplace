@@ -1,4 +1,7 @@
-import { ConnectProductOrderPivot, UserAddressInput } from './create-order.dto.js';
+import {
+  ConnectProductOrderPivot,
+  UserAddressInput,
+} from './create-order.dto.js';
 
 export class CheckoutVerificationDto {
   amount: number;

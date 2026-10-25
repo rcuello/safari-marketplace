@@ -1,7 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
 import {
   CurrentUser,
-  CurrentUserPayload,
+  type CurrentUserPayload,
 } from '#src/auth/decorators/current-user.decorator.js';
 import { ReportsService } from './reports.service.js';
 

@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import flashSaleJSON from '#db/flash-sale.json';
-import ProductsByFlashSaleJSON from '#db/products-by-flash-sale.json';
+import flashSaleJSON from '#db/flash-sale.json' with { type: 'json' };
+import ProductsByFlashSaleJSON from '#db/products-by-flash-sale.json' with { type: 'json' };
 import { plainToClass } from 'class-transformer';
-import Fuse from 'fuse.js';
+import Fuse from '../common/fuse.js';
 import { paginate } from '#src/common/pagination/paginate.js';
 import { FlashSale } from './entities/flash-sale.entity.js';
 import { GetFlashSaleDto } from './dto/get-flash-sales.dto.js';

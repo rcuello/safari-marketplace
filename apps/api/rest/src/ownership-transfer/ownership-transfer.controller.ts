@@ -21,7 +21,7 @@ import { OwnershipTransfer } from './entities/ownership-transfer.entity.js';
 import { Shop } from '#src/shops/entities/shop.entity.js';
 import {
   CurrentUser,
-  CurrentUserPayload,
+  type CurrentUserPayload,
 } from '#src/auth/decorators/current-user.decorator.js';
 import {
   ADMIN_AND_OWNER,

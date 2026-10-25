@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { UpdateAuthorDto } from './dto/update-author.dto.js';
 import { plainToClass } from 'class-transformer';
-import authorsJson from '#db/authors.json';
+import authorsJson from '#db/authors.json' with { type: 'json' };
 import { Author } from './entities/author.entity.js';
-import Fuse from 'fuse.js';
+import Fuse from '../common/fuse.js';
 import { GetAuthorDto } from './dto/get-author.dto.js';
 import { paginate } from '../common/pagination/paginate.js';
 import { GetTopAuthorsDto } from './dto/get-top-authors.dto.js';

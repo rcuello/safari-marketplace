@@ -17,7 +17,10 @@ import {
   UpdateOrderStatusDto,
 } from './dto/create-order-status.dto.js';
 import { CreateOrderDto } from './dto/create-order.dto.js';
-import { GetOrderFilesDto, OrderFilesPaginator } from './dto/get-downloads.dto.js';
+import {
+  GetOrderFilesDto,
+  OrderFilesPaginator,
+} from './dto/get-downloads.dto.js';
 import { GetOrderStatusesDto } from './dto/get-order-statuses.dto.js';
 import { GetOrdersDto, OrderPaginator } from './dto/get-orders.dto.js';
 import { OrderPaymentDto } from './dto/order-payment.dto.js';
@@ -35,7 +38,7 @@ import {
 } from '#src/auth/decorators/permissions.decorator.js';
 import {
   CurrentUser,
-  CurrentUserPayload,
+  type CurrentUserPayload,
 } from '#src/auth/decorators/current-user.decorator.js';
 
 @Controller('orders')

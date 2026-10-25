@@ -14,7 +14,7 @@ import { UpdateQuestionDto } from './dto/update-question.dto.js';
 import { MyQuestionsService } from './my-questions.service.js';
 import {
   CurrentUser,
-  CurrentUserPayload,
+  type CurrentUserPayload,
 } from '#src/auth/decorators/current-user.decorator.js';
 
 @Controller('my-questions')

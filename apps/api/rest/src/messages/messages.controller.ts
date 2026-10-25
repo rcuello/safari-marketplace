@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import {
   CurrentUser,
-  CurrentUserPayload,
+  type CurrentUserPayload,
 } from '#src/auth/decorators/current-user.decorator.js';
 import { GetConversationsDto } from '#src/conversations/dto/get-conversations.dto.js';
 import { CreateMessageDto } from './dto/create-message.dto.js';

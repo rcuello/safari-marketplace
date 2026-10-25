@@ -21,7 +21,7 @@ import {
 } from '#src/auth/decorators/permissions.decorator.js';
 import {
   CurrentUser,
-  CurrentUserPayload,
+  type CurrentUserPayload,
 } from '#src/auth/decorators/current-user.decorator.js';
 
 @Controller('coupons')

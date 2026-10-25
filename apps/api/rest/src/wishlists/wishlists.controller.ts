@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import {
   CurrentUser,
-  CurrentUserPayload,
+  type CurrentUserPayload,
 } from '#src/auth/decorators/current-user.decorator.js';
 import { CreateWishlistDto } from './dto/create-wishlists.dto.js';
 import { GetWishlistDto } from './dto/get-wishlists.dto.js';

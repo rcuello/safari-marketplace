@@ -14,7 +14,7 @@ import { GetWithdrawsDto, WithdrawPaginator } from './dto/get-withdraw.dto.js';
 import { Withdraw } from './entities/withdraw.entity.js';
 import {
   CurrentUser,
-  CurrentUserPayload,
+  type CurrentUserPayload,
 } from '#src/auth/decorators/current-user.decorator.js';
 import {
   ADMIN_AND_OWNER,

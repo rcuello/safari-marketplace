@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { NotifyLogs } from './entities/notify-logs.entity.js';
 import { plainToClass } from 'class-transformer';
-import Fuse from 'fuse.js';
+import Fuse from '../common/fuse.js';
 import { paginate } from '#src/common/pagination/paginate.js';
 import { GetNotifyLogsDto } from './dto/get-notify-logs.dto.js';
 

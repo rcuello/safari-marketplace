@@ -44,7 +44,7 @@ const NOW = new Date('2026-10-23T00:00:00Z');
 
 function mock<T>(file: string): T {
   return JSON.parse(
-    readFileSync(join(__dirname, '../db/pickbazar', file), 'utf8'),
+    readFileSync(join(import.meta.dirname, '../db/pickbazar', file), 'utf8'),
   ) as T;
 }
 

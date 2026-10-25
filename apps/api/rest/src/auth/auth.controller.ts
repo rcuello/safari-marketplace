@@ -3,7 +3,7 @@ import { AuthService } from './auth.service.js';
 import { Public } from './decorators/public.decorator.js';
 import {
   CurrentUser,
-  CurrentUserPayload,
+  type CurrentUserPayload,
 } from './decorators/current-user.decorator.js';
 import {
   ChangePasswordDto,

@@ -107,7 +107,10 @@ describe('WithdrawsService', () => {
     it('las 11 claves y las 13 del shop en el orden del mock; amount numérico, deleted_at null', async () => {
       listMock.mockResolvedValue({ items: [makeWithdraw()], total: 1 });
       const mock = JSON.parse(
-        readFileSync(join(__dirname, '../db/pickbazar/withdraws.json'), 'utf8'),
+        readFileSync(
+          join(import.meta.dirname, '../db/pickbazar/withdraws.json'),
+          'utf8',
+        ),
       ) as Record<string, Record<string, unknown>>[];
       const page = await service.getWithdraws(
         { limit: '10', page: '1' } as unknown as GetWithdrawsDto,

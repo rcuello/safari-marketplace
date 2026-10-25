@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import settingJson from '#db/settings.json';
+import settingJson from '#db/settings.json' with { type: 'json' };
 import { Setting } from '#src/settings/entities/setting.entity.js';
 import { plainToClass } from 'class-transformer';
 import { InjectStripe } from 'nestjs-stripe';
-import paymentGatewayJson from '#src/db/pickbazar/payment-gateway.json';
+import paymentGatewayJson from '#src/db/pickbazar/payment-gateway.json' with { type: 'json' };
 import { Order } from '#src/orders/entities/order.entity.js';
 import { PaymentGateWay } from '#src/payment-method/entities/payment-gateway.entity.js';
 import { User } from '#src/users/entities/user.entity.js';

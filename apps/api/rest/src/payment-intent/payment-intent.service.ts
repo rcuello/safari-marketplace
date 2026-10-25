@@ -1,8 +1,8 @@
-import taxesJson from '#db/taxes.json';
+import taxesJson from '#db/taxes.json' with { type: 'json' };
 import { Injectable } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
 import { PaymentIntent } from './entries/payment-intent.entity.js';
-import ordersJson from '#db/orders.json';
+import ordersJson from '#db/orders.json' with { type: 'json' };
 import { Order } from '#src/orders/entities/order.entity.js';
 import { GetPaymentIntentDto } from './dto/get-payment-intent.dto.js';
 

@@ -1,5 +1,5 @@
-import paymentGatewayJson from '#db/payment-gateway.json';
-import paymentIntentJson from '#db/payment-intent.json';
+import paymentGatewayJson from '#db/payment-gateway.json' with { type: 'json' };
+import paymentIntentJson from '#db/payment-intent.json' with { type: 'json' };
 import {
   BadRequestException,
   Injectable,
@@ -47,7 +47,10 @@ import { PaymentGateWay } from '#src/payment-method/entities/payment-gateway.ent
 import { PaypalPaymentService } from '#src/payment/paypal-payment.service.js';
 import { StripePaymentService } from '#src/payment/stripe-payment.service.js';
 import { CreateOrderDto } from './dto/create-order.dto.js';
-import { GetOrderFilesDto, OrderFilesPaginator } from './dto/get-downloads.dto.js';
+import {
+  GetOrderFilesDto,
+  OrderFilesPaginator,
+} from './dto/get-downloads.dto.js';
 import { GetOrdersDto, OrderPaginator } from './dto/get-orders.dto.js';
 import { UpdateOrderDto } from './dto/update-order.dto.js';
 import {

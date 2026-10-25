@@ -1,5 +1,5 @@
-import paymentGatewayJson from '#db/payment-gateway.json';
-import cards from '#db/payment-methods.json';
+import paymentGatewayJson from '#db/payment-gateway.json' with { type: 'json' };
+import cards from '#db/payment-methods.json' with { type: 'json' };
 import { Injectable } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
 import { AuthService } from '#src/auth/auth.service.js';

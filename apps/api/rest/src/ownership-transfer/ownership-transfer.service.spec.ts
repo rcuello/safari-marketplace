@@ -125,7 +125,7 @@ describe('OwnershipTransferService', () => {
     listMock.mockResolvedValue({ items: [makeTransfer()], total: 1 });
     const mock = JSON.parse(
       readFileSync(
-        join(__dirname, '../db/pickbazar/ownership-transfer.json'),
+        join(import.meta.dirname, '../db/pickbazar/ownership-transfer.json'),
         'utf8',
       ),
     ) as Record<string, Record<string, unknown>>[];
