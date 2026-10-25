@@ -7,8 +7,8 @@ Guía verificada en Windows 11 + Node 22.14 + yarn 1.22.22 (2026-08-24).
 | Servicio | Carpeta | Stack | Puerto |
 |---|---|---|---|
 | API (híbrida: Postgres + mock) | `api/rest` | NestJS 9 | `9001` |
-| Tienda | `shop` | Next.js 14.2 (pages router) | `3003` |
-| Admin | `admin/rest` | Next.js 14.2 (pages router) | `3002` |
+| Tienda | `shop` | Next.js 16.4 (pages router, webpack) | `3003` |
+| Admin | `admin/rest` | Next.js 16.4 (pages router, webpack) | `3002` |
 
 `shop` y `admin/rest` consumen la API vía `NEXT_PUBLIC_REST_API_ENDPOINT`.
 Existe además una variante GraphQL (`api/graphql` + `dev:gql`) que depende de
@@ -324,7 +324,12 @@ global `Express.Multer.File`.
 Ruido cosmético, no fallos: `apple-mobile-web-app-capable` deprecado (solo en
 el admin; el shop ya trae también `mobile-web-app-capable`). El aviso de
 `fetchPriority` (Next 13 con React 18.3) ya no aparece: React está fijado en
-18.2.0 y el frontend corre en Next 14.2 (US-80).
+18.2.0 (US-80). En la terminal, Next 16 avisa al arrancar `React 18 support is
+deprecated in Next.js 16`: es esperado hasta que llegue React 19 (US-83).
+
+Los scripts de `dev` y `build` llevan `--webpack` (US-82): con Turbopack, el
+default de Next 16, la portada del shop no hidrata y el admin no compila (ver
+la US-82).
 
 ## Notas para el despliegue en nube
 
@@ -343,10 +348,12 @@ el admin; el shop ya trae también `mobile-web-app-capable`). El aviso de
   App Service / Cloud Run / Heroku sin cambios.
 - Las `NEXT_PUBLIC_*` se inlinean **en build time**: hay que fijarlas antes de
   `next build`, no en el arranque del contenedor.
-- `next.config.js` tiene una allowlist de `images.domains`. Cualquier host nuevo
-  de imágenes debe añadirse ahí o `next/image` fallará en producción.
-- Con `APPLICATION_MODE=production` el build ignora errores de TypeScript y
-  ESLint (ver `next.config.js`). Útil para desplegar, pero conviene que los
+- `next.config.js` tiene una allowlist de `images.remotePatterns`. Cualquier
+  host nuevo de imágenes debe añadirse ahí o `next/image` fallará en
+  producción. `localhost` y `127.0.0.1` solo se optimizan fuera de producción
+  (`dangerouslyAllowLocalIP`, US-82).
+- Con `APPLICATION_MODE=production` el build ignora errores de TypeScript
+  (ver `next.config.js`; desde Next 16, `next build` ya no lintea). Útil para desplegar, pero conviene que los
   estudiantes sepan que ese interruptor existe.
 - `apps/deployment/` trae los scripts `zx` originales de Pickbazar para VM con
   Nginx; son una referencia, no el camino recomendado si se despliega con
