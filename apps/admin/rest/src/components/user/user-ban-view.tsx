@@ -6,8 +6,8 @@ import {
 import { useBlockUserMutation, useUnblockUserMutation } from '@/data/user';
 
 const CustomerBanView = () => {
-  const { mutate: blockUser, isLoading: loading } = useBlockUserMutation();
-  const { mutate: unblockUser, isLoading: activeLoading } =
+  const { mutate: blockUser, isPending: loading } = useBlockUserMutation();
+  const { mutate: unblockUser, isPending: activeLoading } =
     useUnblockUserMutation();
 
   const { data } = useModalState();

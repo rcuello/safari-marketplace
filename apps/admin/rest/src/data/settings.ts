@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from 'react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'next-i18next';
 import { API_ENDPOINTS } from './client/api-endpoints';
@@ -15,7 +15,8 @@ export const useUpdateSettingsMutation = () => {
   const queryClient = useQueryClient();
   const { updateSettings } = useSettings();
 
-  return useMutation(settingsClient.update, {
+  return useMutation({
+    mutationFn: settingsClient.update,
     onError: (error) => {
       console.log(error);
     },
@@ -29,16 +30,16 @@ export const useUpdateSettingsMutation = () => {
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.SETTINGS);
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.SETTINGS] });
     },
   });
 };
 
 export const useSettingsQuery = ({ language }: { language: string }) => {
-  const { data, error, isLoading } = useQuery<Settings, Error>(
-    [API_ENDPOINTS.SETTINGS, { language }],
-    () => settingsClient.all({ language }),
-  );
+  const { data, error, isLoading } = useQuery<Settings, Error>({
+    queryKey: [API_ENDPOINTS.SETTINGS, { language }],
+    queryFn: () => settingsClient.all({ language }),
+  });
 
   return {
     settings: data,

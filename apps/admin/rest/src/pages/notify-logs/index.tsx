@@ -36,7 +36,7 @@ const NotifyLogItem = ({ item }: any) => {
   const { permissions } = getAuthCredentials();
   const { locale } = useRouter();
 
-  const { mutate: seenNotifyLog, isLoading: creating } =
+  const { mutate: seenNotifyLog, isPending: creating } =
     useNotifyLogReadMutation();
 
   const { order } = useOrderQuery({

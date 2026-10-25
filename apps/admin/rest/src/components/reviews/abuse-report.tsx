@@ -7,7 +7,7 @@ import { useAbuseReportMutation } from '@/data/review';
 
 export default function AbuseReport({ data }: { data: any }) {
   const { t } = useTranslation('common');
-  const { mutate: createAbuseReport, isLoading } = useAbuseReportMutation();
+  const { mutate: createAbuseReport, isPending: isLoading } = useAbuseReportMutation();
 
   function onSubmit(values: Pick<CreateAbuseReportInput, 'message'>) {
     createAbuseReport({

@@ -1,5 +1,10 @@
 import Router, { useRouter } from 'next/router';
-import { useMutation, useQuery, useQueryClient } from 'react-query';
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  keepPreviousData,
+} from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'next-i18next';
 import { Routes } from '@/config/routes';
@@ -14,14 +19,12 @@ export const useNotifyLogsQuery = (
   params: Partial<NotifyLogsQueryOptions>,
   options: any = {}
 ) => {
-  const { data, error, isLoading } = useQuery<NotifyLogsPaginator, Error>(
-    [API_ENDPOINTS.NOTIFY_LOGS, params],
-    ({ queryKey, pageParam }) =>
-      notifyClient.paginated(Object.assign({}, queryKey[1], pageParam)),
-    {
-      keepPreviousData: true,
-    }
-  );
+  const { data, error, isLoading } = useQuery<NotifyLogsPaginator, Error>({
+    queryKey: [API_ENDPOINTS.NOTIFY_LOGS, params],
+    queryFn: ({ queryKey }) =>
+      notifyClient.paginated(Object.assign({}, queryKey[1])),
+    placeholderData: keepPreviousData,
+  });
 
   return {
     notifyLogs: data?.data ?? [],
@@ -36,13 +39,14 @@ export const useDeleteNotifyLogMutation = () => {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
 
-  return useMutation(notifyClient.delete, {
+  return useMutation({
+    mutationFn: notifyClient.delete,
     onSuccess: () => {
       toast.success(t('common:successfully-deleted'));
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.NOTIFY_LOGS);
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.NOTIFY_LOGS] });
     },
   });
 };
@@ -51,11 +55,14 @@ export const useNotifyLogReadMutation = () => {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
 
-  return useMutation(notifyClient.notifyLogSeen, {
+  return useMutation({
+    mutationFn: notifyClient.notifyLogSeen,
     onSuccess: async () => {},
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.NOTIFY_LOG_SEEN);
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.NOTIFY_LOG_SEEN],
+      });
     },
     onError: (error: any) => {
       toast.error(t(`common:${error?.response?.data.message}`));
@@ -67,11 +74,14 @@ export const useNotifyLogAllReadMutation = () => {
   const queryClient = useQueryClient();
   const { t } = useTranslation('common');
 
-  return useMutation(notifyClient.readAllNotifyLogs, {
+  return useMutation({
+    mutationFn: notifyClient.readAllNotifyLogs,
     onSuccess: () => {},
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.READ_ALL_NOTIFY_LOG);
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.READ_ALL_NOTIFY_LOG],
+      });
     },
     onError: (error: any) => {
       toast.error(t(`common:${error?.response?.data.message}`));

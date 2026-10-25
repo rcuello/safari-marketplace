@@ -6,7 +6,7 @@ import {
 import { useDeleteManufacturerMutation } from '@/data/manufacturer';
 
 const ManufacturerDeleteView = () => {
-  const { mutate: deleteManufacturerMutation, isLoading: loading } =
+  const { mutate: deleteManufacturerMutation, isPending: loading } =
     useDeleteManufacturerMutation();
 
   const { data: modalData } = useModalState();

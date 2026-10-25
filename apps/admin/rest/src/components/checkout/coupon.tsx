@@ -22,7 +22,7 @@ const Coupon = ({ subtotal }: { subtotal: number }) => {
       code: '',
     },
   });
-  const { mutate: verifyCoupon, isLoading: loading } =
+  const { mutate: verifyCoupon, isPending: loading } =
     useVerifyCouponMutation();
   if (!hasCoupon && !coupon) {
     return (

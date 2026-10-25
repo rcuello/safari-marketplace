@@ -7,7 +7,7 @@ import { useDeleteProductMutation } from '@/data/product';
 import { getErrorMessage } from '@/utils/form-error';
 
 const ProductDeleteView = () => {
-  const { mutate: deleteProduct, isLoading: loading } =
+  const { mutate: deleteProduct, isPending: loading } =
     useDeleteProductMutation();
   const { data } = useModalState();
   const { closeModal } = useModalAction();

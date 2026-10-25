@@ -39,7 +39,7 @@ const Header = ({
   className?: string;
 }) => {
   const { t } = useTranslation();
-  const { mutate: updateOwnerShipTransferStatus, isLoading: updating } =
+  const { mutate: updateOwnerShipTransferStatus, isPending: updating } =
     useUpdateOwnerTransferMutation();
   const { permissions } = getAuthCredentials();
   const {

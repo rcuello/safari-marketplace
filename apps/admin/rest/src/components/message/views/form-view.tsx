@@ -43,7 +43,7 @@ const CreateMessageForm = ({ className, shop, ...rest }: Props) => {
   const { t } = useTranslation();
   const router = useRouter();
   const { query } = router;
-  const { mutate: createMessage, isLoading: creating } = useSendMessage();
+  const { mutate: createMessage, isPending: creating } = useSendMessage();
   const { permissions } = getAuthCredentials();
   let permission = hasAccess(adminOnly, permissions);
   useEffect(() => {

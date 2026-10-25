@@ -1,4 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from 'react-query';
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  keepPreviousData,
+} from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'next-i18next';
 import { mapPaginatorData } from '@/utils/data-mappers';
@@ -11,13 +16,14 @@ export const useAbuseReportMutation = () => {
   const queryClient = useQueryClient();
   const { t } = useTranslation('common');
   const { closeModal } = useModalAction();
-  return useMutation(reviewClient.reportAbuse, {
+  return useMutation({
+    mutationFn: reviewClient.reportAbuse,
     onSuccess: () => {
       toast.success(t('text-abuse-report-submitted'));
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.refetchQueries(API_ENDPOINTS.REVIEWS);
+      queryClient.refetchQueries({ queryKey: [API_ENDPOINTS.REVIEWS] });
       closeModal();
     },
   });
@@ -27,13 +33,14 @@ export const useDeclineReviewMutation = () => {
   const queryClient = useQueryClient();
   const { t } = useTranslation('common');
 
-  return useMutation(reviewClient.decline, {
+  return useMutation({
+    mutationFn: reviewClient.decline,
     onSuccess: () => {
       toast.success(t('successfully-decline'));
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.refetchQueries(API_ENDPOINTS.REVIEWS);
+      queryClient.refetchQueries({ queryKey: [API_ENDPOINTS.REVIEWS] });
     },
   });
 };
@@ -42,36 +49,36 @@ export const useDeleteReviewMutation = () => {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
 
-  return useMutation(reviewClient.delete, {
+  return useMutation({
+    mutationFn: reviewClient.delete,
     onSuccess: () => {
       toast.success(t('common:successfully-deleted'));
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.REVIEWS);
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.REVIEWS] });
     },
   });
 };
 
 export const useReviewQuery = (id: string) => {
-  return useQuery<Review, Error>([API_ENDPOINTS.REVIEWS, id], () =>
-    reviewClient.get({ id })
-  );
+  return useQuery<Review, Error>({
+    queryKey: [API_ENDPOINTS.REVIEWS, id],
+    queryFn: () => reviewClient.get({ id }),
+  });
 };
 
 export const useReviewsQuery = (
   params: Partial<ReviewQueryOptions>,
   options: any = {}
 ) => {
-  const { data, error, isLoading } = useQuery<ReviewPaginator, Error>(
-    [API_ENDPOINTS.REVIEWS, params],
-    ({ queryKey, pageParam }) =>
-      reviewClient.paginated(Object.assign({}, queryKey[1], pageParam)),
-    {
-      keepPreviousData: true,
-      ...options,
-    }
-  );
+  const { data, error, isLoading } = useQuery<ReviewPaginator, Error>({
+    queryKey: [API_ENDPOINTS.REVIEWS, params],
+    queryFn: ({ queryKey }) =>
+      reviewClient.paginated(Object.assign({}, queryKey[1])),
+    placeholderData: keepPreviousData,
+    ...options,
+  });
 
   return {
     reviews: data?.data ?? [],

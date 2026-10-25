@@ -214,9 +214,9 @@ export default function CreateOrUpdateCategoriesForm({
     });
   }, [generateName]);
 
-  const { mutate: createCategory, isLoading: creating } =
+  const { mutate: createCategory, isPending: creating } =
     useCreateCategoryMutation();
-  const { mutate: updateCategory, isLoading: updating } =
+  const { mutate: updateCategory, isPending: updating } =
     useUpdateCategoryMutation();
 
   const onSubmit = async (values: FormValues) => {

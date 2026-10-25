@@ -49,7 +49,7 @@ export default function PaymentSettingsForm({ settings }: IProps) {
   const { t } = useTranslation();
   const { locale } = useRouter();
   const [isCopied, setIsCopied] = useState(false);
-  const { mutate: updateSettingsMutation, isLoading: loading } =
+  const { mutate: updateSettingsMutation, isPending: loading } =
     useUpdateSettingsMutation();
   const { language, options } = settings ?? {};
 

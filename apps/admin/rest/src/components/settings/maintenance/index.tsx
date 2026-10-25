@@ -28,7 +28,7 @@ type IProps = {
 export default function MaintenanceSettingsForm({ settings }: IProps) {
   const { t } = useTranslation();
   const { locale } = useRouter();
-  const { mutate: updateSettingsMutation, isLoading: loading } =
+  const { mutate: updateSettingsMutation, isPending: loading } =
     useUpdateSettingsMutation();
   const { language, options } = settings ?? {};
 

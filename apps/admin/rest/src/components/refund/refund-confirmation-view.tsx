@@ -40,7 +40,7 @@ const UpdateRefundConfirmationView = () => {
   const { t } = useTranslation('common');
   const { handleSubmit, control } = useForm<FormValues>();
 
-  const { mutate: updateRefund, isLoading: loading } =
+  const { mutate: updateRefund, isPending: loading } =
     useUpdateRefundMutation();
 
   const { data: id } = useModalState();

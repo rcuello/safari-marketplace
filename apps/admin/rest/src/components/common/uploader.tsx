@@ -32,7 +32,7 @@ export default function Uploader({
 }: any) {
   const { t } = useTranslation();
   const [files, setFiles] = useState<Attachment[]>(getPreviewImage(value));
-  const { mutate: upload, isLoading: loading } = useUploadMutation();
+  const { mutate: upload, isPending: loading } = useUploadMutation();
   const [error, setError] = useState<string | null>(null);
   const { getRootProps, getInputProps } = useDropzone({
     ...(!acceptFile

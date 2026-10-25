@@ -66,7 +66,7 @@ export default function GeneralSettingsForm({
 }: IProps) {
   const { t } = useTranslation();
   const { locale } = useRouter();
-  const { mutate: updateSettingsMutation, isLoading: loading } =
+  const { mutate: updateSettingsMutation, isPending: loading } =
     useUpdateSettingsMutation();
   const { options } = settings ?? {};
 

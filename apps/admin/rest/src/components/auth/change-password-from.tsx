@@ -26,7 +26,7 @@ const changePasswordSchema = yup.object().shape({
 
 const ChangePasswordForm = () => {
   const { t } = useTranslation();
-  const { mutate: changePassword, isLoading: loading } =
+  const { mutate: changePassword, isPending: loading } =
     useChangePasswordMutation();
   const {
     register,

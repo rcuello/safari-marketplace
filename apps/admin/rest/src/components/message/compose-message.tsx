@@ -62,7 +62,7 @@ const ComposeMessageModal = () => {
     loading: adminLoading,
     error: adminError,
   } = useAdminsQuery(options);
-  const { mutate: createConversations, isLoading: creating } =
+  const { mutate: createConversations, isPending: creating } =
     useCreateConversations();
   const { handleSubmit } = useForm();
   let lists = permission ? shops : admins;

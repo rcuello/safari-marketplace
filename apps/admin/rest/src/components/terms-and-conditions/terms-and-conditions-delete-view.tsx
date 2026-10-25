@@ -6,7 +6,7 @@ import {
 import { useDeleteTermsAndConditionsMutation } from '@/data/terms-and-condition';
 
 const TermsAndConditionsDeleteView = () => {
-  const { mutate: deleteTermsAndConditions, isLoading: loading } =
+  const { mutate: deleteTermsAndConditions, isPending: loading } =
     useDeleteTermsAndConditionsMutation();
 
   const { data } = useModalState();

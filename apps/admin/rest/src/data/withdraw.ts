@@ -1,5 +1,10 @@
 import Router, { useRouter } from 'next/router';
-import { useMutation, useQuery, useQueryClient } from 'react-query';
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  keepPreviousData,
+} from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'next-i18next';
 import { Routes } from '@/config/routes';
@@ -16,13 +21,14 @@ import { withdrawClient } from './client/withdraw';
 export const useCreateWithdrawMutation = () => {
   const queryClient = useQueryClient();
   const router = useRouter();
-  return useMutation(withdrawClient.create, {
+  return useMutation({
+    mutationFn: withdrawClient.create,
     onSuccess: () => {
       router.push(`/${router.query.shop}/withdraws`);
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.WITHDRAWS);
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.WITHDRAWS] });
     },
   });
 };
@@ -30,22 +36,25 @@ export const useCreateWithdrawMutation = () => {
 export const useApproveWithdrawMutation = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  return useMutation(withdrawClient.approve, {
+  return useMutation({
+    mutationFn: withdrawClient.approve,
     onSuccess: () => {
       toast.success(t('common:successfully-updated'));
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.APPROVE_WITHDRAW);
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.APPROVE_WITHDRAW],
+      });
     },
   });
 };
 
 export const useWithdrawQuery = ({ id }: { id: string }) => {
-  const { data, error, isLoading } = useQuery<Withdraw, Error>(
-    [API_ENDPOINTS.WITHDRAWS, { id }],
-    () => withdrawClient.get({ id })
-  );
+  const { data, error, isLoading } = useQuery<Withdraw, Error>({
+    queryKey: [API_ENDPOINTS.WITHDRAWS, { id }],
+    queryFn: () => withdrawClient.get({ id }),
+  });
 
   return {
     withdraw: data,
@@ -58,15 +67,13 @@ export const useWithdrawsQuery = (
   params: Partial<WithdrawQueryOptions>,
   options: any = {}
 ) => {
-  const { data, error, isLoading } = useQuery<WithdrawPaginator, Error>(
-    [API_ENDPOINTS.WITHDRAWS, params],
-    ({ queryKey, pageParam }) =>
-      withdrawClient.paginated(Object.assign({}, queryKey[1], pageParam)),
-    {
-      keepPreviousData: true,
-      ...options,
-    }
-  );
+  const { data, error, isLoading } = useQuery<WithdrawPaginator, Error>({
+    queryKey: [API_ENDPOINTS.WITHDRAWS, params],
+    queryFn: ({ queryKey }) =>
+      withdrawClient.paginated(Object.assign({}, queryKey[1])),
+    placeholderData: keepPreviousData,
+    ...options,
+  });
 
   return {
     withdraws: data?.data ?? [],

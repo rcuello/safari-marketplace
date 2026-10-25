@@ -17,7 +17,7 @@ type FormValues = {
 
 const QuestionReplyView = () => {
   const { t } = useTranslation();
-  const { mutate: replyQuestion, isLoading: loading } =
+  const { mutate: replyQuestion, isPending: loading } =
     useReplyQuestionMutation();
 
   const { data } = useModalState();

@@ -35,7 +35,7 @@ const registrationFormSchema = yup.object().shape({
 });
 const RegistrationForm = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const { mutate: registerUser, isLoading: loading } = useRegisterMutation();
+  const { mutate: registerUser, isPending: loading } = useRegisterMutation();
 
   const {
     register,

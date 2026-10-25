@@ -12,7 +12,7 @@ type FormValues = {
 
 export default function EmailUpdateForm({ me }: any) {
     const { t } = useTranslation();
-    const { mutate: updateEmail, isLoading: loading } = useUpdateUserEmailMutation();
+    const { mutate: updateEmail, isPending: loading } = useUpdateUserEmailMutation();
     const {
         register,
         handleSubmit,

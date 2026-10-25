@@ -1,5 +1,10 @@
 import Router, { useRouter } from 'next/router';
-import { useMutation, useQuery, useQueryClient } from 'react-query';
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  keepPreviousData,
+} from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'next-i18next';
 import { Routes } from '@/config/routes';
@@ -19,7 +24,8 @@ export const useCreateRefunReasonMutation = () => {
   const { t } = useTranslation();
   const router = useRouter();
 
-  return useMutation(RefundReasonClient.create, {
+  return useMutation({
+    mutationFn: RefundReasonClient.create,
     onSuccess: async () => {
       const generateRedirectUrl = router.query.shop
         ? `/${router.query.shop}${Routes.refundReasons.list}`
@@ -31,7 +37,9 @@ export const useCreateRefunReasonMutation = () => {
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.REFUND_REASONS);
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.REFUND_REASONS],
+      });
     },
     onError: (error: any) => {
       toast.error(t(`common:${error?.response?.data.message}`));
@@ -43,13 +51,16 @@ export const useDeleteRefundReasonMutation = () => {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
 
-  return useMutation(RefundReasonClient.delete, {
+  return useMutation({
+    mutationFn: RefundReasonClient.delete,
     onSuccess: () => {
       toast.success(t('common:successfully-deleted'));
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.REFUND_REASONS);
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.REFUND_REASONS],
+      });
     },
     onError: (error: any) => {
       toast.error(t(`common:${error?.response?.data.message}`));
@@ -61,7 +72,8 @@ export const useUpdateRefundReasonMutation = () => {
   const { t } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();
-  return useMutation(RefundReasonClient.update, {
+  return useMutation({
+    mutationFn: RefundReasonClient.update,
     onSuccess: async (data) => {
       const generateRedirectUrl = router.query.shop
         ? `/${router.query.shop}${Routes.refundReasons.list}`
@@ -76,7 +88,9 @@ export const useUpdateRefundReasonMutation = () => {
       toast.success(t('common:successfully-updated'));
     },
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.REFUND_REASONS);
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.REFUND_REASONS],
+      });
     },
     onError: (error: any) => {
       toast.error(t(`common:${error?.response?.data.message}`));
@@ -85,10 +99,10 @@ export const useUpdateRefundReasonMutation = () => {
 };
 
 export const useRefundReasonQuery = ({ slug, language }: GetParams) => {
-  const { data, error, isLoading } = useQuery<RefundReason, Error>(
-    [API_ENDPOINTS.REFUND_REASONS, { slug, language }],
-    () => RefundReasonClient.get({ slug, language })
-  );
+  const { data, error, isLoading } = useQuery<RefundReason, Error>({
+    queryKey: [API_ENDPOINTS.REFUND_REASONS, { slug, language }],
+    queryFn: () => RefundReasonClient.get({ slug, language }),
+  });
 
   return {
     refundReason: data,
@@ -97,15 +111,15 @@ export const useRefundReasonQuery = ({ slug, language }: GetParams) => {
   };
 };
 
-export const useRefundReasonsQuery = (options: Partial<RefundReasonQueryOptions>) => {
-  const { data, error, isLoading } = useQuery<RefundReasonPaginator, Error>(
-    [API_ENDPOINTS.REFUND_REASONS, options],
-    ({ queryKey, pageParam }) =>
-    RefundReasonClient.paginated(Object.assign({}, queryKey[1], pageParam)),
-    {
-      keepPreviousData: true,
-    }
-  );
+export const useRefundReasonsQuery = (
+  options: Partial<RefundReasonQueryOptions>
+) => {
+  const { data, error, isLoading } = useQuery<RefundReasonPaginator, Error>({
+    queryKey: [API_ENDPOINTS.REFUND_REASONS, options],
+    queryFn: ({ queryKey }) =>
+      RefundReasonClient.paginated(Object.assign({}, queryKey[1])),
+    placeholderData: keepPreviousData,
+  });
 
   return {
     refundReasons: data?.data ?? [],

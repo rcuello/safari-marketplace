@@ -7,7 +7,7 @@ import { useRemoveStaffMutation } from '@/data/staff';
 import { getErrorMessage } from '@/utils/form-error';
 
 const StaffDeleteView = () => {
-  const { mutate: removeStaffByID, isLoading: loading } =
+  const { mutate: removeStaffByID, isPending: loading } =
     useRemoveStaffMutation();
 
   const { data } = useModalState();

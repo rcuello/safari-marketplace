@@ -1,27 +1,30 @@
 import { Product, ProductQueryOptions } from '@/types';
-import { useQuery } from 'react-query';
+import { useQuery } from '@tanstack/react-query';
 import { API_ENDPOINTS } from './client/api-endpoints';
 import { dashboardClient } from '@/data/client/dashboard';
 import { productClient } from '@/data/client/product';
 
 export function useAnalyticsQuery() {
-  return useQuery([API_ENDPOINTS.ANALYTICS], dashboardClient.analytics);
+  return useQuery({
+    queryKey: [API_ENDPOINTS.ANALYTICS],
+    queryFn: dashboardClient.analytics,
+  });
 }
 
 export function usePopularProductsQuery(options: Partial<ProductQueryOptions>) {
-  return useQuery<Product[], Error>(
-    [API_ENDPOINTS.POPULAR_PRODUCTS, options],
-    ({ queryKey, pageParam }) =>
-      productClient.popular(Object.assign({}, pageParam, queryKey[1])),
-  );
+  return useQuery<Product[], Error>({
+    queryKey: [API_ENDPOINTS.POPULAR_PRODUCTS, options],
+    queryFn: ({ queryKey }) =>
+      productClient.popular(Object.assign({}, queryKey[1])),
+  });
 }
 
 export function useLowProductStockQuery(options: Partial<ProductQueryOptions>) {
-  return useQuery<Product[], Error>(
-    [API_ENDPOINTS.LOW_STOCK_PRODUCTS_ANALYTICS, options],
-    ({ queryKey, pageParam }) =>
-      productClient.lowStock(Object.assign({}, pageParam, queryKey[1])),
-  );
+  return useQuery<Product[], Error>({
+    queryKey: [API_ENDPOINTS.LOW_STOCK_PRODUCTS_ANALYTICS, options],
+    queryFn: ({ queryKey }) =>
+      productClient.lowStock(Object.assign({}, queryKey[1])),
+  });
 }
 
 export function useProductByCategoryQuery({
@@ -31,13 +34,10 @@ export function useProductByCategoryQuery({
   limit?: number;
   language?: string;
 }) {
-  return useQuery(
-    [API_ENDPOINTS.CATEGORY_WISE_PRODUCTS, { limit, language }],
-    () => productClient.productByCategory({ limit, language }),
-    {
-      keepPreviousData: false,
-    },
-  );
+  return useQuery({
+    queryKey: [API_ENDPOINTS.CATEGORY_WISE_PRODUCTS, { limit, language }],
+    queryFn: () => productClient.productByCategory({ limit, language }),
+  });
 }
 
 // export function useProductByCategoryQuery(
@@ -53,21 +53,19 @@ export function useProductByCategoryQuery({
 export function useMostSoldProductByCategoryQuery(
   options: Partial<ProductQueryOptions>,
 ) {
-  return useQuery<Product[], Error>(
-    [API_ENDPOINTS.CATEGORY_WISE_PRODUCTS_SALE, options],
-    ({ queryKey, pageParam }) =>
-      productClient.mostSoldProductByCategory(
-        Object.assign({}, pageParam, queryKey[1]),
-      ),
-  );
+  return useQuery<Product[], Error>({
+    queryKey: [API_ENDPOINTS.CATEGORY_WISE_PRODUCTS_SALE, options],
+    queryFn: ({ queryKey }) =>
+      productClient.mostSoldProductByCategory(Object.assign({}, queryKey[1])),
+  });
 }
 
 export function useTopRatedProductsQuery(
   options: Partial<ProductQueryOptions>,
 ) {
-  return useQuery<Product[], Error>(
-    [API_ENDPOINTS.TOP_RATED_PRODUCTS, options],
-    ({ queryKey, pageParam }) =>
-      productClient.topRated(Object.assign({}, pageParam, queryKey[1])),
-  );
+  return useQuery<Product[], Error>({
+    queryKey: [API_ENDPOINTS.TOP_RATED_PRODUCTS, options],
+    queryFn: ({ queryKey }) =>
+      productClient.topRated(Object.assign({}, queryKey[1])),
+  });
 }

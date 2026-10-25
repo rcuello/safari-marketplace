@@ -28,7 +28,7 @@ type FormValues = {
 
 const TransferShopOwnershipForm = ({ shop, vendors }: Props) => {
   const { t } = useTranslation();
-  const { mutate: transferOwnership, isLoading: transferring } =
+  const { mutate: transferOwnership, isPending: transferring } =
     useTransferShopOwnershipMutation();
 
   const { handleSubmit, control, register } = useForm<FormValues>({

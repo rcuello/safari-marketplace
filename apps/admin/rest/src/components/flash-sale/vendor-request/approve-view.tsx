@@ -9,7 +9,7 @@ import { useApproveVendorFlashSaleRequestMutation } from '@/data/flash-sale-vend
 
 const ApproveShopView = () => {
   const { t } = useTranslation();
-  const { mutate: approveFlashSaleRequest, isLoading: loading } =
+  const { mutate: approveFlashSaleRequest, isPending: loading } =
     useApproveVendorFlashSaleRequestMutation();
 
   const { data: id } = useModalState();

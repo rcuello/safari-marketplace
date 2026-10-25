@@ -14,9 +14,9 @@ type FormValues = {
 };
 
 const ApproveShopView = () => {
-  const { mutate: approveShopMutation, isLoading: loading } =
+  const { mutate: approveShopMutation, isPending: loading } =
     useApproveShopMutation();
-  const { mutate: createConversations, isLoading: creating } =
+  const { mutate: createConversations, isPending: creating } =
     useCreateConversations();
   const {
     data: { id: shopId, data },

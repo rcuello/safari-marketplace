@@ -88,9 +88,9 @@ export default function CreateOrUpdateCouponForm({ initialValues }: IProps) {
     resolver: yupResolver(couponValidationSchema),
   });
   const { currency } = useSettings();
-  const { mutate: createCoupon, isLoading: creating } =
+  const { mutate: createCoupon, isPending: creating } =
     useCreateCouponMutation();
-  const { mutate: updateCoupon, isLoading: updating } =
+  const { mutate: updateCoupon, isPending: updating } =
     useUpdateCouponMutation();
 
   const { openModal } = useModalAction();

@@ -23,7 +23,7 @@ import { SellerOpportunity } from './form-part/seller-opportunity';
 import { UserStory } from './form-part/user-story';
 import { Contact } from './form-part/contact';
 import { API_ENDPOINTS } from '@/data/client/api-endpoints';
-import { useQueryClient } from 'react-query';
+import { useQueryClient } from '@tanstack/react-query';
 
 type IProps = {
   becomeSellerData?: BecomeSeller | null;
@@ -37,7 +37,7 @@ export default function BecomeSellerInfoForm({
   // becomeSellerData?.page_options.page_options.
   const { t } = useTranslation();
   const { locale, reload } = useRouter();
-  const { mutate: updateBecomeSellerMutation, isLoading: loading } =
+  const { mutate: updateBecomeSellerMutation, isPending: loading } =
     useUpdateBecomeSellerMutation();
   const { page_options, commissions } = becomeSellerData ?? {};
 
@@ -96,10 +96,9 @@ export default function BecomeSellerInfoForm({
       },
       {
         onSuccess: () => {
-          queryClient.invalidateQueries([
-            API_ENDPOINTS.BECAME_SELLER,
-            { language: locale },
-          ]); // re-fetch data
+          queryClient.invalidateQueries({
+            queryKey: [API_ENDPOINTS.BECAME_SELLER, { language: locale }],
+          }); // re-fetch data
         },
       },
     );

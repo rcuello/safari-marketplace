@@ -6,7 +6,7 @@ import {
 import { useDeleteQuestionMutation } from '@/data/question';
 
 const QuestionDeleteView = () => {
-  const { mutate: deleteQuestion, isLoading: loading } =
+  const { mutate: deleteQuestion, isPending: loading } =
     useDeleteQuestionMutation();
 
   const { data } = useModalState();

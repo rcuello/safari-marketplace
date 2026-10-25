@@ -24,8 +24,8 @@ export default function VerifyEmailActions() {
   const { t } = useTranslation('common');
   useMeQuery();
 
-  const { mutate: logout, isLoading: isLoading } = useLogoutMutation();
-  const { mutate: verifyEmail, isLoading: isVerifying } =
+  const { mutate: logout, isPending: isLoading } = useLogoutMutation();
+  const { mutate: verifyEmail, isPending: isVerifying } =
     useResendVerificationEmail();
   const router = useRouter();
   const { emailVerified } = getEmailVerified();

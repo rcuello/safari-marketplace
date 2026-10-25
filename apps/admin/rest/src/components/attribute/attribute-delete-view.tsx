@@ -6,7 +6,7 @@ import {
 import { useDeleteAttributeMutation } from '@/data/attributes';
 
 const AttributeDeleteView = () => {
-  const { mutate: deleteAttributeByID, isLoading: loading } =
+  const { mutate: deleteAttributeByID, isPending: loading } =
     useDeleteAttributeMutation();
 
   const { data } = useModalState();

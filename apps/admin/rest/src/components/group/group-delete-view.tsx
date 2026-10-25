@@ -6,7 +6,7 @@ import {
 import { useDeleteTypeMutation } from '@/data/type';
 
 const TypeDeleteView = () => {
-  const { mutate: deleteType, isLoading: loading } = useDeleteTypeMutation();
+  const { mutate: deleteType, isPending: loading } = useDeleteTypeMutation();
 
   const { data } = useModalState();
   const { closeModal } = useModalAction();

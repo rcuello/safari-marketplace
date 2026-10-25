@@ -6,7 +6,7 @@ import {
 import { useDeleteStoreNoticeMutation } from '@/data/store-notice';
 
 const StoreNoticeDeleteView = () => {
-  const { mutate: deleteStoreNotice, isLoading: loading } =
+  const { mutate: deleteStoreNotice, isPending: loading } =
     useDeleteStoreNoticeMutation();
 
   const { data } = useModalState();

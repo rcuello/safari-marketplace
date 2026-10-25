@@ -73,7 +73,7 @@ export default function SettingsForm({ settings }: IProps) {
   const router = useRouter();
   const { locale } = router;
   const [isCopied, setIsCopied] = useState(false);
-  const { mutate: updateSettingsMutation, isLoading: loading } =
+  const { mutate: updateSettingsMutation, isPending: loading } =
     useUpdateSettingsMutation();
   const { language, options } = settings ?? {};
   const {

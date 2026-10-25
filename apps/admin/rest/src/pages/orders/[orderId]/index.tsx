@@ -49,7 +49,7 @@ export default function OrderDetailsPage() {
     resetCheckout();
   }, [resetCart, resetCheckout]);
 
-  const { mutate: updateOrder, isLoading: updating } = useUpdateOrderMutation();
+  const { mutate: updateOrder, isPending: updating } = useUpdateOrderMutation();
   const {
     order,
     isLoading: loading,

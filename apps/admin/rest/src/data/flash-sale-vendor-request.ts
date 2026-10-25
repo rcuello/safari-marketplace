@@ -4,11 +4,12 @@ import {
   useInfiniteQuery,
   useMutation,
   useQueryClient,
-} from 'react-query';
+  keepPreviousData,
+} from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'next-i18next';
 import { mapPaginatorData } from '@/utils/data-mappers';
-import type { UseInfiniteQueryOptions } from 'react-query';
+import type { UseInfiniteQueryOptions } from '@tanstack/react-query';
 import {
   FlashSale,
   FlashSalePaginator,
@@ -33,16 +34,12 @@ export const useRequestedListsForFlashSale = (
   const { data, error, isLoading } = useQuery<
     FlashSaleProductsRequestPaginator,
     Error
-  >(
-    [API_ENDPOINTS.REQUEST_LISTS_FOR_FLASH_SALE, options],
-    ({ queryKey, pageParam }) =>
-      flashSaleVendorRequestClient.paginated(
-        Object.assign({}, queryKey[1], pageParam),
-      ),
-    {
-      keepPreviousData: true,
-    },
-  );
+  >({
+    queryKey: [API_ENDPOINTS.REQUEST_LISTS_FOR_FLASH_SALE, options],
+    queryFn: ({ queryKey }) =>
+      flashSaleVendorRequestClient.paginated(Object.assign({}, queryKey[1])),
+    placeholderData: keepPreviousData,
+  });
 
   return {
     flashSaleRequests: data?.data ?? [],
@@ -63,10 +60,10 @@ export const useRequestedListForFlashSale = ({
   language: string;
   shop_id?: string;
 }) => {
-  const { data, error, isLoading } = useQuery<any, Error>(
-    [API_ENDPOINTS.FLASH_SALE, { id, language, shop_id }],
-    () => flashSaleVendorRequestClient.get({ id, language, shop_id }),
-  );
+  const { data, error, isLoading } = useQuery<any, Error>({
+    queryKey: [API_ENDPOINTS.FLASH_SALE, { id, language, shop_id }],
+    queryFn: () => flashSaleVendorRequestClient.get({ id, language, shop_id }),
+  });
 
   return {
     flashSaleRequest: data,
@@ -80,16 +77,14 @@ export const useRequestedListForFlashSale = ({
 export const useRequestedProductsForFlashSale = (
   options: Partial<FlashSaleRequestedProductsQueryOptions>,
 ) => {
-  const { data, error, isLoading } = useQuery<ProductPaginator, Error>(
-    [API_ENDPOINTS.REQUESTED_PRODUCTS_FOR_FLASH_SALE, options],
-    ({ queryKey, pageParam }) =>
+  const { data, error, isLoading } = useQuery<ProductPaginator, Error>({
+    queryKey: [API_ENDPOINTS.REQUESTED_PRODUCTS_FOR_FLASH_SALE, options],
+    queryFn: ({ queryKey }) =>
       flashSaleVendorRequestClient.requestedProducts(
-        Object.assign({}, queryKey[1], pageParam),
+        Object.assign({}, queryKey[1]),
       ),
-    {
-      keepPreviousData: true,
-    },
-  );
+    placeholderData: keepPreviousData,
+  });
 
   return {
     products: data?.data ?? [],
@@ -106,7 +101,8 @@ export const useCreateFlashSaleRequestMutation = () => {
   const router = useRouter();
   const { t } = useTranslation();
 
-  return useMutation(flashSaleVendorRequestClient.create, {
+  return useMutation({
+    mutationFn: flashSaleVendorRequestClient.create,
     onSuccess: async () => {
       const generateRedirectUrl = router.query.shop
         ? `/${router.query.shop}${Routes.vendorRequestForFlashSale.list}`
@@ -118,7 +114,9 @@ export const useCreateFlashSaleRequestMutation = () => {
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.REQUEST_LISTS_FOR_FLASH_SALE);
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.REQUEST_LISTS_FOR_FLASH_SALE],
+      });
     },
     onError: (error: any) => {
       toast.error(t(`common:${error?.response?.data.message}`));
@@ -132,7 +130,8 @@ export const useUpdateFlashSaleRequestMutation = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const router = useRouter();
-  return useMutation(flashSaleVendorRequestClient.update, {
+  return useMutation({
+    mutationFn: flashSaleVendorRequestClient.update,
     onSuccess: async (data) => {
       const generateRedirectUrl = router.query.shop
         ? `/${router.query.shop}${Routes.vendorRequestForFlashSale.list}`
@@ -144,7 +143,9 @@ export const useUpdateFlashSaleRequestMutation = () => {
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.REQUEST_LISTS_FOR_FLASH_SALE);
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.REQUEST_LISTS_FOR_FLASH_SALE],
+      });
     },
     onError: (error: any) => {
       toast.error(t(`common:${error?.response?.data.message}`));
@@ -158,13 +159,16 @@ export const useDeleteFlashSaleRequestMutation = () => {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
 
-  return useMutation(flashSaleVendorRequestClient.delete, {
+  return useMutation({
+    mutationFn: flashSaleVendorRequestClient.delete,
     onSuccess: () => {
       toast.success(t('common:successfully-deleted'));
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.REQUEST_LISTS_FOR_FLASH_SALE);
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.REQUEST_LISTS_FOR_FLASH_SALE],
+      });
     },
     onError: (error: any) => {
       toast.error(t(`common:${error?.response?.data.message}`));
@@ -179,7 +183,8 @@ export const useApproveVendorFlashSaleRequestMutation = () => {
   const queryClient = useQueryClient();
   const router = useRouter();
 
-  return useMutation(flashSaleVendorRequestClient.approve, {
+  return useMutation({
+    mutationFn: flashSaleVendorRequestClient.approve,
     onSuccess: async () => {
       const generateRedirectUrl = router.query.shop
         ? `/${router.query.shop}${Routes.vendorRequestForFlashSale.list}`
@@ -192,7 +197,7 @@ export const useApproveVendorFlashSaleRequestMutation = () => {
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.FLASH_SALE);
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.FLASH_SALE] });
     },
   });
 };
@@ -202,13 +207,14 @@ export const useApproveVendorFlashSaleRequestMutation = () => {
 export const useDisApproveVendorFlashSaleRequestMutation = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  return useMutation(flashSaleVendorRequestClient.disapprove, {
+  return useMutation({
+    mutationFn: flashSaleVendorRequestClient.disapprove,
     onSuccess: () => {
       toast.success(t('common:successfully-updated'));
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.FLASH_SALE);
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.FLASH_SALE] });
     },
   });
 };

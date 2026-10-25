@@ -173,9 +173,9 @@ export default function CreateOrUpdateAuthorForm({ initialValues }: IProps) {
     });
   }, [generateName]);
 
-  const { mutate: createAuthor, isLoading: creating } =
+  const { mutate: createAuthor, isPending: creating } =
     useCreateAuthorMutation();
-  const { mutate: updateAuthor, isLoading: updating } =
+  const { mutate: updateAuthor, isPending: updating } =
     useUpdateAuthorMutation();
 
   const { fields, append, remove } = useFieldArray({

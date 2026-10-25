@@ -1,5 +1,9 @@
-import { useQuery } from 'react-query';
-import { useMutation, useQueryClient } from 'react-query';
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  keepPreviousData,
+} from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'next-i18next';
 import { API_ENDPOINTS } from '@/data/client/api-endpoints';
@@ -19,15 +23,13 @@ export const useOrdersQuery = (
   params: Partial<OrderQueryOptions>,
   options: any = {}
 ) => {
-  const { data, error, isLoading } = useQuery<OrderPaginator, Error>(
-    [API_ENDPOINTS.ORDERS, params],
-    ({ queryKey, pageParam }) =>
-      orderClient.paginated(Object.assign({}, queryKey[1], pageParam)),
-    {
-      keepPreviousData: true,
-      ...options,
-    }
-  );
+  const { data, error, isLoading } = useQuery<OrderPaginator, Error>({
+    queryKey: [API_ENDPOINTS.ORDERS, params],
+    queryFn: ({ queryKey }) =>
+      orderClient.paginated(Object.assign({}, queryKey[1])),
+    placeholderData: keepPreviousData,
+    ...options,
+  });
   return {
     orders: data?.data ?? [],
     paginatorInfo: mapPaginatorData(data),
@@ -43,13 +45,11 @@ export const useOrderQuery = ({
   id: string;
   language: string;
 }) => {
-  const { data, error, isLoading } = useQuery<Order, Error>(
-    [API_ENDPOINTS.ORDERS, { id, language }],
-    () => orderClient.get({ id, language }),
-    {
-      enabled: Boolean(id), // Set to true to enable or false to disable
-    }
-  );
+  const { data, error, isLoading } = useQuery<Order, Error>({
+    queryKey: [API_ENDPOINTS.ORDERS, { id, language }],
+    queryFn: () => orderClient.get({ id, language }),
+    enabled: Boolean(id), // Set to true to enable or false to disable
+  });
 
   return {
     order: data,
@@ -67,7 +67,8 @@ export function useCreateOrderMutation() {
   const { locale } = router;
   const { t } = useTranslation();
 
-  const { mutate: createOrder, isLoading } = useMutation(orderClient.create, {
+  const { mutate: createOrder, isPending: isLoading } = useMutation({
+    mutationFn: orderClient.create,
     onSuccess: (data: any) => {
       if (data?.id) {
         router.push(`${Routes.order.list}/${data?.id}`);
@@ -110,13 +111,14 @@ export function useCreateOrderMutation() {
 export const useUpdateOrderMutation = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  return useMutation(orderClient.update, {
+  return useMutation({
+    mutationFn: orderClient.update,
     onSuccess: () => {
       toast.success(t('common:successfully-updated'));
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.ORDERS);
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.ORDERS] });
     },
   });
 };
@@ -149,13 +151,11 @@ export const useDownloadInvoiceMutation = (
     },
   };
 
-  return useQuery<string, Error>(
-    [API_ENDPOINTS.ORDER_INVOICE_DOWNLOAD],
-    () => orderClient.downloadInvoice(formattedInput),
-    {
-      ...options,
-    }
-  );
+  return useQuery<string, Error>({
+    queryKey: [API_ENDPOINTS.ORDER_INVOICE_DOWNLOAD],
+    queryFn: () => orderClient.downloadInvoice(formattedInput),
+    ...options,
+  });
 };
 
 export function useOrderSeen() {
@@ -163,13 +163,14 @@ export function useOrderSeen() {
   const { t } = useTranslation('common');
   const {
     mutate: readOrderNotice,
-    isLoading,
+    isPending: isLoading,
     isSuccess,
-  } = useMutation(orderClient.orderSeen, {
+  } = useMutation({
+    mutationFn: orderClient.orderSeen,
     onSuccess: () => {},
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.ORDER_SEEN);
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.ORDER_SEEN] });
     },
   });
 

@@ -50,7 +50,7 @@ const AddStaffForm = () => {
   } = useForm<FormValues>({
     resolver: yupResolver(staffFormSchema),
   });
-  const { mutate: addStaff, isLoading: loading } = useAddStaffMutation();
+  const { mutate: addStaff, isPending: loading } = useAddStaffMutation();
   const { t } = useTranslation();
 
   function onSubmit({ name, email, password }: FormValues) {

@@ -236,8 +236,8 @@ export default function CreateOrUpdateTypeForm({ initialValues }: IProps) {
     name: 'settings.manufactures.enable',
   });
 
-  const { mutate: createType, isLoading: creating } = useCreateTypeMutation();
-  const { mutate: updateType, isLoading: updating } = useUpdateTypeMutation();
+  const { mutate: createType, isPending: creating } = useCreateTypeMutation();
+  const { mutate: updateType, isPending: updating } = useUpdateTypeMutation();
   const slugAutoSuggest = formatSlug(watch('name'));
   const onSubmit = (values: FormValues) => {
     const input = {

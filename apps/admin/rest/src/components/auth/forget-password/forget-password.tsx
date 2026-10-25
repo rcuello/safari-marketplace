@@ -15,10 +15,10 @@ const EnterNewPasswordView = dynamic(() => import('./enter-new-password-view'));
 
 const ForgotPassword = () => {
   const { t } = useTranslation();
-  const { mutate: forgetPassword, isLoading } = useForgetPasswordMutation();
-  const { mutate: verifyToken, isLoading: verifying } =
+  const { mutate: forgetPassword, isPending: isLoading } = useForgetPasswordMutation();
+  const { mutate: verifyToken, isPending: verifying } =
     useVerifyForgetPasswordTokenMutation();
-  const { mutate: resetPassword, isLoading: resetting } =
+  const { mutate: resetPassword, isPending: resetting } =
     useResetPasswordMutation();
   const [errorMsg, setErrorMsg] = useState<string | null | undefined>('');
   const [verifiedEmail, setVerifiedEmail] = useState('');

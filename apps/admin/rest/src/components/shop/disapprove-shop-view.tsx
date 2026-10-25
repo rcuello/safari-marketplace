@@ -9,7 +9,7 @@ import { useTranslation } from 'next-i18next';
 
 const ProductDeleteView = () => {
   const { t } = useTranslation();
-  const { mutate: disApproveShopById, isLoading: loading } =
+  const { mutate: disApproveShopById, isPending: loading } =
     useDisApproveShopMutation();
 
   const { data: modalData } = useModalState();

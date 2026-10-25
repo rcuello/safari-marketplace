@@ -8,7 +8,7 @@ import { useRouter } from 'next/router';
 
 const AcceptAbuseReportView = () => {
   const router = useRouter();
-  const { mutate: deleteReview, isLoading: loading } =
+  const { mutate: deleteReview, isPending: loading } =
     useDeleteReviewMutation();
 
   const { data: modalData } = useModalState();

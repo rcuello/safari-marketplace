@@ -39,9 +39,9 @@ export default function CreateOrUpdateTaxForm({ initialValues }: IProps) {
     resolver: yupResolver(taxValidationSchema),
     defaultValues: initialValues ?? defaultValues,
   });
-  const { mutate: createTaxClass, isLoading: creating } =
+  const { mutate: createTaxClass, isPending: creating } =
     useCreateTaxClassMutation();
-  const { mutate: updateTaxClass, isLoading: updating } =
+  const { mutate: updateTaxClass, isPending: updating } =
     useUpdateTaxClassMutation();
   const onSubmit = async (values: Tax) => {
     if (initialValues) {

@@ -1,19 +1,17 @@
-import { useMutation, useQueryClient } from 'react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { API_ENDPOINTS } from '@/data/client/api-endpoints';
 import { uploadClient } from '@/data/client/upload';
 
 export const useUploadMutation = () => {
   const queryClient = useQueryClient();
 
-  return useMutation(
-    (input: any) => {
+  return useMutation({
+    mutationFn: (input: any) => {
       return uploadClient.upload(input);
     },
-    {
-      // Always refetch after error or success:
-      onSettled: () => {
-        queryClient.invalidateQueries(API_ENDPOINTS.SETTINGS);
-      },
-    }
-  );
+    // Always refetch after error or success:
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.SETTINGS] });
+    },
+  });
 };

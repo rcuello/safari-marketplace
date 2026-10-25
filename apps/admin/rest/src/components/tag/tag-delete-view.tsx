@@ -7,7 +7,7 @@ import { useDeleteTagMutation } from '@/data/tag';
 import { getErrorMessage } from '@/utils/form-error';
 
 const TagDeleteView = () => {
-  const { mutate: deleteTagById, isLoading: loading } = useDeleteTagMutation();
+  const { mutate: deleteTagById, isPending: loading } = useDeleteTagMutation();
 
   const { data } = useModalState();
   const { closeModal } = useModalAction();

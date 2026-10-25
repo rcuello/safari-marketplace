@@ -6,7 +6,7 @@ import {
 import { useDeleteFlashSaleRequestMutation } from '@/data/flash-sale-vendor-request';
 
 const FlashSaleDeleteView = () => {
-  const { mutate: deleteFlashSaleRequest, isLoading: loading } =
+  const { mutate: deleteFlashSaleRequest, isPending: loading } =
     useDeleteFlashSaleRequestMutation();
 
   const { data } = useModalState();

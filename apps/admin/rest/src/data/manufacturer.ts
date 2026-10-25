@@ -1,5 +1,10 @@
 import Router, { useRouter } from 'next/router';
-import { useMutation, useQuery, useQueryClient } from 'react-query';
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  keepPreviousData,
+} from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'next-i18next';
 import { Routes } from '@/config/routes';
@@ -19,7 +24,8 @@ export const useCreateManufacturerMutation = () => {
   const { t } = useTranslation();
   const router = useRouter();
 
-  return useMutation(manufacturerClient.create, {
+  return useMutation({
+    mutationFn: manufacturerClient.create,
     onSuccess: async () => {
       const generateRedirectUrl = router.query.shop
         ? `/${router.query.shop}${Routes.manufacturer.list}`
@@ -31,7 +37,9 @@ export const useCreateManufacturerMutation = () => {
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.MANUFACTURERS);
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.MANUFACTURERS],
+      });
     },
   });
 };
@@ -40,13 +48,16 @@ export const useDeleteManufacturerMutation = () => {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
 
-  return useMutation(manufacturerClient.delete, {
+  return useMutation({
+    mutationFn: manufacturerClient.delete,
     onSuccess: () => {
       toast.success(t('common:successfully-deleted'));
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.MANUFACTURERS);
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.MANUFACTURERS],
+      });
     },
   });
 };
@@ -55,7 +66,8 @@ export const useUpdateManufacturerMutation = () => {
   const { t } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();
-  return useMutation(manufacturerClient.update, {
+  return useMutation({
+    mutationFn: manufacturerClient.update,
     onSuccess: async (data) => {
       const generateRedirectUrl = router.query.shop
         ? `/${router.query.shop}${Routes.manufacturer.list}`
@@ -74,7 +86,9 @@ export const useUpdateManufacturerMutation = () => {
     // },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.MANUFACTURERS);
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.MANUFACTURERS],
+      });
     },
   });
 };
@@ -82,22 +96,25 @@ export const useUpdateManufacturerMutation = () => {
 export const useUpdateManufacturerMutationInList = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  return useMutation(manufacturerClient.update, {
+  return useMutation({
+    mutationFn: manufacturerClient.update,
     onSuccess: async () => {
       toast.success(t('common:successfully-updated'));
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.MANUFACTURERS);
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.MANUFACTURERS],
+      });
     },
   });
 };
 
 export const useManufacturerQuery = ({ slug, language }: GetParams) => {
-  const { data, error, isLoading } = useQuery<Manufacturer, Error>(
-    [API_ENDPOINTS.MANUFACTURERS, { slug, language }],
-    () => manufacturerClient.get({ slug, language })
-  );
+  const { data, error, isLoading } = useQuery<Manufacturer, Error>({
+    queryKey: [API_ENDPOINTS.MANUFACTURERS, { slug, language }],
+    queryFn: () => manufacturerClient.get({ slug, language }),
+  });
 
   return {
     manufacturer: data,
@@ -109,14 +126,12 @@ export const useManufacturerQuery = ({ slug, language }: GetParams) => {
 export const useManufacturersQuery = (
   options: Partial<ManufacturerQueryOptions>
 ) => {
-  const { data, error, isLoading } = useQuery<ManufacturerPaginator, Error>(
-    [API_ENDPOINTS.MANUFACTURERS, options],
-    ({ queryKey, pageParam }) =>
-      manufacturerClient.paginated(Object.assign({}, queryKey[1], pageParam)),
-    {
-      keepPreviousData: true,
-    }
-  );
+  const { data, error, isLoading } = useQuery<ManufacturerPaginator, Error>({
+    queryKey: [API_ENDPOINTS.MANUFACTURERS, options],
+    queryFn: ({ queryKey }) =>
+      manufacturerClient.paginated(Object.assign({}, queryKey[1])),
+    placeholderData: keepPreviousData,
+  });
 
   return {
     manufacturers: data?.data ?? [],

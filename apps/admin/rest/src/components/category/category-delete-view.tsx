@@ -6,7 +6,7 @@ import {
 import { useDeleteCategoryMutation } from '@/data/category';
 
 const CategoryDeleteView = () => {
-  const { mutate: deleteCategory, isLoading: loading } =
+  const { mutate: deleteCategory, isPending: loading } =
     useDeleteCategoryMutation();
 
   const { data } = useModalState();

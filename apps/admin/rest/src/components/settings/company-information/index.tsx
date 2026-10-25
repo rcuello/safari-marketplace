@@ -67,7 +67,7 @@ export const updatedIcons = socialIcon.map((item: any) => {
 });
 
 export default function CompanyInfoForm({ settings }: IProps) {
-  const { mutate: updateSettingsMutation, isLoading: loading } =
+  const { mutate: updateSettingsMutation, isPending: loading } =
     useUpdateSettingsMutation();
   const { t } = useTranslation();
   const { options } = settings ?? {};

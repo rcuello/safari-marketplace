@@ -9,7 +9,7 @@ import { useApproveTermAndConditionMutation } from '@/data/terms-and-condition';
 
 const ApproveShopView = () => {
   const { t } = useTranslation();
-  const { mutate: approveTermMutation, isLoading: loading } =
+  const { mutate: approveTermMutation, isPending: loading } =
     useApproveTermAndConditionMutation();
 
   const { data: shopId } = useModalState();

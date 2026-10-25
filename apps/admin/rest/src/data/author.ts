@@ -1,5 +1,10 @@
 import Router, { useRouter } from 'next/router';
-import { useMutation, useQuery, useQueryClient } from 'react-query';
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  keepPreviousData,
+} from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'next-i18next';
 import { Routes } from '@/config/routes';
@@ -19,7 +24,8 @@ export const useCreateAuthorMutation = () => {
   const { t } = useTranslation();
   const router = useRouter();
 
-  return useMutation(AuthorClient.create, {
+  return useMutation({
+    mutationFn: AuthorClient.create,
     onSuccess: async () => {
       const generateRedirectUrl = router.query.shop
         ? `/${router.query.shop}${Routes.author.list}`
@@ -31,7 +37,7 @@ export const useCreateAuthorMutation = () => {
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.AUTHORS);
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.AUTHORS] });
     },
     onError: (error: any) => {
       toast.error(t(`common:${error?.response?.data.message}`));
@@ -43,13 +49,14 @@ export const useDeleteAuthorMutation = () => {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
 
-  return useMutation(AuthorClient.delete, {
+  return useMutation({
+    mutationFn: AuthorClient.delete,
     onSuccess: () => {
       toast.success(t('common:successfully-deleted'));
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.AUTHORS);
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.AUTHORS] });
     },
     onError: (error: any) => {
       toast.error(t(`common:${error?.response?.data.message}`));
@@ -61,7 +68,8 @@ export const useUpdateAuthorMutation = () => {
   const { t } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();
-  return useMutation(AuthorClient.update, {
+  return useMutation({
+    mutationFn: AuthorClient.update,
     onSuccess: async (data) => {
       const generateRedirectUrl = router.query.shop
         ? `/${router.query.shop}${Routes.author.list}`
@@ -80,7 +88,7 @@ export const useUpdateAuthorMutation = () => {
     // },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.AUTHORS);
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.AUTHORS] });
     },
     onError: (error: any) => {
       toast.error(t(`common:${error?.response?.data.message}`));
@@ -91,13 +99,14 @@ export const useUpdateAuthorMutation = () => {
 export const useUpdateAuthorMutationInList = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  return useMutation(AuthorClient.update, {
+  return useMutation({
+    mutationFn: AuthorClient.update,
     onSuccess: async () => {
       toast.success(t('common:successfully-updated'));
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.AUTHORS);
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.AUTHORS] });
     },
     onError: (error: any) => {
       toast.error(t(`common:${error?.response?.data.message}`));
@@ -106,10 +115,10 @@ export const useUpdateAuthorMutationInList = () => {
 };
 
 export const useAuthorQuery = ({ slug, language }: GetParams) => {
-  const { data, error, isLoading } = useQuery<Author, Error>(
-    [API_ENDPOINTS.AUTHORS, { slug, language }],
-    () => AuthorClient.get({ slug, language })
-  );
+  const { data, error, isLoading } = useQuery<Author, Error>({
+    queryKey: [API_ENDPOINTS.AUTHORS, { slug, language }],
+    queryFn: () => AuthorClient.get({ slug, language }),
+  });
 
   return {
     author: data,
@@ -119,14 +128,12 @@ export const useAuthorQuery = ({ slug, language }: GetParams) => {
 };
 
 export const useAuthorsQuery = (options: Partial<AuthorQueryOptions>) => {
-  const { data, error, isLoading } = useQuery<AuthorPaginator, Error>(
-    [API_ENDPOINTS.AUTHORS, options],
-    ({ queryKey, pageParam }) =>
-      AuthorClient.paginated(Object.assign({}, queryKey[1], pageParam)),
-    {
-      keepPreviousData: true,
-    }
-  );
+  const { data, error, isLoading } = useQuery<AuthorPaginator, Error>({
+    queryKey: [API_ENDPOINTS.AUTHORS, options],
+    queryFn: ({ queryKey }) =>
+      AuthorClient.paginated(Object.assign({}, queryKey[1])),
+    placeholderData: keepPreviousData,
+  });
 
   return {
     authors: data?.data ?? [],

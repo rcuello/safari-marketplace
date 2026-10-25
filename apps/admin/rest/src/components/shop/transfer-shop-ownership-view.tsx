@@ -34,7 +34,7 @@ const TransferShopOwnershipView = () => {
 
   const { handleSubmit, control, register, watch } = useForm<FormValues>();
 
-  const { mutate: transferOwnership, isLoading } =
+  const { mutate: transferOwnership, isPending: isLoading } =
     useTransferShopOwnershipMutation();
 
   const { closeModal } = useModalAction();

@@ -51,7 +51,7 @@ export default function OrderDetailsPage() {
   });
   const shopId = shopData?.id!;
   const { alignLeft, alignRight, isRTL } = useIsRTL();
-  const { mutate: updateOrder, isLoading: updating } = useUpdateOrderMutation();
+  const { mutate: updateOrder, isPending: updating } = useUpdateOrderMutation();
   const {
     order,
     isLoading: loading,

@@ -40,7 +40,7 @@ const StoreNoticeBar = ({ user }: IProps) => {
     sortedBy: SortOrder.Desc,
   });
 
-  const { mutate: readAllNotifyLogs, isLoading: creating } =
+  const { mutate: readAllNotifyLogs, isPending: creating } =
     useNotifyLogAllReadMutation();
 
   const markAllAsRead = () => {

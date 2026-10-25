@@ -13,7 +13,7 @@ import { useTranslation } from 'next-i18next';
 
 const DisApproveCouponView = () => {
   const { t } = useTranslation();
-  const { mutate: ApproveCouponById, isLoading: loading } =
+  const { mutate: ApproveCouponById, isPending: loading } =
     useDisApproveCouponMutation();
 
   const { data: modalData } = useModalState();

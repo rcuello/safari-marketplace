@@ -6,20 +6,26 @@ import { adminOnly, getAuthCredentials, hasAccess } from '@/utils/auth-utils';
 import { mapPaginatorData } from '@/utils/data-mappers';
 import { useTranslation } from 'next-i18next';
 import Router, { useRouter } from 'next/router';
-import { useMutation, useQuery, useQueryClient } from 'react-query';
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  keepPreviousData,
+} from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { shopClient } from './client/shop';
 
 export const useApproveShopMutation = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  return useMutation(shopClient.approve, {
+  return useMutation({
+    mutationFn: shopClient.approve,
     onSuccess: () => {
       toast.success(t('common:successfully-updated'));
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.SHOPS);
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.SHOPS] });
     },
   });
 };
@@ -27,13 +33,14 @@ export const useApproveShopMutation = () => {
 export const useDisApproveShopMutation = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  return useMutation(shopClient.disapprove, {
+  return useMutation({
+    mutationFn: shopClient.disapprove,
     onSuccess: () => {
       toast.success(t('common:successfully-updated'));
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.SHOPS);
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.SHOPS] });
     },
   });
 };
@@ -42,7 +49,8 @@ export const useCreateShopMutation = () => {
   const queryClient = useQueryClient();
   const router = useRouter();
 
-  return useMutation(shopClient.create, {
+  return useMutation({
+    mutationFn: shopClient.create,
     onSuccess: () => {
       const { permissions } = getAuthCredentials();
       if (hasAccess(adminOnly, permissions)) {
@@ -52,7 +60,7 @@ export const useCreateShopMutation = () => {
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.SHOPS);
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.SHOPS] });
     },
   });
 };
@@ -61,7 +69,8 @@ export const useUpdateShopMutation = () => {
   const { t } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();
-  return useMutation(shopClient.update, {
+  return useMutation({
+    mutationFn: shopClient.update,
     onSuccess: async (data) => {
       await router.push(`/${data?.slug}/edit`, undefined, {
         locale: Config.defaultLanguage,
@@ -69,14 +78,15 @@ export const useUpdateShopMutation = () => {
       toast.success(t('common:successfully-updated'));
     },
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.SHOPS);
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.SHOPS] });
     },
   });
 };
 export const useTransferShopOwnershipMutation = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  return useMutation(shopClient.transferShopOwnership, {
+  return useMutation({
+    mutationFn: shopClient.transferShopOwnership,
     onSuccess: (shop: Shop) => {
       toast.success(
         `${t('common:successfully-transferred')}${shop.owner?.name}`,
@@ -84,28 +94,26 @@ export const useTransferShopOwnershipMutation = () => {
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.SHOPS);
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.SHOPS] });
     },
   });
 };
 
 export const useShopQuery = ({ slug }: { slug: string }, options?: any) => {
-  return useQuery<Shop, Error>(
-    [API_ENDPOINTS.SHOPS, { slug }],
-    () => shopClient.get({ slug }),
-    options,
-  );
+  return useQuery<Shop, Error>({
+    queryKey: [API_ENDPOINTS.SHOPS, { slug }],
+    queryFn: () => shopClient.get({ slug }),
+    ...options,
+  });
 };
 
 export const useShopsQuery = (options: Partial<ShopQueryOptions>) => {
-  const { data, error, isLoading } = useQuery<ShopPaginator, Error>(
-    [API_ENDPOINTS.SHOPS, options],
-    ({ queryKey, pageParam }) =>
-      shopClient.paginated(Object.assign({}, queryKey[1], pageParam)),
-    {
-      keepPreviousData: true,
-    },
-  );
+  const { data, error, isLoading } = useQuery<ShopPaginator, Error>({
+    queryKey: [API_ENDPOINTS.SHOPS, options],
+    queryFn: ({ queryKey }) =>
+      shopClient.paginated(Object.assign({}, queryKey[1])),
+    placeholderData: keepPreviousData,
+  });
 
   return {
     shops: data?.data ?? [],
@@ -116,14 +124,12 @@ export const useShopsQuery = (options: Partial<ShopQueryOptions>) => {
 };
 
 export const useInActiveShopsQuery = (options: Partial<ShopQueryOptions>) => {
-  const { data, error, isLoading } = useQuery<ShopPaginator, Error>(
-    [API_ENDPOINTS.NEW_OR_INACTIVE_SHOPS, options],
-    ({ queryKey, pageParam }) =>
-      shopClient.newOrInActiveShops(Object.assign({}, queryKey[1], pageParam)),
-    {
-      keepPreviousData: true,
-    },
-  );
+  const { data, error, isLoading } = useQuery<ShopPaginator, Error>({
+    queryKey: [API_ENDPOINTS.NEW_OR_INACTIVE_SHOPS, options],
+    queryFn: ({ queryKey }) =>
+      shopClient.newOrInActiveShops(Object.assign({}, queryKey[1])),
+    placeholderData: keepPreviousData,
+  });
 
   return {
     shops: data?.data ?? [],

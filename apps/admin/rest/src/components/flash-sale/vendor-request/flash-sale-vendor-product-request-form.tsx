@@ -101,9 +101,9 @@ export default function CreateOrUpdateVendorProductsRequestFlashSaleForm({
     resolver: yupResolver(flashSaleVendorRequestValidationSchema),
   });
 
-  const { mutate: createFlashSaleRequest, isLoading: creating } =
+  const { mutate: createFlashSaleRequest, isPending: creating } =
     useCreateFlashSaleRequestMutation();
-  const { mutate: updateFlashSaleRequest, isLoading: updating } =
+  const { mutate: updateFlashSaleRequest, isPending: updating } =
     useUpdateFlashSaleRequestMutation();
 
   const onSubmit = async (values: FormValues) => {

@@ -4,11 +4,12 @@ import {
   useInfiniteQuery,
   useMutation,
   useQueryClient,
-} from 'react-query';
+  keepPreviousData,
+} from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'next-i18next';
 import { mapPaginatorData } from '@/utils/data-mappers';
-import type { UseInfiniteQueryOptions } from 'react-query';
+import type { UseInfiniteQueryOptions } from '@tanstack/react-query';
 import {
   GetParams,
   TermsAndConditions,
@@ -25,13 +26,16 @@ import { termsAndConditionClients } from '@/data/client/terms-and-condition';
 export const useApproveTermAndConditionMutation = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  return useMutation(termsAndConditionClients.approve, {
+  return useMutation({
+    mutationFn: termsAndConditionClients.approve,
     onSuccess: () => {
       toast.success(t('common:successfully-updated'));
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.TERMS_AND_CONDITIONS);
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.TERMS_AND_CONDITIONS],
+      });
     },
   });
 };
@@ -41,25 +45,27 @@ export const useApproveTermAndConditionMutation = () => {
 export const useDisApproveTermAndConditionMutation = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  return useMutation(termsAndConditionClients.disapprove, {
+  return useMutation({
+    mutationFn: termsAndConditionClients.disapprove,
     onSuccess: () => {
       toast.success(t('common:successfully-updated'));
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.TERMS_AND_CONDITIONS);
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.TERMS_AND_CONDITIONS],
+      });
     },
   });
 };
 
-
 // Read Single Terms And Conditions
 
 export const useTermsAndConditionQuery = ({ slug, language }: GetParams) => {
-  const { data, error, isLoading } = useQuery<TermsAndConditions, Error>(
-    [API_ENDPOINTS.TERMS_AND_CONDITIONS, { slug, language }],
-    () => termsAndConditionClients.get({ slug, language })
-  );
+  const { data, error, isLoading } = useQuery<TermsAndConditions, Error>({
+    queryKey: [API_ENDPOINTS.TERMS_AND_CONDITIONS, { slug, language }],
+    queryFn: () => termsAndConditionClients.get({ slug, language }),
+  });
 
   return {
     termsAndConditions: data,
@@ -76,16 +82,12 @@ export const useTermsAndConditionsQuery = (
   const { data, error, isLoading } = useQuery<
     TermsAndConditionsPaginator,
     Error
-  >(
-    [API_ENDPOINTS.TERMS_AND_CONDITIONS, options],
-    ({ queryKey, pageParam }) =>
-      termsAndConditionClients.paginated(
-        Object.assign({}, queryKey[1], pageParam)
-      ),
-    {
-      keepPreviousData: true,
-    }
-  );
+  >({
+    queryKey: [API_ENDPOINTS.TERMS_AND_CONDITIONS, options],
+    queryFn: ({ queryKey }) =>
+      termsAndConditionClients.paginated(Object.assign({}, queryKey[1])),
+    placeholderData: keepPreviousData,
+  });
 
   return {
     termsAndConditions: data?.data ?? [],
@@ -95,8 +97,6 @@ export const useTermsAndConditionsQuery = (
   };
 };
 
-
-
 // Create Terms And Conditions
 
 export const useCreateTermsAndConditionsMutation = () => {
@@ -104,7 +104,8 @@ export const useCreateTermsAndConditionsMutation = () => {
   const router = useRouter();
   const { t } = useTranslation();
 
-  return useMutation(termsAndConditionClients.create, {
+  return useMutation({
+    mutationFn: termsAndConditionClients.create,
     onSuccess: async () => {
       const generateRedirectUrl = router.query.shop
         ? `/${router.query.shop}${Routes.termsAndCondition.list}`
@@ -116,7 +117,9 @@ export const useCreateTermsAndConditionsMutation = () => {
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.TERMS_AND_CONDITIONS);
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.TERMS_AND_CONDITIONS],
+      });
     },
     onError: (error: any) => {
       toast.error(t(`common:${error?.response?.data.message}`));
@@ -130,7 +133,8 @@ export const useUpdateTermsAndConditionsMutation = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const router = useRouter();
-  return useMutation(termsAndConditionClients.update, {
+  return useMutation({
+    mutationFn: termsAndConditionClients.update,
     onSuccess: async (data: any) => {
       const generateRedirectUrl = router.query.shop
         ? `/${router.query.shop}${Routes.termsAndCondition.list}`
@@ -142,7 +146,9 @@ export const useUpdateTermsAndConditionsMutation = () => {
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.TERMS_AND_CONDITIONS);
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.TERMS_AND_CONDITIONS],
+      });
     },
     onError: (error: any) => {
       toast.error(t(`common:${error?.response?.data.message}`));
@@ -156,13 +162,16 @@ export const useDeleteTermsAndConditionsMutation = () => {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
 
-  return useMutation(termsAndConditionClients.delete, {
+  return useMutation({
+    mutationFn: termsAndConditionClients.delete,
     onSuccess: () => {
       toast.success(t('common:successfully-deleted'));
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.TERMS_AND_CONDITIONS);
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.TERMS_AND_CONDITIONS],
+      });
     },
     onError: (error: any) => {
       toast.error(t(`common:${error?.response?.data.message}`));

@@ -7,7 +7,7 @@ import { getErrorMessage } from '@/utils/form-error';
 import { useDeleteAuthorMutation } from '@/data/author';
 
 const AuthorDeleteView = () => {
-  const { mutate: deleteAuthor, isLoading: loading } =
+  const { mutate: deleteAuthor, isPending: loading } =
     useDeleteAuthorMutation();
 
   const { data } = useModalState();

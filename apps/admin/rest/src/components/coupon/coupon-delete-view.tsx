@@ -6,7 +6,7 @@ import {
 import { useDeleteCouponMutation } from '@/data/coupon';
 
 const CouponDeleteView = () => {
-  const { mutate: deleteCoupon, isLoading: loading } =
+  const { mutate: deleteCoupon, isPending: loading } =
     useDeleteCouponMutation();
 
   const { data } = useModalState();

@@ -6,7 +6,7 @@ import {
 import { useDeleteOwnerTransferMutation } from '@/data/ownership-transfer';
 
 const OwnershipTransferDeleteView = () => {
-  const { mutate: deleteOwnershipTransfer, isLoading: loading } =
+  const { mutate: deleteOwnershipTransfer, isPending: loading } =
     useDeleteOwnerTransferMutation();
 
   const { data } = useModalState();

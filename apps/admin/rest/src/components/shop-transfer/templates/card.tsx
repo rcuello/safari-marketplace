@@ -41,7 +41,7 @@ const ShopDetailsCard = ({
   ...rest
 }: CardProps) => {
   const { permissions } = getAuthCredentials();
-  const { mutate: createConversations, isLoading: creating } =
+  const { mutate: createConversations, isPending: creating } =
     useCreateConversations();
 
   const createAConversations = useCallback(({ shopId }: { shopId: number }) => {

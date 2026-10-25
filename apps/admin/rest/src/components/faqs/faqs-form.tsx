@@ -66,8 +66,8 @@ export default function CreateOrUpdateFaqsForm({ initialValues }: IProps) {
     resolver: yupResolver(faqsValidationSchema),
   });
 
-  const { mutate: createFAQs, isLoading: creating } = useCreateFaqsMutation();
-  const { mutate: updateFAQs, isLoading: updating } = useUpdateFaqsMutation();
+  const { mutate: createFAQs, isPending: creating } = useCreateFaqsMutation();
+  const { mutate: updateFAQs, isPending: updating } = useUpdateFaqsMutation();
 
   const faqName = watch('faq_title');
   const autoSuggestionList = useMemo(() => {

@@ -33,7 +33,7 @@ const defaultValues = {
 const LoginForm = () => {
   const { t } = useTranslation();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const { mutate: login, isLoading, error } = useLogin();
+  const { mutate: login, isPending: isLoading, error } = useLogin();
 
   function onSubmit({ email, password }: LoginInput) {
     login(

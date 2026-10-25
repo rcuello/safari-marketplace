@@ -13,7 +13,7 @@ export default function ImportAttributes() {
     slug: shop as string,
   });
   const shopId = shopData?.id!;
-  const { mutate: importAttributes, isLoading: loading } =
+  const { mutate: importAttributes, isPending: loading } =
     useImportAttributesMutation();
 
   const handleDrop = async (acceptedFiles: any) => {

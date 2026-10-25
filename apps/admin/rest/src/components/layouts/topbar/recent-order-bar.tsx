@@ -35,7 +35,7 @@ const NotifyLogItem = ({ item }: any) => {
   const { locale } = useRouter();
   const { permissions } = getAuthCredentials();
   const router = useRouter();
-  const { mutate: seenNotifyLog, isLoading: creating } =
+  const { mutate: seenNotifyLog, isPending: creating } =
     useNotifyLogReadMutation();
 
   const { order } = useOrderQuery({
@@ -93,7 +93,7 @@ const RecentOrderBar = ({ user }: IProps) => {
   const [order, setOrder] = useState([]);
   const { permissions } = getAuthCredentials();
   const permission = hasAccess(adminOnly, permissions);
-  const { mutate: readAllNotifyLogs, isLoading: creating } =
+  const { mutate: readAllNotifyLogs, isPending: creating } =
     useNotifyLogAllReadMutation();
   let allOrder: any = [];
 

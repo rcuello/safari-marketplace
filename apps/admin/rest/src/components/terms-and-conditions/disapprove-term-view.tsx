@@ -7,7 +7,7 @@ import {
 import { useDisApproveTermAndConditionMutation } from '@/data/terms-and-condition';
 
 const ProductDeleteView = () => {
-  const { mutate: disApproveTermById, isLoading: loading } = useDisApproveTermAndConditionMutation();
+  const { mutate: disApproveTermById, isPending: loading } = useDisApproveTermAndConditionMutation();
 
   const { data: modalData } = useModalState();
   const { closeModal } = useModalAction();

@@ -156,8 +156,8 @@ export default function CreateOrUpdateTagForm({ initialValues }: IProps) {
     });
   }, [generateName]);
 
-  const { mutate: createTag, isLoading: creating } = useCreateTagMutation();
-  const { mutate: updateTag, isLoading: updating } = useUpdateTagMutation();
+  const { mutate: createTag, isPending: creating } = useCreateTagMutation();
+  const { mutate: updateTag, isPending: updating } = useUpdateTagMutation();
   const slugAutoSuggest = formatSlug(watch('name'));
   const onSubmit = async (values: FormValues) => {
     const input = {

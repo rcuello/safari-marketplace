@@ -6,7 +6,7 @@ import {
 import { useMakeOrRevokeAdminMutation } from '@/data/user';
 
 const CustomerBanView = () => {
-  const { mutate: makeOrRevokeAdmin, isLoading: loading } =
+  const { mutate: makeOrRevokeAdmin, isPending: loading } =
     useMakeOrRevokeAdminMutation();
   const { data } = useModalState();
 

@@ -6,7 +6,7 @@ import {
 import { useDeleteShippingClassMutation } from '@/data/shipping';
 
 const ShippingDeleteView = () => {
-  const { mutate: deleteShippingClass, isLoading: loading } =
+  const { mutate: deleteShippingClass, isPending: loading } =
     useDeleteShippingClassMutation();
 
   const { data } = useModalState();

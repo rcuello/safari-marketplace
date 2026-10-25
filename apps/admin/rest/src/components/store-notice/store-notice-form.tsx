@@ -130,9 +130,9 @@ export default function CreateOrUpdateStoreNoticeForm({
     resolver: yupResolver(storeNoticeValidationSchema),
   });
 
-  const { mutate: createStoreNotice, isLoading: creating } =
+  const { mutate: createStoreNotice, isPending: creating } =
     useCreateStoreNoticeMutation();
-  const { mutate: updateStoreNotice, isLoading: updating } =
+  const { mutate: updateStoreNotice, isPending: updating } =
     useUpdateStoreNoticeMutation();
 
   const noticeType = watch('type');

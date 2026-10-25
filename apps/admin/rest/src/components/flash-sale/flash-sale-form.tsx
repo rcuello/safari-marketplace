@@ -146,9 +146,9 @@ export default function CreateOrUpdateFlashSaleForm({ initialValues }: IProps) {
     resolver: yupResolver(flashSaleValidationSchema),
   });
 
-  const { mutate: createFlashSale, isLoading: creating } =
+  const { mutate: createFlashSale, isPending: creating } =
     useCreateFlashSaleMutation();
-  const { mutate: updateFlashSale, isLoading: updating } =
+  const { mutate: updateFlashSale, isPending: updating } =
     useUpdateFlashSaleMutation();
 
   const flashSaleName = watch('title');

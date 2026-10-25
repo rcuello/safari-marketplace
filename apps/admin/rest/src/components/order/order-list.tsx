@@ -43,7 +43,7 @@ const OrderList = ({
   const rowExpandable = (record: any) => record.children?.length;
   const { alignLeft, alignRight } = useIsRTL();
   const { permissions } = getAuthCredentials();
-  const { mutate: createConversations, isLoading: creating } =
+  const { mutate: createConversations, isPending: creating } =
     useCreateConversations();
   const [loading, setLoading] = useState<boolean | string | undefined>(false);
   const [sortingObj, setSortingObj] = useState<{

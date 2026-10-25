@@ -77,9 +77,9 @@ export default function CreateOrUpdateRefundReasonForm({
     return RefundReasonSuggestions({ name: generateName ?? '' });
   }, [generateName]);
 
-  const { mutate: createRefundReason, isLoading: creating } =
+  const { mutate: createRefundReason, isPending: creating } =
     useCreateRefunReasonMutation();
-  const { mutate: updateRefundReason, isLoading: updating } =
+  const { mutate: updateRefundReason, isPending: updating } =
     useUpdateRefundReasonMutation();
 
   const onSubmit = async (values: FormValues) => {

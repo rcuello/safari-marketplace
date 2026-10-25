@@ -95,8 +95,8 @@ type FormValues = {
 };
 const ShopForm = ({ initialValues }: { initialValues?: Shop }) => {
   const [location] = useAtom(locationAtom);
-  const { mutate: createShop, isLoading: creating } = useCreateShopMutation();
-  const { mutate: updateShop, isLoading: updating } = useUpdateShopMutation();
+  const { mutate: createShop, isPending: creating } = useCreateShopMutation();
+  const { mutate: updateShop, isPending: updating } = useUpdateShopMutation();
   // const { permissions } = getAuthCredentials();
   // let permission = hasAccess(adminAndOwnerOnly, permissions);
   const { permissions } = getAuthCredentials();

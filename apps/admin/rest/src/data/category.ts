@@ -1,5 +1,10 @@
 import Router, { useRouter } from 'next/router';
-import { useMutation, useQuery, useQueryClient } from 'react-query';
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  keepPreviousData,
+} from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'next-i18next';
 import { Routes } from '@/config/routes';
@@ -18,7 +23,8 @@ export const useCreateCategoryMutation = () => {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
 
-  return useMutation(categoryClient.create, {
+  return useMutation({
+    mutationFn: categoryClient.create,
     onSuccess: () => {
       Router.push(Routes.category.list, undefined, {
         locale: Config.defaultLanguage,
@@ -27,7 +33,7 @@ export const useCreateCategoryMutation = () => {
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.CATEGORIES);
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.CATEGORIES] });
     },
   });
 };
@@ -36,13 +42,14 @@ export const useDeleteCategoryMutation = () => {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
 
-  return useMutation(categoryClient.delete, {
+  return useMutation({
+    mutationFn: categoryClient.delete,
     onSuccess: () => {
       toast.success(t('common:successfully-deleted'));
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.CATEGORIES);
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.CATEGORIES] });
     },
   });
 };
@@ -51,7 +58,8 @@ export const useUpdateCategoryMutation = () => {
   const { t } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();
-  return useMutation(categoryClient.update, {
+  return useMutation({
+    mutationFn: categoryClient.update,
     onSuccess: async (data) => {
       const generateRedirectUrl = router.query.shop
         ? `/${router.query.shop}${Routes.category.list}`
@@ -70,16 +78,16 @@ export const useUpdateCategoryMutation = () => {
     // },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.CATEGORIES);
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.CATEGORIES] });
     },
   });
 };
 
 export const useCategoryQuery = ({ slug, language }: GetParams) => {
-  const { data, error, isLoading } = useQuery<Category, Error>(
-    [API_ENDPOINTS.CATEGORIES, { slug, language }],
-    () => categoryClient.get({ slug, language })
-  );
+  const { data, error, isLoading } = useQuery<Category, Error>({
+    queryKey: [API_ENDPOINTS.CATEGORIES, { slug, language }],
+    queryFn: () => categoryClient.get({ slug, language }),
+  });
 
   return {
     category: data,
@@ -89,14 +97,12 @@ export const useCategoryQuery = ({ slug, language }: GetParams) => {
 };
 
 export const useCategoriesQuery = (options: Partial<CategoryQueryOptions>) => {
-  const { data, error, isLoading } = useQuery<CategoryPaginator, Error>(
-    [API_ENDPOINTS.CATEGORIES, options],
-    ({ queryKey, pageParam }) =>
-      categoryClient.paginated(Object.assign({}, queryKey[1], pageParam)),
-    {
-      keepPreviousData: true,
-    }
-  );
+  const { data, error, isLoading } = useQuery<CategoryPaginator, Error>({
+    queryKey: [API_ENDPOINTS.CATEGORIES, options],
+    queryFn: ({ queryKey }) =>
+      categoryClient.paginated(Object.assign({}, queryKey[1])),
+    placeholderData: keepPreviousData,
+  });
 
   return {
     categories: data?.data ?? [],

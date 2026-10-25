@@ -7,7 +7,7 @@ import { getErrorMessage } from '@/utils/form-error';
 import { useDeleteRefundPolicyMutation } from '@/data/refund-policy';
 
 const RefundPolicyDeleteView = () => {
-  const { mutate: deleteRefundPolicy, isLoading: loading } =
+  const { mutate: deleteRefundPolicy, isPending: loading } =
   useDeleteRefundPolicyMutation();
 
   const { data } = useModalState();

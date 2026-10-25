@@ -54,7 +54,7 @@ export default function CreateOrUpdateWithdrawForm({ initialValues }: IProps) {
     resolver: yupResolver(withdrawValidationSchema),
   });
 
-  const { mutate: createWithdraw, isLoading: creating } =
+  const { mutate: createWithdraw, isPending: creating } =
     useCreateWithdrawMutation();
 
   const onSubmit = (values: FormValues) => {

@@ -70,7 +70,7 @@ const Withdraw = () => {
     setValue,
     formState: { errors },
   } = useForm<FormValues>();
-  const { mutate: approveWithdraw, isLoading: approving } =
+  const { mutate: approveWithdraw, isPending: approving } =
     useApproveWithdrawMutation();
 
   function handleApproveWithdraw({ status }: any) {

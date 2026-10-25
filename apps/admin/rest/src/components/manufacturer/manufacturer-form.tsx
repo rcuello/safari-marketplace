@@ -156,9 +156,9 @@ export default function CreateOrUpdateManufacturerForm({
     }),
   });
 
-  const { mutate: createManufacturer, isLoading: creating } =
+  const { mutate: createManufacturer, isPending: creating } =
     useCreateManufacturerMutation();
-  const { mutate: updateManufacturer, isLoading: updating } =
+  const { mutate: updateManufacturer, isPending: updating } =
     useUpdateManufacturerMutation();
   const slugAutoSuggest = formatSlug(watch('name'));
   const generateName = watch('name');

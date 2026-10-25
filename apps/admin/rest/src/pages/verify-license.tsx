@@ -29,7 +29,7 @@ export default function VerifyLicenseKeyActions() {
   useMeQuery();
 
 
-  const { mutate: verifyLicenseKey, isLoading } =
+  const { mutate: verifyLicenseKey, isPending: isLoading } =
     useLicenseKeyMutation();
   const router = useRouter();
 

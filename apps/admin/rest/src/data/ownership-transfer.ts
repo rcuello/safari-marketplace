@@ -4,11 +4,12 @@ import {
   useInfiniteQuery,
   useMutation,
   useQueryClient,
-} from 'react-query';
+  keepPreviousData,
+} from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'next-i18next';
 import { mapPaginatorData } from '@/utils/data-mappers';
-import type { UseInfiniteQueryOptions } from 'react-query';
+import type { UseInfiniteQueryOptions } from '@tanstack/react-query';
 import {
   OwnershipTransferPaginator,
   OwnershipTransferQueryOptions,
@@ -31,19 +32,19 @@ export const useOwnerShipTransferQuery = ({
   shop_id?: string;
   request_view_type?: string;
 }) => {
-  const { data, error, isLoading, refetch } = useQuery<any, Error>(
-    [
+  const { data, error, isLoading, refetch } = useQuery<any, Error>({
+    queryKey: [
       API_ENDPOINTS.OWNERSHIP_TRANSFER,
       { transaction_identifier, language, shop_id },
     ],
-    () =>
+    queryFn: () =>
       ownershipTransferClient.get({
         transaction_identifier,
         language,
         shop_id,
         request_view_type,
       }),
-  );
+  });
 
   return {
     ownershipTransfer: data,
@@ -61,16 +62,12 @@ export const useOwnerShipTransfersQuery = (
   const { data, error, isLoading } = useQuery<
     OwnershipTransferPaginator,
     Error
-  >(
-    [API_ENDPOINTS.OWNERSHIP_TRANSFER, options],
-    ({ queryKey, pageParam }) =>
-      ownershipTransferClient.paginated(
-        Object.assign({}, queryKey[1], pageParam),
-      ),
-    {
-      keepPreviousData: true,
-    },
-  );
+  >({
+    queryKey: [API_ENDPOINTS.OWNERSHIP_TRANSFER, options],
+    queryFn: ({ queryKey }) =>
+      ownershipTransferClient.paginated(Object.assign({}, queryKey[1])),
+    placeholderData: keepPreviousData,
+  });
 
   return {
     ownershipTransfer: data?.data ?? [],
@@ -84,7 +81,10 @@ export const useOwnerShipTransfersQuery = (
 
 export const useOwnerShipTransferLoadMoreQuery = (
   options: Partial<OwnershipTransferQueryOptions>,
-  config?: UseInfiniteQueryOptions<OwnershipTransferPaginator, Error>,
+  config?: Omit<
+    UseInfiniteQueryOptions<OwnershipTransferPaginator, Error>,
+    'queryKey' | 'queryFn' | 'initialPageParam' | 'getNextPageParam'
+  >,
 ) => {
   const {
     data,
@@ -93,16 +93,15 @@ export const useOwnerShipTransferLoadMoreQuery = (
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
-  } = useInfiniteQuery<OwnershipTransferPaginator, Error>(
-    [API_ENDPOINTS.OWNERSHIP_TRANSFER, options],
-    ({ queryKey, pageParam }) =>
+  } = useInfiniteQuery<OwnershipTransferPaginator, Error>({
+    queryKey: [API_ENDPOINTS.OWNERSHIP_TRANSFER, options],
+    queryFn: ({ queryKey, pageParam }) =>
       ownershipTransferClient.all(Object.assign({}, queryKey[1], pageParam)),
-    {
-      ...config,
-      getNextPageParam: ({ current_page, last_page }) =>
-        last_page > current_page && { page: current_page + 1 },
-    },
-  );
+    ...config,
+    initialPageParam: undefined,
+    getNextPageParam: ({ current_page, last_page }) =>
+      last_page > current_page ? { page: current_page + 1 } : undefined,
+  });
 
   function handleLoadMore() {
     fetchNextPage();
@@ -128,7 +127,8 @@ export const useCreateOwnerTransferMutation = () => {
   const router = useRouter();
   const { t } = useTranslation();
 
-  return useMutation(ownershipTransferClient.create, {
+  return useMutation({
+    mutationFn: ownershipTransferClient.create,
     onSuccess: async () => {
       const generateRedirectUrl = router.query.shop
         ? `/${router.query.shop}${Routes.ownershipTransferRequest.list}`
@@ -140,7 +140,9 @@ export const useCreateOwnerTransferMutation = () => {
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.OWNERSHIP_TRANSFER);
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.OWNERSHIP_TRANSFER],
+      });
     },
     onError: (error: any) => {
       toast.error(t(`common:${error?.response?.data.message}`));
@@ -154,7 +156,8 @@ export const useUpdateOwnerTransferMutation = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const router = useRouter();
-  return useMutation(ownershipTransferClient.update, {
+  return useMutation({
+    mutationFn: ownershipTransferClient.update,
     onSuccess: async (data) => {
       const generateRedirectUrl = router.query.shop
         ? `/${router.query.shop}${Routes.ownershipTransferRequest.list}`
@@ -166,7 +169,9 @@ export const useUpdateOwnerTransferMutation = () => {
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.OWNERSHIP_TRANSFER);
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.OWNERSHIP_TRANSFER],
+      });
     },
     onError: (error: any) => {
       toast.error(t(`common:${error?.response?.data.message}`));
@@ -180,13 +185,16 @@ export const useDeleteOwnerTransferMutation = () => {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
 
-  return useMutation(ownershipTransferClient.delete, {
+  return useMutation({
+    mutationFn: ownershipTransferClient.delete,
     onSuccess: () => {
       toast.success(t('common:successfully-deleted'));
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.OWNERSHIP_TRANSFER);
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.OWNERSHIP_TRANSFER],
+      });
     },
     onError: (error: any) => {
       toast.error(t(`common:${error?.response?.data.message}`));
@@ -199,13 +207,16 @@ export const useDeleteOwnerTransferMutation = () => {
 export const useApproveOwnerTransferMutation = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  return useMutation(ownershipTransferClient.approve, {
+  return useMutation({
+    mutationFn: ownershipTransferClient.approve,
     onSuccess: () => {
       toast.success(t('common:successfully-updated'));
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.OWNERSHIP_TRANSFER);
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.OWNERSHIP_TRANSFER],
+      });
     },
   });
 };
@@ -215,13 +226,16 @@ export const useApproveOwnerTransferMutation = () => {
 export const useDisApproveOwnerTransferMutation = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  return useMutation(ownershipTransferClient.disapprove, {
+  return useMutation({
+    mutationFn: ownershipTransferClient.disapprove,
     onSuccess: () => {
       toast.success(t('common:successfully-updated'));
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.OWNERSHIP_TRANSFER);
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.OWNERSHIP_TRANSFER],
+      });
     },
   });
 };

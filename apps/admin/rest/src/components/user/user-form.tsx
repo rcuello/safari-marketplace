@@ -29,7 +29,7 @@ const defaultValues = {
 const CustomerCreateForm = () => {
   const { t } = useTranslation();
   const router = useRouter();
-  const { mutate: registerUser, isLoading: loading } = useRegisterMutation();
+  const { mutate: registerUser, isPending: loading } = useRegisterMutation();
 
   const {
     register,

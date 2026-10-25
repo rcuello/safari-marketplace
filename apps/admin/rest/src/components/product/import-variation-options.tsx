@@ -13,7 +13,7 @@ export default function ImportVariationOptions() {
     slug: shop as string,
   });
   const shopId = shopData?.id!;
-  const { mutate: importVariationOptions, isLoading: loading } =
+  const { mutate: importVariationOptions, isPending: loading } =
     useImportVariationOptionsMutation();
 
   const handleDrop = async (acceptedFiles: any) => {

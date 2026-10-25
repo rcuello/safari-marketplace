@@ -13,7 +13,7 @@ export default function ImportProducts() {
     slug: shop as string,
   });
   const shopId = shopData?.id!;
-  const { mutate: importProducts, isLoading: loading } =
+  const { mutate: importProducts, isPending: loading } =
     useImportProductsMutation();
 
   const handleDrop = async (acceptedFiles: any) => {

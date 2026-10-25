@@ -55,7 +55,7 @@ export default function RefundDetailsView({
   const { query } = useRouter();
   const { alignLeft, alignRight } = useIsRTL();
   const { openModal } = useModalAction();
-  const { mutate: updateRefund, isLoading: updating } =
+  const { mutate: updateRefund, isPending: updating } =
     useUpdateRefundMutation();
 
   async function handleUpdateRefundStatus({ status }: any) {

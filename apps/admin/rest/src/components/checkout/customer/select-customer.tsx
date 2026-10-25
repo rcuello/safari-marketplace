@@ -4,7 +4,7 @@ import { useAtom } from 'jotai';
 import { useTranslation } from 'next-i18next';
 import AsyncSelect from 'react-select/async';
 import { selectStyles } from '@/components/ui/select/select.styles';
-import { QueryClient } from 'react-query';
+import { QueryClient } from '@tanstack/react-query';
 import { API_ENDPOINTS } from '@/data/client/api-endpoints';
 import { userClient } from '@/data/client/user';
 
@@ -20,10 +20,10 @@ const AddOrUpdateCheckoutCustomer = () => {
 
   async function fetchAsyncOptions(inputValue: string) {
     const queryClient = new QueryClient();
-    const data = await queryClient.fetchQuery(
-      [API_ENDPOINTS.USERS, { text: inputValue, page: 1 }],
-      () => userClient.fetchUsers({ name: inputValue, page: 1 })
-    );
+    const data = await queryClient.fetchQuery({
+      queryKey: [API_ENDPOINTS.USERS, { text: inputValue, page: 1 }],
+      queryFn: () => userClient.fetchUsers({ name: inputValue, page: 1 }),
+    });
 
     return data?.data?.map((user: any) => ({
       value: user.id,

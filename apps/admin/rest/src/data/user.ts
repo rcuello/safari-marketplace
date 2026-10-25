@@ -3,7 +3,12 @@ import { Routes } from '@/config/routes';
 import Cookies from 'js-cookie';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
-import { useMutation, useQuery, useQueryClient } from 'react-query';
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  keepPreviousData,
+} from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { API_ENDPOINTS } from './client/api-endpoints';
 import { userClient } from './client/user';
@@ -17,6 +22,7 @@ import {
 } from '@/types';
 import { mapPaginatorData } from '@/utils/data-mappers';
 import axios from 'axios';
+import { useEffect } from 'react';
 import { setEmailVerified } from '@/utils/auth-utils';
 import { type } from 'os';
 
@@ -24,47 +30,56 @@ export const useMeQuery = () => {
   const queryClient = useQueryClient();
   const router = useRouter();
 
-  return useQuery<User, Error>([API_ENDPOINTS.ME], userClient.me, {
+  const query = useQuery<User, Error>({
+    queryKey: [API_ENDPOINTS.ME],
+    queryFn: userClient.me,
     retry: false,
-
-    onSuccess: () => {
-      if (router.pathname === Routes.verifyLicense) {
-        router.replace(Routes.dashboard);
-      }
-      if (router.pathname === Routes.verifyEmail) {
-        setEmailVerified(true);
-        router.replace(Routes.dashboard);
-      }
-    },
-
-    onError: (err) => {
-      if (axios.isAxiosError(err)) {
-        if (err.response?.status === 417) {
-          router.replace(Routes.verifyLicense);
-          return;
-        }
-
-        if (err.response?.status === 409) {
-          setEmailVerified(false);
-          router.replace(Routes.verifyEmail);
-          return;
-        }
-        queryClient.clear();
-        router.replace(Routes.login);
-      }
-    },
   });
+  const { data, error } = query;
+
+  // v5 quita onSuccess/onError de useQuery: los mismos cuerpos, como efectos
+  useEffect(() => {
+    if (!data) return;
+    if (router.pathname === Routes.verifyLicense) {
+      router.replace(Routes.dashboard);
+    }
+    if (router.pathname === Routes.verifyEmail) {
+      setEmailVerified(true);
+      router.replace(Routes.dashboard);
+    }
+  }, [data]);
+
+  useEffect(() => {
+    if (!error) return;
+    if (axios.isAxiosError(error)) {
+      if (error.response?.status === 417) {
+        router.replace(Routes.verifyLicense);
+        return;
+      }
+
+      if (error.response?.status === 409) {
+        setEmailVerified(false);
+        router.replace(Routes.verifyEmail);
+        return;
+      }
+      queryClient.clear();
+      router.replace(Routes.login);
+    }
+  }, [error]);
+
+  return query;
 };
 
 export function useLogin() {
-  return useMutation(userClient.login);
+  return useMutation({ mutationFn: userClient.login });
 }
 
 export const useLogoutMutation = () => {
   const router = useRouter();
   const { t } = useTranslation();
 
-  return useMutation(userClient.logout, {
+  return useMutation({
+    mutationFn: userClient.logout,
     onSuccess: () => {
       Cookies.remove(AUTH_CRED);
       router.replace(Routes.login);
@@ -79,7 +94,8 @@ export const useRegisterMutation = () => {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
 
-  return useMutation(userClient.register, {
+  return useMutation({
+    mutationFn: userClient.register,
     onSuccess: () => {
       toast.success(t('common:successfully-register'), {
         toastId: 'successRegister',
@@ -87,7 +103,7 @@ export const useRegisterMutation = () => {
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.REGISTER);
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.REGISTER] });
     },
   });
 };
@@ -95,21 +111,23 @@ export const useRegisterMutation = () => {
 export const useUpdateUserMutation = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  return useMutation(userClient.update, {
+  return useMutation({
+    mutationFn: userClient.update,
     onSuccess: () => {
       toast.success(t('common:successfully-updated'));
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.ME);
-      queryClient.invalidateQueries(API_ENDPOINTS.USERS);
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.ME] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.USERS] });
     },
   });
 };
 export const useUpdateUserEmailMutation = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  return useMutation(userClient.updateEmail, {
+  return useMutation({
+    mutationFn: userClient.updateEmail,
     onSuccess: () => {
       toast.success(t('common:successfully-updated'));
     },
@@ -122,23 +140,23 @@ export const useUpdateUserEmailMutation = () => {
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.ME);
-      queryClient.invalidateQueries(API_ENDPOINTS.USERS);
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.ME] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.USERS] });
     },
   });
 };
 
 export const useChangePasswordMutation = () => {
-  return useMutation(userClient.changePassword);
+  return useMutation({ mutationFn: userClient.changePassword });
 };
 
-
 export const useForgetPasswordMutation = () => {
-  return useMutation(userClient.forgetPassword);
+  return useMutation({ mutationFn: userClient.forgetPassword });
 };
 export const useResendVerificationEmail = () => {
   const { t } = useTranslation('common');
-  return useMutation(userClient.resendVerificationEmail, {
+  return useMutation({
+    mutationFn: userClient.resendVerificationEmail,
     onSuccess: () => {
       toast.success(t('common:PICKBAZAR_MESSAGE.EMAIL_SENT_SUCCESSFUL'));
     },
@@ -152,7 +170,8 @@ export const useLicenseKeyMutation = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const router = useRouter();
-  return useMutation(userClient.addLicenseKey, {
+  return useMutation({
+    mutationFn: userClient.addLicenseKey,
     onSuccess: () => {
       toast.success(t('common:successfully-updated'));
       setTimeout(() => {
@@ -166,26 +185,25 @@ export const useLicenseKeyMutation = () => {
 };
 
 export const useVerifyForgetPasswordTokenMutation = () => {
-  return useMutation(userClient.verifyForgetPasswordToken);
+  return useMutation({ mutationFn: userClient.verifyForgetPasswordToken });
 };
 
 export const useResetPasswordMutation = () => {
-  return useMutation(userClient.resetPassword);
+  return useMutation({ mutationFn: userClient.resetPassword });
 };
-
-
 
 export const useMakeOrRevokeAdminMutation = () => {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
 
-  return useMutation(userClient.makeAdmin, {
+  return useMutation({
+    mutationFn: userClient.makeAdmin,
     onSuccess: () => {
       toast.success(t('common:successfully-updated'));
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.USERS);
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.USERS] });
     },
   });
 };
@@ -194,17 +212,18 @@ export const useBlockUserMutation = () => {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
 
-  return useMutation(userClient.block, {
+  return useMutation({
+    mutationFn: userClient.block,
     onSuccess: () => {
       toast.success(t('common:successfully-block'));
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.USERS);
-      queryClient.invalidateQueries(API_ENDPOINTS.STAFFS);
-      queryClient.invalidateQueries(API_ENDPOINTS.ADMIN_LIST);
-      queryClient.invalidateQueries(API_ENDPOINTS.CUSTOMERS);
-      queryClient.invalidateQueries(API_ENDPOINTS.VENDORS_LIST);
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.USERS] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.STAFFS] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.ADMIN_LIST] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.CUSTOMERS] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.VENDORS_LIST] });
     },
   });
 };
@@ -213,17 +232,18 @@ export const useUnblockUserMutation = () => {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
 
-  return useMutation(userClient.unblock, {
+  return useMutation({
+    mutationFn: userClient.unblock,
     onSuccess: () => {
       toast.success(t('common:successfully-unblock'));
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.USERS);
-      queryClient.invalidateQueries(API_ENDPOINTS.STAFFS);
-      queryClient.invalidateQueries(API_ENDPOINTS.ADMIN_LIST);
-      queryClient.invalidateQueries(API_ENDPOINTS.CUSTOMERS);
-      queryClient.invalidateQueries(API_ENDPOINTS.VENDORS_LIST);
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.USERS] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.STAFFS] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.ADMIN_LIST] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.CUSTOMERS] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.VENDORS_LIST] });
     },
   });
 };
@@ -231,35 +251,32 @@ export const useUnblockUserMutation = () => {
 export const useAddWalletPointsMutation = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  return useMutation(userClient.addWalletPoints, {
+  return useMutation({
+    mutationFn: userClient.addWalletPoints,
     onSuccess: () => {
       toast.success(t('common:successfully-updated'));
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.USERS);
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.USERS] });
     },
   });
 };
 
 export const useUserQuery = ({ id }: { id: string }) => {
-  return useQuery<User, Error>(
-    [API_ENDPOINTS.USERS, id],
-    () => userClient.fetchUser({ id }),
-    {
-      enabled: Boolean(id),
-    }
-  );
+  return useQuery<User, Error>({
+    queryKey: [API_ENDPOINTS.USERS, id],
+    queryFn: () => userClient.fetchUser({ id }),
+    enabled: Boolean(id),
+  });
 };
 
 export const useUsersQuery = (params: Partial<QueryOptionsType>) => {
-  const { data, isLoading, error } = useQuery<UserPaginator, Error>(
-    [API_ENDPOINTS.USERS, params],
-    () => userClient.fetchUsers(params),
-    {
-      keepPreviousData: true,
-    }
-  );
+  const { data, isLoading, error } = useQuery<UserPaginator, Error>({
+    queryKey: [API_ENDPOINTS.USERS, params],
+    queryFn: () => userClient.fetchUsers(params),
+    placeholderData: keepPreviousData,
+  });
 
   return {
     users: data?.data ?? [],
@@ -270,13 +287,11 @@ export const useUsersQuery = (params: Partial<QueryOptionsType>) => {
 };
 
 export const useAdminsQuery = (params: Partial<QueryOptionsType>) => {
-  const { data, isLoading, error } = useQuery<UserPaginator, Error>(
-    [API_ENDPOINTS.ADMIN_LIST, params],
-    () => userClient.fetchAdmins(params),
-    {
-      keepPreviousData: true,
-    }
-  );
+  const { data, isLoading, error } = useQuery<UserPaginator, Error>({
+    queryKey: [API_ENDPOINTS.ADMIN_LIST, params],
+    queryFn: () => userClient.fetchAdmins(params),
+    placeholderData: keepPreviousData,
+  });
 
   return {
     admins: data?.data ?? [],
@@ -287,13 +302,11 @@ export const useAdminsQuery = (params: Partial<QueryOptionsType>) => {
 };
 
 export const useVendorsQuery = (params: Partial<UserQueryOptions>) => {
-  const { data, isLoading, error } = useQuery<UserPaginator, Error>(
-    [API_ENDPOINTS.VENDORS_LIST, params],
-    () => userClient.fetchVendors(params),
-    {
-      keepPreviousData: true,
-    }
-  );
+  const { data, isLoading, error } = useQuery<UserPaginator, Error>({
+    queryKey: [API_ENDPOINTS.VENDORS_LIST, params],
+    queryFn: () => userClient.fetchVendors(params),
+    placeholderData: keepPreviousData,
+  });
 
   return {
     vendors: data?.data ?? [],
@@ -304,13 +317,11 @@ export const useVendorsQuery = (params: Partial<UserQueryOptions>) => {
 };
 
 export const useCustomersQuery = (params: Partial<UserQueryOptions>) => {
-  const { data, isLoading, error } = useQuery<UserPaginator, Error>(
-    [API_ENDPOINTS.CUSTOMERS, params],
-    () => userClient.fetchCustomers(params),
-    {
-      keepPreviousData: true,
-    }
-  );
+  const { data, isLoading, error } = useQuery<UserPaginator, Error>({
+    queryKey: [API_ENDPOINTS.CUSTOMERS, params],
+    queryFn: () => userClient.fetchCustomers(params),
+    placeholderData: keepPreviousData,
+  });
 
   return {
     customers: data?.data ?? [],
@@ -320,15 +331,14 @@ export const useCustomersQuery = (params: Partial<UserQueryOptions>) => {
   };
 };
 
-
-export const useMyStaffsQuery = (params: Partial<UserQueryOptions & { shop_id: string }>) => {
-  const { data, isLoading, error } = useQuery<UserPaginator, Error>(
-    [API_ENDPOINTS.MY_STAFFS, params],
-    () => userClient.getMyStaffs(params),
-    {
-      keepPreviousData: true,
-    }
-  );
+export const useMyStaffsQuery = (
+  params: Partial<UserQueryOptions & { shop_id: string }>
+) => {
+  const { data, isLoading, error } = useQuery<UserPaginator, Error>({
+    queryKey: [API_ENDPOINTS.MY_STAFFS, params],
+    queryFn: () => userClient.getMyStaffs(params),
+    placeholderData: keepPreviousData,
+  });
 
   return {
     myStaffs: data?.data ?? [],
@@ -338,15 +348,12 @@ export const useMyStaffsQuery = (params: Partial<UserQueryOptions & { shop_id: s
   };
 };
 
-
 export const useAllStaffsQuery = (params: Partial<UserQueryOptions>) => {
-  const { data, isLoading, error } = useQuery<UserPaginator, Error>(
-    [API_ENDPOINTS.ALL_STAFFS, params],
-    () => userClient.getAllStaffs(params),
-    {
-      keepPreviousData: true,
-    }
-  );
+  const { data, isLoading, error } = useQuery<UserPaginator, Error>({
+    queryKey: [API_ENDPOINTS.ALL_STAFFS, params],
+    queryFn: () => userClient.getAllStaffs(params),
+    placeholderData: keepPreviousData,
+  });
 
   return {
     allStaffs: data?.data ?? [],
@@ -355,4 +362,3 @@ export const useAllStaffsQuery = (params: Partial<UserQueryOptions>) => {
     error,
   };
 };
-

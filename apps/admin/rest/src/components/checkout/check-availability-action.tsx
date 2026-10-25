@@ -29,7 +29,7 @@ export const CheckAvailabilityAction: React.FC<{
   const [errorMessage, setError] = useState('');
   const { items, total, isEmpty } = useCart();
 
-  const { mutate: verifyCheckout, isLoading: loading } =
+  const { mutate: verifyCheckout, isPending: loading } =
     useVerifyCheckoutMutation();
 
   function handleVerifyCheckout() {

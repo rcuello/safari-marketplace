@@ -111,7 +111,7 @@ const AuthorList = ({
       align: 'center' as AlignType,
       width: 160,
       render: function Render(is_approved: boolean, record: any) {
-        const { mutate: updateAuthor, isLoading: updating } =
+        const { mutate: updateAuthor, isPending: updating } =
           useUpdateAuthorMutationInList();
 
         function handleOnClick() {

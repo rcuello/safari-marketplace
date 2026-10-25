@@ -128,7 +128,7 @@ const ManufacturerList = ({
       width: 150,
       render: function Render(is_approved: boolean, record: any) {
         const { locale } = useRouter();
-        const { mutate: updateManufacturer, isLoading: updating } =
+        const { mutate: updateManufacturer, isPending: updating } =
           useUpdateManufacturerMutationInList();
 
         function handleOnClick() {

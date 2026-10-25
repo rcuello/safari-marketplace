@@ -1,5 +1,10 @@
 import Router, { useRouter } from 'next/router';
-import { useMutation, useQuery, useQueryClient } from 'react-query';
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  keepPreviousData,
+} from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'next-i18next';
 import { mapPaginatorData } from '@/utils/data-mappers';
@@ -13,7 +18,8 @@ export const useCreateTagMutation = () => {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
 
-  return useMutation(tagClient.create, {
+  return useMutation({
+    mutationFn: tagClient.create,
     onSuccess: () => {
       Router.push(Routes.tag.list, undefined, {
         locale: Config.defaultLanguage,
@@ -22,7 +28,7 @@ export const useCreateTagMutation = () => {
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.TAGS);
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.TAGS] });
     },
   });
 };
@@ -31,13 +37,14 @@ export const useDeleteTagMutation = () => {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
 
-  return useMutation(tagClient.delete, {
+  return useMutation({
+    mutationFn: tagClient.delete,
     onSuccess: () => {
       toast.success(t('common:successfully-deleted'));
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.TAGS);
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.TAGS] });
     },
   });
 };
@@ -46,7 +53,8 @@ export const useUpdateTagMutation = () => {
   const { t } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();
-  return useMutation(tagClient.update, {
+  return useMutation({
+    mutationFn: tagClient.update,
     onSuccess: async (data) => {
       const generateRedirectUrl = router.query.shop
         ? `/${router.query.shop}${Routes.tag.list}`
@@ -65,16 +73,16 @@ export const useUpdateTagMutation = () => {
     // },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.TAGS);
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.TAGS] });
     },
   });
 };
 
 export const useTagQuery = ({ slug, language }: GetParams) => {
-  const { data, error, isLoading } = useQuery<Tag, Error>(
-    [API_ENDPOINTS.TYPES, { slug, language }],
-    () => tagClient.get({ slug, language })
-  );
+  const { data, error, isLoading } = useQuery<Tag, Error>({
+    queryKey: [API_ENDPOINTS.TYPES, { slug, language }],
+    queryFn: () => tagClient.get({ slug, language }),
+  });
   return {
     tag: data,
     error,
@@ -83,14 +91,12 @@ export const useTagQuery = ({ slug, language }: GetParams) => {
 };
 
 export const useTagsQuery = (options: Partial<TagQueryOptions>) => {
-  const { data, error, isLoading } = useQuery<TagPaginator, Error>(
-    [API_ENDPOINTS.TAGS, options],
-    ({ queryKey, pageParam }) =>
-      tagClient.paginated(Object.assign({}, queryKey[1], pageParam)),
-    {
-      keepPreviousData: true,
-    }
-  );
+  const { data, error, isLoading } = useQuery<TagPaginator, Error>({
+    queryKey: [API_ENDPOINTS.TAGS, options],
+    queryFn: ({ queryKey }) =>
+      tagClient.paginated(Object.assign({}, queryKey[1])),
+    placeholderData: keepPreviousData,
+  });
 
   return {
     tags: data?.data ?? [],

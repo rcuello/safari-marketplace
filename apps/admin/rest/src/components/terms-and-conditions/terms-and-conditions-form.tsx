@@ -74,9 +74,9 @@ export default function CreateOrUpdateTermsAndConditionsForm({
     resolver: yupResolver(termsAndConditionsValidationSchema),
   });
 
-  const { mutate: createTermsAndConditions, isLoading: creating } =
+  const { mutate: createTermsAndConditions, isPending: creating } =
     useCreateTermsAndConditionsMutation();
-  const { mutate: updateTermsAndConditions, isLoading: updating } =
+  const { mutate: updateTermsAndConditions, isPending: updating } =
     useUpdateTermsAndConditionsMutation();
 
   const termsAndConditionsName = watch('title');

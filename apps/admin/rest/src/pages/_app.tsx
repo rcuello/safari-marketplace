@@ -6,10 +6,13 @@ import { SettingsProvider } from '@/contexts/settings.context';
 import ErrorMessage from '@/components/ui/error-message';
 import PageLoader from '@/components/ui/page-loader/page-loader';
 import { ToastContainer } from 'react-toastify';
-import { QueryClient, QueryClientProvider } from 'react-query';
-import { Hydrate } from 'react-query/hydration';
+import {
+  QueryClient,
+  QueryClientProvider,
+  HydrationBoundary,
+} from '@tanstack/react-query';
 import { useSettingsQuery } from '@/data/settings';
-import { ReactQueryDevtools } from 'react-query/devtools';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { appWithTranslation } from 'next-i18next';
 import { ModalProvider } from '@/components/ui/modal/modal.context';
 import DefaultSeo from '@/components/ui/default-seo';
@@ -47,7 +50,7 @@ const CustomApp = ({ Component, pageProps }: AppPropsWithLayout) => {
   return (
     <div dir={dir}>
       <QueryClientProvider client={queryClient}>
-        <Hydrate state={pageProps?.dehydratedState}>
+        <HydrationBoundary state={pageProps?.dehydratedState}>
           <AppSettings>
             <UIProvider>
               <ModalProvider>
@@ -73,7 +76,7 @@ const CustomApp = ({ Component, pageProps }: AppPropsWithLayout) => {
             </UIProvider>
           </AppSettings>
           <ReactQueryDevtools />
-        </Hydrate>
+        </HydrationBoundary>
       </QueryClientProvider>
     </div>
   );

@@ -41,9 +41,9 @@ export default function CreateOrUpdateShippingForm({ initialValues }: IProps) {
     resolver: yupResolver(shippingValidationSchema),
     defaultValues: initialValues ?? defaultValues,
   });
-  const { mutate: createShippingClass, isLoading: creating } =
+  const { mutate: createShippingClass, isPending: creating } =
     useCreateShippingMutation();
-  const { mutate: updateShippingClass, isLoading: updating } =
+  const { mutate: updateShippingClass, isPending: updating } =
     useUpdateShippingMutation();
 
   const onSubmit = async (values: ShippingInput) => {

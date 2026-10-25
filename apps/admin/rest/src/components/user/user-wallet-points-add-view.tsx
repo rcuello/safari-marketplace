@@ -20,7 +20,7 @@ const addPointsValidationSchema = Yup.object().shape({
 });
 const UserWalletPointsAddView = () => {
   const { t } = useTranslation();
-  const { mutate: addWalletPoints, isLoading: loading } =
+  const { mutate: addWalletPoints, isPending: loading } =
     useAddWalletPointsMutation();
 
   const { data: customerId } = useModalState();

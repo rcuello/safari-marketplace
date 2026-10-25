@@ -125,9 +125,9 @@ export default function CreateOrUpdateProductForm({
 
   const upload_max_filesize = options?.server_info?.upload_max_filesize / 1024;
 
-  const { mutate: createProduct, isLoading: creating } =
+  const { mutate: createProduct, isPending: creating } =
     useCreateProductMutation();
-  const { mutate: updateProduct, isLoading: updating } =
+  const { mutate: updateProduct, isPending: updating } =
     useUpdateProductMutation();
 
   const onSubmit = async (values: ProductFormValues) => {

@@ -32,7 +32,7 @@ const MessageBar = ({ user }: IProps) => {
   const { permissions } = getAuthCredentials();
   let permission = hasAccess(adminOnly, permissions);
   const { mutate: createSeenMessage } = useMessageSeen();
-  const { mutate: readAllNotifyLogs, isLoading: creating } =
+  const { mutate: readAllNotifyLogs, isPending: creating } =
     useNotifyLogAllReadMutation();
   let { conversations } = useConversationsQuery({
     limit: 5,
