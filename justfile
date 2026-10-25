@@ -252,7 +252,14 @@ check-ports:
 doctor:
     #!/usr/bin/env bash
     set -uo pipefail
-    echo "node    $(node -v 2>/dev/null || echo 'FALTA - instala Node 20+')"
+    # DA-6 del Épico 75: @nestjs/cli 11 (US-78) declara engines node >= 20.11.
+    if ! node_v="$(node -v 2>/dev/null)"; then
+      echo "node    FALTA - instala Node 20.11+"
+    elif node -e 'const [M, m] = process.versions.node.split(".").map(Number); process.exit(M > 20 || (M === 20 && m >= 11) ? 0 : 1)'; then
+      echo "node    $node_v OK"
+    else
+      echo "node    $node_v VIEJO - la API (NestJS 11) pide Node 20.11+"
+    fi
     echo "yarn    $(yarn -v 2>/dev/null || echo 'FALTA - npm i -g yarn')"
     echo "python  $(python --version 2>&1 || echo 'FALTA - solo necesario para el scraper')"
     for f in apps/api/rest/.env apps/shop/.env apps/admin/rest/.env; do
