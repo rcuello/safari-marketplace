@@ -12,8 +12,14 @@ const { i18n } = require('./next-i18next.config');
 const nextConfig = {
   reactStrictMode: true,
   i18n,
+  // Next 16 escribe un AGENTS.md en la app en cada `next dev`; no se versiona.
+  agentRules: false,
   images: {
-    domains: [
+    // Sustituye a images.domains (obsoleto, R-4). Un patrón por host sin
+    // protocolo, puerto ni ruta equivale a la entrada de `domains`. La antigua
+    // entrada '127.0.0.1:8000' no casaba nunca (`domains` compara el hostname,
+    // que no lleva puerto) y ya la cubre '127.0.0.1'.
+    remotePatterns: [
       'via.placeholder.com',
       'res.cloudinary.com',
       's3.amazonaws.com',
@@ -24,16 +30,17 @@ const nextConfig = {
       'pickbazar-sail.test',
       'pickbazarlaravel.s3.ap-southeast-1.amazonaws.com',
       'lh3.googleusercontent.com',
-      '127.0.0.1:8000',
-    ],
+    ].map((hostname) => ({ hostname })),
+    // Next 16 bloquea por defecto optimizar imágenes de IPs locales; las
+    // entradas 'localhost' y '127.0.0.1' solo tienen sentido en desarrollo,
+    // así que se permiten ahí y producción conserva el bloqueo de Next.
+    dangerouslyAllowLocalIP: process.env.NODE_ENV !== 'production',
   },
   ...(process.env.APPLICATION_MODE === 'production' && {
     typescript: {
       ignoreBuildErrors: true,
     },
-    eslint: {
-      ignoreDuringBuilds: true,
-    },
+    // `eslint.ignoreDuringBuilds` sale: Next 16 ya no lintea en `next build`.
   }),
 };
 
