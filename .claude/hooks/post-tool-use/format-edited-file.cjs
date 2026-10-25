@@ -10,13 +10,12 @@
 // Qué formatea (ruta relativa a la raíz del repo -> herramienta, cwd):
 //   - packages/db/**            .ts .js .mjs .cjs .json -> biome `check --write`
 //                               (formato + orden de imports), cwd packages/db
-//   - apps/api/rest/**          .ts                     -> prettier 2.8 de la API
+//   - apps/api/rest/**          .ts                     -> prettier 3 de la API
 //   - apps/shop/** y
-//     apps/admin/rest/**        .ts .tsx .js .jsx .json .css -> prettier 2.4.0 de
-//                               apps/node_modules (el que dejó esas apps en 0;
-//                               el 3.3.3 local de cada app marcaría ~265
-//                               archivos), cwd la app, con su prettier.config.js
-//                               y su .prettierignore
+//     apps/admin/rest/**        .ts .tsx .js .jsx .json .css -> prettier 3 de
+//                               apps/node_modules (desde US-81 es la única copia
+//                               del workspace), cwd la app, con su
+//                               prettier.config.js y su .prettierignore
 //
 // Qué ignora: todo lo demás (md, sql, prisma, Python, yaml), cualquier ruta con
 // node_modules/, dist/, generated/, .next/ o __generated__/, los archivos de
@@ -53,8 +52,10 @@ const SKIP_SEGMENTS = new Set([
 const SKIP_PREFIXES = ['apps/admin/graphql/', 'apps/api/graphql/'];
 
 const FRONT_EXTS = ['.ts', '.tsx', '.js', '.jsx', '.json', '.css'];
-const APPS_PRETTIER = 'apps/node_modules/prettier/bin-prettier.js';
-const prettierArgs = (file) => ['--loglevel', 'warn', '--write', file];
+// Prettier 3 movió el binario a bin/prettier.cjs y renombró --loglevel a
+// --log-level (US-81).
+const APPS_PRETTIER = 'apps/node_modules/prettier/bin/prettier.cjs';
+const prettierArgs = (file) => ['--log-level', 'warn', '--write', file];
 
 // Orden: el primer prefijo que coincide gana.
 const TARGETS = [
@@ -70,7 +71,7 @@ const TARGETS = [
     prefix: 'apps/api/rest/',
     exts: ['.ts'],
     tool: 'prettier',
-    bin: 'apps/api/rest/node_modules/prettier/bin-prettier.js',
+    bin: 'apps/api/rest/node_modules/prettier/bin/prettier.cjs',
     cwd: 'apps/api/rest',
     args: prettierArgs,
   },

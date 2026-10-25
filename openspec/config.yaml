@@ -52,12 +52,12 @@ testing:
     # Lint SIN escribir (el que exige la DoD; ver rules.apply.lint_commands):
     #   packages/db   -> npm run lint   (biome check .)
     #   apps/api/rest -> npx eslint "{src,apps,libs,test}/**/*.ts"   (NUNCA `yarn lint`: lleva --fix y reescribe)
-    #   apps/shop y apps/admin/rest -> yarn lint   (next lint)
+    #   apps/shop y apps/admin/rest -> yarn lint   (eslint src, flat config; next lint de Next 14.2 no la lee, US-81)
     linter: true
     type_checker: true         # tsc --noEmit en packages/db (`npm run typecheck`); resto solo via build
-    # Formateadores: biome `npm run format` en packages/db; prettier 2.8 `yarn format` en apps/api/rest;
-    # prettier 2.4.0 de apps/node_modules en shop/admin (prettier.config.js de cada app; el 3.3.3 local
-    # de cada app NO es el que dejo ese codigo en 0). El hook PostToolUse
+    # Formateadores: biome `npm run format` en packages/db; prettier 3 `yarn format` en apps/api/rest;
+    # prettier 3 de apps/node_modules en shop/admin (prettier.config.js de cada app; US-81 reformateo
+    # ambas apps y la API con la 3.9.9). El hook PostToolUse
     # .claude/hooks/post-tool-use/format-edited-file.cjs pasa el formateador correspondiente sobre
     # cada archivo que el agente edita; no sustituye al lint de la DoD.
     formatter: true
