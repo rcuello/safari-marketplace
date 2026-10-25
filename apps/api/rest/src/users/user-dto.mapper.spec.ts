@@ -1,7 +1,7 @@
-/// <reference types="jest" />
+/// <reference types="vitest/globals" />
 /*
  * La referencia de arriba es necesaria porque tsconfig.json fija
- * `types: ["node","express","multer"]` y deja fuera los globals de jest;
+ * `types: ["node","express","multer"]` y deja fuera los globals de Vitest;
  * se limita a este archivo para no tocar la config del build.
  */
 /**

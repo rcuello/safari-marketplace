@@ -1,7 +1,7 @@
-/// <reference types="jest" />
+/// <reference types="vitest/globals" />
 /*
  * La referencia de arriba es necesaria porque tsconfig.json fija
- * `types: ["node","express","multer"]` y deja fuera los globals de jest.
+ * `types: ["node","express","multer"]` y deja fuera los globals de Vitest.
  */
 /**
  * Tests unitarios de `MyQuestionsService` (US-55): todo es del usuario que
@@ -25,18 +25,18 @@ import { Question } from './entities/question.entity';
 import { MyQuestionsService } from './my-questions.service';
 import { QuestionService } from './questions.service';
 
-jest.mock('@safari/db', () => ({
-  ...jest.requireActual<typeof import('@safari/db')>('@safari/db'),
-  listUserQuestions: jest.fn(),
-  findQuestionById: jest.fn(),
-  updateQuestionText: jest.fn(),
-  deleteQuestion: jest.fn(),
+vi.mock('@safari/db', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@safari/db')>()),
+  listUserQuestions: vi.fn(),
+  findQuestionById: vi.fn(),
+  updateQuestionText: vi.fn(),
+  deleteQuestion: vi.fn(),
 }));
 
-const listMock = jest.mocked(listUserQuestions);
-const findMock = jest.mocked(findQuestionById);
-const updateMock = jest.mocked(updateQuestionText);
-const deleteMock = jest.mocked(deleteQuestion);
+const listMock = vi.mocked(listUserQuestions);
+const findMock = vi.mocked(findQuestionById);
+const updateMock = vi.mocked(updateQuestionText);
+const deleteMock = vi.mocked(deleteQuestion);
 
 const AT = new Date('2022-03-18T10:19:46.000Z');
 
@@ -78,7 +78,7 @@ describe('MyQuestionsService', () => {
   let service: MyQuestionsService;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     questions = new QuestionService();
     service = new MyQuestionsService(questions);
   });
@@ -129,9 +129,7 @@ describe('MyQuestionsService', () => {
   });
 
   it('crear delega en QuestionService con el usuario que llama', async () => {
-    const spy = jest
-      .spyOn(questions, 'create')
-      .mockResolvedValue({} as Question);
+    const spy = vi.spyOn(questions, 'create').mockResolvedValue({} as Question);
     const dto = {
       question: 'zz',
       product_id: '1',

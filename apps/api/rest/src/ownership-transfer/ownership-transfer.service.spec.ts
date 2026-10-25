@@ -1,7 +1,7 @@
-/// <reference types="jest" />
+/// <reference types="vitest/globals" />
 /*
  * La referencia de arriba es necesaria porque tsconfig.json fija
- * `types: ["node","express","multer"]` y deja fuera los globals de jest;
+ * `types: ["node","express","multer"]` y deja fuera los globals de Vitest;
  * se limita a este archivo para no tocar la config del build.
  */
 /**
@@ -38,22 +38,22 @@ import { GetOwnershipTransferDto } from './dto/get-ownership-transfer.dto';
 import { TransferShopOwnershipDto } from './dto/transfer-shop-ownership.dto';
 import { OwnershipTransferService } from './ownership-transfer.service';
 
-jest.mock('@safari/db', () => ({
-  ...jest.requireActual<typeof import('@safari/db')>('@safari/db'),
-  listOwnershipTransfers: jest.fn(),
-  findOwnershipTransferByIdentifier: jest.fn(),
-  createOwnershipTransfer: jest.fn(),
-  updateOwnershipTransfer: jest.fn(),
-  deleteOwnershipTransfer: jest.fn(),
-  transferShopOwnership: jest.fn(),
+vi.mock('@safari/db', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@safari/db')>()),
+  listOwnershipTransfers: vi.fn(),
+  findOwnershipTransferByIdentifier: vi.fn(),
+  createOwnershipTransfer: vi.fn(),
+  updateOwnershipTransfer: vi.fn(),
+  deleteOwnershipTransfer: vi.fn(),
+  transferShopOwnership: vi.fn(),
 }));
 
-const listMock = jest.mocked(listOwnershipTransfers);
-const findMock = jest.mocked(findOwnershipTransferByIdentifier);
-const createMock = jest.mocked(createOwnershipTransfer);
-const updateMock = jest.mocked(updateOwnershipTransfer);
-const deleteMock = jest.mocked(deleteOwnershipTransfer);
-const transferMock = jest.mocked(transferShopOwnership);
+const listMock = vi.mocked(listOwnershipTransfers);
+const findMock = vi.mocked(findOwnershipTransferByIdentifier);
+const createMock = vi.mocked(createOwnershipTransfer);
+const updateMock = vi.mocked(updateOwnershipTransfer);
+const deleteMock = vi.mocked(deleteOwnershipTransfer);
+const transferMock = vi.mocked(transferShopOwnership);
 
 const NOW = new Date('2026-10-23T00:00:00Z');
 const user = (sub: number, permissions: string[]): CurrentUserPayload => ({
@@ -117,7 +117,7 @@ describe('OwnershipTransferService', () => {
   let service: OwnershipTransferService;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     service = new OwnershipTransferService();
   });
 

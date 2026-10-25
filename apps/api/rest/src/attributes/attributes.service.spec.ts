@@ -1,7 +1,7 @@
-/// <reference types="jest" />
+/// <reference types="vitest/globals" />
 /*
  * La referencia de arriba es necesaria porque tsconfig.json fija
- * `types: ["node","express","multer"]` y deja fuera los globals de jest.
+ * `types: ["node","express","multer"]` y deja fuera los globals de Vitest.
  */
 /**
  * Tests unitarios de `AttributesService` (US-50). Mismo arnés que
@@ -23,20 +23,20 @@ import { AttributesService } from './attributes.service';
 import { CreateAttributeDto } from './dto/create-attribute.dto';
 import { UpdateAttributeDto } from './dto/update-attribute.dto';
 
-jest.mock('@safari/db', () => ({
-  ...jest.requireActual<typeof import('@safari/db')>('@safari/db'),
-  listAttributes: jest.fn(),
-  findAttributeByIdOrSlug: jest.fn(),
-  createAttribute: jest.fn(),
-  updateAttribute: jest.fn(),
-  deleteAttribute: jest.fn(),
+vi.mock('@safari/db', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@safari/db')>()),
+  listAttributes: vi.fn(),
+  findAttributeByIdOrSlug: vi.fn(),
+  createAttribute: vi.fn(),
+  updateAttribute: vi.fn(),
+  deleteAttribute: vi.fn(),
 }));
 
-const listMock = jest.mocked(listAttributes);
-const findMock = jest.mocked(findAttributeByIdOrSlug);
-const createMock = jest.mocked(createAttribute);
-const updateMock = jest.mocked(updateAttribute);
-const deleteMock = jest.mocked(deleteAttribute);
+const listMock = vi.mocked(listAttributes);
+const findMock = vi.mocked(findAttributeByIdOrSlug);
+const createMock = vi.mocked(createAttribute);
+const updateMock = vi.mocked(updateAttribute);
+const deleteMock = vi.mocked(deleteAttribute);
 
 const NOW = new Date('2026-10-21T00:00:00Z');
 
@@ -69,7 +69,7 @@ describe('AttributesService', () => {
   let service: AttributesService;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     service = new AttributesService();
   });
 

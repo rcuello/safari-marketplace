@@ -1,7 +1,7 @@
-/// <reference types="jest" />
+/// <reference types="vitest/globals" />
 /*
  * La referencia de arriba es necesaria porque tsconfig.json fija
- * `types: ["node","express","multer"]` y deja fuera los globals de jest.
+ * `types: ["node","express","multer"]` y deja fuera los globals de Vitest.
  */
 /**
  * Tests unitarios de `ReportsService` (`/my-reports`, US-54).
@@ -10,16 +10,16 @@ import 'reflect-metadata';
 import { listAbusiveReportsByUser } from '@safari/db';
 import { ReportsService } from './reports.service';
 
-jest.mock('@safari/db', () => ({
-  ...jest.requireActual<typeof import('@safari/db')>('@safari/db'),
-  listAbusiveReportsByUser: jest.fn(),
+vi.mock('@safari/db', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@safari/db')>()),
+  listAbusiveReportsByUser: vi.fn(),
 }));
 
-const listMock = jest.mocked(listAbusiveReportsByUser);
+const listMock = vi.mocked(listAbusiveReportsByUser);
 const AT = new Date('2022-07-26T04:35:51.000Z');
 
 describe('ReportsService', () => {
-  beforeEach(() => jest.resetAllMocks());
+  beforeEach(() => vi.resetAllMocks());
 
   it('devuelve {data} solo con los reportes del usuario que llama, sin paginador', async () => {
     listMock.mockResolvedValue([

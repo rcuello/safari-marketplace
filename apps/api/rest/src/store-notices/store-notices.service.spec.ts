@@ -1,7 +1,7 @@
-/// <reference types="jest" />
+/// <reference types="vitest/globals" />
 /*
  * La referencia de arriba es necesaria porque tsconfig.json fija
- * `types: ["node","express","multer"]` y deja fuera los globals de jest.
+ * `types: ["node","express","multer"]` y deja fuera los globals de Vitest.
  */
 /**
  * Tests unitarios de `StoreNoticesService` (US-51). Mismo arnés que
@@ -25,22 +25,22 @@ import { StoreNoticesService } from './store-notices.service';
 import { CreateStoreNoticeDto } from './dto/create-store-notice.dto';
 import { GetStoreNoticesDto } from './dto/get-store-notices.dto';
 
-jest.mock('@safari/db', () => ({
-  ...jest.requireActual<typeof import('@safari/db')>('@safari/db'),
-  listStoreNotices: jest.fn(),
-  findStoreNoticeById: jest.fn(),
-  createStoreNotice: jest.fn(),
-  updateStoreNotice: jest.fn(),
-  deleteStoreNotice: jest.fn(),
-  markStoreNoticeRead: jest.fn(),
+vi.mock('@safari/db', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@safari/db')>()),
+  listStoreNotices: vi.fn(),
+  findStoreNoticeById: vi.fn(),
+  createStoreNotice: vi.fn(),
+  updateStoreNotice: vi.fn(),
+  deleteStoreNotice: vi.fn(),
+  markStoreNoticeRead: vi.fn(),
 }));
 
-const listMock = jest.mocked(listStoreNotices);
-const findMock = jest.mocked(findStoreNoticeById);
-const createMock = jest.mocked(createStoreNotice);
-const updateMock = jest.mocked(updateStoreNotice);
-const deleteMock = jest.mocked(deleteStoreNotice);
-const readMock = jest.mocked(markStoreNoticeRead);
+const listMock = vi.mocked(listStoreNotices);
+const findMock = vi.mocked(findStoreNoticeById);
+const createMock = vi.mocked(createStoreNotice);
+const updateMock = vi.mocked(updateStoreNotice);
+const deleteMock = vi.mocked(deleteStoreNotice);
+const readMock = vi.mocked(markStoreNoticeRead);
 
 const T = new Date('2026-10-22T00:00:00.000Z');
 
@@ -132,7 +132,7 @@ describe('StoreNoticesService', () => {
   let service: StoreNoticesService;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     service = new StoreNoticesService();
   });
 

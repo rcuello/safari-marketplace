@@ -1,7 +1,7 @@
-/// <reference types="jest" />
+/// <reference types="vitest/globals" />
 /*
  * La referencia de arriba es necesaria porque tsconfig.json fija
- * `types: ["node","express","multer"]` y deja fuera los globals de jest.
+ * `types: ["node","express","multer"]` y deja fuera los globals de Vitest.
  */
 /**
  * Tests unitarios de `OrderStatusesService` (US-57). Mismo arnés que
@@ -32,20 +32,20 @@ import {
 import { GetOrderStatusesDto } from './dto/get-order-statuses.dto';
 import { OrderStatusesService } from './order-statuses.service';
 
-jest.mock('@safari/db', () => ({
-  ...jest.requireActual<typeof import('@safari/db')>('@safari/db'),
-  listOrderStatuses: jest.fn(),
-  findOrderStatusBySlug: jest.fn(),
-  createOrderStatus: jest.fn(),
-  updateOrderStatus: jest.fn(),
-  deleteOrderStatus: jest.fn(),
+vi.mock('@safari/db', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@safari/db')>()),
+  listOrderStatuses: vi.fn(),
+  findOrderStatusBySlug: vi.fn(),
+  createOrderStatus: vi.fn(),
+  updateOrderStatus: vi.fn(),
+  deleteOrderStatus: vi.fn(),
 }));
 
-const listMock = jest.mocked(listOrderStatuses);
-const findMock = jest.mocked(findOrderStatusBySlug);
-const createMock = jest.mocked(createOrderStatus);
-const updateMock = jest.mocked(updateOrderStatus);
-const deleteMock = jest.mocked(deleteOrderStatus);
+const listMock = vi.mocked(listOrderStatuses);
+const findMock = vi.mocked(findOrderStatusBySlug);
+const createMock = vi.mocked(createOrderStatus);
+const updateMock = vi.mocked(updateOrderStatus);
+const deleteMock = vi.mocked(deleteOrderStatus);
 
 function makeRecord(
   overrides: Partial<OrderStatusRecord> = {},
@@ -75,7 +75,7 @@ describe('OrderStatusesService', () => {
   let service: OrderStatusesService;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     service = new OrderStatusesService();
   });
 

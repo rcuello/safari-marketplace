@@ -1,7 +1,7 @@
-/// <reference types="jest" />
+/// <reference types="vitest/globals" />
 /*
  * La referencia de arriba es necesaria porque tsconfig.json fija
- * `types: ["node","express","multer"]` y deja fuera los globals de jest;
+ * `types: ["node","express","multer"]` y deja fuera los globals de Vitest;
  * se limita a este archivo para no tocar la config del build.
  */
 /**
@@ -15,7 +15,7 @@
  *
  * Mismo arnés que `products.service.spec.ts`: se mockea SOLO el acceso a
  * datos (`listShops` / `listShopsNear`) y se dejan REALES
- * `isPrismaConnectionError` / `getUserFriendlyMessage` (jest.requireActual),
+ * `isPrismaConnectionError` / `getUserFriendlyMessage` (`importOriginal` de `vi.mock`),
  * para que la clasificación del error se pruebe de verdad y sin base.
  */
 import 'reflect-metadata';
@@ -46,26 +46,26 @@ import { CreateShopDto } from './dto/create-shop.dto';
 import { UpdateShopDto } from './dto/update-shop.dto';
 import type { CurrentUserPayload } from 'src/auth/decorators/current-user.decorator';
 
-jest.mock('@safari/db', () => ({
+vi.mock('@safari/db', async (importOriginal) => ({
   // El barrel es seguro de cargar sin DATABASE_URL (cliente lazy vía Proxy);
   // se conservan reales las clases de error de dominio y `toWriteHttpException`
   // (via `domain-error.mapper.ts`, tampoco mockeado) — solo se mockea el
   // acceso a datos de las 4 escrituras de US-30 (PR#4, task 4.1).
-  ...jest.requireActual<typeof import('@safari/db')>('@safari/db'),
-  listShops: jest.fn(),
-  listShopsNear: jest.fn(),
-  createShop: jest.fn(),
-  updateShop: jest.fn(),
-  setShopActive: jest.fn(),
-  findShopOwnerById: jest.fn(),
+  ...(await importOriginal<typeof import('@safari/db')>()),
+  listShops: vi.fn(),
+  listShopsNear: vi.fn(),
+  createShop: vi.fn(),
+  updateShop: vi.fn(),
+  setShopActive: vi.fn(),
+  findShopOwnerById: vi.fn(),
 }));
 
-const listShopsMock = jest.mocked(listShops);
-const listShopsNearMock = jest.mocked(listShopsNear);
-const createShopMock = jest.mocked(createShop);
-const updateShopMock = jest.mocked(updateShop);
-const setShopActiveMock = jest.mocked(setShopActive);
-const findShopOwnerByIdMock = jest.mocked(findShopOwnerById);
+const listShopsMock = vi.mocked(listShops);
+const listShopsNearMock = vi.mocked(listShopsNear);
+const createShopMock = vi.mocked(createShop);
+const updateShopMock = vi.mocked(updateShop);
+const setShopActiveMock = vi.mocked(setShopActive);
+const findShopOwnerByIdMock = vi.mocked(findShopOwnerById);
 
 const WRITE_NOW = new Date('2026-09-11T00:00:00Z');
 

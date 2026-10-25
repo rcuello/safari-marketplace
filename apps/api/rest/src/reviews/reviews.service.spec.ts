@@ -1,7 +1,7 @@
-/// <reference types="jest" />
+/// <reference types="vitest/globals" />
 /*
  * La referencia de arriba es necesaria porque tsconfig.json fija
- * `types: ["node","express","multer"]` y deja fuera los globals de jest.
+ * `types: ["node","express","multer"]` y deja fuera los globals de Vitest.
  */
 /**
  * Tests unitarios de `ReviewService` (US-54). Solo se mockea el acceso a
@@ -33,20 +33,20 @@ import { GetReviewsDto } from './dto/get-reviews.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
 import { ReviewService } from './reviews.service';
 
-jest.mock('@safari/db', () => ({
-  ...jest.requireActual<typeof import('@safari/db')>('@safari/db'),
-  listReviews: jest.fn(),
-  findReviewById: jest.fn(),
-  createReview: jest.fn(),
-  updateReview: jest.fn(),
-  deleteReview: jest.fn(),
+vi.mock('@safari/db', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@safari/db')>()),
+  listReviews: vi.fn(),
+  findReviewById: vi.fn(),
+  createReview: vi.fn(),
+  updateReview: vi.fn(),
+  deleteReview: vi.fn(),
 }));
 
-const listMock = jest.mocked(listReviews);
-const findMock = jest.mocked(findReviewById);
-const createMock = jest.mocked(createReview);
-const updateMock = jest.mocked(updateReview);
-const deleteMock = jest.mocked(deleteReview);
+const listMock = vi.mocked(listReviews);
+const findMock = vi.mocked(findReviewById);
+const createMock = vi.mocked(createReview);
+const updateMock = vi.mocked(updateReview);
+const deleteMock = vi.mocked(deleteReview);
 
 const NOW = new Date('2022-03-18T09:06:12.000Z');
 
@@ -128,7 +128,7 @@ describe('ReviewService', () => {
   let service: ReviewService;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     service = new ReviewService();
   });
 

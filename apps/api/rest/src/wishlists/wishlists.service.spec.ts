@@ -1,7 +1,7 @@
-/// <reference types="jest" />
+/// <reference types="vitest/globals" />
 /*
  * La referencia de arriba es necesaria porque tsconfig.json fija
- * `types: ["node","express","multer"]` y deja fuera los globals de jest.
+ * `types: ["node","express","multer"]` y deja fuera los globals de Vitest.
  */
 /**
  * Tests unitarios de `WishlistsService` (US-53). Mismo arnés que
@@ -28,22 +28,22 @@ import { CreateWishlistDto } from './dto/create-wishlists.dto';
 import { GetWishlistDto } from './dto/get-wishlists.dto';
 import { WishlistsService } from './wishlists.service';
 
-jest.mock('@safari/db', () => ({
-  ...jest.requireActual<typeof import('@safari/db')>('@safari/db'),
-  listWishlistProducts: jest.fn(),
-  findWishlistProduct: jest.fn(),
-  isInWishlist: jest.fn(),
-  addToWishlist: jest.fn(),
-  removeFromWishlist: jest.fn(),
-  toggleWishlist: jest.fn(),
+vi.mock('@safari/db', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@safari/db')>()),
+  listWishlistProducts: vi.fn(),
+  findWishlistProduct: vi.fn(),
+  isInWishlist: vi.fn(),
+  addToWishlist: vi.fn(),
+  removeFromWishlist: vi.fn(),
+  toggleWishlist: vi.fn(),
 }));
 
-const listMock = jest.mocked(listWishlistProducts);
-const findMock = jest.mocked(findWishlistProduct);
-const inMock = jest.mocked(isInWishlist);
-const addMock = jest.mocked(addToWishlist);
-const removeMock = jest.mocked(removeFromWishlist);
-const toggleMock = jest.mocked(toggleWishlist);
+const listMock = vi.mocked(listWishlistProducts);
+const findMock = vi.mocked(findWishlistProduct);
+const inMock = vi.mocked(isInWishlist);
+const addMock = vi.mocked(addToWishlist);
+const removeMock = vi.mocked(removeFromWishlist);
+const toggleMock = vi.mocked(toggleWishlist);
 
 const NOW = new Date('2026-10-22T00:00:00Z');
 const CUSTOMER = 2;
@@ -123,7 +123,7 @@ describe('WishlistsService', () => {
   let service: WishlistsService;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     service = new WishlistsService();
   });
 

@@ -1,7 +1,7 @@
-/// <reference types="jest" />
+/// <reference types="vitest/globals" />
 /*
  * La referencia de arriba es necesaria porque tsconfig.json fija
- * `types: ["node","express","multer"]` y deja fuera los globals de jest.
+ * `types: ["node","express","multer"]` y deja fuera los globals de Vitest.
  */
 /**
  * Tests unitarios de `QuestionService` (US-55). Solo se mockea el acceso a
@@ -33,24 +33,24 @@ import { GetQuestionDto } from './dto/get-questions.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
 import { QuestionService } from './questions.service';
 
-jest.mock('@safari/db', () => ({
-  ...jest.requireActual<typeof import('@safari/db')>('@safari/db'),
-  listQuestions: jest.fn(),
-  findQuestionById: jest.fn(),
-  createQuestion: jest.fn(),
-  answerQuestion: jest.fn(),
-  deleteQuestion: jest.fn(),
-  findShopOwnerById: jest.fn(),
-  isShopStaff: jest.fn(),
+vi.mock('@safari/db', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@safari/db')>()),
+  listQuestions: vi.fn(),
+  findQuestionById: vi.fn(),
+  createQuestion: vi.fn(),
+  answerQuestion: vi.fn(),
+  deleteQuestion: vi.fn(),
+  findShopOwnerById: vi.fn(),
+  isShopStaff: vi.fn(),
 }));
 
-const listMock = jest.mocked(listQuestions);
-const findMock = jest.mocked(findQuestionById);
-const createMock = jest.mocked(createQuestion);
-const answerMock = jest.mocked(answerQuestion);
-const deleteMock = jest.mocked(deleteQuestion);
-const ownerMock = jest.mocked(findShopOwnerById);
-const staffMock = jest.mocked(isShopStaff);
+const listMock = vi.mocked(listQuestions);
+const findMock = vi.mocked(findQuestionById);
+const createMock = vi.mocked(createQuestion);
+const answerMock = vi.mocked(answerQuestion);
+const deleteMock = vi.mocked(deleteQuestion);
+const ownerMock = vi.mocked(findShopOwnerById);
+const staffMock = vi.mocked(isShopStaff);
 
 const AT = new Date('2022-03-18T10:19:46.000Z');
 
@@ -120,7 +120,7 @@ describe('QuestionService', () => {
   let service: QuestionService;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     service = new QuestionService();
   });
 

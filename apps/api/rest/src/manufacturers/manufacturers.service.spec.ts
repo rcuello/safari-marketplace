@@ -1,7 +1,7 @@
-/// <reference types="jest" />
+/// <reference types="vitest/globals" />
 /*
  * La referencia de arriba es necesaria porque tsconfig.json fija
- * `types: ["node","express","multer"]` y deja fuera los globals de jest;
+ * `types: ["node","express","multer"]` y deja fuera los globals de Vitest;
  * se limita a este archivo para no tocar la config del build.
  */
 /**
@@ -43,23 +43,23 @@ import { ManufacturersService } from './manufacturers.service';
 import { CreateManufacturerDto } from './dto/create-manufacturer.dto';
 import { UpdateManufacturerDto } from './dto/update-manufacturer.dto';
 
-jest.mock('@safari/db', () => ({
+vi.mock('@safari/db', async (importOriginal) => ({
   // El barrel es seguro de cargar sin DATABASE_URL (cliente lazy vía Proxy);
   // se conservan reales las clases de error de dominio y solo se mockea el
   // acceso a datos.
-  ...jest.requireActual<typeof import('@safari/db')>('@safari/db'),
-  createManufacturer: jest.fn(),
-  updateManufacturer: jest.fn(),
-  deleteManufacturer: jest.fn(),
-  findManufacturerBySlug: jest.fn(),
-  listTypes: jest.fn(),
+  ...(await importOriginal<typeof import('@safari/db')>()),
+  createManufacturer: vi.fn(),
+  updateManufacturer: vi.fn(),
+  deleteManufacturer: vi.fn(),
+  findManufacturerBySlug: vi.fn(),
+  listTypes: vi.fn(),
 }));
 
-const createManufacturerMock = jest.mocked(createManufacturer);
-const updateManufacturerMock = jest.mocked(updateManufacturer);
-const deleteManufacturerMock = jest.mocked(deleteManufacturer);
-const findManufacturerBySlugMock = jest.mocked(findManufacturerBySlug);
-const listTypesMock = jest.mocked(listTypes);
+const createManufacturerMock = vi.mocked(createManufacturer);
+const updateManufacturerMock = vi.mocked(updateManufacturer);
+const deleteManufacturerMock = vi.mocked(deleteManufacturer);
+const findManufacturerBySlugMock = vi.mocked(findManufacturerBySlug);
+const listTypesMock = vi.mocked(listTypes);
 
 const NOW = new Date('2026-09-10T00:00:00Z');
 

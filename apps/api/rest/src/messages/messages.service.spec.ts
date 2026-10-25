@@ -1,7 +1,7 @@
-/// <reference types="jest" />
+/// <reference types="vitest/globals" />
 /*
  * La referencia de arriba es necesaria porque tsconfig.json fija
- * `types: ["node","express","multer"]` y deja fuera los globals de jest.
+ * `types: ["node","express","multer"]` y deja fuera los globals de Vitest.
  */
 /**
  * Tests unitarios de `MessagesService` (US-56) y de `markSeen` (US-64). Solo
@@ -24,18 +24,18 @@ import { GetConversationsDto } from 'src/conversations/dto/get-conversations.dto
 import { CreateMessageDto } from './dto/create-message.dto';
 import { MessagesService } from './messages.service';
 
-jest.mock('@safari/db', () => ({
-  ...jest.requireActual<typeof import('@safari/db')>('@safari/db'),
-  findConversationById: jest.fn(),
-  listMessages: jest.fn(),
-  createMessage: jest.fn(),
-  markConversationSeen: jest.fn(),
+vi.mock('@safari/db', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@safari/db')>()),
+  findConversationById: vi.fn(),
+  listMessages: vi.fn(),
+  createMessage: vi.fn(),
+  markConversationSeen: vi.fn(),
 }));
 
-const findMock = jest.mocked(findConversationById);
-const listMock = jest.mocked(listMessages);
-const createMock = jest.mocked(createMessage);
-const seenMock = jest.mocked(markConversationSeen);
+const findMock = vi.mocked(findConversationById);
+const listMock = vi.mocked(listMessages);
+const createMock = vi.mocked(createMessage);
+const seenMock = vi.mocked(markConversationSeen);
 
 const AT = new Date('2023-03-21T03:18:35.000Z');
 const ADMIN: CurrentUserPayload = {
@@ -103,7 +103,7 @@ describe('MessagesService', () => {
   let service: MessagesService;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     service = new MessagesService();
   });
 

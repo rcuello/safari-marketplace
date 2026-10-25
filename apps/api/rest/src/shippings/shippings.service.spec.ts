@@ -1,7 +1,7 @@
-/// <reference types="jest" />
+/// <reference types="vitest/globals" />
 /*
  * La referencia de arriba es necesaria porque tsconfig.json fija
- * `types: ["node","express","multer"]` y deja fuera los globals de jest.
+ * `types: ["node","express","multer"]` y deja fuera los globals de Vitest.
  */
 /**
  * Tests unitarios de `ShippingsService` (US-49). Mismo arnés que
@@ -22,20 +22,20 @@ import {
 import { ShippingsService } from './shippings.service';
 import { CreateShippingDto } from './dto/create-shipping.dto';
 
-jest.mock('@safari/db', () => ({
-  ...jest.requireActual<typeof import('@safari/db')>('@safari/db'),
-  listShippings: jest.fn(),
-  findShippingById: jest.fn(),
-  createShipping: jest.fn(),
-  updateShipping: jest.fn(),
-  deleteShipping: jest.fn(),
+vi.mock('@safari/db', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@safari/db')>()),
+  listShippings: vi.fn(),
+  findShippingById: vi.fn(),
+  createShipping: vi.fn(),
+  updateShipping: vi.fn(),
+  deleteShipping: vi.fn(),
 }));
 
-const listMock = jest.mocked(listShippings);
-const findMock = jest.mocked(findShippingById);
-const createMock = jest.mocked(createShipping);
-const updateMock = jest.mocked(updateShipping);
-const deleteMock = jest.mocked(deleteShipping);
+const listMock = vi.mocked(listShippings);
+const findMock = vi.mocked(findShippingById);
+const createMock = vi.mocked(createShipping);
+const updateMock = vi.mocked(updateShipping);
+const deleteMock = vi.mocked(deleteShipping);
 
 function makeRecord(overrides: Partial<ShippingRecord> = {}): ShippingRecord {
   return {
@@ -54,7 +54,7 @@ describe('ShippingsService', () => {
   let service: ShippingsService;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     service = new ShippingsService();
   });
 

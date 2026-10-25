@@ -1,7 +1,7 @@
-/// <reference types="jest" />
+/// <reference types="vitest/globals" />
 /*
  * La referencia de arriba es necesaria porque tsconfig.json fija
- * `types: ["node","express","multer"]` y deja fuera los globals de jest.
+ * `types: ["node","express","multer"]` y deja fuera los globals de Vitest.
  */
 /**
  * Tests unitarios de `AbusiveReportService` (US-54). Solo se mockea el
@@ -30,22 +30,22 @@ import { CreateReportDto } from './dto/create-report.dto';
 import { UpdateReportDto } from './dto/update-report.dto';
 import { AbusiveReportService } from './reports.service';
 
-jest.mock('@safari/db', () => ({
-  ...jest.requireActual<typeof import('@safari/db')>('@safari/db'),
-  listAbusiveReports: jest.fn(),
-  findAbusiveReportById: jest.fn(),
-  createAbusiveReport: jest.fn(),
-  updateAbusiveReport: jest.fn(),
-  deleteAbusiveReport: jest.fn(),
-  rejectAbusiveReports: jest.fn(),
+vi.mock('@safari/db', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@safari/db')>()),
+  listAbusiveReports: vi.fn(),
+  findAbusiveReportById: vi.fn(),
+  createAbusiveReport: vi.fn(),
+  updateAbusiveReport: vi.fn(),
+  deleteAbusiveReport: vi.fn(),
+  rejectAbusiveReports: vi.fn(),
 }));
 
-const listMock = jest.mocked(listAbusiveReports);
-const findMock = jest.mocked(findAbusiveReportById);
-const createMock = jest.mocked(createAbusiveReport);
-const updateMock = jest.mocked(updateAbusiveReport);
-const deleteMock = jest.mocked(deleteAbusiveReport);
-const rejectMock = jest.mocked(rejectAbusiveReports);
+const listMock = vi.mocked(listAbusiveReports);
+const findMock = vi.mocked(findAbusiveReportById);
+const createMock = vi.mocked(createAbusiveReport);
+const updateMock = vi.mocked(updateAbusiveReport);
+const deleteMock = vi.mocked(deleteAbusiveReport);
+const rejectMock = vi.mocked(rejectAbusiveReports);
 
 const CUSTOMER: CurrentUserPayload = {
   sub: 2,
@@ -84,7 +84,7 @@ describe('AbusiveReportService', () => {
   let service: AbusiveReportService;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     service = new AbusiveReportService();
   });
 

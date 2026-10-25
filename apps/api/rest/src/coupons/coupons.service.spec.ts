@@ -1,7 +1,7 @@
-/// <reference types="jest" />
+/// <reference types="vitest/globals" />
 /*
  * La referencia de arriba es necesaria porque tsconfig.json fija
- * `types: ["node","express","multer"]` y deja fuera los globals de jest.
+ * `types: ["node","express","multer"]` y deja fuera los globals de Vitest.
  */
 /**
  * Tests unitarios de `CouponsService` (US-52). Mismo arnés que
@@ -38,28 +38,28 @@ import { GetCouponsDto } from './dto/get-coupons.dto';
 import { UpdateCouponDto } from './dto/update-coupon.dto';
 import { VerifyCouponInput } from './dto/verify-coupon.dto';
 
-jest.mock('@safari/db', () => ({
-  ...jest.requireActual<typeof import('@safari/db')>('@safari/db'),
-  listCoupons: jest.fn(),
-  findCouponByCode: jest.fn(),
-  findCouponById: jest.fn(),
-  createCoupon: jest.fn(),
-  updateCoupon: jest.fn(),
-  deleteCoupon: jest.fn(),
-  setCouponApproval: jest.fn(),
-  findShopOwnerById: jest.fn(),
-  isShopStaff: jest.fn(),
+vi.mock('@safari/db', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@safari/db')>()),
+  listCoupons: vi.fn(),
+  findCouponByCode: vi.fn(),
+  findCouponById: vi.fn(),
+  createCoupon: vi.fn(),
+  updateCoupon: vi.fn(),
+  deleteCoupon: vi.fn(),
+  setCouponApproval: vi.fn(),
+  findShopOwnerById: vi.fn(),
+  isShopStaff: vi.fn(),
 }));
 
-const listMock = jest.mocked(listCoupons);
-const findByCodeMock = jest.mocked(findCouponByCode);
-const findByIdMock = jest.mocked(findCouponById);
-const createMock = jest.mocked(createCoupon);
-const updateMock = jest.mocked(updateCoupon);
-const deleteMock = jest.mocked(deleteCoupon);
-const approvalMock = jest.mocked(setCouponApproval);
-const ownerMock = jest.mocked(findShopOwnerById);
-const staffMock = jest.mocked(isShopStaff);
+const listMock = vi.mocked(listCoupons);
+const findByCodeMock = vi.mocked(findCouponByCode);
+const findByIdMock = vi.mocked(findCouponById);
+const createMock = vi.mocked(createCoupon);
+const updateMock = vi.mocked(updateCoupon);
+const deleteMock = vi.mocked(deleteCoupon);
+const approvalMock = vi.mocked(setCouponApproval);
+const ownerMock = vi.mocked(findShopOwnerById);
+const staffMock = vi.mocked(isShopStaff);
 
 const NOW = new Date('2026-10-22T12:00:00.000Z');
 const OWNER = 1;
@@ -120,7 +120,7 @@ describe('CouponsService', () => {
   let service: CouponsService;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     _setNowProvider(() => NOW);
     service = new CouponsService();
   });
@@ -373,7 +373,7 @@ describe('CouponsService', () => {
   /**
    * US-66 (Ampliación, Decisión 2 cerrada): `assertCanManage` admite al staff
    * de la tienda (fila en `shop_staff`), consultado solo si no es dueño.
-   * `jest.resetAllMocks()` deja `isShopStaff` en `undefined` (falsy) para el
+   * `vi.resetAllMocks()` deja `isShopStaff` en `undefined` (falsy) para el
    * resto de casos, que siguen significando «sin fila».
    */
   describe('staff de la tienda (US-66, Ampliación)', () => {

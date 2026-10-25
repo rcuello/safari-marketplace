@@ -1,7 +1,7 @@
-/// <reference types="jest" />
+/// <reference types="vitest/globals" />
 /*
  * La referencia de arriba es necesaria porque tsconfig.json fija
- * `types: ["node","express","multer"]` y deja fuera los globals de jest.
+ * `types: ["node","express","multer"]` y deja fuera los globals de Vitest.
  */
 /**
  * Tests unitarios de `TermsAndConditionsService` (US-47). Mismo arnés que
@@ -23,22 +23,22 @@ import { TermsAndConditionsService } from './terms-and-conditions.service';
 import { CreateTermsAndConditionsDto } from './dto/create-terms-and-conditions.dto';
 import { GetTermsAndConditionsDto } from './dto/get-terms-and-conditions.dto';
 
-jest.mock('@safari/db', () => ({
-  ...jest.requireActual<typeof import('@safari/db')>('@safari/db'),
-  listTermsAndConditions: jest.fn(),
-  findTermsAndConditionsBySlug: jest.fn(),
-  createTermsAndConditions: jest.fn(),
-  updateTermsAndConditions: jest.fn(),
-  deleteTermsAndConditions: jest.fn(),
-  setTermsApproval: jest.fn(),
+vi.mock('@safari/db', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@safari/db')>()),
+  listTermsAndConditions: vi.fn(),
+  findTermsAndConditionsBySlug: vi.fn(),
+  createTermsAndConditions: vi.fn(),
+  updateTermsAndConditions: vi.fn(),
+  deleteTermsAndConditions: vi.fn(),
+  setTermsApproval: vi.fn(),
 }));
 
-const listMock = jest.mocked(listTermsAndConditions);
-const findMock = jest.mocked(findTermsAndConditionsBySlug);
-const createMock = jest.mocked(createTermsAndConditions);
-const updateMock = jest.mocked(updateTermsAndConditions);
-const deleteMock = jest.mocked(deleteTermsAndConditions);
-const approvalMock = jest.mocked(setTermsApproval);
+const listMock = vi.mocked(listTermsAndConditions);
+const findMock = vi.mocked(findTermsAndConditionsBySlug);
+const createMock = vi.mocked(createTermsAndConditions);
+const updateMock = vi.mocked(updateTermsAndConditions);
+const deleteMock = vi.mocked(deleteTermsAndConditions);
+const approvalMock = vi.mocked(setTermsApproval);
 
 const NOW = new Date('2026-10-20T00:00:00Z');
 
@@ -82,7 +82,7 @@ describe('TermsAndConditionsService', () => {
   let service: TermsAndConditionsService;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     service = new TermsAndConditionsService();
   });
 

@@ -1,7 +1,7 @@
-/// <reference types="jest" />
+/// <reference types="vitest/globals" />
 /*
  * La referencia de arriba es necesaria porque tsconfig.json fija
- * `types: ["node","express","multer"]` y deja fuera los globals de jest.
+ * `types: ["node","express","multer"]` y deja fuera los globals de Vitest.
  */
 /**
  * Tests unitarios de `TaxesService` (US-49). Mismo arnés que
@@ -21,20 +21,20 @@ import {
 import { TaxesService } from './taxes.service';
 import { CreateTaxDto } from './dto/create-tax.dto';
 
-jest.mock('@safari/db', () => ({
-  ...jest.requireActual<typeof import('@safari/db')>('@safari/db'),
-  listTaxes: jest.fn(),
-  findTaxById: jest.fn(),
-  createTax: jest.fn(),
-  updateTax: jest.fn(),
-  deleteTax: jest.fn(),
+vi.mock('@safari/db', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@safari/db')>()),
+  listTaxes: vi.fn(),
+  findTaxById: vi.fn(),
+  createTax: vi.fn(),
+  updateTax: vi.fn(),
+  deleteTax: vi.fn(),
 }));
 
-const listMock = jest.mocked(listTaxes);
-const findMock = jest.mocked(findTaxById);
-const createMock = jest.mocked(createTax);
-const updateMock = jest.mocked(updateTax);
-const deleteMock = jest.mocked(deleteTax);
+const listMock = vi.mocked(listTaxes);
+const findMock = vi.mocked(findTaxById);
+const createMock = vi.mocked(createTax);
+const updateMock = vi.mocked(updateTax);
+const deleteMock = vi.mocked(deleteTax);
 
 function makeRecord(overrides: Partial<TaxRecord> = {}): TaxRecord {
   return {
@@ -58,7 +58,7 @@ describe('TaxesService', () => {
   let service: TaxesService;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     service = new TaxesService();
   });
 

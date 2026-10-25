@@ -1,7 +1,7 @@
-/// <reference types="jest" />
+/// <reference types="vitest/globals" />
 /*
  * La referencia de arriba es necesaria porque tsconfig.json fija
- * `types: ["node","express","multer"]` y deja fuera los globals de jest;
+ * `types: ["node","express","multer"]` y deja fuera los globals de Vitest;
  * se limita a este archivo para no tocar la config del build.
  */
 /**
@@ -27,18 +27,18 @@ import {
 } from '@safari/db';
 import { AnalyticsService, STATUS_KEYS } from './analytics.service';
 
-jest.mock('@safari/db', () => ({
-  ...jest.requireActual<typeof import('@safari/db')>('@safari/db'),
-  getDashboardAnalytics: jest.fn(),
-  listCategoryWiseProductCounts: jest.fn(),
-  listLowStockProducts: jest.fn(),
-  listTopRatedProducts: jest.fn(),
+vi.mock('@safari/db', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@safari/db')>()),
+  getDashboardAnalytics: vi.fn(),
+  listCategoryWiseProductCounts: vi.fn(),
+  listLowStockProducts: vi.fn(),
+  listTopRatedProducts: vi.fn(),
 }));
 
-const dashboardMock = jest.mocked(getDashboardAnalytics);
-const categoryMock = jest.mocked(listCategoryWiseProductCounts);
-const lowStockMock = jest.mocked(listLowStockProducts);
-const topRatedMock = jest.mocked(listTopRatedProducts);
+const dashboardMock = vi.mocked(getDashboardAnalytics);
+const categoryMock = vi.mocked(listCategoryWiseProductCounts);
+const lowStockMock = vi.mocked(listLowStockProducts);
+const topRatedMock = vi.mocked(listTopRatedProducts);
 
 const NOW = new Date('2026-10-23T00:00:00Z');
 
@@ -147,7 +147,7 @@ describe('AnalyticsService', () => {
   let service: AnalyticsService;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     service = new AnalyticsService();
   });
 

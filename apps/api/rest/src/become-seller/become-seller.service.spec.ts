@@ -1,7 +1,7 @@
-/// <reference types="jest" />
+/// <reference types="vitest/globals" />
 /*
  * La referencia de arriba es necesaria porque tsconfig.json fija
- * `types: ["node","express","multer"]` y deja fuera los globals de jest;
+ * `types: ["node","express","multer"]` y deja fuera los globals de Vitest;
  * se limita a este archivo para no tocar la config del build (calco
  * `categories.service.spec.ts:1-6`).
  */
@@ -25,8 +25,9 @@
  * `apps/api/rest/package.json` declara el rango `^4.7.4`, que permite
  * instalar cualquier `4.7.x` sin `satisfies` (llegó en 4.9), así que la red
  * no puede depender de una versión más nueva que la que el rango declarado
- * garantiza. `ts-jest` corre sin `isolatedModules`, así que un error de
- * tipo tumba la suite entera.
+ * garantiza. Desde US-88 la suite corre en Vitest con SWC, que transpila
+ * sin comprobar tipos: esta red la dispara `npx tsc --noEmit -p
+ * tsconfig.json` (que incluye los specs), no `vitest run`.
  */
 import { getBecomeSeller, updateBecomeSeller } from '@safari/db';
 import type { BecomeSellerRecord } from '@safari/db';
@@ -40,14 +41,14 @@ import {
   BecomeSellerOptions,
 } from './entities/become-seller.entity';
 
-jest.mock('@safari/db', () => ({
-  ...jest.requireActual<typeof import('@safari/db')>('@safari/db'),
-  getBecomeSeller: jest.fn(),
-  updateBecomeSeller: jest.fn(),
+vi.mock('@safari/db', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@safari/db')>()),
+  getBecomeSeller: vi.fn(),
+  updateBecomeSeller: vi.fn(),
 }));
 
-const getBecomeSellerMock = jest.mocked(getBecomeSeller);
-const updateBecomeSellerMock = jest.mocked(updateBecomeSeller);
+const getBecomeSellerMock = vi.mocked(getBecomeSeller);
+const updateBecomeSellerMock = vi.mocked(updateBecomeSeller);
 
 const CREATED_AT = new Date('2024-06-06T10:30:48.000Z');
 const UPDATED_AT = new Date('2024-06-12T11:31:46.000Z');

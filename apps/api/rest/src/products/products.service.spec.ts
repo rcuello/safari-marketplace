@@ -1,7 +1,7 @@
-/// <reference types="jest" />
+/// <reference types="vitest/globals" />
 /*
  * La referencia de arriba es necesaria porque tsconfig.json fija
- * `types: ["node","express","multer"]` y deja fuera los globals de jest;
+ * `types: ["node","express","multer"]` y deja fuera los globals de Vitest;
  * se limita a este archivo para no tocar la config del build.
  */
 /**
@@ -13,7 +13,7 @@
  * pública, mockeando SOLO `listProducts` de `@safari/db` y asertando (a) lo
  * que recibe el repositorio mockeado y (b) lo que devuelve `getProducts()`.
  * `isPrismaConnectionError` / `getUserFriendlyMessage` se dejan REALES
- * (jest.requireActual) para que el mapeo de errores 503/500 se pruebe
+ * (`importOriginal` de `vi.mock`) para que el mapeo de errores 503/500 se pruebe
  * contra la clasificación verdadera, sin base de datos.
  */
 import 'reflect-metadata';
@@ -50,34 +50,34 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { Product } from './entities/product.entity';
 import type { CurrentUserPayload } from 'src/auth/decorators/current-user.decorator';
 
-jest.mock('@safari/db', () => ({
+vi.mock('@safari/db', async (importOriginal) => ({
   // El barrel es seguro de cargar sin DATABASE_URL (cliente lazy vía Proxy);
   // se conservan los helpers de errores reales y solo se mockea el acceso a
   // datos.
-  ...jest.requireActual<typeof import('@safari/db')>('@safari/db'),
-  listProducts: jest.fn(),
-  findProductBySlug: jest.fn(),
+  ...(await importOriginal<typeof import('@safari/db')>()),
+  listProducts: vi.fn(),
+  findProductBySlug: vi.fn(),
   // US-29 (PR#4): las 5 escrituras/lecturas auxiliares que faltaban. Las
   // clases de error (`InvalidSalePriceError`, etc.) y `CATALOG_ERROR_CODES`
-  // siguen REALES vía el `jest.requireActual` de arriba — solo se mockea el
+  // siguen REALES vía el `importOriginal` de arriba — solo se mockea el
   // acceso a datos, nunca el contrato de errores.
-  createProduct: jest.fn(),
-  updateProduct: jest.fn(),
-  deleteProduct: jest.fn(),
-  findProductShopId: jest.fn(),
-  findShopOwnerById: jest.fn(),
+  createProduct: vi.fn(),
+  updateProduct: vi.fn(),
+  deleteProduct: vi.fn(),
+  findProductShopId: vi.fn(),
+  findShopOwnerById: vi.fn(),
   // US-66 (Ampliación): pertenencia a `shop_staff`, solo lectura.
-  isShopStaff: jest.fn(),
+  isShopStaff: vi.fn(),
 }));
 
-const listProductsMock = jest.mocked(listProducts);
-const findProductBySlugMock = jest.mocked(findProductBySlug);
-const createProductMock = jest.mocked(createProduct);
-const updateProductMock = jest.mocked(updateProduct);
-const deleteProductMock = jest.mocked(deleteProduct);
-const findProductShopIdMock = jest.mocked(findProductShopId);
-const findShopOwnerByIdMock = jest.mocked(findShopOwnerById);
-const isShopStaffMock = jest.mocked(isShopStaff);
+const listProductsMock = vi.mocked(listProducts);
+const findProductBySlugMock = vi.mocked(findProductBySlug);
+const createProductMock = vi.mocked(createProduct);
+const updateProductMock = vi.mocked(updateProduct);
+const deleteProductMock = vi.mocked(deleteProduct);
+const findProductShopIdMock = vi.mocked(findProductShopId);
+const findShopOwnerByIdMock = vi.mocked(findShopOwnerById);
+const isShopStaffMock = vi.mocked(isShopStaff);
 
 /**
  * `ValidationPipe` corre sin `transform` (Decision A del design de US-2):

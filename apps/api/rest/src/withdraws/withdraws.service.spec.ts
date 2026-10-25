@@ -1,7 +1,7 @@
-/// <reference types="jest" />
+/// <reference types="vitest/globals" />
 /*
  * La referencia de arriba es necesaria porque tsconfig.json fija
- * `types: ["node","express","multer"]` y deja fuera los globals de jest;
+ * `types: ["node","express","multer"]` y deja fuera los globals de Vitest;
  * se limita a este archivo para no tocar la config del build.
  */
 /**
@@ -36,22 +36,22 @@ import { CreateWithdrawDto } from './dto/create-withdraw.dto';
 import { GetWithdrawsDto } from './dto/get-withdraw.dto';
 import { WithdrawsService } from './withdraws.service';
 
-jest.mock('@safari/db', () => ({
-  ...jest.requireActual<typeof import('@safari/db')>('@safari/db'),
-  listWithdraws: jest.fn(),
-  findWithdrawById: jest.fn(),
-  createWithdraw: jest.fn(),
-  updateWithdrawStatus: jest.fn(),
-  deleteWithdraw: jest.fn(),
-  findShopOwnerById: jest.fn(),
+vi.mock('@safari/db', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@safari/db')>()),
+  listWithdraws: vi.fn(),
+  findWithdrawById: vi.fn(),
+  createWithdraw: vi.fn(),
+  updateWithdrawStatus: vi.fn(),
+  deleteWithdraw: vi.fn(),
+  findShopOwnerById: vi.fn(),
 }));
 
-const listMock = jest.mocked(listWithdraws);
-const findMock = jest.mocked(findWithdrawById);
-const createMock = jest.mocked(createWithdraw);
-const updateMock = jest.mocked(updateWithdrawStatus);
-const deleteMock = jest.mocked(deleteWithdraw);
-const ownerMock = jest.mocked(findShopOwnerById);
+const listMock = vi.mocked(listWithdraws);
+const findMock = vi.mocked(findWithdrawById);
+const createMock = vi.mocked(createWithdraw);
+const updateMock = vi.mocked(updateWithdrawStatus);
+const deleteMock = vi.mocked(deleteWithdraw);
+const ownerMock = vi.mocked(findShopOwnerById);
 
 const NOW = new Date('2026-10-23T00:00:00Z');
 const user = (sub: number, permissions: string[]): CurrentUserPayload => ({
@@ -99,7 +99,7 @@ describe('WithdrawsService', () => {
   let service: WithdrawsService;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     service = new WithdrawsService();
   });
 

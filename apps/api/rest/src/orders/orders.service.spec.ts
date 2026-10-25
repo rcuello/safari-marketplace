@@ -1,7 +1,7 @@
-/// <reference types="jest" />
+/// <reference types="vitest/globals" />
 /*
  * La referencia de arriba es necesaria porque tsconfig.json fija
- * `types: ["node","express","multer"]` y deja fuera los globals de jest.
+ * `types: ["node","express","multer"]` y deja fuera los globals de Vitest.
  */
 /**
  * Tests unitarios de `OrdersService`: lectura (US-58), escritura (US-59) y
@@ -59,26 +59,26 @@ import {
   OrdersService,
 } from './orders.service';
 
-jest.mock('@safari/db', () => ({
-  ...jest.requireActual<typeof import('@safari/db')>('@safari/db'),
-  listOrders: jest.fn(),
-  findOrderByIdOrTracking: jest.fn(),
-  findProductsForOrder: jest.fn(),
-  findTaxById: jest.fn(),
-  findShippingById: jest.fn(),
-  getSettings: jest.fn(),
-  findCouponById: jest.fn(),
-  findUserById: jest.fn(),
-  createOrderWithChildren: jest.fn(),
-  setOrderStatus: jest.fn(),
-  deleteOrder: jest.fn(),
-  markOrderPaid: jest.fn(),
-  listOrderFilesByCustomer: jest.fn(),
-  findFirstOrderFileByDigitalFileId: jest.fn(),
+vi.mock('@safari/db', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@safari/db')>()),
+  listOrders: vi.fn(),
+  findOrderByIdOrTracking: vi.fn(),
+  findProductsForOrder: vi.fn(),
+  findTaxById: vi.fn(),
+  findShippingById: vi.fn(),
+  getSettings: vi.fn(),
+  findCouponById: vi.fn(),
+  findUserById: vi.fn(),
+  createOrderWithChildren: vi.fn(),
+  setOrderStatus: vi.fn(),
+  deleteOrder: vi.fn(),
+  markOrderPaid: vi.fn(),
+  listOrderFilesByCustomer: vi.fn(),
+  findFirstOrderFileByDigitalFileId: vi.fn(),
 }));
 
-const listMock = jest.mocked(listOrders);
-const findMock = jest.mocked(findOrderByIdOrTracking);
+const listMock = vi.mocked(listOrders);
+const findMock = vi.mocked(findOrderByIdOrTracking);
 
 const ADMIN_USER: CurrentUserPayload = {
   sub: 3,
@@ -187,7 +187,7 @@ describe('OrdersService — lectura', () => {
   let service: OrdersService;
 
   beforeEach(async () => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     const moduleRef = await Test.createTestingModule({
       providers: [
         OrdersService,
@@ -366,16 +366,16 @@ describe('OrdersService — lectura', () => {
 // Escritura (US-59)
 // ---------------------------------------------------------------------------
 
-const productsMock = jest.mocked(findProductsForOrder);
-const taxMock = jest.mocked(findTaxById);
-const shippingMock = jest.mocked(findShippingById);
-const settingsMock = jest.mocked(getSettings);
-const couponMock = jest.mocked(findCouponById);
-const userMock = jest.mocked(findUserById);
-const createMock = jest.mocked(createOrderWithChildren);
-const statusMock = jest.mocked(setOrderStatus);
-const deleteMock = jest.mocked(deleteOrder);
-const paidMock = jest.mocked(markOrderPaid);
+const productsMock = vi.mocked(findProductsForOrder);
+const taxMock = vi.mocked(findTaxById);
+const shippingMock = vi.mocked(findShippingById);
+const settingsMock = vi.mocked(getSettings);
+const couponMock = vi.mocked(findCouponById);
+const userMock = vi.mocked(findUserById);
+const createMock = vi.mocked(createOrderWithChildren);
+const statusMock = vi.mocked(setOrderStatus);
+const deleteMock = vi.mocked(deleteOrder);
+const paidMock = vi.mocked(markOrderPaid);
 
 function makeProduct(
   id: number,
@@ -488,10 +488,10 @@ function orderDto(overrides: Partial<CreateOrderDto> = {}): CreateOrderDto {
 
 describe('OrdersService — escritura', () => {
   let service: OrdersService;
-  const verifyOrder = jest.fn();
+  const verifyOrder = vi.fn();
 
   beforeEach(async () => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     const moduleRef = await Test.createTestingModule({
       providers: [
         OrdersService,
@@ -836,8 +836,8 @@ describe('OrdersService — escritura', () => {
 // Descargas, export e invoice (US-60)
 // ---------------------------------------------------------------------------
 
-const filesMock = jest.mocked(listOrderFilesByCustomer);
-const firstFileMock = jest.mocked(findFirstOrderFileByDigitalFileId);
+const filesMock = vi.mocked(listOrderFilesByCustomer);
+const firstFileMock = vi.mocked(findFirstOrderFileByDigitalFileId);
 
 const FILE = {
   id: 42,
@@ -871,7 +871,7 @@ describe('OrdersService — descargas, export e invoice', () => {
   let controller: OrderFilesController;
 
   beforeEach(async () => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     const moduleRef = await Test.createTestingModule({
       controllers: [OrderFilesController],
       providers: [

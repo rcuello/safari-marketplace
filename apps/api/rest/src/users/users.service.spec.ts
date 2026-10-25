@@ -1,7 +1,7 @@
-/// <reference types="jest" />
+/// <reference types="vitest/globals" />
 /*
  * La referencia de arriba es necesaria porque tsconfig.json fija
- * `types: ["node","express","multer"]` y deja fuera los globals de jest;
+ * `types: ["node","express","multer"]` y deja fuera los globals de Vitest;
  * se limita a este archivo para no tocar la config del build.
  */
 /**
@@ -9,7 +9,7 @@
  * pasa a llamar funciones planas de `@safari/db`. Mismo arnés que
  * `shops.service.spec.ts:21-38,57` — se mockea SOLO el acceso a datos y se
  * dejan REALES `buildPaginator`/`isPrismaConnectionError`/
- * `getUserFriendlyMessage`/`DuplicateEmailError` (jest.requireActual), para
+ * `getUserFriendlyMessage`/`DuplicateEmailError` (`importOriginal` de `vi.mock`), para
  * que la equivalencia con `paginate()` y la clasificación de errores se
  * prueben de verdad y sin base.
  *
@@ -39,23 +39,23 @@ import { paginate } from 'src/common/pagination/paginate';
 import { UsersService } from './users.service';
 import { GetUsersDto } from './dto/get-users.dto';
 
-jest.mock('@safari/db', () => ({
+vi.mock('@safari/db', async (importOriginal) => ({
   // El barrel es seguro de cargar sin DATABASE_URL (cliente lazy vía Proxy).
-  ...jest.requireActual<typeof import('@safari/db')>('@safari/db'),
-  listUsersWithRelations: jest.fn(),
-  findUserWithRelations: jest.fn(),
-  setUserActive: jest.fn(),
-  listUsers: jest.fn(),
-  grantPermission: jest.fn(),
-  createUser: jest.fn(),
+  ...(await importOriginal<typeof import('@safari/db')>()),
+  listUsersWithRelations: vi.fn(),
+  findUserWithRelations: vi.fn(),
+  setUserActive: vi.fn(),
+  listUsers: vi.fn(),
+  grantPermission: vi.fn(),
+  createUser: vi.fn(),
 }));
 
-const listUsersWithRelationsMock = jest.mocked(listUsersWithRelations);
-const findUserWithRelationsMock = jest.mocked(findUserWithRelations);
-const setUserActiveMock = jest.mocked(setUserActive);
-const listUsersMock = jest.mocked(listUsers);
-const grantPermissionMock = jest.mocked(grantPermission);
-const createUserMock = jest.mocked(createUser);
+const listUsersWithRelationsMock = vi.mocked(listUsersWithRelations);
+const findUserWithRelationsMock = vi.mocked(findUserWithRelations);
+const setUserActiveMock = vi.mocked(setUserActive);
+const listUsersMock = vi.mocked(listUsers);
+const grantPermissionMock = vi.mocked(grantPermission);
+const createUserMock = vi.mocked(createUser);
 
 function rawQuery(
   query: Record<string, string | number | undefined>,

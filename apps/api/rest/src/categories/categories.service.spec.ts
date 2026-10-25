@@ -1,7 +1,7 @@
-/// <reference types="jest" />
+/// <reference types="vitest/globals" />
 /*
  * La referencia de arriba es necesaria porque tsconfig.json fija
- * `types: ["node","express","multer"]` y deja fuera los globals de jest;
+ * `types: ["node","express","multer"]` y deja fuera los globals de Vitest;
  * se limita a este archivo para no tocar la config del build.
  */
 /**
@@ -63,23 +63,23 @@ import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 
-jest.mock('@safari/db', () => ({
+vi.mock('@safari/db', async (importOriginal) => ({
   // El barrel es seguro de cargar sin DATABASE_URL (cliente lazy vía Proxy);
   // se conservan reales las clases de error de dominio y solo se mockea el
   // acceso a datos.
-  ...jest.requireActual<typeof import('@safari/db')>('@safari/db'),
-  createCategory: jest.fn(),
-  updateCategory: jest.fn(),
-  deleteCategory: jest.fn(),
-  findCategoryByIdOrSlug: jest.fn(),
-  listCategories: jest.fn(),
+  ...(await importOriginal<typeof import('@safari/db')>()),
+  createCategory: vi.fn(),
+  updateCategory: vi.fn(),
+  deleteCategory: vi.fn(),
+  findCategoryByIdOrSlug: vi.fn(),
+  listCategories: vi.fn(),
 }));
 
-const createCategoryMock = jest.mocked(createCategory);
-const updateCategoryMock = jest.mocked(updateCategory);
-const deleteCategoryMock = jest.mocked(deleteCategory);
-const findCategoryByIdOrSlugMock = jest.mocked(findCategoryByIdOrSlug);
-const listCategoriesMock = jest.mocked(listCategories);
+const createCategoryMock = vi.mocked(createCategory);
+const updateCategoryMock = vi.mocked(updateCategory);
+const deleteCategoryMock = vi.mocked(deleteCategory);
+const findCategoryByIdOrSlugMock = vi.mocked(findCategoryByIdOrSlug);
+const listCategoriesMock = vi.mocked(listCategories);
 
 const NOW = new Date('2026-09-10T00:00:00Z');
 
@@ -666,7 +666,7 @@ describe('Contrato de 16 claves — create/update/remove igual a getCategory, EN
     expect(expectedKeys).toHaveLength(16);
     // Comparación de ORDEN exacto — nunca `.sort()` (jq no está instalado;
     // `node -e` fue el idiom usado en la evidencia manual de PR#2, esto es
-    // el equivalente en jest con `toEqual` sobre el array de claves).
+    // el equivalente en Vitest con `toEqual` sobre el array de claves).
     expect(Object.keys(createResult)).toEqual(expectedKeys);
     expect(Object.keys(updateResult)).toEqual(expectedKeys);
     expect(Object.keys(removeResult)).toEqual(expectedKeys);

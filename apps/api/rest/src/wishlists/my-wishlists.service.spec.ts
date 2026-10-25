@@ -1,7 +1,7 @@
-/// <reference types="jest" />
+/// <reference types="vitest/globals" />
 /*
  * La referencia de arriba es necesaria porque tsconfig.json fija
- * `types: ["node","express","multer"]` y deja fuera los globals de jest.
+ * `types: ["node","express","multer"]` y deja fuera los globals de Vitest.
  */
 /**
  * Tests unitarios de `MyWishlistService` (US-53): delega en
@@ -14,19 +14,19 @@ import { GetWishlistDto } from './dto/get-wishlists.dto';
 import { MyWishlistService } from './my-wishlists.service';
 import { WishlistsService } from './wishlists.service';
 
-jest.mock('@safari/db', () => ({
-  ...jest.requireActual<typeof import('@safari/db')>('@safari/db'),
-  listWishlistProducts: jest.fn(),
+vi.mock('@safari/db', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@safari/db')>()),
+  listWishlistProducts: vi.fn(),
 }));
 
-const listMock = jest.mocked(listWishlistProducts);
+const listMock = vi.mocked(listWishlistProducts);
 
 describe('MyWishlistService', () => {
   let wishlists: WishlistsService;
   let service: MyWishlistService;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     wishlists = new WishlistsService();
     service = new MyWishlistService(wishlists);
   });
@@ -47,9 +47,7 @@ describe('MyWishlistService', () => {
   ] as const)(
     '%s delega en WishlistsService con el mismo usuario e id',
     async (method, target) => {
-      const spy = jest
-        .spyOn(wishlists, target)
-        .mockResolvedValue({} as Product);
+      const spy = vi.spyOn(wishlists, target).mockResolvedValue({} as Product);
       await service[method](2, '945');
       expect(spy).toHaveBeenCalledWith(2, '945');
     },

@@ -1,7 +1,7 @@
-/// <reference types="jest" />
+/// <reference types="vitest/globals" />
 /*
  * La referencia de arriba es necesaria porque tsconfig.json fija
- * `types: ["node","express","multer"]` y deja fuera los globals de jest;
+ * `types: ["node","express","multer"]` y deja fuera los globals de Vitest;
  * se limita a este archivo para no tocar la config del build.
  */
 /**
@@ -43,23 +43,23 @@ import { TagsService } from './tags.service';
 import { CreateTagDto } from './dto/create-tag.dto';
 import { UpdateTagDto } from './dto/update-tag.dto';
 
-jest.mock('@safari/db', () => ({
+vi.mock('@safari/db', async (importOriginal) => ({
   // El barrel es seguro de cargar sin DATABASE_URL (cliente lazy vía Proxy);
   // se conservan reales las clases de error de dominio y solo se mockea el
   // acceso a datos.
-  ...jest.requireActual<typeof import('@safari/db')>('@safari/db'),
-  createTag: jest.fn(),
-  updateTag: jest.fn(),
-  deleteTag: jest.fn(),
-  findTagBySlug: jest.fn(),
-  listTypes: jest.fn(),
+  ...(await importOriginal<typeof import('@safari/db')>()),
+  createTag: vi.fn(),
+  updateTag: vi.fn(),
+  deleteTag: vi.fn(),
+  findTagBySlug: vi.fn(),
+  listTypes: vi.fn(),
 }));
 
-const createTagMock = jest.mocked(createTag);
-const updateTagMock = jest.mocked(updateTag);
-const deleteTagMock = jest.mocked(deleteTag);
-const findTagBySlugMock = jest.mocked(findTagBySlug);
-const listTypesMock = jest.mocked(listTypes);
+const createTagMock = vi.mocked(createTag);
+const updateTagMock = vi.mocked(updateTag);
+const deleteTagMock = vi.mocked(deleteTag);
+const findTagBySlugMock = vi.mocked(findTagBySlug);
+const listTypesMock = vi.mocked(listTypes);
 
 const NOW = new Date('2026-09-10T00:00:00Z');
 

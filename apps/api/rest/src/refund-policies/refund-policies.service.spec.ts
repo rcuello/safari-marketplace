@@ -1,7 +1,7 @@
-/// <reference types="jest" />
+/// <reference types="vitest/globals" />
 /*
  * La referencia de arriba es necesaria porque tsconfig.json fija
- * `types: ["node","express","multer"]` y deja fuera los globals de jest.
+ * `types: ["node","express","multer"]` y deja fuera los globals de Vitest.
  */
 /**
  * Tests unitarios de `RefundPoliciesService` (US-48). Mismo arnés que
@@ -24,20 +24,20 @@ import { RefundPoliciesService } from './refund-policies.service';
 import { CreateRefundPolicyDto } from './dto/create-refund-policy.dto';
 import { GetRefundPolicyDto } from './dto/get-refund-policies.dto';
 
-jest.mock('@safari/db', () => ({
-  ...jest.requireActual<typeof import('@safari/db')>('@safari/db'),
-  listRefundPolicies: jest.fn(),
-  findRefundPolicyBySlug: jest.fn(),
-  createRefundPolicy: jest.fn(),
-  updateRefundPolicy: jest.fn(),
-  deleteRefundPolicy: jest.fn(),
+vi.mock('@safari/db', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@safari/db')>()),
+  listRefundPolicies: vi.fn(),
+  findRefundPolicyBySlug: vi.fn(),
+  createRefundPolicy: vi.fn(),
+  updateRefundPolicy: vi.fn(),
+  deleteRefundPolicy: vi.fn(),
 }));
 
-const listMock = jest.mocked(listRefundPolicies);
-const findMock = jest.mocked(findRefundPolicyBySlug);
-const createMock = jest.mocked(createRefundPolicy);
-const updateMock = jest.mocked(updateRefundPolicy);
-const deleteMock = jest.mocked(deleteRefundPolicy);
+const listMock = vi.mocked(listRefundPolicies);
+const findMock = vi.mocked(findRefundPolicyBySlug);
+const createMock = vi.mocked(createRefundPolicy);
+const updateMock = vi.mocked(updateRefundPolicy);
+const deleteMock = vi.mocked(deleteRefundPolicy);
 
 const NOW = new Date('2026-10-21T00:00:00Z');
 
@@ -78,7 +78,7 @@ describe('RefundPoliciesService', () => {
   let service: RefundPoliciesService;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     service = new RefundPoliciesService();
   });
 

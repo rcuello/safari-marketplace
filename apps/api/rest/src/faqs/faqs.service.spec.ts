@@ -1,7 +1,7 @@
-/// <reference types="jest" />
+/// <reference types="vitest/globals" />
 /*
  * La referencia de arriba es necesaria porque tsconfig.json fija
- * `types: ["node","express","multer"]` y deja fuera los globals de jest.
+ * `types: ["node","express","multer"]` y deja fuera los globals de Vitest.
  */
 /**
  * Tests unitarios de `FaqsService` (US-47). Mismo arnés que
@@ -29,20 +29,20 @@ import { FaqsService } from './faqs.service';
 import { CreateFaqDto } from './dto/create-faq.dto';
 import { GetFaqsDto } from './dto/get-faqs.dto';
 
-jest.mock('@safari/db', () => ({
-  ...jest.requireActual<typeof import('@safari/db')>('@safari/db'),
-  listFaqs: jest.fn(),
-  findFaqById: jest.fn(),
-  createFaq: jest.fn(),
-  updateFaq: jest.fn(),
-  deleteFaq: jest.fn(),
+vi.mock('@safari/db', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@safari/db')>()),
+  listFaqs: vi.fn(),
+  findFaqById: vi.fn(),
+  createFaq: vi.fn(),
+  updateFaq: vi.fn(),
+  deleteFaq: vi.fn(),
 }));
 
-const listFaqsMock = jest.mocked(listFaqs);
-const findFaqByIdMock = jest.mocked(findFaqById);
-const createFaqMock = jest.mocked(createFaq);
-const updateFaqMock = jest.mocked(updateFaq);
-const deleteFaqMock = jest.mocked(deleteFaq);
+const listFaqsMock = vi.mocked(listFaqs);
+const findFaqByIdMock = vi.mocked(findFaqById);
+const createFaqMock = vi.mocked(createFaq);
+const updateFaqMock = vi.mocked(updateFaq);
+const deleteFaqMock = vi.mocked(deleteFaq);
 
 const NOW = new Date('2026-10-20T00:00:00Z');
 
@@ -83,7 +83,7 @@ describe('FaqsService', () => {
   let service: FaqsService;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     service = new FaqsService();
   });
 

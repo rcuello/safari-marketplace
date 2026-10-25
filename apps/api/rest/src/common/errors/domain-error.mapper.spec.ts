@@ -1,7 +1,7 @@
-/// <reference types="jest" />
+/// <reference types="vitest/globals" />
 /*
  * La referencia de arriba es necesaria porque tsconfig.json fija
- * `types: ["node","express","multer"]` y deja fuera los globals de jest;
+ * `types: ["node","express","multer"]` y deja fuera los globals de Vitest;
  * se limita a este archivo para no tocar la config del build.
  */
 /**
@@ -14,7 +14,7 @@
  * tiene; `SlugConflict` solo aparece en una carrera no determinista). Esa
  * cobertura completa es lo que hace alcanzable la CA-7 de US-27b.
  *
- * Sin `jest.mock`: se importa el barrel real de `@safari/db` (seguro de
+ * Sin `vi.mock`: se importa el barrel real de `@safari/db` (seguro de
  * cargar sin `DATABASE_URL` por el cliente lazy vía Proxy, `client.ts:39-45`)
  * y las 5 clases de error se construyen de verdad. Los errores "de Prisma"
  * de este spec se construyen ESTRUCTURALMENTE (`name`/`code`/`message`), no
