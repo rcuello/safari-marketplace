@@ -40,7 +40,7 @@
     "js-cookie": "3.0.5",
     "little-state-machine": "4.8.0",
     "lodash": "4.17.21",
-    "next": "15.5.27",
+    "next": "16.4.0",
     "next-auth": "4.24.15",
     "next-i18next": "15.3.1",
     "next-seo": "6.6.0",
