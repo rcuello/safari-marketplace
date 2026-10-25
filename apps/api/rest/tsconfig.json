@@ -9,11 +9,12 @@
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "target": "es2017",
+    "strict": false,
     "sourceMap": true,
     "outDir": "./dist",
-    "baseUrl": "./",
     "paths": {
-      "@db/*": ["./src/db/pickbazar/*"]
+      "@db/*": ["./src/db/pickbazar/*"],
+      "src/*": ["./src/*"]
     },
     "types": ["node", "express", "multer"],
     "incremental": true,
