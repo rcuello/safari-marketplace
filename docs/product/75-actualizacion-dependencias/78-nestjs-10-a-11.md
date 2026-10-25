@@ -308,7 +308,8 @@ aquí `just verify` y las rutas de humo del épico.
   ```
 
 - **`/docs-json`:** se aceptan los cambios de `@nestjs/swagger` 11 (ver
-  CA-2). Queda pendiente de que el dueño lo confirme.
+  CA-2). **El dueño lo confirmó el 2026-10-24**, con los `tags` por
+  controlador incluidos.
 
 ### Desvíos
 
@@ -328,10 +329,13 @@ aquí `just verify` y las rutas de humo del épico.
 
 ### Hallazgos fuera de scope
 
-- **`uuid` sin declarar** (ver desvíos). La API depende de que el workspace
-  del frontend esté instalado y de que siga trayendo `uuid`. US-80 puede
-  moverlo. La corrección es declarar `uuid` en
-  `apps/api/rest/package.json`, en su propia US.
+- **`uuid` sin declarar** (ver desvíos). La API dependía de que el workspace
+  del frontend estuviera instalado y siguiera trayendo `uuid`. **Corregido
+  el 2026-10-24 por decisión del dueño**, en un commit aparte de esta US
+  (`d27d9f6`, «Declara uuid como dependencia de la API»): `"uuid":
+  "^11.1.1"`, la misma versión que se usaba. Con eso, `require.resolve('uuid')`
+  apunta a `apps/api/rest/node_modules/uuid`. Además, `npx jest` da 34
+  suites / 565 tests, `yarn build` termina bien y el lint queda en 0.
 - **Nombre duplicado de DTO en Swagger.** Con swagger 11, el arranque
   avisa: `Duplicate DTO detected: "RefundPolicyPaginator" is defined
   multiple times with different schemas … This will throw an error in the
