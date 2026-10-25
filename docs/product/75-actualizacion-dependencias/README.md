@@ -87,7 +87,7 @@ arriba.
 | [US-76](./76-parches-menores-dependencias.md) ✅ | Parches y versiones menores (db, scraper, axios, next-auth). Implementada el 2026-10-24; vitest sigue en 4.1.11 | Sí | ninguna | ~30 (manifiestos y lockfiles) |
 | [US-77](./77-nestjs-9-a-10.md) ✅ | NestJS 9 → 10 y TypeScript 5 en la API. Implementada el 2026-10-24; sin cambios de código; los errores HTTP cambian el orden de sus claves (aceptado) | Sí | ninguna | ~150 |
 | [US-78](./78-nestjs-10-a-11.md) ✅ | NestJS 10 → 11 (Express 5). Implementada el 2026-10-24; parser de query `'extended'`; cambio de `/docs-json` aceptado; `uuid` declarado | Sí | US-77 | ~150 |
-| [US-79](./79-nestjs-11-a-12.md) | NestJS 11 → 12 | Sí | US-78, DA-2 | ~100 |
+| [US-79](./79-nestjs-11-a-12.md) ⛔ | NestJS 11 → 12. **Reemplazada** el 2026-10-24 por US-88 → US-91: Nest 12 es solo ESM y jest no lo carga en Node 22 | — | — | — |
 | [US-80](./80-next-13-a-14.md) ✅ | Next 13.5 → 14.2 en shop y admin, con React 18. Implementada el 2026-10-24; también admin/graphql, para tener un solo Next (decisión del dueño, R-1/R-2); el pin de React 18.2.0 se mantiene (D-3) | Sí | ninguna | ~150 |
 | [US-81](./81-eslint-9-flat-config.md) | ESLint 9 con flat config y Prettier 3 en las tres apps | Sí | US-80, US-77 | ~250 |
 | [US-82](./82-next-14-a-16.md) | Next 14.2 → 16 en shop y admin, con React 18 | Sí | US-80, US-81 | ~250 |
@@ -96,10 +96,14 @@ arriba.
 | [US-85](./85-tanstack-query-admin.md) | react-query 3 → @tanstack/react-query 5 en el admin | Sí | US-84 | ~450 |
 | [US-86](./86-tailwind-4.md) | Tailwind 3 → 4 en shop y admin | Sí | US-82 | ~300 |
 | [US-87](./87-stripe-sdks.md) | SDKs de Stripe (servidor y cliente) | Sí | US-78, US-83 | ~150 |
+| [US-88](./88-api-jest-a-vitest.md) | Tests de la API: de jest a Vitest (Nest 11, CommonJS) | Sí | US-78 | ~400 |
+| [US-89](./89-api-typescript-6.md) | TypeScript 6 en la API | Sí | US-88 | ~80 |
+| [US-90](./90-api-commonjs-a-esm.md) | La API de CommonJS a ESM | Sí | US-88, US-89 | ~750 |
+| [US-91](./91-nestjs-12-sobre-esm.md) | NestJS 11 → 12 sobre la API ya en ESM | Sí | US-90 | ~120 |
 
 ```
 Tanda 1 (riesgo bajo)    US-76
-Tanda 2 (API)            US-77 → US-78 → US-79
+Tanda 2 (API)            US-77 → US-78 → US-88 → US-89 → US-90 → US-91   (US-79 reemplazada)
 Tanda 3 (frontend base)  US-80 → US-81 → US-82 → US-83
 Tanda 4 (librerías)      US-84 → US-85 · US-86 · US-87
 ```
@@ -116,7 +120,7 @@ la versión de destino.
 | # | Tema | Opciones | Propuesta por defecto |
 |---|---|---|---|
 | DA-1 | Destino de Next | **(a)** 14.2 y después 16, en dos US. **(b)** Directo a 16. **(c)** Quedarse en 14.2 | **(a)**. Pasar por la 14.2 nos saca primero de una versión sin soporte con el cambio mínimo, y la US de Next 16 parte de una base ya verificada |
-| DA-2 | Destino de NestJS | **(a)** 10 → 11 → 12, en tres US. **(b)** Parar en 11 y dejar la 12 en el backlog | **(a)**. Ir de una mayor en una mayor, como piden las guías de migración de Nest. La 12 salió el 2026-08-27; si en US-79 su guía muestra algo que no queremos adoptar, la US se archiva y nos quedamos en la 11 |
+| DA-2 | Destino de NestJS | **(a)** 10 → 11 → 12, en tres US. **(b)** Parar en 11 y dejar la 12 en el backlog | **(a)**. Ir de una mayor en una mayor, como piden las guías de migración de Nest. La 12 salió el 2026-08-27; si en US-79 su guía muestra algo que no queremos adoptar, la US se archiva y nos quedamos en la 11. **Resuelta el 2026-10-24:** la 12 es solo ESM; el dueño eligió refinarla en US-88 → US-91 (ver US-79). |
 | DA-3 | TypeScript | **(a)** El último 5.x (5.9.3) en la API, el shop y el admin. **(b)** TypeScript 6. **(c)** TypeScript 7 (el compilador nuevo) | **(a)**. Las otras dos opciones van en una US aparte cuando `ts-jest`, `typescript-eslint` y Next las declaren compatibles |
 | DA-4 | Variantes GraphQL (`apps/admin/graphql`, `apps/api/graphql`) | **(a)** Fuera de este épico; lo decide US-12. **(b)** Actualizarlas junto con las REST | **(a)**. Ojo: `admin/graphql` está en el mismo workspace y los `resolutions` de React le aplican también (R-2) |
 | DA-5 | Prisma 8 | **(a)** Fuera hasta que salga estable; US-76 solo sube a 7.10.1. **(b)** Adoptar la RC | **(a)**. `latest` apunta a una RC (`8.0.0-rc.27`) y `just db-build` no tiene por qué cargar con eso |
