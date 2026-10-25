@@ -364,10 +364,12 @@ su DoD pide el lint y los builds, no el comando de tests.
    `tsc --noEmit` ya está en la DoD. Lo que cambia es que ahora depende de
    ese comando. La spec viva `openspec/specs/become-seller-contract-types/spec.md:108`
    todavía dice «THEN `npx jest` falla con un error real de TypeScript».
-   **Decisión para el dueño:**
-   - **(a)** aceptar `tsc --noEmit` como gate de esa red y corregir la spec
-     viva, por SDD o al integrar;
-   - **(b)** activar `test.typecheck` de Vitest en una US aparte.
+   **Decisión del dueño (2026-10-24): (a).** `tsc --noEmit` queda como gate
+   de la red de tipos. Al integrar se corrigió la spec viva
+   `openspec/specs/become-seller-contract-types/spec.md`: el escenario de
+   renombrar `commissions` ahora espera el fallo de `tsc`, y los gates citan
+   `npx vitest run` y `tsc`. La opción (b), `test.typecheck` de Vitest,
+   queda descartada.
 
    Ya se corrigió el comentario de `become-seller.service.spec.ts`, que
    atribuía la red a ts-jest, y `openspec/config.yaml` ya lo explica.
@@ -380,6 +382,8 @@ su DoD pide el lint y los builds, no el comando de tests.
    las dependencias directas. `vite` es transitiva: la resolvió el rango de
    `vitest` y quedó en el `yarn.lock`. Para aplicar la regla también a las
    transitivas habría que fijarla con `resolutions`, y no se hizo.
+   **Decisión del dueño (2026-10-24):** la regla de las dos semanas vale solo
+   para las dependencias directas; las transitivas las fija el lockfile.
 4. Estos docs vigentes todavía nombran `npx jest`:
    - `CLAUDE.md`;
    - el README del Épico 75, en la fila de la línea base;

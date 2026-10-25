@@ -105,7 +105,9 @@ demostrarse: romper el tipo, pegar el error real (rojo), restaurarlo
 
 - GIVEN el chequeo de tipos en verde
 - WHEN se renombra `commissions` a `missions` en el DTO o la entidad
-- THEN `npx jest` falla con un error real de TypeScript
+- THEN `npx tsc --noEmit -p tsconfig.json` falla con un error real de
+  TypeScript (desde US-88 el runner es Vitest con SWC, que no comprueba
+  tipos; la red de tipos de los specs la dispara `tsc`)
 
 #### Scenario: Eliminar una de las 24 claves rompe la compilación
 
@@ -122,7 +124,8 @@ requirement lo re-verifica. `GET /api/became-seller` MUST seguir en
 (fresco al aplicar, no la cifra de `sdd-explore`), excluyendo
 `created_at`/`updated_at` del envoltorio. `POST` con el body real del
 admin MUST seguir respondiendo 201 con el mismo envoltorio.
-`/api/settings` MUST seguir en 5503 B. `npx jest` MUST cerrar
+`/api/settings` MUST seguir en 5503 B. `npx vitest run` (era `npx jest`
+hasta US-88) MUST cerrar
 ≥ 10 suites / ≥ 291 tests. `just build-api` MUST cerrar en verde (único
 punto donde corre el plugin de Swagger). `just db-check` MUST cerrar
 idéntico a la base (12 archivos / 228 tests). `git diff --stat` MUST
@@ -138,9 +141,9 @@ limitarse a `apps/api/rest/src/become-seller/`.
 #### Scenario: Los gates cierran en verde y el diff queda acotado al módulo
 
 - GIVEN el change aplicado
-- WHEN se corren `npx jest`, `just build-api`, `just db-check`,
-  `just verify` y `git diff --stat`
-- THEN los cuatro comandos cierran en verde (jest ≥ 10/291, `db-check`
+- WHEN se corren `npx vitest run`, `npx tsc --noEmit -p tsconfig.json`,
+  `just build-api`, `just db-check`, `just verify` y `git diff --stat`
+- THEN los comandos cierran en verde (vitest ≥ 10/291, `db-check`
   en exactamente 12/228, `/api/settings` en 5503 B) y el diff solo
   toca `apps/api/rest/src/become-seller/`
 
