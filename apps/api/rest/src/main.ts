@@ -1,11 +1,19 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { json, NextFunction, Request, Response } from 'express';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { cors: true });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    cors: true,
+  });
+  // US-78: Express 5 cambió el parser de query strings por defecto de `qs`
+  // ('extended') a `node:querystring` ('simple'), que no entiende corchetes:
+  // `?limit[]=2` o `?search[name]=x` dejaban de llegar como array/objeto y
+  // cambiaban la respuesta. 'extended' devuelve el comportamiento de Express 4.
+  app.set('query parser', 'extended');
   // US-64: el admin manda el id desnudo (`1`) a POST /messages/seen/:id y el
   // parser JSON estricto de Nest lo rechaza con 400. Este parser no estricto
   // va antes y solo en esa ruta; el estricto ve el cuerpo ya leído y no hace

@@ -1,4 +1,12 @@
-import { JwtModuleOptions } from '@nestjs/jwt';
+import { JwtModuleOptions, JwtSignOptions } from '@nestjs/jwt';
+
+/**
+ * Desde `@types/jsonwebtoken` 9.0.10 (llega con `@nestjs/jwt` 11),
+ * `expiresIn` ya no acepta cualquier `string`: pide el formato de `ms`
+ * (`'7d'`, `'12h'`…). `JWT_EXPIRES_IN` viene del entorno sin validar, igual
+ * que antes, y jsonwebtoken lo sigue validando al firmar.
+ */
+type ExpiresIn = NonNullable<JwtSignOptions['expiresIn']>;
 
 /**
  * Único lector de `JWT_SECRET`/`JWT_EXPIRES_IN` (Decisión B, design.md).
@@ -28,7 +36,9 @@ export function resolveJwtOptions(): JwtModuleOptions {
 
   cached = {
     secret,
-    signOptions: { expiresIn: process.env.JWT_EXPIRES_IN || '7d' },
+    signOptions: {
+      expiresIn: (process.env.JWT_EXPIRES_IN || '7d') as ExpiresIn,
+    },
   };
   return cached;
 }
