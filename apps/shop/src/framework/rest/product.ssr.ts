@@ -3,9 +3,8 @@ import type { GetStaticPaths, GetStaticProps } from 'next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import invariant from 'tiny-invariant';
 import client from './client';
-import { dehydrate } from 'react-query/hydration';
+import { dehydrate, QueryClient } from '@tanstack/react-query';
 import { API_ENDPOINTS } from '@/framework/client/api-endpoints';
-import { QueryClient } from 'react-query';
 import { SettingsQueryOptions } from '@/types';
 
 // This function gets called at build time
@@ -18,7 +17,7 @@ export const getStaticPaths: GetStaticPaths<ParsedQueryParams> = async ({
   invariant(locales, 'locales is not defined');
   const { data } = await client.products.all({ limit: 100 });
   const paths = data?.flatMap((product) =>
-    locales?.map((locale) => ({ params: { slug: product.slug }, locale }))
+    locales?.map((locale) => ({ params: { slug: product.slug }, locale })),
   );
   return {
     paths,
@@ -36,10 +35,11 @@ export const getStaticProps: GetStaticProps<
 
   const queryClient = new QueryClient();
 
-  await queryClient.prefetchQuery(
-    [API_ENDPOINTS.SETTINGS, { language: locale }],
-    ({ queryKey }) => client.settings.all(queryKey[1] as SettingsQueryOptions)
-  );
+  await queryClient.prefetchQuery({
+    queryKey: [API_ENDPOINTS.SETTINGS, { language: locale }],
+    queryFn: ({ queryKey }) =>
+      client.settings.all(queryKey[1] as SettingsQueryOptions),
+  });
 
   try {
     const product = await client.products.get({ slug, language: locale });

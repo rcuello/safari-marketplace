@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient, useMutation } from 'react-query';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { Card } from '@/types';
 import { API_ENDPOINTS } from '@/framework/client/api-endpoints';
 import client from '@/framework/client';
@@ -10,14 +10,12 @@ import { useUser } from '@/framework/user';
 export function useCards(params?: any, options?: any) {
   const { isAuthorized } = useUser();
 
-  const { data, isLoading, error } = useQuery<Card[], Error>(
-    [API_ENDPOINTS.CARDS, params],
-    () => client.cards.all(params),
-    {
-      enabled: isAuthorized,
-      ...options,
-    }
-  );
+  const { data, isLoading, error } = useQuery<Card[], Error>({
+    queryKey: [API_ENDPOINTS.CARDS, params],
+    queryFn: () => client.cards.all(params),
+    enabled: isAuthorized,
+    ...options,
+  });
 
   return {
     cards: data ?? [],
@@ -31,14 +29,19 @@ export const useDeleteCard = () => {
   const { t } = useTranslation();
   const { closeModal } = useModalAction();
 
-  const { mutate, isLoading, error } = useMutation(client.cards.remove, {
+  const {
+    mutate,
+    isPending: isLoading,
+    error,
+  } = useMutation({
+    mutationFn: client.cards.remove,
     onSuccess: () => {
       closeModal();
       toast.success(`${t('common:card-successfully-deleted')}`);
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.CARDS);
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.CARDS] });
     },
   });
 
@@ -53,29 +56,31 @@ export function useAddCards(method_key?: any) {
   const { t } = useTranslation();
   const { closeModal } = useModalAction();
   const queryClient = useQueryClient();
-  const { mutate, isLoading, error } = useMutation(
-    client.cards.addPaymentMethod,
-    {
-      onSuccess: () => {
-        closeModal();
-        toast.success(`${t('common:card-successfully-add')}`, {
-          toastId: 'success',
-        });
-      },
-      onError: (error) => {
-        const {
-          response: { data },
-        }: any = error ?? {};
-        toast.error(`${t(data?.message)}`, {
-          toastId: 'error',
-        });
-      },
-      // Always refetch after error or success:
-      onSettled: () => {
-        queryClient.invalidateQueries(API_ENDPOINTS.CARDS);
-      },
-    }
-  );
+  const {
+    mutate,
+    isPending: isLoading,
+    error,
+  } = useMutation({
+    mutationFn: client.cards.addPaymentMethod,
+    onSuccess: () => {
+      closeModal();
+      toast.success(`${t('common:card-successfully-add')}`, {
+        toastId: 'success',
+      });
+    },
+    onError: (error) => {
+      const {
+        response: { data },
+      }: any = error ?? {};
+      toast.error(`${t(data?.message)}`, {
+        toastId: 'error',
+      });
+    },
+    // Always refetch after error or success:
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.CARDS] });
+    },
+  });
 
   return {
     addNewCard: mutate,
@@ -87,18 +92,20 @@ export function useAddCards(method_key?: any) {
 export function useDefaultPaymentMethod() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const { mutate, isLoading, error } = useMutation(
-    client.cards.makeDefaultPaymentMethod,
-    {
-      onSuccess: () => {
-        toast.success(`${t('common:set-default-card-message')}`);
-      },
-      // Always refetch after error or success:
-      onSettled: () => {
-        queryClient.invalidateQueries(API_ENDPOINTS.CARDS);
-      },
-    }
-  );
+  const {
+    mutate,
+    isPending: isLoading,
+    error,
+  } = useMutation({
+    mutationFn: client.cards.makeDefaultPaymentMethod,
+    onSuccess: () => {
+      toast.success(`${t('common:set-default-card-message')}`);
+    },
+    // Always refetch after error or success:
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.CARDS] });
+    },
+  });
 
   return {
     createDefaultPaymentMethod: mutate,

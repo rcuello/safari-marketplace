@@ -1,7 +1,10 @@
 import { useState } from 'react';
-import { QueryClient, QueryClientProvider } from 'react-query';
-import { Hydrate } from 'react-query/hydration';
-import { ReactQueryDevtools } from 'react-query/devtools';
+import {
+  QueryClient,
+  QueryClientProvider,
+  HydrationBoundary,
+} from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import type { AppProps } from 'next/app';
 
 interface QueryProviderProps {
@@ -16,14 +19,14 @@ export default function QueryProvider({
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Hydrate
+      <HydrationBoundary
         state={
           //@ts-ignore
           pageProps.dehydratedState
         }
       >
         {children}
-      </Hydrate>
+      </HydrationBoundary>
       <ReactQueryDevtools />
     </QueryClientProvider>
   );

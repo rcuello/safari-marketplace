@@ -8,8 +8,7 @@ import type {
 } from '@/types';
 import type { GetStaticPaths, GetStaticProps } from 'next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import { QueryClient } from 'react-query';
-import { dehydrate } from 'react-query/hydration';
+import { QueryClient, dehydrate } from '@tanstack/react-query';
 import invariant from 'tiny-invariant';
 import client from './client';
 import { API_ENDPOINTS } from './client/api-endpoints';
@@ -30,12 +29,12 @@ export const getStaticPaths: GetStaticPaths<ParsedQueryParams> = async ({
   invariant(locales, 'locales is not defined');
   const data = await client.types.all({ limit: 100 });
   const paths = data?.flatMap((type) =>
-    locales?.map((locale) => ({ params: { pages: [type.slug] }, locale }))
+    locales?.map((locale) => ({ params: { pages: [type.slug] }, locale })),
   );
   // We'll pre-render only these paths at build time also with the slash route.
   return {
     paths: paths.concat(
-      locales?.map((locale) => ({ params: { pages: [] }, locale }))
+      locales?.map((locale) => ({ params: { pages: [] }, locale })),
     ),
     fallback: 'blocking',
   };
@@ -46,14 +45,19 @@ export const getStaticProps: GetStaticProps<
   ParsedQueryParams
 > = async ({ locale, params }) => {
   const queryClient = new QueryClient();
-  await queryClient.prefetchQuery(
-    [API_ENDPOINTS.SETTINGS, { language: locale }],
-    ({ queryKey }) => client.settings.all(queryKey[1] as SettingsQueryOptions)
-  );
-  const types = await queryClient.fetchQuery(
-    [API_ENDPOINTS.TYPES, { limit: TYPES_PER_PAGE, language: locale }],
-    ({ queryKey }) => client.types.all(queryKey[1] as TypeQueryOptions)
-  );
+  await queryClient.prefetchQuery({
+    queryKey: [API_ENDPOINTS.SETTINGS, { language: locale }],
+    queryFn: ({ queryKey }) =>
+      client.settings.all(queryKey[1] as SettingsQueryOptions),
+  });
+  const types = await queryClient.fetchQuery({
+    queryKey: [
+      API_ENDPOINTS.TYPES,
+      { limit: TYPES_PER_PAGE, language: locale },
+    ],
+    queryFn: ({ queryKey }) =>
+      client.types.all(queryKey[1] as TypeQueryOptions),
+  });
 
   const { pages } = params!;
   let pageType: string | undefined;
@@ -72,21 +76,22 @@ export const getStaticProps: GetStaticProps<
     };
   }
 
-  await queryClient.prefetchQuery(
-    [API_ENDPOINTS.TYPES, { slug: pageType, language: locale }],
-    ({ queryKey }: any) => client.types.get(queryKey[1])
-  );
+  await queryClient.prefetchQuery({
+    queryKey: [API_ENDPOINTS.TYPES, { slug: pageType, language: locale }],
+    queryFn: ({ queryKey }: any) => client.types.get(queryKey[1]),
+  });
   const productVariables = {
     type: pageType,
     limit: PRODUCTS_PER_PAGE,
   };
-  await queryClient.prefetchInfiniteQuery(
-    [
+  await queryClient.prefetchInfiniteQuery({
+    queryKey: [
       API_ENDPOINTS.PRODUCTS,
       { limit: PRODUCTS_PER_PAGE, type: pageType, language: locale },
     ],
-    ({ queryKey }) => client.products.all(queryKey[1] as any)
-  );
+    queryFn: ({ queryKey }) => client.products.all(queryKey[1] as any),
+    initialPageParam: undefined,
+  });
 
   const popularProductVariables = {
     type_slug: pageType,
@@ -97,19 +102,19 @@ export const getStaticProps: GetStaticProps<
 
   // Only prefetch popular products for `book` demo
   if (pageType === 'book') {
-    await queryClient.prefetchQuery(
-      [API_ENDPOINTS.PRODUCTS_POPULAR, popularProductVariables],
-      ({ queryKey }) =>
-        client.products.popular(queryKey[1] as PopularProductQueryOptions)
-    );
+    await queryClient.prefetchQuery({
+      queryKey: [API_ENDPOINTS.PRODUCTS_POPULAR, popularProductVariables],
+      queryFn: ({ queryKey }) =>
+        client.products.popular(queryKey[1] as PopularProductQueryOptions),
+    });
 
-    await queryClient.prefetchQuery(
-      [API_ENDPOINTS.BEST_SELLING_PRODUCTS, popularProductVariables],
-      ({ queryKey }) =>
+    await queryClient.prefetchQuery({
+      queryKey: [API_ENDPOINTS.BEST_SELLING_PRODUCTS, popularProductVariables],
+      queryFn: ({ queryKey }) =>
         client.products.bestSelling(
-          queryKey[1] as BestSellingProductQueryOptions
-        )
-    );
+          queryKey[1] as BestSellingProductQueryOptions,
+        ),
+    });
   }
 
   const categoryVariables = {
@@ -121,11 +126,12 @@ export const getStaticProps: GetStaticProps<
         ? 'all'
         : 'null',
   };
-  await queryClient.prefetchInfiniteQuery(
-    [API_ENDPOINTS.CATEGORIES, categoryVariables],
-    ({ queryKey }) =>
+  await queryClient.prefetchInfiniteQuery({
+    queryKey: [API_ENDPOINTS.CATEGORIES, categoryVariables],
+    queryFn: ({ queryKey }) =>
       client.categories.all(queryKey[1] as CategoryQueryOptions),
-  );
+    initialPageParam: undefined,
+  });
   return {
     props: {
       variables: {

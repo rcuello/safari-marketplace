@@ -1,5 +1,5 @@
 import { MyReportsQueryOptions, ReportsPaginator } from '@/types';
-import { useInfiniteQuery } from 'react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import client from './client';
 import { API_ENDPOINTS } from './client/api-endpoints';
 import { mapPaginatorData } from './utils/data-mappers';
@@ -13,15 +13,16 @@ export function useMyReports(options?: MyReportsQueryOptions) {
     hasNextPage,
     isFetching,
     isFetchingNextPage,
-  } = useInfiniteQuery<ReportsPaginator, Error>(
-    [API_ENDPOINTS.MY_REPORTS, options],
-    ({ queryKey, pageParam }) =>
-      client.myReports.all(Object.assign({}, queryKey[1], pageParam)),
-    {
-      getNextPageParam: ({ current_page, last_page }) =>
-        last_page > current_page && { page: current_page + 1 },
-    }
-  );
+  } = useInfiniteQuery<ReportsPaginator, Error>({
+    queryKey: [API_ENDPOINTS.MY_REPORTS, options],
+    queryFn: ({ queryKey, pageParam }) =>
+      client.myReports.all(
+        Object.assign({}, queryKey[1] as MyReportsQueryOptions, pageParam)
+      ),
+    initialPageParam: undefined,
+    getNextPageParam: ({ current_page, last_page }) =>
+      last_page > current_page ? { page: current_page + 1 } : undefined,
+  });
   function handleLoadMore() {
     fetchNextPage();
   }

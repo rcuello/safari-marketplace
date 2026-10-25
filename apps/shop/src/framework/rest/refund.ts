@@ -1,17 +1,17 @@
 import type { RefundQueryOptions, RefundReasonPaginator } from '@/types';
-import { useInfiniteQuery } from 'react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import client from './client';
 import { API_ENDPOINTS } from './client/api-endpoints';
 import { mapPaginatorData } from '@/framework/utils/data-mappers';
-import { useRouter } from "next/router";
+import { useRouter } from 'next/router';
 
 export function useRefundReason(options?: Partial<RefundQueryOptions>) {
   const { locale } = useRouter();
 
   const formattedOptions = {
     ...options,
-    language: locale
-  }
+    language: locale,
+  };
 
   const {
     data,
@@ -21,15 +21,14 @@ export function useRefundReason(options?: Partial<RefundQueryOptions>) {
     hasNextPage,
     isFetching,
     isFetchingNextPage,
-  } = useInfiniteQuery<RefundReasonPaginator, Error>(
-    [API_ENDPOINTS.REFUNDS_REASONS, formattedOptions],
-    ({ queryKey, pageParam }) =>
+  } = useInfiniteQuery<RefundReasonPaginator, Error>({
+    queryKey: [API_ENDPOINTS.REFUNDS_REASONS, formattedOptions],
+    queryFn: ({ queryKey, pageParam }) =>
       client.refundReason.all(Object.assign({}, queryKey[1], pageParam)),
-    {
-      getNextPageParam: ({ current_page, last_page }) =>
-        last_page > current_page && { page: current_page + 1 },
-    }
-  );
+    initialPageParam: undefined,
+    getNextPageParam: ({ current_page, last_page }) =>
+      last_page > current_page ? { page: current_page + 1 } : undefined,
+  });
 
   function handleLoadMore() {
     fetchNextPage();

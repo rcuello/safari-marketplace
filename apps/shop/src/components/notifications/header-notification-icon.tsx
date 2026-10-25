@@ -45,7 +45,7 @@ const HeaderNotification: React.FC<HeaderNotificationProps> = ({
 
   const { width } = useWindowSize();
 
-  const { mutate: readAllNotifyLogs, isLoading: creating } =
+  const { mutate: readAllNotifyLogs, isPending: creating } =
     useNotifyLogAllRead();
 
   const { me } = useUser();

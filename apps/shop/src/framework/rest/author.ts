@@ -4,7 +4,7 @@ import type {
   AuthorQueryOptions,
   QueryOptions,
 } from '@/types';
-import { useInfiniteQuery, useQuery } from 'react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import client from './client';
 import { API_ENDPOINTS } from './client/api-endpoints';
 import { mapPaginatorData } from '@/framework/utils/data-mappers';
@@ -27,15 +27,14 @@ export function useAuthors(options?: Partial<AuthorQueryOptions>) {
     hasNextPage,
     isFetching,
     isFetchingNextPage,
-  } = useInfiniteQuery<AuthorPaginator, Error>(
-    [API_ENDPOINTS.AUTHORS, formattedOptions],
-    ({ queryKey, pageParam }) =>
+  } = useInfiniteQuery<AuthorPaginator, Error>({
+    queryKey: [API_ENDPOINTS.AUTHORS, formattedOptions],
+    queryFn: ({ queryKey, pageParam }) =>
       client.authors.all(Object.assign({}, queryKey[1], pageParam)),
-    {
-      getNextPageParam: ({ current_page, last_page }) =>
-        last_page > current_page && { page: current_page + 1 },
-    },
-  );
+    initialPageParam: undefined,
+    getNextPageParam: ({ current_page, last_page }) =>
+      last_page > current_page ? { page: current_page + 1 } : undefined,
+  });
 
   function handleLoadMore() {
     fetchNextPage();
@@ -63,10 +62,10 @@ export function useTopAuthors(options: Partial<AuthorQueryOptions>) {
     language: locale,
   };
 
-  const { data, isLoading, error } = useQuery<Author[], Error>(
-    [API_ENDPOINTS.AUTHORS_TOP, formattedOptions],
-    ({ queryKey }) => client.authors.top(queryKey[1] as QueryOptions),
-  );
+  const { data, isLoading, error } = useQuery<Author[], Error>({
+    queryKey: [API_ENDPOINTS.AUTHORS_TOP, formattedOptions],
+    queryFn: ({ queryKey }) => client.authors.top(queryKey[1] as QueryOptions),
+  });
   return {
     authors: data ?? [],
     isLoading,

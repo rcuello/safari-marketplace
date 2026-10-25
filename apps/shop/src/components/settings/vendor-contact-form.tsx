@@ -34,7 +34,7 @@ const VendorContactForm: React.FC<VendorContactFormProps> = ({ shop }) => {
     shouldUnregister: true,
     resolver: yupResolver(vendorContactFormSchema),
   });
-  const { mutate, isLoading } = useContact({ reset });
+  const { mutate, isPending: isLoading } = useContact({ reset });
 
   async function onSubmit(values: CreateContactUsInput) {
     const emailTo = shop?.owner?.email;

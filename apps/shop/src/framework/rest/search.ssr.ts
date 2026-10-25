@@ -1,9 +1,8 @@
 import { GetServerSideProps } from 'next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import invariant from 'tiny-invariant';
-import { QueryClient } from 'react-query';
+import { QueryClient, dehydrate } from '@tanstack/react-query';
 import { API_ENDPOINTS } from '@/framework/client/api-endpoints';
-import { dehydrate } from 'react-query/hydration';
 import client from '@/framework/client';
 import {
   CategoryQueryOptions,
@@ -19,27 +18,33 @@ export const getServerSideProps: GetServerSideProps = async ({
   invariant(params, 'params is required');
   const { searchType } = params;
   const queryClient = new QueryClient();
-  await queryClient.prefetchQuery(
-    [API_ENDPOINTS.SETTINGS, { language: locale }],
-    ({ queryKey }) => client.settings.all(queryKey[1] as SettingsQueryOptions)
-  );
+  await queryClient.prefetchQuery({
+    queryKey: [API_ENDPOINTS.SETTINGS, { language: locale }],
+    queryFn: ({ queryKey }) =>
+      client.settings.all(queryKey[1] as SettingsQueryOptions),
+  });
 
-  await queryClient.prefetchQuery(
-    [API_ENDPOINTS.TYPES, { limit: TYPES_PER_PAGE, language: locale }],
-    ({ queryKey }) => client.types.all(queryKey[1] as TypeQueryOptions)
-  );
+  await queryClient.prefetchQuery({
+    queryKey: [
+      API_ENDPOINTS.TYPES,
+      { limit: TYPES_PER_PAGE, language: locale },
+    ],
+    queryFn: ({ queryKey }) =>
+      client.types.all(queryKey[1] as TypeQueryOptions),
+  });
 
   const categoryVariable = {
     type: searchType,
     limit: 1000,
     parent: 'null',
-    language: locale
+    language: locale,
   };
 
-  await queryClient.prefetchQuery(
-    [API_ENDPOINTS.CATEGORIES, categoryVariable],
-    ({ queryKey }) => client.categories.all(queryKey[1] as CategoryQueryOptions)
-  );
+  await queryClient.prefetchQuery({
+    queryKey: [API_ENDPOINTS.CATEGORIES, categoryVariable],
+    queryFn: ({ queryKey }) =>
+      client.categories.all(queryKey[1] as CategoryQueryOptions),
+  });
 
   return {
     props: {

@@ -1,5 +1,5 @@
 import type { CouponPaginator, CouponQueryOptions } from '@/types';
-import { useInfiniteQuery } from 'react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import client from './client';
 import { API_ENDPOINTS } from './client/api-endpoints';
 import { mapPaginatorData } from '@/framework/utils/data-mappers';
@@ -21,15 +21,14 @@ export function useCoupons(options?: Partial<CouponQueryOptions>) {
     hasNextPage,
     isFetching,
     isFetchingNextPage,
-  } = useInfiniteQuery<CouponPaginator, Error>(
-    [API_ENDPOINTS.COUPONS, formattedOptions],
-    ({ queryKey, pageParam }) =>
+  } = useInfiniteQuery<CouponPaginator, Error>({
+    queryKey: [API_ENDPOINTS.COUPONS, formattedOptions],
+    queryFn: ({ queryKey, pageParam }) =>
       client.coupons.all(Object.assign({}, queryKey[1], pageParam)),
-    {
-      getNextPageParam: ({ current_page, last_page }) =>
-        last_page > current_page && { page: current_page + 1 },
-    },
-  );
+    initialPageParam: undefined,
+    getNextPageParam: ({ current_page, last_page }) =>
+      last_page > current_page ? { page: current_page + 1 } : undefined,
+  });
 
   function handleLoadMore() {
     fetchNextPage();

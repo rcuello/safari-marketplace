@@ -1,18 +1,18 @@
-import { QueryOptions } from '@/types';
-import { useInfiniteQuery } from 'react-query';
+import { QueryOptions, TagPaginator } from '@/types';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import client from './client';
 import { API_ENDPOINTS } from './client/api-endpoints';
 import { mapPaginatorData } from '@/framework/utils/data-mappers';
-import { useRouter } from "next/router";
+import { useRouter } from 'next/router';
 
 export const useTags = (options: Pick<QueryOptions, 'limit'>) => {
   const { locale } = useRouter();
-  
+
   const formattedOptions = {
     ...options,
-    language: locale
+    language: locale,
   };
-  
+
   const {
     data,
     isLoading,
@@ -20,15 +20,14 @@ export const useTags = (options: Pick<QueryOptions, 'limit'>) => {
     fetchNextPage,
     hasNextPage,
     error,
-  } = useInfiniteQuery(
-    [API_ENDPOINTS.TAGS, formattedOptions],
-    ({ queryKey, pageParam }) =>
+  } = useInfiniteQuery<TagPaginator, Error>({
+    queryKey: [API_ENDPOINTS.TAGS, formattedOptions],
+    queryFn: ({ queryKey, pageParam }) =>
       client.tags.all(Object.assign({}, queryKey[1], pageParam)),
-    {
-      getNextPageParam: ({ current_page, last_page }) =>
-        last_page > current_page && { page: current_page + 1 },
-    }
-  );
+    initialPageParam: undefined,
+    getNextPageParam: ({ current_page, last_page }) =>
+      last_page > current_page ? { page: current_page + 1 } : undefined,
+  });
 
   function handleLoadMore() {
     fetchNextPage();

@@ -1,7 +1,12 @@
 import { useModalAction } from '@/components/ui/modal/modal.context';
 import type { Review, ReviewPaginator, ReviewQueryOptions } from '@/types';
 import { useTranslation } from 'next-i18next';
-import { useMutation, useQuery, useQueryClient } from 'react-query';
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import client from './client';
 import { API_ENDPOINTS } from './client/api-endpoints';
@@ -13,14 +18,12 @@ export function useReviews(options?: Partial<ReviewQueryOptions>) {
     isLoading,
     error,
     isFetching,
-  } = useQuery<ReviewPaginator, Error>(
-    [API_ENDPOINTS.PRODUCTS_REVIEWS, options],
-    ({ queryKey }) =>
+  } = useQuery<ReviewPaginator, Error>({
+    queryKey: [API_ENDPOINTS.PRODUCTS_REVIEWS, options],
+    queryFn: ({ queryKey }) =>
       client.reviews.all(Object.assign({}, queryKey[1] as ReviewQueryOptions)),
-    {
-      keepPreviousData: true,
-    },
-  );
+    placeholderData: keepPreviousData,
+  });
   return {
     reviews: response?.data ?? [],
     paginatorInfo: mapPaginatorData(response),
@@ -32,13 +35,11 @@ export function useReviews(options?: Partial<ReviewQueryOptions>) {
 }
 
 export function useReview({ id }: { id: string }) {
-  const { data, isLoading, error } = useQuery<Review, Error>(
-    [API_ENDPOINTS.PRODUCTS_REVIEWS, id],
-    () => client.reviews.get({ id }),
-    {
-      enabled: Boolean(id),
-    },
-  );
+  const { data, isLoading, error } = useQuery<Review, Error>({
+    queryKey: [API_ENDPOINTS.PRODUCTS_REVIEWS, id],
+    queryFn: () => client.reviews.get({ id }),
+    enabled: Boolean(id),
+  });
   return {
     review: data,
     isLoading,
@@ -50,18 +51,16 @@ export function useCreateReview() {
   const { t } = useTranslation('common');
   const { closeModal } = useModalAction();
   const queryClient = useQueryClient();
-  const { mutate: createReview, isLoading } = useMutation(
-    client.reviews.create,
-    {
-      onSuccess: (res) => {
-        toast.success(`${t('text-review-request-submitted')}`);
-      },
-      onSettled: () => {
-        queryClient.invalidateQueries([API_ENDPOINTS.ORDERS]);
-        closeModal();
-      },
+  const { mutate: createReview, isPending: isLoading } = useMutation({
+    mutationFn: client.reviews.create,
+    onSuccess: (res) => {
+      toast.success(`${t('text-review-request-submitted')}`);
     },
-  );
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.ORDERS] });
+      closeModal();
+    },
+  });
   return {
     createReview,
     isLoading,
@@ -72,18 +71,16 @@ export function useUpdateReview() {
   const { t } = useTranslation('common');
   const { closeModal } = useModalAction();
   const queryClient = useQueryClient();
-  const { mutate: updateReview, isLoading } = useMutation(
-    client.reviews.update,
-    {
-      onSuccess: (res) => {
-        toast.success(`${t('text-review-request-update-submitted')}`);
-      },
-      onSettled: () => {
-        queryClient.invalidateQueries([API_ENDPOINTS.ORDERS]);
-        closeModal();
-      },
+  const { mutate: updateReview, isPending: isLoading } = useMutation({
+    mutationFn: client.reviews.update,
+    onSuccess: (res) => {
+      toast.success(`${t('text-review-request-update-submitted')}`);
     },
-  );
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.ORDERS] });
+      closeModal();
+    },
+  });
   return {
     updateReview,
     isLoading,

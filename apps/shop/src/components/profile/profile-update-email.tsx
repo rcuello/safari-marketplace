@@ -9,7 +9,7 @@ import type { UpdateEmailUserInput, User } from '@/types';
 
 const ProfileUpdateEmail = ({ user }: { user: User }) => {
   const { t } = useTranslation('common');
-  const { mutate: updateEmail, isLoading } = useUpdateEmail();
+  const { mutate: updateEmail, isPending: isLoading } = useUpdateEmail();
 
   function onSubmit(values: UpdateEmailUserInput) {
     if (!user) {

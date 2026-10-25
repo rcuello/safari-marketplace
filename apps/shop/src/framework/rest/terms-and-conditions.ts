@@ -4,7 +4,7 @@ import type {
   TermsAndConditionsQueryOptions,
 } from '@/types';
 import { useRouter } from 'next/router';
-import { useInfiniteQuery } from 'react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import client from './client';
 import { API_ENDPOINTS } from './client/api-endpoints';
 
@@ -26,15 +26,14 @@ export function useTermsAndConditions(
     hasNextPage,
     isFetching,
     isFetchingNextPage,
-  } = useInfiniteQuery<TermsAndConditionsPaginator, Error>(
-    [API_ENDPOINTS.TERMS_AND_CONDITIONS, formattedOptions],
-    ({ queryKey, pageParam }) =>
+  } = useInfiniteQuery<TermsAndConditionsPaginator, Error>({
+    queryKey: [API_ENDPOINTS.TERMS_AND_CONDITIONS, formattedOptions],
+    queryFn: ({ queryKey, pageParam }) =>
       client.termsAndConditions.all(Object.assign({}, queryKey[1], pageParam)),
-    {
-      getNextPageParam: ({ current_page, last_page }) =>
-        last_page > current_page && { page: current_page + 1 },
-    }
-  );
+    initialPageParam: undefined,
+    getNextPageParam: ({ current_page, last_page }) =>
+      last_page > current_page ? { page: current_page + 1 } : undefined,
+  });
 
   function handleLoadMore() {
     fetchNextPage();

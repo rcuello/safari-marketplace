@@ -28,13 +28,13 @@ import { useStateMachine } from 'little-state-machine';
 import { signOut as socialLoginSignOut } from 'next-auth/react';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   QueryClient,
   useMutation,
   useQuery,
   useQueryClient,
-} from 'react-query';
+} from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 
 export function useUser() {
@@ -43,33 +43,35 @@ export function useUser() {
   const { emailVerified } = getEmailVerified();
   const router = useRouter();
 
-  const { data, isLoading, error, isFetchedAfterMount } = useQuery(
-    [API_ENDPOINTS.USERS_ME],
-    client.users.me,
-    {
-      enabled: isAuthorized,
-      retry: false,
-      onSuccess: (data) => {
-        if (emailVerified === false) {
-          setEmailVerified(true);
-          router.reload();
-          return;
-        }
-      },
-      onError: (err) => {
-        if (axios.isAxiosError(err)) {
-          if (err?.response?.status === 409) {
-            setEmailVerified(false);
-            router.push(Routes.verifyEmail);
-            return;
-          }
-          if (router.pathname === Routes.verifyEmail) {
-            return;
-          }
-        }
-      },
-    },
-  );
+  const { data, isLoading, error, isFetchedAfterMount } = useQuery({
+    queryKey: [API_ENDPOINTS.USERS_ME],
+    queryFn: client.users.me,
+    enabled: isAuthorized,
+    retry: false,
+  });
+  // TanStack Query 5 quitó onSuccess/onError de useQuery: los mismos efectos
+  // corren cuando llega el usuario o el error.
+  useEffect(() => {
+    if (!data) return;
+    if (emailVerified === false) {
+      setEmailVerified(true);
+      router.reload();
+      return;
+    }
+  }, [data]);
+  useEffect(() => {
+    if (!error) return;
+    if (axios.isAxiosError(error)) {
+      if (error?.response?.status === 409) {
+        setEmailVerified(false);
+        router.push(Routes.verifyEmail);
+        return;
+      }
+      if (router.pathname === Routes.verifyEmail) {
+        return;
+      }
+    }
+  }, [error]);
   //TODO: do some improvement here
   return {
     me: data,
@@ -83,7 +85,8 @@ export function useUser() {
 export const useDeleteAddress = () => {
   const { closeModal } = useModalAction();
   const queryClient = useQueryClient();
-  return useMutation(client.users.deleteAddress, {
+  return useMutation({
+    mutationFn: client.users.deleteAddress,
     onSuccess: (data) => {
       if (data) {
         toast.success('successfully-address-deleted');
@@ -99,14 +102,15 @@ export const useDeleteAddress = () => {
       toast.error(data?.message);
     },
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.USERS_ME);
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.USERS_ME] });
     },
   });
 };
 export const useUpdateEmail = () => {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
-  return useMutation(client.users.updateEmail, {
+  return useMutation({
+    mutationFn: client.users.updateEmail,
     onSuccess: (data) => {
       if (data) {
         toast.success(t('successfully-email-updated'));
@@ -120,7 +124,7 @@ export const useUpdateEmail = () => {
       toast.error(data?.message);
     },
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.USERS_ME);
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.USERS_ME] });
     },
   });
 };
@@ -129,7 +133,8 @@ export const useUpdateUser = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { closeModal } = useModalAction();
-  return useMutation(client.users.update, {
+  return useMutation({
+    mutationFn: client.users.update,
     onSuccess: (data) => {
       if (data?.id) {
         // toast.success(`${t('profile-update-successful')}`);
@@ -140,7 +145,7 @@ export const useUpdateUser = () => {
       toast.error(`${t('error-something-wrong')}`);
     },
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.USERS_ME);
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.USERS_ME] });
     },
   });
 };
@@ -148,7 +153,8 @@ export const useUpdateUser = () => {
 export const useContact = ({ reset }: { reset: () => void }) => {
   const { t } = useTranslation('common');
 
-  return useMutation(client.users.contactUs, {
+  return useMutation({
+    mutationFn: client.users.contactUs,
     onSuccess: (data) => {
       if (data.success) {
         toast.success(`${t(data.message)}`);
@@ -171,7 +177,8 @@ export function useLogin() {
   const queryClient = useQueryClient();
   let [serverError, setServerError] = useState<string | null>(null);
 
-  const { mutate, isLoading } = useMutation(client.users.login, {
+  const { mutate, isPending: isLoading } = useMutation({
+    mutationFn: client.users.login,
     onSuccess: (data) => {
       if (!data.token) {
         setServerError('error-credential-wrong');
@@ -186,7 +193,7 @@ export function useLogin() {
       console.log(error.message);
     },
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.NOTIFY_LOGS);
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.NOTIFY_LOGS] });
     },
   });
 
@@ -199,7 +206,8 @@ export function useSocialLogin() {
   const { setToken } = useToken();
   const [_, setAuthorized] = useAtom(authorizationAtom);
 
-  return useMutation(client.users.socialLogin, {
+  return useMutation({
+    mutationFn: client.users.socialLogin,
     onSuccess: (data) => {
       if (data?.token && data?.permissions?.length) {
         setToken(data?.token);
@@ -214,7 +222,7 @@ export function useSocialLogin() {
       console.log(error.message);
     },
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.NOTIFY_LOGS);
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.NOTIFY_LOGS] });
       queryClient.clear();
     },
   });
@@ -226,7 +234,8 @@ export function useSendOtpCode({
   let [serverError, setServerError] = useState<string | null>(null);
   const [otpState, setOtpState] = useAtom(optAtom);
 
-  const { mutate, isLoading } = useMutation(client.users.sendOtpCode, {
+  const { mutate, isPending: isLoading } = useMutation({
+    mutationFn: client.users.sendOtpCode,
     onSuccess: (data) => {
       if (!data.success) {
         setServerError(data.message!);
@@ -256,7 +265,8 @@ export function useVerifyOtpCode({
 }) {
   const [otpState, setOtpState] = useAtom(optAtom);
   let [serverError, setServerError] = useState<string | null>(null);
-  const { mutate, isLoading } = useMutation(client.users.verifyOtpCode, {
+  const { mutate, isPending: isLoading } = useMutation({
+    mutationFn: client.users.verifyOtpCode,
     onSuccess: (data) => {
       if (!data.success) {
         setServerError(data?.message!);
@@ -288,7 +298,8 @@ export function useOtpLogin() {
   const queryClient = new QueryClient();
   let [serverError, setServerError] = useState<string | null>(null);
 
-  const { mutate: otpLogin, isLoading } = useMutation(client.users.OtpLogin, {
+  const { mutate: otpLogin, isPending: isLoading } = useMutation({
+    mutationFn: client.users.OtpLogin,
     onSuccess: (data) => {
       if (!data.token) {
         setServerError('text-otp-verify-failed');
@@ -305,7 +316,7 @@ export function useOtpLogin() {
       console.log(error.message);
     },
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.NOTIFY_LOGS);
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.NOTIFY_LOGS] });
       queryClient.clear();
     },
   });
@@ -331,7 +342,8 @@ export function useRegister() {
     null,
   );
 
-  const { mutate, isLoading } = useMutation(client.users.register, {
+  const { mutate, isPending: isLoading } = useMutation({
+    mutationFn: client.users.register,
     onSuccess: (data) => {
       if (data?.token && data?.permissions?.length) {
         setToken(data?.token);
@@ -351,7 +363,7 @@ export function useRegister() {
       setFormError(data);
     },
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.NOTIFY_LOGS);
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.NOTIFY_LOGS] });
     },
   });
 
@@ -359,23 +371,21 @@ export function useRegister() {
 }
 export function useResendVerificationEmail() {
   const { t } = useTranslation('common');
-  const { mutate, isLoading } = useMutation(
-    client.users.resendVerificationEmail,
-    {
-      onSuccess: (data) => {
-        if (data?.success) {
-          toast.success(t('PICKBAZAR_MESSAGE.EMAIL_SENT_SUCCESSFUL'));
-        }
-      },
-      onError: (error) => {
-        const {
-          response: { data },
-        }: any = error ?? {};
-
-        toast.error(data?.message);
-      },
+  const { mutate, isPending: isLoading } = useMutation({
+    mutationFn: client.users.resendVerificationEmail,
+    onSuccess: (data) => {
+      if (data?.success) {
+        toast.success(t('PICKBAZAR_MESSAGE.EMAIL_SENT_SUCCESSFUL'));
+      }
     },
-  );
+    onError: (error) => {
+      const {
+        response: { data },
+      }: any = error ?? {};
+
+      toast.error(data?.message);
+    },
+  });
 
   return { mutate, isLoading };
 }
@@ -385,7 +395,8 @@ export function useLogout() {
   const [_, setAuthorized] = useAtom(authorizationAtom);
   const [_r, resetCheckout] = useAtom(clearCheckoutAtom);
 
-  const { mutate: signOut, isLoading } = useMutation(client.users.logout, {
+  const { mutate: signOut, isPending: isLoading } = useMutation({
+    mutationFn: client.users.logout,
     onSuccess: (data) => {
       if (data) {
         removeToken();
@@ -395,7 +406,7 @@ export function useLogout() {
         setAuthorized(false);
         //@ts-ignore
         resetCheckout();
-        queryClient.refetchQueries(API_ENDPOINTS.USERS_ME);
+        queryClient.refetchQueries({ queryKey: [API_ENDPOINTS.USERS_ME] });
       }
     },
     onSettled: () => {
@@ -417,7 +428,8 @@ export function useChangePassword() {
   let [formError, setFormError] =
     useState<Partial<ChangePasswordUserInput> | null>(null);
 
-  const { mutate, isLoading } = useMutation(client.users.changePassword, {
+  const { mutate, isPending: isLoading } = useMutation({
+    mutationFn: client.users.changePassword,
     onSuccess: (data) => {
       if (!data.success) {
         setFormError({
@@ -444,7 +456,8 @@ export function useForgotPassword() {
   let [formError, setFormError] = useState<any>(null);
   const { t } = useTranslation();
 
-  const { mutate, isLoading } = useMutation(client.users.forgotPassword, {
+  const { mutate, isPending: isLoading } = useMutation({
+    mutationFn: client.users.forgotPassword,
     onSuccess: (data, variables) => {
       if (!data.success) {
         setFormError({
@@ -468,7 +481,8 @@ export function useResetPassword() {
   const { openModal } = useModalAction();
   const { actions } = useStateMachine({ updateFormState });
 
-  return useMutation(client.users.resetPassword, {
+  return useMutation({
+    mutationFn: client.users.resetPassword,
     onSuccess: (data) => {
       if (data?.success) {
         toast.success('Successfully Reset Password!');
@@ -490,26 +504,24 @@ export function useVerifyForgotPasswordToken() {
   const queryClient = useQueryClient();
   let [formError, setFormError] = useState<any>(null);
 
-  const { mutate, isLoading } = useMutation(
-    client.users.verifyForgotPasswordToken,
-    {
-      onSuccess: (data, variables) => {
-        if (!data.success) {
-          setFormError({
-            token: data?.message ?? '',
-          });
-          return;
-        }
-        actions.updateFormState({
-          step: 'Password',
-          token: variables.token as string,
+  const { mutate, isPending: isLoading } = useMutation({
+    mutationFn: client.users.verifyForgotPasswordToken,
+    onSuccess: (data, variables) => {
+      if (!data.success) {
+        setFormError({
+          token: data?.message ?? '',
         });
-      },
-      onSettled: () => {
-        queryClient.clear();
-      },
+        return;
+      }
+      actions.updateFormState({
+        step: 'Password',
+        token: variables.token as string,
+      });
     },
-  );
+    onSettled: () => {
+      queryClient.clear();
+    },
+  });
 
   return { mutate, isLoading, formError, setFormError };
 }

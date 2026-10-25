@@ -1,10 +1,9 @@
 import type { FAQS, FaqsPaginator, FaqsQueryOptions } from '@/types';
-import { useQuery } from 'react-query';
+import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import client from './client';
 import { API_ENDPOINTS } from './client/api-endpoints';
 import { useRouter } from 'next/router';
 import { mapPaginatorData } from '@/framework/utils/data-mappers';
-import { useInfiniteQuery } from 'react-query';
 
 export function useFAQs(options?: Partial<FaqsQueryOptions>) {
   const { locale } = useRouter();
@@ -22,15 +21,14 @@ export function useFAQs(options?: Partial<FaqsQueryOptions>) {
     hasNextPage,
     isFetching,
     isFetchingNextPage,
-  } = useInfiniteQuery<FaqsPaginator, Error>(
-    [API_ENDPOINTS.FAQS, formattedOptions],
-    ({ queryKey, pageParam }) =>
+  } = useInfiniteQuery<FaqsPaginator, Error>({
+    queryKey: [API_ENDPOINTS.FAQS, formattedOptions],
+    queryFn: ({ queryKey, pageParam }) =>
       client.faqs.all(Object.assign({}, queryKey[1], pageParam)),
-    {
-      getNextPageParam: ({ current_page, last_page }) =>
-        last_page > current_page && { page: current_page + 1 },
-    },
-  );
+    initialPageParam: undefined,
+    getNextPageParam: ({ current_page, last_page }) =>
+      last_page > current_page ? { page: current_page + 1 } : undefined,
+  });
 
   function handleLoadMore() {
     fetchNextPage();

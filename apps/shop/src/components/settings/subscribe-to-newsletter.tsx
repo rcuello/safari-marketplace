@@ -13,7 +13,7 @@ export default function SubscribeToNewsletter({
   const { t } = useTranslation('common');
   const {
     mutate: subscribe,
-    isLoading: loading,
+    isPending: loading,
     isSubscribed,
   } = useSubscription();
 

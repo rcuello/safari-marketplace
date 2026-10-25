@@ -9,11 +9,12 @@ import type {
   GetParams,
 } from '@/types';
 import {
+  keepPreviousData,
   useInfiniteQuery,
   useMutation,
   useQuery,
   useQueryClient,
-} from 'react-query';
+} from '@tanstack/react-query';
 import client from './client';
 import { API_ENDPOINTS } from './client/api-endpoints';
 import { mapPaginatorData } from '@/framework/utils/data-mappers';
@@ -39,15 +40,14 @@ export function useProducts(options?: Partial<ProductQueryOptions>) {
     hasNextPage,
     isFetching,
     isFetchingNextPage,
-  } = useInfiniteQuery<ProductPaginator, Error>(
-    [API_ENDPOINTS.PRODUCTS, formattedOptions],
-    ({ queryKey, pageParam }) =>
+  } = useInfiniteQuery<ProductPaginator, Error>({
+    queryKey: [API_ENDPOINTS.PRODUCTS, formattedOptions],
+    queryFn: ({ queryKey, pageParam }) =>
       client.products.all(Object.assign({}, queryKey[1], pageParam)),
-    {
-      getNextPageParam: ({ current_page, last_page }) =>
-        last_page > current_page && { page: current_page + 1 },
-    },
-  );
+    initialPageParam: undefined,
+    getNextPageParam: ({ current_page, last_page }) =>
+      last_page > current_page ? { page: current_page + 1 } : undefined,
+  });
 
   function handleLoadMore() {
     fetchNextPage();
@@ -77,11 +77,11 @@ export const usePopularProducts = (
     language: locale,
   };
 
-  const { data, isLoading, error } = useQuery<Product[], Error>(
-    [API_ENDPOINTS.PRODUCTS_POPULAR, formattedOptions],
-    ({ queryKey }) =>
+  const { data, isLoading, error } = useQuery<Product[], Error>({
+    queryKey: [API_ENDPOINTS.PRODUCTS_POPULAR, formattedOptions],
+    queryFn: ({ queryKey }) =>
       client.products.popular(queryKey[1] as PopularProductQueryOptions),
-  );
+  });
 
   return {
     products: data ?? [],
@@ -100,13 +100,13 @@ export const useBestSellingProducts = (
     language: locale,
   };
 
-  const { data, isLoading, error } = useQuery<Product[], Error>(
-    [API_ENDPOINTS.BEST_SELLING_PRODUCTS, formattedOptions],
-    ({ queryKey }) =>
+  const { data, isLoading, error } = useQuery<Product[], Error>({
+    queryKey: [API_ENDPOINTS.BEST_SELLING_PRODUCTS, formattedOptions],
+    queryFn: ({ queryKey }) =>
       client.products.bestSelling(
         queryKey[1] as BestSellingProductQueryOptions,
       ),
-  );
+  });
 
   return {
     products: data ?? [],
@@ -118,10 +118,10 @@ export const useBestSellingProducts = (
 export function useProduct({ slug }: { slug: string }) {
   const { locale: language } = useRouter();
 
-  const { data, isLoading, error } = useQuery<Product, Error>(
-    [API_ENDPOINTS.PRODUCTS, { slug, language }],
-    () => client.products.get({ slug, language }),
-  );
+  const { data, isLoading, error } = useQuery<Product, Error>({
+    queryKey: [API_ENDPOINTS.PRODUCTS, { slug, language }],
+    queryFn: () => client.products.get({ slug, language }),
+  });
   return {
     product: data,
     isLoading,
@@ -135,16 +135,14 @@ export function useQuestions(options?: Partial<QuestionQueryOptions>) {
     isLoading,
     error,
     isFetching,
-  } = useQuery<QuestionPaginator, Error>(
-    [API_ENDPOINTS.PRODUCTS_QUESTIONS, options],
-    ({ queryKey }) =>
+  } = useQuery<QuestionPaginator, Error>({
+    queryKey: [API_ENDPOINTS.PRODUCTS_QUESTIONS, options],
+    queryFn: ({ queryKey }) =>
       client.products.questions(
         Object.assign({}, queryKey[1] as QuestionQueryOptions),
       ),
-    {
-      keepPreviousData: true,
-    },
-  );
+    placeholderData: keepPreviousData,
+  });
   return {
     questions: response?.data ?? [],
     paginatorInfo: mapPaginatorData(response),
@@ -157,16 +155,18 @@ export function useQuestions(options?: Partial<QuestionQueryOptions>) {
 export function useCreateFeedback() {
   const { t } = useTranslation('common');
   const queryClient = useQueryClient();
-  const { mutate: createFeedback, isLoading } = useMutation(
-    client.products.createFeedback,
-    {
-      onSuccess: (res) => {
-        toast.success(`${t('text-feedback-submitted')}`);
-        queryClient.refetchQueries(API_ENDPOINTS.PRODUCTS_QUESTIONS);
-        queryClient.refetchQueries(API_ENDPOINTS.PRODUCTS_REVIEWS);
-      },
+  const { mutate: createFeedback, isPending: isLoading } = useMutation({
+    mutationFn: client.products.createFeedback,
+    onSuccess: (res) => {
+      toast.success(`${t('text-feedback-submitted')}`);
+      queryClient.refetchQueries({
+        queryKey: [API_ENDPOINTS.PRODUCTS_QUESTIONS],
+      });
+      queryClient.refetchQueries({
+        queryKey: [API_ENDPOINTS.PRODUCTS_REVIEWS],
+      });
     },
-  );
+  });
   return {
     createFeedback,
     isLoading,
@@ -176,24 +176,22 @@ export function useCreateFeedback() {
 export function useCreateAbuseReport() {
   const { t } = useTranslation('common');
   const { closeModal } = useModalAction();
-  const { mutate: createAbuseReport, isLoading } = useMutation(
-    client.products.createAbuseReport,
-    {
-      onSuccess: () => {
-        toast.success(`${t('text-abuse-report-submitted')}`);
-      },
-      onError: (error) => {
-        const {
-          response: { data },
-        }: any = error ?? {};
-
-        toast.error(`${t(data?.message)}`);
-      },
-      onSettled: () => {
-        closeModal();
-      },
+  const { mutate: createAbuseReport, isPending: isLoading } = useMutation({
+    mutationFn: client.products.createAbuseReport,
+    onSuccess: () => {
+      toast.success(`${t('text-abuse-report-submitted')}`);
     },
-  );
+    onError: (error) => {
+      const {
+        response: { data },
+      }: any = error ?? {};
+
+      toast.error(`${t(data?.message)}`);
+    },
+    onSettled: () => {
+      closeModal();
+    },
+  });
   return {
     createAbuseReport,
     isLoading,
@@ -204,25 +202,25 @@ export function useCreateQuestion() {
   const { t } = useTranslation('common');
   const { closeModal } = useModalAction();
   const queryClient = useQueryClient();
-  const { mutate: createQuestion, isLoading } = useMutation(
-    client.products.createQuestion,
-    {
-      onSuccess: () => {
-        toast.success(`${t('text-question-submitted')}`);
-      },
-      onError: (error) => {
-        const {
-          response: { data },
-        }: any = error ?? {};
-
-        toast.error(`${t(data?.message)}`);
-      },
-      onSettled: () => {
-        queryClient.refetchQueries(API_ENDPOINTS.PRODUCTS_QUESTIONS);
-        closeModal();
-      },
+  const { mutate: createQuestion, isPending: isLoading } = useMutation({
+    mutationFn: client.products.createQuestion,
+    onSuccess: () => {
+      toast.success(`${t('text-question-submitted')}`);
     },
-  );
+    onError: (error) => {
+      const {
+        response: { data },
+      }: any = error ?? {};
+
+      toast.error(`${t(data?.message)}`);
+    },
+    onSettled: () => {
+      queryClient.refetchQueries({
+        queryKey: [API_ENDPOINTS.PRODUCTS_QUESTIONS],
+      });
+      closeModal();
+    },
+  });
   return {
     createQuestion,
     isLoading,

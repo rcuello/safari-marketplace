@@ -40,7 +40,7 @@ const SuperAdminContactForm: React.FC<SuperAdminContactFormProps> = ({
     shouldUnregister: true,
     resolver: yupResolver(superAdminContactFormSchema),
   });
-  const { mutate, isLoading } = useContact({ reset });
+  const { mutate, isPending: isLoading } = useContact({ reset });
 
   async function onSubmit(values: CreateContactUsInput) {
     mutate(values);

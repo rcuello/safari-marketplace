@@ -4,7 +4,7 @@ import type {
   ManufacturerQueryOptions,
   QueryOptions,
 } from '@/types';
-import { useInfiniteQuery, useQuery } from 'react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import client from './client';
 import { API_ENDPOINTS } from './client/api-endpoints';
 import { mapPaginatorData } from '@/framework/utils/data-mappers';
@@ -27,15 +27,14 @@ export function useManufacturers(options?: ManufacturerQueryOptions) {
     hasNextPage,
     isFetching,
     isFetchingNextPage,
-  } = useInfiniteQuery<ManufacturerPaginator, Error>(
-    [API_ENDPOINTS.MANUFACTURERS, formattedOptions],
-    ({ queryKey, pageParam }) =>
+  } = useInfiniteQuery<ManufacturerPaginator, Error>({
+    queryKey: [API_ENDPOINTS.MANUFACTURERS, formattedOptions],
+    queryFn: ({ queryKey, pageParam }) =>
       client.manufacturers.all(Object.assign({}, queryKey[1], pageParam)),
-    {
-      getNextPageParam: ({ current_page, last_page }) =>
-        last_page > current_page && { page: current_page + 1 },
-    },
-  );
+    initialPageParam: undefined,
+    getNextPageParam: ({ current_page, last_page }) =>
+      last_page > current_page ? { page: current_page + 1 } : undefined,
+  });
 
   function handleLoadMore() {
     fetchNextPage();
@@ -63,10 +62,11 @@ export function useTopManufacturers(options: Pick<QueryOptions, 'limit'>) {
     language: locale,
   };
 
-  const { data, isLoading, error } = useQuery<Manufacturer[], Error>(
-    [API_ENDPOINTS.MANUFACTURERS_TOP, formattedOptions],
-    ({ queryKey }) => client.manufacturers.top(queryKey[1] as QueryOptions),
-  );
+  const { data, isLoading, error } = useQuery<Manufacturer[], Error>({
+    queryKey: [API_ENDPOINTS.MANUFACTURERS_TOP, formattedOptions],
+    queryFn: ({ queryKey }) =>
+      client.manufacturers.top(queryKey[1] as QueryOptions),
+  });
   return {
     manufacturers: data ?? [],
     isLoading,

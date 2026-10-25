@@ -1,5 +1,5 @@
 import type { CategoryPaginator, CategoryQueryOptions } from '@/types';
-import { useInfiniteQuery } from 'react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import client from './client';
 import { API_ENDPOINTS } from './client/api-endpoints';
 import { mapPaginatorData } from '@/framework/utils/data-mappers';
@@ -21,15 +21,14 @@ export function useCategories(options?: Partial<CategoryQueryOptions>) {
     hasNextPage,
     isFetching,
     isFetchingNextPage,
-  } = useInfiniteQuery<CategoryPaginator, Error>(
-    [API_ENDPOINTS.CATEGORIES, formattedOptions],
-    ({ queryKey, pageParam }) =>
+  } = useInfiniteQuery<CategoryPaginator, Error>({
+    queryKey: [API_ENDPOINTS.CATEGORIES, formattedOptions],
+    queryFn: ({ queryKey, pageParam }) =>
       client.categories.all(Object.assign({}, queryKey[1], pageParam)),
-    {
-      getNextPageParam: ({ current_page, last_page }) =>
-        last_page > current_page && { page: current_page + 1 },
-    },
-  );
+    initialPageParam: undefined,
+    getNextPageParam: ({ current_page, last_page }) =>
+      last_page > current_page ? { page: current_page + 1 } : undefined,
+  });
 
   function handleLoadMore() {
     fetchNextPage();

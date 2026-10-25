@@ -5,12 +5,11 @@ import type {
   ProductPaginator,
   FlashSaleProductsQueryOptions,
 } from '@/types';
-import { useQuery } from 'react-query';
+import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import client from '@/framework/client';
 import { API_ENDPOINTS } from '@/framework/client/api-endpoints';
 import { useRouter } from 'next/router';
 import { mapPaginatorData } from '@/framework/utils/data-mappers';
-import { useInfiniteQuery } from 'react-query';
 
 export function useFlashSales(options?: Partial<FlashSaleQueryOptions>) {
   const { locale } = useRouter();
@@ -28,15 +27,14 @@ export function useFlashSales(options?: Partial<FlashSaleQueryOptions>) {
     hasNextPage,
     isFetching,
     isFetchingNextPage,
-  } = useInfiniteQuery<FlashSalePaginator, Error>(
-    [API_ENDPOINTS.FLASH_SALE, formattedOptions],
-    ({ queryKey, pageParam }) =>
+  } = useInfiniteQuery<FlashSalePaginator, Error>({
+    queryKey: [API_ENDPOINTS.FLASH_SALE, formattedOptions],
+    queryFn: ({ queryKey, pageParam }) =>
       client.flashSale.all(Object.assign({}, queryKey[1], pageParam)),
-    {
-      getNextPageParam: ({ current_page, last_page }) =>
-        last_page > current_page && { page: current_page + 1 },
-    },
-  );
+    initialPageParam: undefined,
+    getNextPageParam: ({ current_page, last_page }) =>
+      last_page > current_page ? { page: current_page + 1 } : undefined,
+  });
 
   function handleLoadMore() {
     fetchNextPage();
@@ -63,10 +61,10 @@ export const useFlashSale = ({
   slug: string;
   language: string;
 }) => {
-  const { data, error, isLoading } = useQuery<FlashSale, Error>(
-    [API_ENDPOINTS.FLASH_SALE, { slug, language }],
-    () => client?.flashSale?.get({ slug, language }),
-  );
+  const { data, error, isLoading } = useQuery<FlashSale, Error>({
+    queryKey: [API_ENDPOINTS.FLASH_SALE, { slug, language }],
+    queryFn: () => client?.flashSale?.get({ slug, language }),
+  });
 
   return {
     flashSale: data,
@@ -93,17 +91,20 @@ export function useFlashSaleProductBySlug(
     hasNextPage,
     isFetching,
     isFetchingNextPage,
-  } = useInfiniteQuery<ProductPaginator, Error>(
-    [API_ENDPOINTS.PRODUCTS_BY_FLASH_SALE, formattedOptions],
-    ({ queryKey, pageParam }) =>
+  } = useInfiniteQuery<ProductPaginator, Error>({
+    queryKey: [API_ENDPOINTS.PRODUCTS_BY_FLASH_SALE, formattedOptions],
+    queryFn: ({ queryKey, pageParam }) =>
       client?.flashSale?.getProductsByFlashSale(
-        Object.assign({}, queryKey[1], pageParam),
+        Object.assign(
+          {},
+          queryKey[1] as FlashSaleProductsQueryOptions,
+          pageParam,
+        ),
       ),
-    {
-      getNextPageParam: ({ current_page, last_page }) =>
-        last_page > current_page && { page: current_page + 1 },
-    },
-  );
+    initialPageParam: undefined,
+    getNextPageParam: ({ current_page, last_page }) =>
+      last_page > current_page ? { page: current_page + 1 } : undefined,
+  });
 
   function handleLoadMore() {
     fetchNextPage();

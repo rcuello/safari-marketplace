@@ -1,5 +1,5 @@
 import { MyQuestionQueryOptions, QuestionPaginator } from '@/types';
-import { useInfiniteQuery } from 'react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import client from './client';
 import { API_ENDPOINTS } from './client/api-endpoints';
 import { mapPaginatorData } from './utils/data-mappers';
@@ -13,15 +13,16 @@ export function useMyQuestions(options?: MyQuestionQueryOptions) {
     hasNextPage,
     isFetching,
     isFetchingNextPage,
-  } = useInfiniteQuery<QuestionPaginator, Error>(
-    [API_ENDPOINTS.MY_QUESTIONS, options],
-    ({ queryKey, pageParam }) =>
-      client.myQuestions.all(Object.assign({}, queryKey[1], pageParam)),
-    {
-      getNextPageParam: ({ current_page, last_page }) =>
-        last_page > current_page && { page: current_page + 1 },
-    }
-  );
+  } = useInfiniteQuery<QuestionPaginator, Error>({
+    queryKey: [API_ENDPOINTS.MY_QUESTIONS, options],
+    queryFn: ({ queryKey, pageParam }) =>
+      client.myQuestions.all(
+        Object.assign({}, queryKey[1] as MyQuestionQueryOptions, pageParam)
+      ),
+    initialPageParam: undefined,
+    getNextPageParam: ({ current_page, last_page }) =>
+      last_page > current_page ? { page: current_page + 1 } : undefined,
+  });
   function handleLoadMore() {
     fetchNextPage();
   }

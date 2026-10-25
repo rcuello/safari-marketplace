@@ -6,7 +6,7 @@ import {
   useMutation,
   useQuery,
   useQueryClient,
-} from 'react-query';
+} from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import client from './client';
 import { API_ENDPOINTS } from './client/api-endpoints';
@@ -18,9 +18,10 @@ export function useToggleWishlist(product_id: string) {
   const { t } = useTranslation('common');
   const {
     mutate: toggleWishlist,
-    isLoading,
+    isPending: isLoading,
     isSuccess,
-  } = useMutation(client.wishlist.toggle, {
+  } = useMutation({
+    mutationFn: client.wishlist.toggle,
     onSuccess: (data) => {
       queryClient.setQueryData(
         [`${API_ENDPOINTS.WISHLIST}/in_wishlist`, product_id],
@@ -42,12 +43,13 @@ export function useRemoveFromWishlist() {
   const queryClient = useQueryClient();
   const {
     mutate: removeFromWishlist,
-    isLoading,
+    isPending: isLoading,
     isSuccess,
-  } = useMutation(client.wishlist.remove, {
+  } = useMutation({
+    mutationFn: client.wishlist.remove,
     onSuccess: () => {
       toast.success(`${t('text-removed-from-wishlist')}`);
-      queryClient.refetchQueries([API_ENDPOINTS.USERS_WISHLIST]);
+      queryClient.refetchQueries({ queryKey: [API_ENDPOINTS.USERS_WISHLIST] });
     },
     onError: (error) => {
       if (axios.isAxiosError(error)) {
@@ -75,15 +77,16 @@ export function useWishlist(options?: WishlistQueryOptions) {
     hasNextPage,
     isFetching,
     isFetchingNextPage,
-  } = useInfiniteQuery<WishlistPaginator, Error>(
-    [API_ENDPOINTS.USERS_WISHLIST, formattedOptions],
-    ({ queryKey, pageParam }) =>
-      client.wishlist.all(Object.assign({}, queryKey[1], pageParam)),
-    {
-      getNextPageParam: ({ current_page, last_page }) =>
-        last_page > current_page && { page: current_page + 1 },
-    }
-  );
+  } = useInfiniteQuery<WishlistPaginator, Error>({
+    queryKey: [API_ENDPOINTS.USERS_WISHLIST, formattedOptions],
+    queryFn: ({ queryKey, pageParam }) =>
+      client.wishlist.all(
+        Object.assign({}, queryKey[1] as WishlistQueryOptions, pageParam)
+      ),
+    initialPageParam: undefined,
+    getNextPageParam: ({ current_page, last_page }) =>
+      last_page > current_page ? { page: current_page + 1 } : undefined,
+  });
   function handleLoadMore() {
     fetchNextPage();
   }
@@ -108,13 +111,11 @@ export function useInWishlist({
   product_id: string;
   enabled: boolean;
 }) {
-  const { data, isLoading, error, refetch } = useQuery<boolean, Error>(
-    [`${API_ENDPOINTS.WISHLIST}/in_wishlist`, product_id],
-    () => client.wishlist.checkIsInWishlist({ product_id }),
-    {
-      enabled,
-    }
-  );
+  const { data, isLoading, error, refetch } = useQuery<boolean, Error>({
+    queryKey: [`${API_ENDPOINTS.WISHLIST}/in_wishlist`, product_id],
+    queryFn: () => client.wishlist.checkIsInWishlist({ product_id }),
+    enabled,
+  });
   return {
     inWishlist: Boolean(data) ?? false,
     isLoading,

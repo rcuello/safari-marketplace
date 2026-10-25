@@ -10,7 +10,7 @@ import {
   useInfiniteQuery,
   useQueryClient,
   useMutation,
-} from 'react-query';
+} from '@tanstack/react-query';
 import client from './client';
 import { API_ENDPOINTS } from './client/api-endpoints';
 import { mapPaginatorData } from '@/framework/utils/data-mappers';
@@ -28,15 +28,14 @@ export function useShops(options?: Partial<ShopQueryOptions>) {
     hasNextPage,
     isFetching,
     isFetchingNextPage,
-  } = useInfiniteQuery<ShopPaginator, Error>(
-    [API_ENDPOINTS.SHOPS, options],
-    ({ queryKey, pageParam }) =>
+  } = useInfiniteQuery<ShopPaginator, Error>({
+    queryKey: [API_ENDPOINTS.SHOPS, options],
+    queryFn: ({ queryKey, pageParam }) =>
       client.shops.all(Object.assign({}, queryKey[1], pageParam)),
-    {
-      getNextPageParam: ({ current_page, last_page }) =>
-        last_page > current_page && { page: current_page + 1 },
-    },
-  );
+    initialPageParam: undefined,
+    getNextPageParam: ({ current_page, last_page }) =>
+      last_page > current_page ? { page: current_page + 1 } : undefined,
+  });
 
   function handleLoadMore() {
     fetchNextPage();
@@ -60,22 +59,23 @@ export const useShop = (
   { slug, enabled }: { slug: string; enabled?: boolean },
   options?: any,
 ) => {
-  return useQuery<Shop, Error>(
-    [API_ENDPOINTS.SHOPS, { slug }],
-    () => client.shops.get(slug),
-    { enabled: enabled },
-  );
+  return useQuery<Shop, Error>({
+    queryKey: [API_ENDPOINTS.SHOPS, { slug }],
+    queryFn: () => client.shops.get(slug),
+    enabled: enabled,
+  });
 };
 
 export const useSearchNearShops = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { closeModal } = useModalAction();
-  return useMutation(client.shops.searchNearShops, {
+  return useMutation({
+    mutationFn: client.shops.searchNearShops,
     onSuccess: (data) => {
       if (data.length > 0) {
         toast.success(`${t('Show Result')}`);
-        queryClient.invalidateQueries(API_ENDPOINTS.NEAR_SHOPS);
+        queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.NEAR_SHOPS] });
         closeModal();
       }
     },
@@ -86,10 +86,10 @@ export const useSearchNearShops = () => {
 };
 
 export const useGetSearchNearShops = ({ lat, lng }: ShopMapLocation) => {
-  const { data, isLoading, error } = useQuery<Shop[], Error>(
-    [API_ENDPOINTS.NEAR_SHOPS, { lat, lng }],
-    () => client.shops.getSearchNearShops({ lat, lng }),
-  );
+  const { data, isLoading, error } = useQuery<Shop[], Error>({
+    queryKey: [API_ENDPOINTS.NEAR_SHOPS, { lat, lng }],
+    queryFn: () => client.shops.getSearchNearShops({ lat, lng }),
+  });
   return {
     data: data ?? [],
     isLoading,
@@ -102,9 +102,9 @@ export const useShopMaintenanceEvent = () => {
   const queryClient = useQueryClient();
   const router = useRouter();
   const { reload } = router;
-  const { mutate: ShopMaintenanceEventRequest, isLoading } = useMutation(
-    client.shops.shopMaintenanceEvent,
-    {
+  const { mutate: ShopMaintenanceEventRequest, isPending: isLoading } =
+    useMutation({
+      mutationFn: client.shops.shopMaintenanceEvent,
       onSuccess: () => {
         reload();
       },
@@ -112,11 +112,10 @@ export const useShopMaintenanceEvent = () => {
         toast.error(`${t('error-something-wrong')}`);
       },
       onSettled: () => {
-        queryClient.invalidateQueries(API_ENDPOINTS.SHOPS);
-        queryClient.invalidateQueries(API_ENDPOINTS.PRODUCTS);
+        queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.SHOPS] });
+        queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.PRODUCTS] });
       },
-    },
-  );
+    });
   function createShopMaintenanceEventRequest(input: ShopMaintenanceEvent) {
     ShopMaintenanceEventRequest(input);
   }

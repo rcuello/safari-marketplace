@@ -9,7 +9,7 @@ import {
   useMutation,
   useQuery,
   useQueryClient,
-} from 'react-query';
+} from '@tanstack/react-query';
 import client from './client';
 import { API_ENDPOINTS } from './client/api-endpoints';
 import { toast } from 'react-toastify';
@@ -31,18 +31,17 @@ export function useNotifyLogs(options?: Partial<NotifyLogsQueryOptions>) {
     hasNextPage,
     isFetching,
     isFetchingNextPage,
-  } = useInfiniteQuery<NotifyLogsPaginator, Error>(
-    [API_ENDPOINTS.NOTIFY_LOGS, formattedOptions],
-    ({ queryKey, pageParam }) =>
+  } = useInfiniteQuery<NotifyLogsPaginator, Error>({
+    queryKey: [API_ENDPOINTS.NOTIFY_LOGS, formattedOptions],
+    queryFn: ({ queryKey, pageParam }) =>
       client.notifyLogs.all(Object.assign({}, queryKey[1], pageParam)),
-    {
-      enabled: isAuthorized && Boolean(settings?.enableEmailForDigitalProduct),
-      retry: false,
-      getNextPageParam: ({ current_page, last_page }) =>
-        last_page > current_page && { page: current_page + 1 },
-      refetchOnWindowFocus: false,
-    },
-  );
+    enabled: isAuthorized && Boolean(settings?.enableEmailForDigitalProduct),
+    retry: false,
+    initialPageParam: undefined,
+    getNextPageParam: ({ current_page, last_page }) =>
+      last_page > current_page ? { page: current_page + 1 } : undefined,
+    refetchOnWindowFocus: false,
+  });
 
   function handleLoadMore() {
     fetchNextPage();
@@ -65,14 +64,12 @@ export function useNotifyLogs(options?: Partial<NotifyLogsQueryOptions>) {
 export function useNotifyLog({ id }: { id: string }) {
   const { isAuthorized } = useUser();
   const { settings } = useSettings();
-  const { data, isLoading, error } = useQuery<NotifyLogs, Error>(
-    [API_ENDPOINTS.NOTIFY_LOGS, id],
-    () => client?.notifyLogs?.get({ id }),
-    {
-      enabled: isAuthorized && Boolean(settings?.enableEmailForDigitalProduct),
-      retry: false,
-    },
-  );
+  const { data, isLoading, error } = useQuery<NotifyLogs, Error>({
+    queryKey: [API_ENDPOINTS.NOTIFY_LOGS, id],
+    queryFn: () => client?.notifyLogs?.get({ id }),
+    enabled: isAuthorized && Boolean(settings?.enableEmailForDigitalProduct),
+    retry: false,
+  });
 
   return {
     notification: data,
@@ -86,15 +83,16 @@ export function useNotificationRead() {
   const queryClient = useQueryClient();
   const {
     mutate: readNotification,
-    isLoading,
+    isPending: isLoading,
     isSuccess,
-  } = useMutation(client?.notifyLogs?.readNotifyLog, {
+  } = useMutation({
+    mutationFn: client?.notifyLogs?.readNotifyLog,
     onSuccess: () => {
       toast.success(t('text-notification-read-message'));
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.NOTIFY_LOGS);
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.NOTIFY_LOGS] });
     },
   });
 
@@ -105,13 +103,14 @@ export const useNotifyLogAllRead = () => {
   const queryClient = useQueryClient();
   const { t } = useTranslation('common');
 
-  return useMutation(client?.notifyLogs?.readAllNotifyLogs, {
+  return useMutation({
+    mutationFn: client?.notifyLogs?.readAllNotifyLogs,
     onSuccess: () => {
       toast.success(t('text-notifications-read-message'));
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries(API_ENDPOINTS.NOTIFY_LOGS);
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.NOTIFY_LOGS] });
     },
     onError: (error: any) => {
       toast.error(t(`common:${error?.response?.data.message}`));

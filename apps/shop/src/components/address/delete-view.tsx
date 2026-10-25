@@ -10,7 +10,8 @@ export default function AddressDeleteView() {
     data: { addressId },
   } = useModalState();
   const { closeModal } = useModalAction();
-  const { mutate: deleteAddressById, isLoading } = useDeleteAddress();
+  const { mutate: deleteAddressById, isPending: isLoading } =
+    useDeleteAddress();
 
   function handleDelete() {
     if (!addressId) {

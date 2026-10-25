@@ -11,7 +11,7 @@ import type { UpdateUserInput, User } from '@/types';
 
 const ProfileForm = ({ user }: { user: User }) => {
   const { t } = useTranslation('common');
-  const { mutate: updateProfile, isLoading } = useUpdateUser();
+  const { mutate: updateProfile, isPending: isLoading } = useUpdateUser();
 
   function onSubmit(values: UpdateUserInput) {
     if (!user) {

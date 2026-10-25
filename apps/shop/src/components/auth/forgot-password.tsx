@@ -198,7 +198,7 @@ function RenderFormSteps() {
     isLoading: verifying,
     formError: tokenFormError,
   } = useVerifyForgotPasswordToken();
-  const { mutate: resetPassword, isLoading: resetting } = useResetPassword();
+  const { mutate: resetPassword, isPending: resetting } = useResetPassword();
   // use hook for getting form state and actions
   const { state, actions } = useStateMachine({ updateFormState });
 
@@ -272,7 +272,7 @@ export const updateFormState = (
   payload: {
     step: 'Email' | 'Token' | 'Password';
     [key: string]: string;
-  }
+  },
 ) => {
   return {
     ...state,

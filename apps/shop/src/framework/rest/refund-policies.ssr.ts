@@ -2,21 +2,31 @@ import { LIMIT } from '@/lib/constants';
 import { RefundPolicyQueryOptions, SettingsQueryOptions } from '@/types';
 import type { GetStaticProps } from 'next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import { QueryClient } from 'react-query';
-import { dehydrate } from 'react-query/hydration';
+import { QueryClient, dehydrate } from '@tanstack/react-query';
 import client from './client';
 import { API_ENDPOINTS } from './client/api-endpoints';
 
 export const getCustomerStaticProps: GetStaticProps = async ({ locale }) => {
   const queryClient = new QueryClient();
-  await queryClient.prefetchQuery(
-    [API_ENDPOINTS.SETTINGS, { language: locale }],
-    ({ queryKey }) => client.settings.all(queryKey[1] as SettingsQueryOptions)
-  );
-  await queryClient.prefetchInfiniteQuery(
-    [API_ENDPOINTS.REFUND_POLICIES, { target: 'customer', status: 'approved', limit: LIMIT, language: locale, }],
-    ({ queryKey }) => client.refundPolicies.all(queryKey[1] as RefundPolicyQueryOptions)
-  );
+  await queryClient.prefetchQuery({
+    queryKey: [API_ENDPOINTS.SETTINGS, { language: locale }],
+    queryFn: ({ queryKey }) =>
+      client.settings.all(queryKey[1] as SettingsQueryOptions),
+  });
+  await queryClient.prefetchInfiniteQuery({
+    queryKey: [
+      API_ENDPOINTS.REFUND_POLICIES,
+      {
+        target: 'customer',
+        status: 'approved',
+        limit: LIMIT,
+        language: locale,
+      },
+    ],
+    queryFn: ({ queryKey }) =>
+      client.refundPolicies.all(queryKey[1] as RefundPolicyQueryOptions),
+    initialPageParam: undefined,
+  });
   return {
     props: {
       ...(await serverSideTranslations(locale!, ['common'])),
@@ -27,14 +37,20 @@ export const getCustomerStaticProps: GetStaticProps = async ({ locale }) => {
 
 export const getVendorStaticProps: GetStaticProps = async ({ locale }) => {
   const queryClient = new QueryClient();
-  await queryClient.prefetchQuery(
-    [API_ENDPOINTS.SETTINGS, { language: locale }],
-    ({ queryKey }) => client.settings.all(queryKey[1] as SettingsQueryOptions)
-  );
-  await queryClient.prefetchInfiniteQuery(
-    [API_ENDPOINTS.REFUND_POLICIES, { target: 'vendor', status: 'approved', limit: LIMIT, language: locale, }],
-    ({ queryKey }) => client.refundPolicies.all(queryKey[1] as RefundPolicyQueryOptions)
-  );
+  await queryClient.prefetchQuery({
+    queryKey: [API_ENDPOINTS.SETTINGS, { language: locale }],
+    queryFn: ({ queryKey }) =>
+      client.settings.all(queryKey[1] as SettingsQueryOptions),
+  });
+  await queryClient.prefetchInfiniteQuery({
+    queryKey: [
+      API_ENDPOINTS.REFUND_POLICIES,
+      { target: 'vendor', status: 'approved', limit: LIMIT, language: locale },
+    ],
+    queryFn: ({ queryKey }) =>
+      client.refundPolicies.all(queryKey[1] as RefundPolicyQueryOptions),
+    initialPageParam: undefined,
+  });
   return {
     props: {
       ...(await serverSideTranslations(locale!, ['common'])),
@@ -43,4 +59,3 @@ export const getVendorStaticProps: GetStaticProps = async ({ locale }) => {
     revalidate: 10,
   };
 };
-
