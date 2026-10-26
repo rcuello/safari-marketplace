@@ -295,3 +295,12 @@ máquina da el segundo. Ninguna otra receta cambió: `nest start --watch`
 - La huella se comparó contra los valores documentados de la línea base
   (los JSON de la sesión de US-90 ya no existían). El script reconstruido
   reprodujo cada sha, así que mide lo mismo.
+
+## Decisión del dueño al integrar (2026-10-26)
+
+**DA-3: el CLI se queda en 11.** `@nestjs/cli` 11.0.24 y
+`@nestjs/schematics` 11.1.0 no se suben mientras la máquina tenga Node
+22.14. Compilan con el TypeScript 6 del proyecto y cargan el plugin de
+Swagger 12, así que `just api-dev` y `just build-api` funcionan. Cuando se
+actualice Node a 22.22.3+ o 24.15+ (`just doctor` ya avisa), se suben los
+dos a 12 y se regenera el lockfile.
