@@ -252,13 +252,18 @@ check-ports:
 doctor:
     #!/usr/bin/env bash
     set -uo pipefail
-    # DA-6 del Épico 75: @nestjs/cli 11 (US-78) declara engines node >= 20.11.
+    # DA-1 de US-91: los schematics de Nest 12 (`nest generate`, `nest upgrade`,
+    # @nestjs/cli 12) piden Node 22.22.3+, 24.15+ o 26+. Ejecutar la API en
+    # Nest 12 (ESM) solo pide 20.19+ o 22.12+ (la linea 21 no sirve). Mientras
+    # la maquina tenga menos, la API se queda con @nestjs/cli 11 (ver US-91).
     if ! node_v="$(node -v 2>/dev/null)"; then
-      echo "node    FALTA - instala Node 20.11+"
-    elif node -e 'const [M, m] = process.versions.node.split(".").map(Number); process.exit(M > 20 || (M === 20 && m >= 11) ? 0 : 1)'; then
+      echo "node    FALTA - instala Node 22.22.3+ o 24.15+"
+    elif node -e 'const [M, m, p] = process.versions.node.split(".").map(Number); process.exit(M >= 26 || (M === 24 && m >= 15) || (M === 22 && (m > 22 || (m === 22 && p >= 3))) ? 0 : 1)'; then
       echo "node    $node_v OK"
+    elif node -e 'const [M, m] = process.versions.node.split(".").map(Number); process.exit(M > 22 || (M === 22 && m >= 12) || (M === 20 && m >= 19) ? 0 : 1)'; then
+      echo "node    $node_v VIEJO - la API (NestJS 12) arranca, pero el CLI de Nest 12 (nest generate, nest upgrade) pide Node 22.22.3+ o 24.15+"
     else
-      echo "node    $node_v VIEJO - la API (NestJS 11) pide Node 20.11+"
+      echo "node    $node_v VIEJO - la API (NestJS 12, ESM) pide Node 20.19+ o 22.12+; el CLI de Nest 12, 22.22.3+ o 24.15+"
     fi
     echo "yarn    $(yarn -v 2>/dev/null || echo 'FALTA - npm i -g yarn')"
     echo "python  $(python --version 2>&1 || echo 'FALTA - solo necesario para el scraper')"
