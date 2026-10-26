@@ -8,6 +8,9 @@
 **Fecha:** 2026-10-24
 **Status:** Reemplazada (2026-10-24) por US-88 → US-91. Se detuvo en su
 CA-1: Nest 12 obliga a un rediseño (ver «Resultado»).
+**Estado final (2026-10-26):** la API corre en Nest 12 (`@nestjs/*` 12.1.3,
+Swagger 12.0.2) sobre ESM, por US-90 + [US-91](./91-nestjs-12-sobre-esm.md).
+El CLI sigue en 11 hasta que la máquina tenga Node 22.22.3+ (DA-3 de US-91).
 **Depende de:** US-78
 **LOC est.:** ~100
 

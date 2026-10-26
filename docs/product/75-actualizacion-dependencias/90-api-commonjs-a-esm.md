@@ -7,9 +7,9 @@
 
 **Épico:** [Épico 75](./README.md)
 **Fecha:** 2026-10-24
-**Status:** Detenida en el CA-1 (2026-10-25): el plugin de Swagger de
-`@nestjs/swagger` 11.4.7 no emite ESM ejecutable. Hace falta una decisión
-del dueño (DA-4, abajo)
+**Status:** Implementada (2026-10-26), verificada junto con
+[US-91](./91-nestjs-12-sobre-esm.md) (DA-4 a). Pendiente de la integración:
+`just verify` con el shop y el admin (CA-2)
 **Depende de:** US-88 y US-89
 **LOC est.:** ~750 (sobre todo mecánico: extensiones `.js` en los imports
 relativos)
@@ -112,11 +112,11 @@ Feature: API en ESM
 ## Definición de Done
 
 - [x] DA-1..DA-3 confirmadas (propuestas por defecto aplicadas). DA-4
-      abierta.
+      resuelta el 2026-10-25: (a), cierre junto con US-91.
 - [x] Línea base (vitest, huella de contrato) en CommonJS. `just verify`:
       pendiente de la integración (los puertos 3002/3003 los usa US-82).
-- [ ] CA-1..CA-3 con la salida pegada. **Bloqueado en el CA-1** (ver
-      «Resultado»).
+- [x] CA-1..CA-3 con la salida pegada, sobre Nest 12 (ver «Cierre»).
+      `just verify`: pendiente de la integración.
 - [x] El codemod de extensiones en un commit propio, separado de los ajustes
       a mano.
 - [x] Lint sin escribir en 0.
@@ -327,7 +327,7 @@ Por eso la guía dice que `nest-cli.json` es igual en CommonJS y en ESM.
 Pero pide `@nestjs/common` y `@nestjs/core` `^12.0.0`, así que no se puede
 usar con Nest 11.
 
-### DA-4 — Abierta: cómo destrabar el CA-1
+### DA-4 — Cómo destrabar el CA-1 (resuelta: **(a)**, 2026-10-25)
 
 | Opción | Coste |
 |---|---|
@@ -357,3 +357,91 @@ usar con Nest 11.
   se importa con `type`.
 - Con los `@nestjs/*` 12 hay que repetir la comprobación de los namespaces
   CJS: contrastar cada import con nombre contra lo que Node expone.
+
+## Cierre — 2026-10-26, junto con US-91 (DA-4 a)
+
+Misma rama, con los `@nestjs/*` de ejecución ya en 12 (commit `3e56038`,
+detalle en [US-91](./91-nestjs-12-sobre-esm.md)). **Ningún cambio de código
+nuevo para ESM:** `@nestjs/swagger` 12.0.2 detecta ESM por archivo y emite
+imports estáticos, con el mismo `nest-cli.json` (`"plugins":
+["@nestjs/swagger"]`, sin opciones). API compilada en el puerto 9011 con
+`PORT=9011 DATABASE_URL=postgresql://safari:safari@localhost:5433/safari_scraper JWT_SECRET=us91-desechable`.
+
+### CA-1 — Arranca como ESM ✅
+
+```
+$ yarn build                                   # dos veces seguidas (trampa del tsbuildinfo de US-89)
+$ rimraf dist
+$ nest build
+Done in 103.15s.        # 1.ª: 333 .js en dist/
+Done in 40.97s.         # 2.ª: 333 .js, dist/main.js presente
+$ grep -rE '[^_.]require\("' dist --include=*.js | wc -l
+0                       # con Swagger 11.4.7 eran 113 archivos
+$ grep -rl openapi_import dist --include=*.js | wc -l
+102                     # los metadatos del plugin, como import estático
+$ node dist/main.js
+[InstanceLoader] StripeModule dependencies initialized +69ms
+[InstanceLoader] StripeCoreModule dependencies initialized +1ms
+WARN Duplicate DTO detected: "RefundPolicyPaginator" … (sigue siendo aviso)
+[NestApplication] Nest application successfully started +12ms
+Application is running on: http://[::1]:9011/api
+GET /docs       -> 200 3126 B
+GET /docs-json  -> 200 184441 B, 169 rutas
+```
+
+El único `require(` que queda en `dist/` es el de `common/fuse.js`, que sale
+de `createRequire` a propósito (ver «Ajustes a mano»). `nest start --watch`
+(lo que corre `just api-dev`) también arranca: `Found 0 errors`,
+`Nest application successfully started` y `GET /api/settings` 200 5504.
+
+### CA-2 — Misma batería y mismo contrato ✅ (salvo `just verify`)
+
+```
+$ npx vitest run
+ Test Files  34 passed (34)
+      Tests  565 passed (565)
+```
+
+La huella de contrato (27 entradas de US-78 más las 7 del mock JSON de
+arriba) **da idéntica a la de CommonJS: 34 de 34, 0 diferencias**, también
+`/docs-json` (184441 B, `c7269d664b474cce`). Comparada contra los valores
+de la línea base de este documento y de US-89 (los JSON de la sesión de
+US-90 ya no estaban en el scratchpad; el script se reconstruyó con las
+mismas peticiones y reprodujo cada sha):
+
+```
+$ node -e "<diff de baseline-cjs-documentado.txt contra contract-nest12.json>"
+entradas 34 34 diferencias 0
+```
+
+`just verify` con el shop y el admin: **pendiente de la integración**
+(3002/3003/9001 son del árbol principal).
+
+### CA-3 — Interop, en la app final ✅
+
+- **`bcryptjs`** (import por defecto): `POST /token` con
+  `admin@demo.com` → **201**, claves `permissions,role,token`. Con eso
+  responden también `/me` (1345 B), Q8 `/users` (16025 B), `/orders` y
+  `/cards` con token de admin, con los mismos bytes que en CJS.
+- **PayPal** (import por defecto): ninguna ruta lo ejerce sin salir a la
+  red (las dos llamadas van al sandbox de PayPal). El constructor corre al
+  arrancar (`PaymentModule` y `OrdersService` se instancian) y, desde el
+  `dist/` compilado:
+
+  ```
+  $ node --input-type=module -e "… new PaypalPaymentService() …"
+  orders.OrdersCreateRequest function path /v2/checkout/orders? verb POST
+  orders.OrdersCaptureRequest function /v2/checkout/orders/X1/capture?
+  namespace keys [ 'core', 'default' ]      # por eso no sirve import * as
+  ```
+- La comprobación de namespaces (`check-named-imports.mjs`), repetida con
+  `@nestjs/*` 12: `@safari/db` 172/172, `class-validator` 5/5,
+  `class-transformer` 2/2, `nestjs-stripe` 2/2, `@nestjs/config` 1/1,
+  `@nestjs/core` 3/3, `@nestjs/swagger` 6/6, `@nestjs/mapped-types` 1/1,
+  `uuid` 1/1; `bcryptjs`, PayPal, `stripe` y `fuse.js` con `default`. Los
+  que «faltan» son interfaces que TS borra: `ExecutionContext` y
+  `CanActivate` (`@nestjs/common`), `JwtModuleOptions` y `JwtSignOptions`
+  (`@nestjs/jwt`), `NestExpressApplication` y `Request`/`Response`/
+  `NextFunction` (`express`). Igual que en Nest 11.
+
+`npx tsc --noEmit -p tsconfig.json` 0 y lint sin escribir 0.
