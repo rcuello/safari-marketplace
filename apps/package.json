@@ -29,7 +29,9 @@
     "rimraf": "3.0.2"
   },
   "resolutions": {
-    "react": "18.2.0",
-    "react-dom": "18.2.0"
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0"
   }
 }
