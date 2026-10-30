@@ -1,19 +1,19 @@
 import classNames from 'classnames';
 import { useMemo, useRef, useState } from 'react';
 import { Controller } from 'react-hook-form';
-import { Quill } from 'react-quill';
+import Quill from 'quill';
 import ValidationError from '@/components/ui/form-validation-error';
 import { uploadClient } from '@/data/client/upload';
 import { useTranslation } from 'next-i18next/pages';
 import { SnowTheme } from 'quill-color-picker-enhance';
-import ReactQuill from 'react-quill';
 // @ts-ignore
 import quillEmoji from 'react-quill-emoji';
 import 'react-quill-emoji/dist/quill-emoji.css';
-import 'react-quill/dist/quill.snow.css';
+import 'quill/dist/quill.snow.css';
 import { twMerge } from 'tailwind-merge';
 import Loader from '@/components/ui/loader/loader';
 import TooltipLabel from '@/components/ui/tooltip-label';
+import QuillEditor from '@/components/ui/wysiwyg-editor/quill-editor';
 
 export type RichTextEditorProps = {
   title?: string;
@@ -56,7 +56,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     },
     true,
   );
-  const quillRef = useRef();
+  const quillRef = useRef<Quill | null>(null);
 
   const ImageHandler = () => {
     const input = document.createElement('input');
@@ -76,10 +76,10 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         const reader = new FileReader();
         // Read the selected file as a data URL
         reader.onload = () => {
-          // @ts-ignore
-          const quillEditor = quillRef?.current?.getEditor();
+          const quillEditor = quillRef.current;
+          if (!quillEditor) return;
           // Get the current selection range and insert the image at that index
-          const range = quillEditor?.getSelection(true);
+          const range = quillEditor.getSelection(true);
           quillEditor.insertEmbed(
             range.index,
             'image',
@@ -187,7 +187,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         name={name}
         control={control}
         render={({ field }) => (
-          <ReactQuill
+          <QuillEditor
             id={name}
             modules={modules}
             formats={formats}
@@ -206,7 +206,6 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                   : '',
               ),
             )}
-            // @ts-ignore
             ref={quillRef}
             readOnly={disabled}
           />
