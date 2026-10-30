@@ -1,3 +1,7 @@
+/* Los @import van antes de cualquier regla: Turbopack (Lightning CSS) los
+   rechaza detrás de otras, y webpack ya los subía al principio del bundle. */
+@import './custom-plugins.css';
+@import './rich-text-editor.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -319,5 +323,3 @@
     -moz-appearance: textfield;
   }
 }
-@import './custom-plugins.css';
-@import './rich-text-editor.css';
