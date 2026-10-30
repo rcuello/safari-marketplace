@@ -1,11 +1,7 @@
+// <alpha-value> lo entienden la v3 y la v4; la v4 no acepta colores definidos como
+// función (US-86). Las variables siguen en formato "r, g, b".
 function withOpacity(variableName) {
-  return ({ opacityValue }) => {
-    if (opacityValue !== undefined) {
-      return `rgba(var(${variableName}), ${opacityValue})`;
-    } else {
-      return `rgb(var(${variableName}))`;
-    }
-  };
+  return `rgba(var(${variableName}), <alpha-value>)`;
 }
 
 module.exports = {
