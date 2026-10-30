@@ -59,7 +59,7 @@ import { ManufacturerDescriptionSuggestion } from '@/components/manufacturer/man
 
 export const updatedIcons = socialIcon.map((item: any) => {
   item.label = (
-    <div className="flex items-center text-body space-s-4">
+    <div className="flex items-center text-body space-x-4">
       <span className="flex items-center justify-center w-4 h-4">
         {getIcon({
           iconList: socialIcons,
@@ -302,7 +302,7 @@ export default function CreateOrUpdateManufacturerForm({
                 disabled={isSlugDisable}
               />
               <button
-                className="absolute top-[27px] right-px z-0 flex h-[46px] w-11 items-center justify-center rounded-tr rounded-br border-l border-solid border-border-base bg-white px-2 text-body transition duration-200 hover:text-heading focus:outline-none"
+                className="absolute top-[27px] right-px z-0 flex h-[46px] w-11 items-center justify-center rounded-tr rounded-br border-l border-solid border-border-base bg-white px-2 text-body transition duration-200 hover:text-heading focus:outline-hidden"
                 type="button"
                 title={t('common:text-edit')}
                 onClick={() => setIsSlugDisable(false)}
@@ -384,7 +384,7 @@ export default function CreateOrUpdateManufacturerForm({
                         remove(index);
                       }}
                       type="button"
-                      className="text-sm text-red-500 transition-colors duration-200 hover:text-red-700 focus:outline-none sm:col-span-1 sm:mt-4"
+                      className="text-sm text-red-500 transition-colors duration-200 hover:text-red-700 focus:outline-hidden sm:col-span-1 sm:mt-4"
                     >
                       {t('form:button-label-remove')}
                     </button>

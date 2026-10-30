@@ -16,7 +16,7 @@ export default function AuthorsPage() {
           {t('text-search-authors-subtitle')}
         </p>
 
-        <div className="w-full max-w-screen-md mt-12">
+        <div className="w-full max-w-(--breakpoint-md) mt-12">
           <Search
             variant="minimal"
             label="search"

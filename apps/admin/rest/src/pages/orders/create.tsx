@@ -135,7 +135,7 @@ export default function ProductsPage() {
           </div>
         )}
       </div>
-      {/* <div className="w-[440px] flex-shrink-0 bg-white">
+      {/* <div className="w-[440px] shrink-0 bg-white">
           <Cart />
         </div> */}
       {/* </div> */}

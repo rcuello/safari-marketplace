@@ -35,7 +35,7 @@ const ReviewModal = () => {
         <button
           onClick={closeModalAction}
           aria-label="Close panel"
-          className="inline-block outline-none focus:outline-0 px-3"
+          className="inline-block outline-hidden focus:outline-0 px-3"
         >
           <CloseIconNew />
         </button>

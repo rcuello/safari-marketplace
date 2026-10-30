@@ -24,7 +24,7 @@ const AddressCard: React.FC<AddressProps> = ({
       className={classNames(
         'group relative cursor-pointer rounded border p-4 hover:border-accent',
         {
-          'border-accent shadow-sm': checked,
+          'border-accent shadow-xs': checked,
           'border-transparent bg-gray-100': !checked,
         },
       )}
@@ -35,7 +35,7 @@ const AddressCard: React.FC<AddressProps> = ({
       <p className="text-sm text-sub-heading">
         {formatAddress(address?.address)}
       </p>
-      <div className="absolute top-4 flex space-x-2 opacity-0 group-hover:opacity-100 ltr:right-4 rtl:left-4 rtl:space-x-reverse">
+      <div className="absolute top-4 flex space-x-2 opacity-0 group-hover:opacity-100 ltr:right-4 rtl:left-4">
         {onEdit && (
           <button
             className="flex h-5 w-5 items-center justify-center rounded-full bg-accent text-light"

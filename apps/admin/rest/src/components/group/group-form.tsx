@@ -34,7 +34,7 @@ import { useProductsQuery } from '@/data/product';
 
 export const updatedIcons = typeIconList.map((item: any) => {
   item.label = (
-    <div className="flex items-center space-s-5">
+    <div className="flex items-center space-x-5">
       <span className="flex items-center justify-center w-5 h-5">
         {getIcon({
           iconList: typeIcons,
@@ -380,7 +380,7 @@ export default function CreateOrUpdateTypeForm({ initialValues }: IProps) {
                 disabled={isSlugDisable}
               />
               <button
-                className="absolute top-[27px] right-px z-0 flex h-[46px] w-11 items-center justify-center rounded-tr rounded-br border-l border-solid border-border-base bg-white px-2 text-body transition duration-200 hover:text-heading focus:outline-none"
+                className="absolute top-[27px] right-px z-0 flex h-[46px] w-11 items-center justify-center rounded-tr rounded-br border-l border-solid border-border-base bg-white px-2 text-body transition duration-200 hover:text-heading focus:outline-hidden"
                 type="button"
                 title={t('common:text-edit')}
                 onClick={() => setIsSlugDisable(false)}
@@ -527,9 +527,9 @@ export default function CreateOrUpdateTypeForm({ initialValues }: IProps) {
                     }}
                     type="button"
                     className={classNames(
-                      'text-sm text-red-500 transition-colors duration-200 hover:text-red-700 focus:outline-none sm:col-span-1 sm:mt-4',
+                      'text-sm text-red-500 transition-colors duration-200 hover:text-red-700 focus:outline-hidden sm:col-span-1 sm:mt-4',
                       layoutType === 'minimal' && index !== 0 && index > 0
-                        ? 'pointer-events-none cursor-not-allowed text-opacity-80'
+                        ? 'pointer-events-none cursor-not-allowed opacity-80'
                         : '',
                     )}
                     disabled={

@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { twMerge } from 'tailwind-merge';
 
 const classes = {
-  base: 'inline-flex items-center justify-center flex-shrink-0 border text-accent border-border-100 bg-accent/10 overflow-hidden relative',
+  base: 'inline-flex items-center justify-center shrink-0 border text-accent border-border-100 bg-accent/10 overflow-hidden relative',
   size: {
     sm: '32px',
     DEFAULT: '40px',

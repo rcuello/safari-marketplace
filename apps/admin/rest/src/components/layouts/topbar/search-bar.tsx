@@ -115,7 +115,7 @@ const SearchBar: React.FC<IProps> = ({}: IProps) => {
         <SearchIcon className="absolute inset-y-0 left-4 my-auto h-4 w-4" />
         <input
           type="text"
-          className="block w-full rounded-3xl border border-solid border-border-200 bg-gray-50 py-2 text-sm text-heading transition-[border] placeholder:text-gray-400 focus:border-accent focus:bg-white focus:outline-none focus:ring-0 ltr:pl-12 rtl:pr-12 sm:text-sm sm:leading-6"
+          className="block w-full rounded-3xl border border-solid border-border-200 bg-gray-50 py-2 text-sm text-heading transition-[border] placeholder:text-gray-400 focus:border-accent focus:bg-white focus:outline-hidden focus:ring-0 ltr:pl-12 rtl:pr-12 sm:text-sm sm:leading-6"
           placeholder={t('text-top-bar-search-placeholder')}
           value={searchText}
           onChange={(e) => handleSearch(e?.target?.value)}

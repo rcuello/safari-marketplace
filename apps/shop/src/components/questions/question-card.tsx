@@ -42,7 +42,7 @@ export default function QuestionCard({ question }: QuestionCardProps) {
   }
 
   return (
-    <div className="border-t border-border-200 border-opacity-70 py-7 first:border-t-0">
+    <div className="border-t border-border-200/70 py-7 first:border-t-0">
       <p className="mb-2.5 text-base font-semibold text-heading">
         <span className="inline-block uppercase ltr:mr-1 rtl:ml-1">Q:</span>
         {userQuestion}
@@ -61,7 +61,7 @@ export default function QuestionCard({ question }: QuestionCardProps) {
           {t('text-date')}: {dayjs(created_at).format('D MMMM, YYYY')}
         </div>
 
-        <div className="flex items-center space-x-6 rtl:space-x-reverse">
+        <div className="flex items-center space-x-6">
           <button
             className="flex items-center text-xs tracking-wider text-gray-400 transition"
             disabled={my_feedback?.positive}

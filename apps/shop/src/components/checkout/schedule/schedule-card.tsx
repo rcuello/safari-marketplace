@@ -9,7 +9,7 @@ const ScheduleCard: React.FC<ScheduleProps> = ({ checked, schedule }) => (
     className={classNames(
       'relative p-4 rounded border cursor-pointer group hover:border-accent',
       {
-        'border-accent shadow-sm': checked,
+        'border-accent shadow-xs': checked,
         'bg-gray-100 border-transparent': !checked,
       },
     )}

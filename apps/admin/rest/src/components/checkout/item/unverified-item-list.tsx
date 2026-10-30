@@ -16,7 +16,7 @@ const UnverifiedItemList = () => {
   );
   return (
     <div className="w-full">
-      <div className="space-s-4 mb-4 flex flex-col items-center">
+      <div className="space-x-4 mb-4 flex flex-col items-center">
         <span className="text-base font-bold text-heading">
           {t('text-your-order')}
         </span>

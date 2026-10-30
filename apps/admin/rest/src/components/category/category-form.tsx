@@ -41,7 +41,7 @@ import { CategoryDetailSuggestion } from '@/components/category/category-ai-prom
 
 export const updatedIcons = categoryIcons.map((item: any) => {
   item.label = (
-    <div className="flex items-center space-s-5">
+    <div className="flex items-center space-x-5">
       <span className="flex items-center justify-center w-5 h-5">
         {getIcon({
           iconList: categoriesIcon,
@@ -294,7 +294,7 @@ export default function CreateOrUpdateCategoriesForm({
                 disabled={isSlugDisable}
               />
               <button
-                className="absolute top-[27px] right-px z-0 flex h-[46px] w-11 items-center justify-center rounded-tr rounded-br border-l border-solid border-border-base bg-white px-2 text-body transition duration-200 hover:text-heading focus:outline-none"
+                className="absolute top-[27px] right-px z-0 flex h-[46px] w-11 items-center justify-center rounded-tr rounded-br border-l border-solid border-border-base bg-white px-2 text-body transition duration-200 hover:text-heading focus:outline-hidden"
                 type="button"
                 title={t('common:text-edit')}
                 onClick={() => setIsSlugDisable(false)}

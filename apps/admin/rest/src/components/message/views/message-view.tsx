@@ -135,7 +135,7 @@ const UserMessageView = ({
     <>
       <div
         id={id}
-        className="relative flex-auto flex-grow h-full py-16 overflow-x-hidden overflow-y-auto"
+        className="relative flex-auto grow h-full py-16 overflow-x-hidden overflow-y-auto"
         ref={refs.setReference}
         style={{
           maxHeight:

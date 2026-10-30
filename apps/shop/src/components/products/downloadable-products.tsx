@@ -76,7 +76,7 @@ const DownloadableProducts: React.FC = () => {
         return (
           <div
             key={item.purchase_key}
-            className="flex w-full space-x-4 border-b border-gray-200 py-5 first:pt-0 last:border-0 last:pb-0 rtl:space-x-reverse sm:space-x-5"
+            className="flex w-full space-x-4 border-b border-gray-200 py-5 first:pt-0 last:border-0 last:pb-0 sm:space-x-5"
           >
             <div className="relative flex h-16 w-16 shrink-0 items-center justify-center sm:h-20 sm:w-20">
               <Image
@@ -91,7 +91,7 @@ const DownloadableProducts: React.FC = () => {
               />
             </div>
 
-            <div className="flex w-full flex-col items-start sm:flex-row sm:justify-between sm:space-x-4 rtl:sm:space-x-reverse">
+            <div className="flex w-full flex-col items-start sm:flex-row sm:justify-between sm:space-x-4">
               <div className="flex w-full flex-col space-y-1 sm:items-start">
                 <Link
                   href={`${Routes.products}/${
@@ -112,7 +112,7 @@ const DownloadableProducts: React.FC = () => {
                   )}
                 </Link>
 
-                <p className="space-y-1 sm:space-x-1 sm:space-y-0 rtl:sm:space-x-reverse">
+                <p className="space-y-1 sm:space-x-1 sm:space-y-0">
                   <span className="block text-sm font-semibold text-body-dark sm:inline-block sm:w-auto">
                     {t('text-key')}: {item?.purchase_key}
                   </span>

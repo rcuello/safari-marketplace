@@ -55,7 +55,7 @@ const RadialBarChart = ({
   };
 
   return (
-    <div className="h-full w-full rounded bg-light shadow-sm">
+    <div className="h-full w-full rounded bg-light shadow-xs">
       <div className="flex items-start justify-between p-8">
         <h3 className="text-base font-semibold text-heading">{widgetTitle}</h3>
       </div>
@@ -72,7 +72,7 @@ const RadialBarChart = ({
           {label?.map((_: any, index: number) => (
             <div className="flex items-start justify-start px-2" key={index}>
               <span
-                className="me-3 flex h-4 w-4 flex-shrink-0 rounded-full"
+                className="me-3 flex h-4 w-4 shrink-0 rounded-full"
                 style={{ backgroundColor: colors[index] }}
               />
               <div className="flex flex-col">

@@ -10,7 +10,7 @@ const MapWidget = ({ data, totalText }: any) => {
   };
 
   return (
-    <div className="bg-light shadow-sm rounded w-full h-full">
+    <div className="bg-light shadow-xs rounded w-full h-full">
       <div className="flex w-full my-auto mx-0 py-12 px-9">
         <div className="w-5/12 flex flex-col items-center justify-center py-12 pe-8">
           <span className="text-xs text-body mb-1 whitespace-nowrap">
@@ -53,7 +53,7 @@ const MapWidget = ({ data, totalText }: any) => {
         </div>
       </div>
       <div className="w-full flex border border-border-100">
-        <div className="w-full flex flex-wrap  flex-shrink-0 py-5 px-5 md:px-4 justify-around">
+        <div className="w-full flex flex-wrap shrink-0 py-5 px-5 md:px-4 justify-around">
           {data.map((item: any, index: number) => (
             <div
               className="w-1/2 md:w-1/4 flex flex-col justify-between py-4 px-4 md:px-3"

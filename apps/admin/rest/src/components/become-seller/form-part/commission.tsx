@@ -207,7 +207,7 @@ const Commission = ({
                             }
                           }}
                           type="button"
-                          className="text-sm text-red-500 transition-colors duration-200 hover:text-red-700 focus:outline-none"
+                          className="text-sm text-red-500 transition-colors duration-200 hover:text-red-700 focus:outline-hidden"
                         >
                           {t('form:button-label-remove')}
                         </button>

@@ -46,7 +46,7 @@ export default function CheckoutPage() {
 
   return (
     <div className="bg-gray-100">
-      <div className="lg:space-s-8 m-auto flex w-full max-w-5xl flex-col items-center lg:flex-row lg:items-start">
+      <div className="lg:space-x-8 m-auto flex w-full max-w-5xl flex-col items-center lg:flex-row lg:items-start">
         <div className="w-full space-y-6 lg:max-w-2xl">
           <CustomerGrid
             className="shadow-700 bg-light p-5 md:p-8"

@@ -37,8 +37,8 @@ const DisApproveCouponView = () => {
       deleteBtnLoading={loading}
       deleteBtnText="text-disapprove"
       icon={<CheckMarkCircle className="w-10 h-10 m-auto mt-4 text-accent" />}
-      deleteBtnClassName="!bg-accent focus:outline-none hover:!bg-accent-hover focus:!bg-accent-hover"
-      cancelBtnClassName="!bg-red-600 focus:outline-none hover:!bg-red-700 focus:!bg-red-700"
+      deleteBtnClassName="!bg-accent focus:outline-hidden hover:!bg-accent-hover focus:!bg-accent-hover"
+      cancelBtnClassName="!bg-red-600 focus:outline-hidden hover:!bg-red-700 focus:!bg-red-700"
       title="text-disapprove-coupon"
       description="text-want-disapprove-coupon"
     />

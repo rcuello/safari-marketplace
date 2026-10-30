@@ -98,7 +98,7 @@ export const ThumbsCarousel: React.FC<Props> = ({
         </Swiper>
         <div
           ref={prevRef}
-          className="absolute z-10 flex items-center justify-center w-8 h-8 -mt-4 transition-all duration-200 border rounded-full shadow-xl cursor-pointer product-gallery-prev top-2/4 border-border-200 border-opacity-70 bg-light text-heading hover:bg-gray-100 ltr:-left-4 rtl:-right-4 md:-mt-5 md:h-9 md:w-9 ltr:md:-left-5 rtl:md:-right-5"
+          className="absolute z-10 flex items-center justify-center w-8 h-8 -mt-4 transition-all duration-200 border rounded-full shadow-xl cursor-pointer product-gallery-prev top-2/4 border-border-200/70 bg-light text-heading hover:bg-gray-100 ltr:-left-4 rtl:-right-4 md:-mt-5 md:h-9 md:w-9 ltr:md:-left-5 rtl:md:-right-5"
         >
           {isRTL ? (
             <ChevronRight className="w-4 h-4" />
@@ -108,7 +108,7 @@ export const ThumbsCarousel: React.FC<Props> = ({
         </div>
         <div
           ref={nextRef}
-          className="absolute z-10 flex items-center justify-center w-8 h-8 -mt-4 transition-all duration-200 border rounded-full shadow-xl cursor-pointer product-gallery-next top-2/4 border-border-200 border-opacity-70 bg-light text-heading hover:bg-gray-100 ltr:-right-4 rtl:-left-4 md:-mt-5 md:h-9 md:w-9 ltr:md:-right-5 rtl:md:-left-5"
+          className="absolute z-10 flex items-center justify-center w-8 h-8 -mt-4 transition-all duration-200 border rounded-full shadow-xl cursor-pointer product-gallery-next top-2/4 border-border-200/70 bg-light text-heading hover:bg-gray-100 ltr:-right-4 rtl:-left-4 md:-mt-5 md:h-9 md:w-9 ltr:md:-right-5 rtl:md:-left-5"
         >
           {isRTL ? (
             <ChevronLeft className="w-4 h-4" />
@@ -138,7 +138,7 @@ export const ThumbsCarousel: React.FC<Props> = ({
           {gallery?.map((item: any) => (
             <SwiperSlide
               key={`product-thumb-gallery-${item.id}`}
-              className="!flex cursor-pointer items-center justify-center overflow-hidden rounded border border-border-200 border-opacity-75 hover:opacity-75"
+              className="!flex cursor-pointer items-center justify-center overflow-hidden rounded border border-border-200/75 hover:opacity-75"
             >
               <div className="relative w-20 h-20">
                 <Image
@@ -154,7 +154,7 @@ export const ThumbsCarousel: React.FC<Props> = ({
             ? video.map((item: any, index: number) => (
                 <SwiperSlide
                   key={`product-video-${index}`}
-                  className="relative flex items-center justify-center overflow-hidden border border-opacity-75 rounded cursor-pointer border-border-200 hover:opacity-75"
+                  className="relative flex items-center justify-center overflow-hidden border rounded cursor-pointer border-border-200/75 hover:opacity-75"
                 >
                   {/* <Image
                     src={productPlaceholder}

@@ -231,8 +231,8 @@ const ProductList = ({
         <div
           className={`flex justify-start ${
             record?.quantity > 0 && record?.quantity < 10
-              ? 'flex-col items-baseline space-y-2 3xl:flex-row 3xl:space-x-2 3xl:space-y-0 rtl:3xl:space-x-reverse'
-              : 'items-center space-x-2 rtl:space-x-reverse'
+              ? 'flex-col items-baseline space-y-2 3xl:flex-row 3xl:space-x-2 3xl:space-y-0'
+              : 'items-center space-x-2'
           }`}
         >
           <Badge
@@ -240,7 +240,7 @@ const ProductList = ({
             color={
               status.toLocaleLowerCase() === 'draft'
                 ? 'bg-yellow-400/10 text-yellow-500'
-                : 'bg-accent bg-opacity-10 !text-accent'
+                : 'bg-accent/10 !text-accent'
             }
             className="capitalize"
           />

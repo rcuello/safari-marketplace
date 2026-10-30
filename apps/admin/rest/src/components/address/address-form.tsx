@@ -88,7 +88,7 @@ const AddressForm: React.FC<any> = ({ onSubmit }) => {
           <>
             <div>
               <Label>{t('text-type')}</Label>
-              <div className="flex items-center space-s-4">
+              <div className="flex items-center space-x-4">
                 <Radio
                   id="billing"
                   {...register('type')}

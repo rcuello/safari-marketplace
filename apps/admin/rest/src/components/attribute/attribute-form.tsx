@@ -172,7 +172,7 @@ export default function CreateOrUpdateAttributeForm({ initialValues }: IProps) {
                     <button
                       onClick={() => remove(index)}
                       type="button"
-                      className="text-sm text-red-500 transition-colors duration-200 hover:text-red-700 focus:outline-none sm:col-span-1 sm:mt-4"
+                      className="text-sm text-red-500 transition-colors duration-200 hover:text-red-700 focus:outline-hidden sm:col-span-1 sm:mt-4"
                     >
                       {t('form:button-label-remove')}
                     </button>

@@ -16,7 +16,7 @@ export default function Author({ author, variables }: any) {
   const { width } = useWindowSize();
   return (
     <>
-      <div className="mx-auto min-h-screen max-w-screen-xl">
+      <div className="mx-auto min-h-screen max-w-(--breakpoint-xl)">
         <Details author={author} />
         <h2 className="mb-8 text-2xl font-semibold tracking-tight text-heading lg:text-3xl">
           {t('text-author-books')}

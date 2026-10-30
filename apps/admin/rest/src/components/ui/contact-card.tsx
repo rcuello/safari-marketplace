@@ -11,7 +11,7 @@ const ContactCard: React.FC<PhoneNumberProps> = ({ checked, number }) => {
       className={classNames(
         'relative p-4 h-full rounded border cursor-pointer group hover:border-accent',
         {
-          'border-accent shadow-sm bg-light': checked,
+          'border-accent shadow-xs bg-light': checked,
           'bg-gray-100 border-transparent': !checked,
         },
       )}

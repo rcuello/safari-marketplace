@@ -22,7 +22,7 @@ const Link: React.FC<LinkProps> = ({
       {...props}
       className={classNames(
         {
-          "focus:ring-accent-700' inline-flex h-9 flex-shrink-0 items-center justify-center rounded border border-transparent bg-accent px-3 py-0 text-sm font-semibold leading-none text-light outline-none transition duration-300 ease-in-out hover:bg-accent-hover focus:shadow focus:outline-none focus:ring-1":
+          "focus:ring-accent-700' inline-flex h-9 shrink-0 items-center justify-center rounded border border-transparent bg-accent px-3 py-0 text-sm font-semibold leading-none text-light outline-hidden transition duration-300 ease-in-out hover:bg-accent-hover focus:shadow focus:outline-hidden focus:ring-1":
             variant === 'button',
         },
         className,

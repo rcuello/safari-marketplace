@@ -107,7 +107,7 @@ const BarChart = ({
   };
 
   return (
-    <div className="h-full w-full overflow-hidden rounded-lg bg-white p-6 shadow-sm md:p-7">
+    <div className="h-full w-full overflow-hidden rounded-lg bg-white p-6 shadow-xs md:p-7">
       <div className="mb-5 flex items-center justify-between">
         <h3 className="before:content-'' relative mt-1 bg-light text-lg font-semibold text-heading before:absolute before:-top-px before:h-7 before:w-1 before:rounded-tr-md before:rounded-br-md before:bg-accent ltr:before:-left-6 rtl:before:-right-6 md:before:-top-0.5 md:ltr:before:-left-7 md:rtl:before:-right-7 lg:before:h-8">
           {widgetTitle}

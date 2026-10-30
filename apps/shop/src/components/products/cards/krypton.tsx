@@ -33,7 +33,7 @@ const Krypton: React.FC<KryptonProps> = ({ product, className }) => {
     <Link href={Routes.product(slug)}>
       <article
         className={cn(
-          'product-card cart-type-krypton h-full cursor-pointer overflow-hidden rounded border border-border-200 bg-light transition-shadow duration-200 hover:shadow-sm',
+          'product-card cart-type-krypton h-full cursor-pointer overflow-hidden rounded border border-border-200 bg-light transition-shadow duration-200 hover:shadow-xs',
           className,
         )}
       >

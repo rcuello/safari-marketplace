@@ -56,13 +56,13 @@ const Drawer: React.FC<DrawerProps> = ({
                   variants={fadeInOut(0.35)}
                   onClick={onClose}
                   className={cn(
-                    'absolute inset-0 bg-dark bg-opacity-40',
+                    'absolute inset-0 bg-dark/40',
                     useBlurBackdrop && 'use-blur-backdrop',
                   )}
                 />
                 <div
                   className={cn(
-                    'absolute inset-y-0 flex max-w-full outline-none',
+                    'absolute inset-y-0 flex max-w-full outline-hidden',
                     variant === 'right'
                       ? 'ltr:right-0 rtl:right-0'
                       : 'ltr:left-0 rtl:left-0',

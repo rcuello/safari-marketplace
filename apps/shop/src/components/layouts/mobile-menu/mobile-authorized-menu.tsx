@@ -21,15 +21,15 @@ export default function MobileAuthorizedMenu() {
   return (
     <DrawerWrapper>
       <ul className="grow">
-        <li className="flex w-full items-center justify-between border-t border-dashed border-border-200 bg-gray-100 px-5 pt-3 text-sm font-semibold capitalize text-body focus:outline-none ltr:text-left rtl:text-right md:px-8">
+        <li className="flex w-full items-center justify-between border-t border-dashed border-border-200 bg-gray-100 px-5 pt-3 text-sm font-semibold capitalize text-body focus:outline-hidden ltr:text-left rtl:text-right md:px-8">
           <span>{t('text-total-points')}</span>
           <span>{me?.wallet?.total_points ?? 0}</span>
         </li>
-        <li className="flex w-full items-center justify-between bg-gray-100 px-5 pt-3 text-sm font-semibold capitalize text-body focus:outline-none ltr:text-left rtl:text-right md:px-8">
+        <li className="flex w-full items-center justify-between bg-gray-100 px-5 pt-3 text-sm font-semibold capitalize text-body focus:outline-hidden ltr:text-left rtl:text-right md:px-8">
           <span>{t('text-points-used')}</span>
           <span>{me?.wallet?.points_used ?? 0}</span>
         </li>
-        <li className="flex w-full items-center justify-between border-b border-dashed border-border-200 bg-gray-100 px-5 py-3 text-sm font-semibold capitalize text-body focus:outline-none ltr:text-left rtl:text-right md:px-8">
+        <li className="flex w-full items-center justify-between border-b border-dashed border-border-200 bg-gray-100 px-5 py-3 text-sm font-semibold capitalize text-body focus:outline-hidden ltr:text-left rtl:text-right md:px-8">
           <span>{t('text-available-points')}</span>
           <span>{me?.wallet?.available_points ?? 0}</span>
         </li>

@@ -17,11 +17,11 @@ const CartCounterButton = () => {
   // }
   return (
     <button
-      className="product-cart ltr:right-0 ltr:left-auto rtl:left-0 rtl:right-auto shadow-900 rounded-te-none rounded-be-none fixed top-1/2 z-40 -mt-12 flex flex-col items-center justify-center rounded bg-accent p-3 pt-3.5 text-sm font-semibold text-light transition-colors duration-200 hover:bg-accent-hover focus:outline-none"
+      className="product-cart ltr:right-0 ltr:left-auto rtl:left-0 rtl:right-auto shadow-900 rounded-se-none rounded-ee-none fixed top-1/2 z-40 -mt-12 flex flex-col items-center justify-center rounded bg-accent p-3 pt-3.5 text-sm font-semibold text-light transition-colors duration-200 hover:bg-accent-hover focus:outline-hidden"
       onClick={openCartSidebar}
     >
       <span className="flex pb-0.5">
-        <CartCheckBagIcon className="flex-shrink-0" width={14} height={16} />
+        <CartCheckBagIcon className="shrink-0" width={14} height={16} />
         <span className="ms-2 flex">
           {formatString(totalUniqueItems, t('common:text-item'))}
         </span>

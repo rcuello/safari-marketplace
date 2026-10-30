@@ -31,7 +31,7 @@ export default function RefundPolicyPage() {
           breadcrumbTitle={t('text-home')}
         />
         {/* End of page header */}
-        <div className="mx-auto w-full max-w-screen-lg px-4 py-10">
+        <div className="mx-auto w-full max-w-(--breakpoint-lg) px-4 py-10">
           {!isLoading && !refundPolicies.length ? (
             <div className="min-h-full p-5 md:p-8 lg:p-12 2xl:p-16">
               <NotFound text="text-no-faq" className="h-96" />

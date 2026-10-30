@@ -107,7 +107,7 @@ const VerifiedItemList: React.FC<Props> = ({ className }) => {
   );
   return (
     <div className={className}>
-      <div className="mb-4 flex flex-col items-center space-s-4">
+      <div className="mb-4 flex flex-col items-center space-x-4">
         <span className="text-base font-bold text-heading">
           {t('text-your-order')}
         </span>

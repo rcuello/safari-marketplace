@@ -49,14 +49,14 @@ const AuthorizedMenu: React.FC<{ minimal?: boolean }> = ({ minimal }) => {
         <Menu.Items
           as="ul"
           className={cn(
-            'absolute mt-5 w-48 rounded bg-white pb-4 shadow-700 focus:outline-none ltr:right-0 ltr:origin-top-right rtl:left-0 rtl:origin-top-left',
+            'absolute mt-5 w-48 rounded bg-white pb-4 shadow-700 focus:outline-hidden ltr:right-0 ltr:origin-top-right rtl:left-0 rtl:origin-top-left',
             {
               '!mt-2': minimal,
             },
           )}
         >
           <Menu.Item>
-            <li className="flex w-full items-center justify-between bg-accent-500 px-6 py-4 text-xs font-semibold capitalize text-light focus:outline-none ltr:text-left rtl:text-right">
+            <li className="flex w-full items-center justify-between bg-accent-500 px-6 py-4 text-xs font-semibold capitalize text-light focus:outline-hidden ltr:text-left rtl:text-right">
               <span>{t('text-points')}</span>
               <span>{me?.wallet?.available_points ?? 0}</span>
             </li>

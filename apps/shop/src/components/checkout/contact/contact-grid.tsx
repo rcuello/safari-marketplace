@@ -45,7 +45,7 @@ const ContactGrid = ({
           'md:mb-8': count,
         })}
       >
-        <div className="flex items-center space-x-3 rtl:space-x-reverse md:space-x-4">
+        <div className="flex items-center space-x-3 md:space-x-4">
           {count && (
             <span className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-base text-light lg:text-xl">
               {count}
@@ -68,7 +68,7 @@ const ContactGrid = ({
           country="us"
           value={contactNumber}
           disabled={true}
-          inputClass="!p-0 ltr:!pr-4 rtl:!pl-4 ltr:!pl-14 rtl:!pr-14 !flex !items-center !w-full !appearance-none !transition !duration-300 !ease-in-out !text-heading !text-sm focus:!outline-none focus:!ring-0 !border !border-border-base !rounded focus:!border-accent !h-12"
+          inputClass="!p-0 ltr:!pr-4 rtl:!pl-4 ltr:!pl-14 rtl:!pr-14 !flex !items-center !w-full !appearance-none !transition !duration-300 !ease-in-out !text-heading !text-sm focus:!outline-hidden focus:!ring-0 !border !border-border-base !rounded focus:!border-accent !h-12"
           dropdownClass="focus:!ring-0 !border !border-border-base !shadow-350"
         />
       </div>

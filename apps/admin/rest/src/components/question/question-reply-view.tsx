@@ -46,7 +46,7 @@ const QuestionReplyView = () => {
   return (
     <div className="m-auto w-full max-w-lg rounded bg-light sm:w-[32rem]">
       <div className="flex items-center border-b border-border-200 p-7">
-        <div className="flex-shrink-0 rounded border border-border-100">
+        <div className="shrink-0 rounded border border-border-100">
           <Image
             src={
               data?.product?.image?.thumbnail ??
@@ -63,7 +63,7 @@ const QuestionReplyView = () => {
           <h3 className="mb-2 text-sm font-semibold text-heading md:text-base">
             {data?.product?.name}
           </h3>
-          <div className="text-sm text-body text-opacity-80">
+          <div className="text-sm text-body/80">
             {t('common:text-product-id')}:{' '}
             <span className="font-semibold text-accent">
               {data?.product?.id}

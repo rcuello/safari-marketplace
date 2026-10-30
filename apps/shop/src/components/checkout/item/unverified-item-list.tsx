@@ -17,7 +17,7 @@ const UnverifiedItemList = ({ hideTitle = false }: { hideTitle?: boolean }) => {
   return (
     <div className="w-full">
       {!hideTitle && (
-        <div className="mb-4 flex flex-col items-center space-x-4 rtl:space-x-reverse">
+        <div className="mb-4 flex flex-col items-center space-x-4">
           <span className="text-base font-bold text-heading">
             {t('text-your-order')}
           </span>

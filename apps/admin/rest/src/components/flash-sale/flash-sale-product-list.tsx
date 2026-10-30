@@ -370,17 +370,17 @@ const FlashSaleProductList = ({
         <div
           className={`flex justify-start ${
             record?.quantity > 0 && record?.quantity < 10
-              ? 'flex-col items-baseline space-y-3 3xl:flex-row 3xl:space-x-3 3xl:space-y-0 rtl:3xl:space-x-reverse'
-              : 'items-center space-x-3 rtl:space-x-reverse'
+              ? 'flex-col items-baseline space-y-3 3xl:flex-row 3xl:space-x-3 3xl:space-y-0'
+              : 'items-center space-x-3'
           }`}
         >
           <Badge
             text={status}
             className={classNames(
-              'bg-opacity-10 capitalize',
+              'capitalize',
               status?.toLocaleLowerCase() === 'draft'
-                ? 'bg-[#F3AF00] text-[#F3AF00]'
-                : 'bg-accent text-accent',
+                ? 'bg-[#F3AF00]/10 text-[#F3AF00]'
+                : 'bg-accent/10 text-accent',
             )}
           />
           {record?.quantity > 0 && record?.quantity < 10 && (

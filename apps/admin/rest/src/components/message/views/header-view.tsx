@@ -69,7 +69,7 @@ const HeaderView = ({ className, shop, ...rest }: Props) => {
               <Link
                 href={`${process.env.NEXT_PUBLIC_SHOP_URL}/${locale}/shops/${shop?.slug}`}
                 target="_blank"
-                className="text-xl text-[#929292] transition-colors duration-300 hover:text-opacity-60"
+                className="text-xl text-[#929292] transition-colors duration-300 hover:text-[#929292]/60"
                 title={shop?.name}
               >
                 <ExternalLinkIconNew />

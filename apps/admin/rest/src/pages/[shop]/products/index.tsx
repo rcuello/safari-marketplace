@@ -155,7 +155,7 @@ export default function ProductsPage() {
 
             <button
               onClick={handleImportModal}
-              className="hidden h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gray-50 transition duration-300 ms-5 hover:bg-gray-100 md:flex"
+              className="hidden h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-50 transition duration-300 ms-5 hover:bg-gray-100 md:flex"
             >
               <MoreIcon className="w-3.5 text-body" />
             </button>

@@ -50,7 +50,7 @@ function WishlistItem({ product }: { product: Product }) {
     return openModal('SELECT_PRODUCT_VARIATION', product?.slug);
   }
   return (
-    <div className="flex w-full items-start space-x-4 border-b border-gray-200 py-5 first:pt-0 last:border-0 last:pb-0 rtl:space-x-reverse sm:space-x-5 xl:items-center">
+    <div className="flex w-full items-start space-x-4 border-b border-gray-200 py-5 first:pt-0 last:border-0 last:pb-0 sm:space-x-5 xl:items-center">
       <div className="relative flex h-16 w-16 shrink-0 items-center justify-center border border-gray-200 sm:h-[74px] sm:w-[74px]">
         <Image
           src={product?.image?.thumbnail ?? productPlaceholder}
@@ -59,7 +59,7 @@ function WishlistItem({ product }: { product: Product }) {
         />
       </div>
 
-      <div className="flex w-full flex-col items-start sm:flex-row sm:justify-between sm:space-x-4 rtl:sm:space-x-reverse xl:items-center">
+      <div className="flex w-full flex-col items-start sm:flex-row sm:justify-between sm:space-x-4 xl:items-center">
         <div className="flex w-full flex-col sm:items-start">
           <Link
             href={`${Routes.products}/${product?.slug}`}
@@ -69,7 +69,7 @@ function WishlistItem({ product }: { product: Product }) {
             {product?.name}
           </Link>
 
-          {/* <p className="mt-3 space-y-2 space-x-3.5 sm:space-y-0 rtl:sm:space-x-reverse"> */}
+          {/* <p className="mt-3 space-y-2 space-x-3.5 sm:space-y-0"> */}
           <p className="mt-1.5 flex flex-col items-start space-y-3">
             <Link
               href={Routes.shop(product?.shop?.slug)}
@@ -83,7 +83,7 @@ function WishlistItem({ product }: { product: Product }) {
 
         <div className="mt-4 flex w-full flex-col justify-between space-y-3 xs:flex-row xs:space-y-0 sm:w-auto sm:flex-col sm:justify-end sm:space-y-3 md:mt-0">
           {product?.product_type.toLowerCase() === 'variable' ? (
-            <div className="flex items-center space-x-1.5 rtl:space-x-reverse">
+            <div className="flex items-center space-x-1.5">
               <span className="text-xl font-semibold text-heading">
                 {minPrice}
               </span>
@@ -105,7 +105,7 @@ function WishlistItem({ product }: { product: Product }) {
             </span>
           )}
 
-          <div className="flex items-center space-x-6 rtl:space-x-reverse sm:justify-end">
+          <div className="flex items-center space-x-6 sm:justify-end">
             {Number(product?.quantity) > 0 && (
               <>
                 {product?.product_type.toLowerCase() === 'variable' ? (

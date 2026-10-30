@@ -30,7 +30,7 @@ const Oganesson: React.FC<OganessonProps> = ({ product, className }) => {
     <article
       className={cn('product-card cart-type-oganesson group h-full', className)}
     >
-      <div className="relative flex h-48 w-auto items-center justify-center overflow-hidden rounded bg-light transition-shadow group-hover:shadow-sm sm:h-64">
+      <div className="relative flex h-48 w-auto items-center justify-center overflow-hidden rounded bg-light transition-shadow group-hover:shadow-xs sm:h-64">
         <span className="sr-only">{t('text-product-image')}</span>
         <Image
           src={image?.original ?? productPlaceholder}

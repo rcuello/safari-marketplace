@@ -70,7 +70,7 @@ const VerifyEmail = () => {
           <div className="mt-4">
             <Link
               href={Routes.home}
-              className="inline-flex items-center text-bolder underline hover:text-body-dark hover:no-underline focus:outline-none sm:text-base"
+              className="inline-flex items-center text-bolder underline hover:text-body-dark hover:no-underline focus:outline-hidden sm:text-base"
             >
               {t('404-back-home')}
             </Link>

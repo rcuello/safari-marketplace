@@ -56,7 +56,7 @@ export function VideoPlayerControl({
         <button
           aria-label="Video Play Button"
           onClick={playPauseHandler}
-          className="outline-none w-auto h-auto bg-transparent hover:bg-transparent p-0"
+          className="outline-hidden w-auto h-auto bg-transparent hover:bg-transparent p-0"
         >
           {playing ? (
             <Pause className="2xl:w-6 w-3.5 sm:w-4 h-auto -ms-0.5 me-0.5" />
@@ -68,7 +68,7 @@ export function VideoPlayerControl({
           <button
             onClick={handleMuteUnmute}
             aria-label="Volume Button"
-            className="outline-none w-auto h-auto bg-transparent hover:bg-transparent p-0"
+            className="outline-hidden w-auto h-auto bg-transparent hover:bg-transparent p-0"
           >
             {volume > 0 ? (
               <Speaker className="2xl:w-6 w-3.5 sm:w-4 h-auto" />
@@ -93,7 +93,7 @@ export function VideoPlayerControl({
         </span>
         <button
           aria-label="Video Fullscreen Button"
-          className="ml-auto p-0 w-auto h-auto hover:bg-transparent bg-transparent border-0 outline-none"
+          className="ml-auto p-0 w-auto h-auto hover:bg-transparent bg-transparent border-0 outline-hidden"
           onClick={handleFullScreen}
         >
           {isFullscreen ? (

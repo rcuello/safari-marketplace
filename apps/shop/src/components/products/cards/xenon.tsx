@@ -52,7 +52,7 @@ const Xenon: React.FC<XenonProps> = ({ product, className }) => {
   return (
     <article
       className={cn(
-        'product-card cart-type-xenon h-full transform overflow-hidden rounded border border-border-200 border-opacity-70 bg-light transition-all duration-200 hover:-translate-y-0.5 hover:border-transparent hover:shadow',
+        'product-card cart-type-xenon h-full transform overflow-hidden rounded border border-border-200/70 bg-light transition-all duration-200 hover:-translate-y-0.5 hover:border-transparent hover:shadow',
         className,
       )}
     >

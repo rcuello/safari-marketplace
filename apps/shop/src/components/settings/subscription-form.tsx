@@ -41,7 +41,7 @@ export default function SubscriptionForm({
                 id="email_subscribe"
                 {...register('email')}
                 placeholder={t('common:text-enter-email')}
-                className="h-14 w-full border-0 bg-transparent text-sm text-body outline-none focus:outline-0 ltr:pl-5 rtl:pr-5"
+                className="h-14 w-full border-0 bg-transparent text-sm text-body outline-hidden focus:outline-0 ltr:pl-5 rtl:pr-5"
               />
               <button className="absolute top-1/2 -mt-2 ltr:right-3 rtl:left-3">
                 {loading ? (

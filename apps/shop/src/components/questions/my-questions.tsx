@@ -38,7 +38,7 @@ function QuestionItem({ question }: { question: Question }) {
   });
 
   return (
-    <div className="border-t border-border-200 border-opacity-70 py-7 first:border-t-0">
+    <div className="border-t border-border-200/70 py-7 first:border-t-0">
       <div className="mb-5 flex items-center space-x-4">
         <div className="relative h-10 w-10 overflow-hidden rounded border border-gray-200">
           <Image
@@ -57,7 +57,7 @@ function QuestionItem({ question }: { question: Question }) {
           </Link>
 
           {product?.product_type.toLowerCase() === 'variable' ? (
-            <div className="flex items-center justify-start space-x-1.5 rtl:space-x-reverse">
+            <div className="flex items-center justify-start space-x-1.5">
               <span className="text-sm font-semibold text-body">
                 {minPrice}
               </span>
@@ -108,7 +108,7 @@ function QuestionItem({ question }: { question: Question }) {
             {t('text-date')}: {dayjs(created_at).format('D MMMM, YYYY')}
           </div>
 
-          <div className="flex items-center space-x-6 rtl:space-x-reverse">
+          <div className="flex items-center space-x-6">
             <span className="flex items-center text-xs tracking-wider text-gray-400 transition">
               <LikeIcon className="h-4 w-4 ltr:mr-1.5 rtl:ml-1.5" />
               {positive_feedbacks_count}

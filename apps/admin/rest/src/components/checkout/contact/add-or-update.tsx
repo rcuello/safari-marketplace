@@ -31,7 +31,7 @@ const AddOrUpdateCheckoutContact = () => {
           country={'us'}
           value={phone}
           onChange={(phoneNumber) => setPhone(`+${phoneNumber}`)}
-          inputClass="!p-0 !pe-4 !ps-14 !flex !items-center !w-full !appearance-none !transition !duration-300 !ease-in-out !text-heading !text-sm focus:!outline-none focus:!ring-0 !border !border-border-base !border-e-0 !rounded !rounded-e-none focus:!border-accent !h-12"
+          inputClass="!p-0 !pe-4 !ps-14 !flex !items-center !w-full !appearance-none !transition !duration-300 !ease-in-out !text-heading !text-sm focus:!outline-hidden focus:!ring-0 !border !border-border-base !border-e-0 !rounded !rounded-e-none focus:!border-accent !h-12"
           dropdownClass="focus:!ring-0 !border !border-border-base !shadow-350"
         />
         <Button className="!rounded-s-none" onClick={onContactUpdate}>

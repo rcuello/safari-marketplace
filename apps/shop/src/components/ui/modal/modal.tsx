@@ -44,7 +44,7 @@ export default function Modal({
               leaveFrom="opacity-100"
               leaveTo="opacity-0"
             >
-              <div className="fixed inset-0 h-full w-full bg-gray-900 bg-opacity-50" />
+              <div className="fixed inset-0 h-full w-full bg-gray-900/50" />
             </Transition.Child>
           ) : (
             ''
@@ -73,7 +73,7 @@ export default function Modal({
                 ref={cancelButtonRef}
                 className={twMerge(
                   classNames(
-                    'absolute top-4 z-[60] inline-block outline-none focus:outline-0 ltr:right-4 rtl:left-4 lg:hidden',
+                    'absolute top-4 z-[60] inline-block outline-hidden focus:outline-0 ltr:right-4 rtl:left-4 lg:hidden',
                     closeButtonClass,
                   ),
                 )}

@@ -50,7 +50,7 @@ type ShopFormValues = {
 
 export const updatedIcons = socialIcon.map((item: any) => {
   item.label = (
-    <div className="flex items-center text-body space-s-4">
+    <div className="flex items-center text-body space-x-4">
       <span className="flex items-center justify-center w-4 h-4">
         {getIcon({
           iconList: socialIcons,
@@ -175,7 +175,7 @@ export default function SettingsForm({ settings }: IProps) {
                       remove(index);
                     }}
                     type="button"
-                    className="text-sm text-red-500 transition-colors duration-200 hover:text-red-700 focus:outline-none sm:col-span-1 sm:mt-4"
+                    className="text-sm text-red-500 transition-colors duration-200 hover:text-red-700 focus:outline-hidden sm:col-span-1 sm:mt-4"
                   >
                     {t('form:button-label-remove')}
                   </button>

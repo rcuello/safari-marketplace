@@ -67,13 +67,13 @@ const StoreNoticeCard: React.FC<NoticeCardProps> = ({ noticeData }) => {
                 <Badge
                   text={priority}
                   className={cn(
-                    `rounded-full border border-current bg-opacity-10 py-2 px-3 text-sm font-medium capitalize leading-none`,
+                    `rounded-full border border-current py-2 px-3 text-sm font-medium capitalize leading-none`,
                     {
-                      'bg-accent text-accent':
+                      'bg-accent/10 text-accent':
                         StoreNoticePriorityType.High === priority,
-                      'bg-[#43A5FF] text-[#43A5FF]':
+                      'bg-[#43A5FF]/10 text-[#43A5FF]':
                         StoreNoticePriorityType.Medium === priority,
-                      'bg-[#F75159] text-[#F75159]':
+                      'bg-[#F75159]/10 text-[#F75159]':
                         StoreNoticePriorityType.Low === priority,
                     },
                   )}
@@ -91,7 +91,7 @@ const StoreNoticeCard: React.FC<NoticeCardProps> = ({ noticeData }) => {
                 'text-[#43A5FF]': StoreNoticePriorityType.Medium === priority,
                 'text-[#F75159]': StoreNoticePriorityType.Low === priority,
               },
-              is_read ? 'text-opacity-50' : '',
+              is_read ? 'opacity-50' : '',
             )}
           >
             <CheckMarkGhost />

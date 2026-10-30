@@ -9,7 +9,7 @@ const DrawerWrapper = ({ children }: { children?: React.ReactNode }) => {
   const [_, closeSidebar] = useAtom(drawerAtom);
   return (
     <div className="flex h-full flex-col">
-      <div className="fixed top-0 z-20 flex w-full max-w-md items-center justify-between border-b border-border-200 border-opacity-75 bg-white p-5 px-5 md:px-6">
+      <div className="fixed top-0 z-20 flex w-full max-w-md items-center justify-between border-b border-border-200/75 bg-white p-5 px-5 md:px-6">
         <Logo className="w-24 md:w-auto" />
         <button
           onClick={() => closeSidebar({ display: false, view: '' })}

@@ -49,7 +49,7 @@ function OrderView({ order, language, settings, loadingStatus }: any) {
 
   return (
     <div className="p-4 sm:p-8">
-      <div className="mx-auto w-full max-w-screen-lg">
+      <div className="mx-auto w-full max-w-(--breakpoint-lg)">
         <div className="mb-5">
           <Link
             href={Routes.home}
@@ -59,7 +59,7 @@ function OrderView({ order, language, settings, loadingStatus }: any) {
             {t('text-back-to-home')}
           </Link>
         </div>
-        <div className="relative overflow-hidden rounded border shadow-sm">
+        <div className="relative overflow-hidden rounded border shadow-xs">
           <OrderViewHeader
             order={order}
             buttonSize="small"
@@ -67,7 +67,7 @@ function OrderView({ order, language, settings, loadingStatus }: any) {
           />
           <div className="bg-light p-6 sm:p-8 lg:p-12">
             <div className="mb-6 grid gap-4 sm:grid-cols-2 md:mb-12 lg:grid-cols-4">
-              <div className="rounded border border-border-200 px-5 py-4 shadow-sm">
+              <div className="rounded border border-border-200 px-5 py-4 shadow-xs">
                 <h3 className="mb-2 text-sm font-semibold text-heading">
                   {t('text-order-number')}
                 </h3>
@@ -75,7 +75,7 @@ function OrderView({ order, language, settings, loadingStatus }: any) {
                   {order?.tracking_number}
                 </p>
               </div>
-              <div className="rounded border border-border-200 px-5 py-4 shadow-sm">
+              <div className="rounded border border-border-200 px-5 py-4 shadow-xs">
                 <h3 className="mb-2 text-sm font-semibold text-heading">
                   {t('text-date')}
                 </h3>
@@ -85,14 +85,14 @@ function OrderView({ order, language, settings, loadingStatus }: any) {
                     : dayjs(new Date()).format('MMMM D, YYYY')}
                 </p>
               </div>
-              <div className="rounded border border-border-200 px-5 py-4 shadow-sm">
+              <div className="rounded border border-border-200 px-5 py-4 shadow-xs">
                 <h3 className="mb-2 text-sm font-semibold text-heading">
                   {t('text-total')}
                 </h3>
                 <p className="text-sm text-body-dark">{total}</p>
               </div>
 
-              <div className="rounded border border-border-200 px-5 py-4 shadow-sm">
+              <div className="rounded border border-border-200 px-5 py-4 shadow-xs">
                 <h3 className="mb-2 text-sm font-semibold text-heading">
                   {t('text-payment-method')}
                 </h3>
@@ -258,7 +258,7 @@ function OrderView({ order, language, settings, loadingStatus }: any) {
                 </h2>
                 <div>
                   <div className="mb-12 flex items-start rounded border border-gray-700 p-4">
-                    <span className="mt-0.5 flex h-4 w-4 items-center justify-center rounded-sm bg-dark px-2 ltr:mr-3 rtl:ml-3">
+                    <span className="mt-0.5 flex h-4 w-4 items-center justify-center rounded-xs bg-dark px-2 ltr:mr-3 rtl:ml-3">
                       <CheckMark className="h-2 w-2 shrink-0 text-light" />
                     </span>
                     <p className="text-sm text-heading">

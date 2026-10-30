@@ -77,7 +77,7 @@ const TreeMenuItem: React.FC<TreeMenuItemProps> = ({
       >
         <button
           className={cn(
-            'flex w-full items-center py-2 font-semibold text-body-dark outline-none transition-all ease-in-expo  focus:text-accent focus:outline-0 focus:ring-0 ltr:text-left rtl:text-right',
+            'flex w-full items-center py-2 font-semibold text-body-dark outline-hidden transition-all ease-in-expo focus:text-accent focus:outline-0 focus:ring-0 ltr:text-left rtl:text-right',
             isOpen ? 'text-accent' : 'text-body-dark',
             className ? className : 'text-sm',
           )}

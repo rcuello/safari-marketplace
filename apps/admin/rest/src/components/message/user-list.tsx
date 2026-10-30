@@ -74,7 +74,7 @@ const UserList = ({ className, filterText, permission, ...rest }: Props) => {
   // if (loading)
   //   return (
   //     <Loader
-  //       className="!h-auto flex-grow"
+  //       className="!h-auto grow"
   //       showText={false}
   //       text={t('common:text-loading')}
   //     />
@@ -82,7 +82,7 @@ const UserList = ({ className, filterText, permission, ...rest }: Props) => {
   if (loading && isEmpty(conversations)) {
     return (
       <Loader
-        className="!h-full flex-grow"
+        className="!h-full grow"
         showText={false}
         text={t('common:text-loading')}
       />

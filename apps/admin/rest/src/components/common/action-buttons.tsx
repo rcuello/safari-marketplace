@@ -157,7 +157,7 @@ const ActionButtons = ({
       {showReplyQuestion && (
         <button
           onClick={handleReplyQuestion}
-          className="transition duration-200 text-accent hover:text-accent-hover focus:outline-none"
+          className="transition duration-200 text-accent hover:text-accent-hover focus:outline-hidden"
         >
           {t('form:button-text-reply')}
         </button>
@@ -165,7 +165,7 @@ const ActionButtons = ({
       {showMakeAdminButton && (
         <button
           onClick={handleMakeAdmin}
-          className="transition duration-200 text-accent hover:text-accent-hover focus:outline-none"
+          className="transition duration-200 text-accent hover:text-accent-hover focus:outline-hidden"
           title={t('common:text-make-admin')}
         >
           <AdminIcon width={17} />
@@ -174,7 +174,7 @@ const ActionButtons = ({
       {showAddWalletPoints && (
         <button
           onClick={handleAddWalletPoints}
-          className="transition duration-200 text-accent hover:text-accent-hover focus:outline-none"
+          className="transition duration-200 text-accent hover:text-accent-hover focus:outline-hidden"
           title={t('common:text-add-wallet-points')}
         >
           <WalletPointsIcon width={18} />
@@ -184,7 +184,7 @@ const ActionButtons = ({
       {changeRefundStatus && (
         <button
           onClick={handleUpdateRefundStatus}
-          className="transition duration-200 text-accent hover:text-accent-hover focus:outline-none"
+          className="transition duration-200 text-accent hover:text-accent-hover focus:outline-hidden"
           title={t('common:text-change-refund-status')}
         >
           <CheckMarkCircle width={20} />
@@ -194,7 +194,7 @@ const ActionButtons = ({
       {editModalView && (
         <button
           onClick={handleEditModal}
-          className="transition duration-200 text-body hover:text-heading focus:outline-none"
+          className="transition duration-200 text-body hover:text-heading focus:outline-hidden"
           title={t('common:text-edit')}
         >
           <EditIcon width={16} />
@@ -204,7 +204,7 @@ const ActionButtons = ({
         (!isShopActive ? (
           <button
             onClick={() => handleShopStatus(true)}
-            className="transition duration-200 text-accent hover:text-accent-hover focus:outline-none"
+            className="transition duration-200 text-accent hover:text-accent-hover focus:outline-hidden"
             title={t('common:text-approve-shop')}
           >
             <CheckMarkCircle width={16} />
@@ -212,7 +212,7 @@ const ActionButtons = ({
         ) : (
           <button
             onClick={() => handleShopStatus(false)}
-            className="text-red-500 transition duration-200 hover:text-red-600 focus:outline-none"
+            className="text-red-500 transition duration-200 hover:text-red-600 focus:outline-hidden"
             title={t('common:text-disapprove-shop')}
           >
             <CloseFillIcon width={16} />
@@ -224,7 +224,7 @@ const ActionButtons = ({
         (!isCouponApprove ? (
           <button
             onClick={() => handleCouponStatus(true)}
-            className="ml-3 transition duration-200 text-accent hover:text-accent-hover focus:outline-none"
+            className="ml-3 transition duration-200 text-accent hover:text-accent-hover focus:outline-hidden"
             title={t('common:text-approve-coupon')}
           >
             <CheckMarkCircle width={18} />
@@ -232,7 +232,7 @@ const ActionButtons = ({
         ) : (
           <button
             onClick={() => handleCouponStatus(false)}
-            className="ml-3 text-red-500 transition duration-200 hover:text-red-600 focus:outline-none"
+            className="ml-3 text-red-500 transition duration-200 hover:text-red-600 focus:outline-hidden"
             title={t('common:text-disapprove-coupon')}
           >
             <CloseFillIcon width={18} />
@@ -243,7 +243,7 @@ const ActionButtons = ({
         (!isTermsApproved ? (
           <button
             onClick={() => handleTermsStatus(true)}
-            className="transition duration-200 text-accent hover:text-accent-hover focus:outline-none"
+            className="transition duration-200 text-accent hover:text-accent-hover focus:outline-hidden"
             title={t('common:text-approve-shop')}
           >
             <CheckMarkCircle width={16} />
@@ -251,7 +251,7 @@ const ActionButtons = ({
         ) : (
           <button
             onClick={() => handleTermsStatus(false)}
-            className="text-red-500 transition duration-200 hover:text-red-600 focus:outline-none"
+            className="text-red-500 transition duration-200 hover:text-red-600 focus:outline-hidden"
             title={t('common:text-disapprove-shop')}
           >
             <CloseFillIcon width={17} />
@@ -262,7 +262,7 @@ const ActionButtons = ({
           {isUserActive ? (
             <button
               onClick={() => handleUserStatus('ban')}
-              className="text-red-500 transition duration-200 hover:text-red-600 focus:outline-none"
+              className="text-red-500 transition duration-200 hover:text-red-600 focus:outline-hidden"
               title={t('common:text-ban-user')}
             >
               <BanUser width={16} />
@@ -270,7 +270,7 @@ const ActionButtons = ({
           ) : (
             <button
               onClick={() => handleUserStatus('active')}
-              className="transition duration-200 text-accent hover:text-accent focus:outline-none"
+              className="transition duration-200 text-accent hover:text-accent focus:outline-hidden"
               title={t('common:text-activate-user')}
             >
               <CheckMarkCircle width={16} />
@@ -317,7 +317,7 @@ const ActionButtons = ({
           router.asPath !== `/${router.query.shop}${Routes.coupon.list}`) && (
           <button
             onClick={handleDelete}
-            className="text-red-500 transition duration-200 hover:text-red-600 focus:outline-none"
+            className="text-red-500 transition duration-200 hover:text-red-600 focus:outline-hidden"
             title={t('common:text-delete')}
           >
             <TrashIcon width={14} />
@@ -327,7 +327,7 @@ const ActionButtons = ({
       {/* {deleteModalView && (
         <button
           onClick={handleDelete}
-          className="text-red-500 transition duration-200 hover:text-red-600 focus:outline-none"
+          className="text-red-500 transition duration-200 hover:text-red-600 focus:outline-hidden"
           title={t('common:text-delete')}
         >
           <TrashIcon width={14} />
@@ -338,7 +338,7 @@ const ActionButtons = ({
         (isFlashSaleVendorRequestApproved ? (
           <button
             onClick={() => handleVendorFlashSaleStatus(true)}
-            className="transition duration-200 text-red-500 hover:text-red-600 focus:outline-none"
+            className="transition duration-200 text-red-500 hover:text-red-600 focus:outline-hidden"
             title="Disapprove request ?"
           >
             <CloseFillIcon width={17} />
@@ -346,7 +346,7 @@ const ActionButtons = ({
         ) : (
           <button
             onClick={() => handleVendorFlashSaleStatus(false)}
-            className="text-green-500 transition duration-200 hover:text-green-600 focus:outline-none"
+            className="text-green-500 transition duration-200 hover:text-green-600 focus:outline-hidden"
             title="Approve request ?"
           >
             <CheckMarkCircle width={16} />
@@ -366,7 +366,7 @@ const ActionButtons = ({
           <button
             disabled={disabled}
             onClick={handleTransferOwnership}
-            className="transition duration-200 text-accent hover:text-accent-hover focus:outline-none"
+            className="transition duration-200 text-accent hover:text-accent-hover focus:outline-hidden"
           >
             <ExternalLinkIcon width={20} />
           </button>

@@ -7,7 +7,7 @@ import { useTranslation } from 'next-i18next/pages';
 import { twMerge } from 'tailwind-merge';
 
 const classes = {
-  root: 'ps-10 pe-4 h-12 flex items-center w-full rounded-md appearance-none transition duration-300 ease-in-out text-heading text-sm focus:outline-none focus:ring-0',
+  root: 'ps-10 pe-4 h-12 flex items-center w-full rounded-md appearance-none transition duration-300 ease-in-out text-heading text-sm focus:outline-hidden focus:ring-0',
   normal:
     'bg-gray-100 border border-border-base focus:shadow focus:bg-light focus:border-accent',
   solid:
@@ -86,7 +86,7 @@ const Search: React.FC<SearchProps> = ({
       <label htmlFor="search" className="sr-only">
         {t('form:input-label-search')}
       </label>
-      <button className="absolute top-1/2 -translate-y-1/2 p-2 text-body outline-none start-1 focus:outline-none active:outline-none">
+      <button className="absolute top-1/2 -translate-y-1/2 p-2 text-body outline-hidden start-1 focus:outline-hidden active:outline-hidden">
         <SearchIcon className="h-5 w-5" />
       </button>
       <input
@@ -104,7 +104,7 @@ const Search: React.FC<SearchProps> = ({
         <button
           type="button"
           onClick={clear}
-          className="absolute top-1/2 -translate-y-1/2 p-2 text-body outline-none end-1 focus:outline-none active:outline-none"
+          className="absolute top-1/2 -translate-y-1/2 p-2 text-body outline-hidden end-1 focus:outline-hidden active:outline-hidden"
         >
           <CloseIcon className="h-5 w-5" />
         </button>

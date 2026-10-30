@@ -40,9 +40,9 @@ const CartItem = ({ item }: CartItemProps) => {
       animate="to"
       exit="from"
       variants={fadeInOut(0.25)}
-      className="flex items-center border-b border-solid border-border-200 border-opacity-75 px-4 py-4 text-sm sm:px-6"
+      className="flex items-center border-b border-solid border-border-200/75 px-4 py-4 text-sm sm:px-6"
     >
-      <div className="flex-shrink-0">
+      <div className="shrink-0">
         <Counter
           value={item.quantity}
           onDecrement={handleRemoveClick}
@@ -52,7 +52,7 @@ const CartItem = ({ item }: CartItemProps) => {
         />
       </div>
 
-      <div className="relative mx-4 flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden bg-gray-100 sm:h-16 sm:w-16">
+      <div className="relative mx-4 flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden bg-gray-100 sm:h-16 sm:w-16">
         <Image
           src={item?.image ?? '/'}
           alt={item.name}
@@ -70,7 +70,7 @@ const CartItem = ({ item }: CartItemProps) => {
       </div>
       <span className="font-bold text-heading ms-auto">{itemPrice}</span>
       <button
-        className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-muted transition-all duration-200 -me-2 ms-3 hover:bg-gray-100 hover:text-red-600 focus:bg-gray-100 focus:text-red-600 focus:outline-none"
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-muted transition-all duration-200 -me-2 ms-3 hover:bg-gray-100 hover:text-red-600 focus:bg-gray-100 focus:text-red-600 focus:outline-hidden"
         onClick={() => clearItemFromCart(item.id)}
       >
         <span className="sr-only">{t('text-close')}</span>

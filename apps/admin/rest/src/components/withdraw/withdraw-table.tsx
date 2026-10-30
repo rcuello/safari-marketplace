@@ -51,35 +51,35 @@ const WithdrawTable = ({
         return (
           <Badge
             text={t('text-approved')}
-            color="bg-accent bg-opacity-10 !text-accent"
+            color="bg-accent/10 !text-accent"
           />
         );
       case 'PENDING':
         return (
           <Badge
             text={t('text-pending')}
-            color="bg-purple-500 bg-opacity-10 text-purple-500"
+            color="bg-purple-500/10 text-purple-500"
           />
         );
       case 'ON_HOLD':
         return (
           <Badge
             text={t('text-on-hold')}
-            color="bg-pink-500 bg-opacity-10 text-pink-500"
+            color="bg-pink-500/10 text-pink-500"
           />
         );
       case 'REJECTED':
         return (
           <Badge
             text={t('text-rejected')}
-            color="bg-red-500 bg-opacity-10 text-red-500"
+            color="bg-red-500/10 text-red-500"
           />
         );
       case 'PROCESSING':
         return (
           <Badge
             text={t('text-processing')}
-            color="bg-yellow-500 bg-opacity-10 text-yellow-600"
+            color="bg-yellow-500/10 text-yellow-600"
           />
         );
     }

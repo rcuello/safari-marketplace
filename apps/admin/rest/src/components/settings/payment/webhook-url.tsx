@@ -54,7 +54,7 @@ const WebHookURL = ({ gateway }: WebHookURLProps) => {
       <span className="relative h-5 min-w-[80px] sm:min-w-[100px] lg:min-w-[120px]">
         {icon[gateway?.name] ? icon[gateway?.name] : ''}
       </span>
-      <span className="ml-5 flex-grow truncate pr-2 text-xs text-gray-500">
+      <span className="ml-5 grow truncate pr-2 text-xs text-gray-500">
         {url}
       </span>
       <div className="relative flex items-center">

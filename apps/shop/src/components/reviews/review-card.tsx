@@ -65,7 +65,7 @@ export default function ReviewCard({ review }: ReviewCardProps) {
   };
 
   return (
-    <div className="border-t border-border-200 border-opacity-70 py-7 first:border-t-0">
+    <div className="border-t border-border-200/70 py-7 first:border-t-0">
       <Rating rating={rating} className="mb-2.5" />
       <div className="mb-4 flex items-center text-xs text-gray-500">
         {t('text-by')}{' '}
@@ -96,7 +96,7 @@ export default function ReviewCard({ review }: ReviewCardProps) {
         <div className="mt-3.5 text-xs text-gray-400">
           {t('text-date')}: {dayjs(created_at).format('MMMM D, YYYY')}
         </div>
-        <div className="flex items-center space-x-6 rtl:space-x-reverse">
+        <div className="flex items-center space-x-6">
           <button
             className="flex items-center text-xs tracking-wider text-gray-400 transition"
             disabled={my_feedback?.positive}
@@ -141,7 +141,7 @@ export default function ReviewCard({ review }: ReviewCardProps) {
               <Menu.Items
                 as="ul"
                 className={cn(
-                  'absolute mt-2 w-48 overflow-hidden rounded border border-border-200 bg-light py-2 shadow-700 focus:outline-none ltr:right-0 ltr:origin-top-right rtl:left-0 rtl:origin-top-left',
+                  'absolute mt-2 w-48 overflow-hidden rounded border border-border-200 bg-light py-2 shadow-700 focus:outline-hidden ltr:right-0 ltr:origin-top-right rtl:left-0 rtl:origin-top-left',
                 )}
               >
                 <Menu.Item>
@@ -149,7 +149,7 @@ export default function ReviewCard({ review }: ReviewCardProps) {
                     <button
                       onClick={openAbuseReportModal}
                       className={cn(
-                        'flex w-full items-center space-x-4 px-5 py-2.5 text-sm font-semibold capitalize transition duration-200 hover:text-accent focus:outline-0 rtl:space-x-reverse',
+                        'flex w-full items-center space-x-4 px-5 py-2.5 text-sm font-semibold capitalize transition duration-200 hover:text-accent focus:outline-0',
                         active ? 'text-accent' : 'text-body',
                       )}
                     >

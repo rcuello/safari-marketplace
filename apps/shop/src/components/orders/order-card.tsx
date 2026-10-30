@@ -72,7 +72,7 @@ const OrderCard: React.FC<OrderCardProps> = ({ onClick, order, isActive }) => {
           <span className="ltr:ml-1 rtl:mr-1">{amount}</span>
         </p>
         <p className="mb-4 flex w-full items-center justify-between text-sm font-bold text-heading last:mb-0">
-          <span className="w-24 flex-shrink-0 overflow-hidden">
+          <span className="w-24 shrink-0 overflow-hidden">
             {t('text-total-price')}
           </span>
           <span className="ltr:mr-auto rtl:ml-auto">:</span>

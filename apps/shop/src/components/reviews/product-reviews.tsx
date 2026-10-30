@@ -44,7 +44,7 @@ const ProductReviews: React.FC<ProductReviewsProps> = ({
   return (
     <div>
       <div
-        className={cn('border-t border-b border-border-200 border-opacity-70', {
+        className={cn('border-t border-b border-border-200/70', {
           'px-5 ltr:lg:pl-16 ltr:lg:pr-10 rtl:lg:pr-16 rtl:lg:pl-10':
             !boxedLayout,
           'px-5 xl:px-0': boxedLayout,
@@ -54,7 +54,7 @@ const ProductReviews: React.FC<ProductReviewsProps> = ({
           className={cn(
             'flex flex-col justify-between sm:flex-row sm:items-center',
             {
-              'mx-auto max-w-screen-xl': boxedLayout,
+              'mx-auto max-w-(--breakpoint-xl)': boxedLayout,
             },
           )}
         >
@@ -66,11 +66,11 @@ const ProductReviews: React.FC<ProductReviewsProps> = ({
             }
             )
           </h2>
-          <div className="flex flex-col items-center border-border-200 border-opacity-70 py-3 sm:space-y-1 ltr:sm:border-l rtl:sm:border-r lg:flex-row lg:space-y-0 lg:!border-0 lg:py-0">
-            <div className="w-full shrink-0 border-border-200 border-opacity-70 ltr:sm:pl-8 ltr:sm:pr-5 rtl:sm:pl-5 rtl:sm:pr-8 lg:w-auto lg:py-5 ltr:lg:border-l rtl:lg:border-r">
+          <div className="flex flex-col items-center border-border-200/70 py-3 sm:space-y-1 ltr:sm:border-l rtl:sm:border-r lg:flex-row lg:space-y-0 lg:!border-0 lg:py-0">
+            <div className="w-full shrink-0 border-border-200/70 ltr:sm:pl-8 ltr:sm:pr-5 rtl:sm:pl-5 rtl:sm:pr-8 lg:w-auto lg:py-5 ltr:lg:border-l rtl:lg:border-r">
               <Sorting />
             </div>
-            <div className="w-full shrink-0 border-border-200 border-opacity-70 ltr:sm:pl-8 ltr:sm:pr-5 rtl:sm:pl-5 rtl:sm:pr-8 lg:w-auto lg:py-5 ltr:lg:border-l rtl:lg:border-r">
+            <div className="w-full shrink-0 border-border-200/70 ltr:sm:pl-8 ltr:sm:pr-5 rtl:sm:pl-5 rtl:sm:pr-8 lg:w-auto lg:py-5 ltr:lg:border-l rtl:lg:border-r">
               <StarFilter />
             </div>
           </div>
@@ -78,14 +78,14 @@ const ProductReviews: React.FC<ProductReviewsProps> = ({
       </div>
       {!isEmpty(reviews) ? (
         <div
-          className={cn('border-b border-border-200 border-opacity-70', {
+          className={cn('border-b border-border-200/70', {
             'px-5 lg:px-16': !boxedLayout,
             'px-5 xl:px-0': boxedLayout,
           })}
         >
           <div
             className={cn({
-              'mx-auto max-w-screen-xl': boxedLayout,
+              'mx-auto max-w-(--breakpoint-xl)': boxedLayout,
             })}
           >
             {reviews?.map((review: any) => (
@@ -95,7 +95,7 @@ const ProductReviews: React.FC<ProductReviewsProps> = ({
             {/* Pagination */}
 
             {paginatorInfo && (
-              <div className="flex items-center justify-between py-4 border-t border-border-200 border-opacity-70">
+              <div className="flex items-center justify-between py-4 border-t border-border-200/70">
                 <div className="text-xs text-gray-400">
                   {t('text-page')}{' '}
                   {
@@ -131,7 +131,7 @@ const ProductReviews: React.FC<ProductReviewsProps> = ({
           </div>
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center px-5 py-16 border-b border-border-200 border-opacity-70">
+        <div className="flex flex-col items-center justify-center px-5 py-16 border-b border-border-200/70">
           <h3 className="text-lg font-semibold text-gray-400">
             {t('text-no-reviews-found')}
           </h3>

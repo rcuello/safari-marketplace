@@ -23,7 +23,7 @@ const ExportImportView = () => {
         <a
           href={`${process?.env?.NEXT_PUBLIC_REST_API_ENDPOINT}/export-products/${shopId}`}
           target="_blank"
-          className="flex h-36 cursor-pointer flex-col items-center justify-center rounded border-2 border-dashed border-border-base p-5 focus:border-accent-400 focus:outline-none"
+          className="flex h-36 cursor-pointer flex-col items-center justify-center rounded border-2 border-dashed border-border-base p-5 focus:border-accent-400 focus:outline-hidden"
           rel="noreferrer"
         >
           <DownloadIcon className="w-10 text-muted-light" />
@@ -36,7 +36,7 @@ const ExportImportView = () => {
         <a
           href={`${process?.env?.NEXT_PUBLIC_REST_API_ENDPOINT}/export-variation-options/${shopId}`}
           target="_blank"
-          className="flex h-36 cursor-pointer flex-col items-center justify-center rounded border-2 border-dashed border-border-base p-5 focus:border-accent-400 focus:outline-none"
+          className="flex h-36 cursor-pointer flex-col items-center justify-center rounded border-2 border-dashed border-border-base p-5 focus:border-accent-400 focus:outline-hidden"
           rel="noreferrer"
         >
           <DownloadIcon className="w-10 text-muted-light" />

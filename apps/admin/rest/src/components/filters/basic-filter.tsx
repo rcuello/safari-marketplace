@@ -24,7 +24,7 @@ export default function BasicFilter({
   return (
     <div
       className={cn(
-        'flex w-full flex-col space-y-5 rtl:space-x-reverse md:flex-row md:items-end md:space-x-5 md:space-y-0',
+        'flex w-full flex-col space-y-5 md:flex-row md:items-end md:space-x-5 md:space-y-0',
         className,
       )}
     >

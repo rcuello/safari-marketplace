@@ -87,7 +87,7 @@ const StoreNoticeBar = ({ user }: IProps) => {
       <Menu as="div" className="relative hidden text-left sm:inline-block">
         <Menu.Button
           className={cn(
-            'flex h-9 w-9 items-center justify-center gap-2 rounded-full border border-gray-200 bg-gray-50 text-gray-600 before:absolute before:top-0 before:right-0 before:h-2 before:w-2 before:rounded-full  focus:outline-none data-[headlessui-state=open]:bg-white data-[headlessui-state=open]:text-accent ',
+            'flex h-9 w-9 items-center justify-center gap-2 rounded-full border border-gray-200 bg-gray-50 text-gray-600 before:absolute before:top-0 before:right-0 before:h-2 before:w-2 before:rounded-full  focus:outline-hidden data-[headlessui-state=open]:bg-white data-[headlessui-state=open]:text-accent ',
             activeStatus.length ? 'before:bg-[#F5A623]' : null,
           )}
         >
@@ -108,7 +108,7 @@ const StoreNoticeBar = ({ user }: IProps) => {
         >
           <Menu.Items
             as="div"
-            className="absolute top-16 z-30 w-80 rounded-lg border border-gray-200 bg-white shadow-box end-2 origin-top-end focus:outline-none sm:top-12 sm:mt-0.5 sm:end-0 lg:top-14 lg:mt-0"
+            className="absolute top-16 z-30 w-80 rounded-lg border border-gray-200 bg-white shadow-box end-2 ltr:origin-top-right rtl:origin-top-left focus:outline-hidden sm:top-12 sm:mt-0.5 sm:end-0 lg:top-14 lg:mt-0"
           >
             <Menu.Item>
               <>

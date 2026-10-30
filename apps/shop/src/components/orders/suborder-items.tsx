@@ -76,7 +76,7 @@ const SuborderItems: React.FC<SuborderItemsProps> = ({ items }) => {
         return (
           <Link
             href={Routes.order(tracking_number)}
-            className="inline-flex h-10 flex-shrink-0 items-center justify-center rounded border border-transparent bg-gray-700 px-4 py-0 text-sm font-semibold leading-none text-light outline-none transition duration-300 ease-in-out hover:bg-gray-900 focus:shadow focus:outline-none"
+            className="inline-flex h-10 shrink-0 items-center justify-center rounded border border-transparent bg-gray-700 px-4 py-0 text-sm font-semibold leading-none text-light outline-hidden transition duration-300 ease-in-out hover:bg-gray-900 focus:shadow focus:outline-hidden"
           >
             {t('text-view')}
           </Link>

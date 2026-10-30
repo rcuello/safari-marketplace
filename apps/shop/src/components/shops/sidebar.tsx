@@ -206,7 +206,7 @@ const ShopSidebar: React.FC<ShopSidebarProps> = ({
                             key={index}
                             href={item.url}
                             target="_blank"
-                            className={`text-muted transition-colors duration-300 focus:outline-none ltr:mr-3.5 ltr:last:mr-0 rtl:ml-3.5 rtl:last:ml-0 hover:${item.hoverClass}`}
+                            className={`text-muted transition-colors duration-300 focus:outline-hidden ltr:mr-3.5 ltr:last:mr-0 rtl:ml-3.5 rtl:last:ml-0 hover:${item.hoverClass}`}
                             rel="noreferrer"
                           >
                             {getIcon({

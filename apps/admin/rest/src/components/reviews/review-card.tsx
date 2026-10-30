@@ -42,7 +42,7 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
       </div>
       <p className="text-sm leading-6 text-heading">{comment}</p>
       {photos && !isEmpty(photos) && (
-        <div className="flex items-start pt-3 space-s-2">
+        <div className="flex items-start pt-3 space-x-2">
           {photos?.map((photo: any, idx: any) => (
             <div className="mb-1" key={idx}>
               <Image

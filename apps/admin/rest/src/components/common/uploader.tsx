@@ -169,7 +169,7 @@ export default function Uploader({
               </div>
               <p className="flex items-baseline p-1 text-xs cursor-default text-body">
                 <span
-                  className="inline-block max-w-[64px] overflow-hidden overflow-ellipsis whitespace-nowrap"
+                  className="inline-block max-w-[64px] overflow-hidden text-ellipsis whitespace-nowrap"
                   title={`${filename}.${fileType}`}
                 >
                   {filename}
@@ -182,7 +182,7 @@ export default function Uploader({
           ) : null} */}
           {!disabled ? (
             <button
-              className="absolute flex items-center justify-center w-4 h-4 text-xs bg-red-600 rounded-full shadow-xl outline-none top-1 text-light end-1"
+              className="absolute flex items-center justify-center w-4 h-4 text-xs bg-red-600 rounded-full shadow-xl outline-hidden top-1 text-light end-1"
               onClick={() => handleDelete(file.thumbnail)}
             >
               <CloseIcon width={10} height={10} />
@@ -211,7 +211,7 @@ export default function Uploader({
       <div
         {...getRootProps({
           className: classNames(
-            'border-dashed border-2 border-border-base h-36 rounded flex flex-col justify-center items-center cursor-pointer focus:border-accent-400 focus:outline-none relative',
+            'border-dashed border-2 border-border-base h-36 rounded flex flex-col justify-center items-center cursor-pointer focus:border-accent-400 focus:outline-hidden relative',
             disabled
               ? 'pointer-events-none select-none opacity-80 bg-[#EEF1F4]'
               : 'cursor-pointer',

@@ -106,8 +106,8 @@ const BookDetails: React.FC<Props> = ({ product, isModal = false }) => {
   const previewImages = displayImage(selectedVariation?.image, gallery, image);
   const content = useSanitizeContent({ description: description });
   return (
-    <article className="mx-auto max-w-screen-xl rounded-lg bg-light px-5 py-16 xl:px-0">
-      <div className="flex flex-col border-b border-border-200 border-opacity-70 pb-14 lg:flex-row">
+    <article className="mx-auto max-w-(--breakpoint-xl) rounded-lg bg-light px-5 py-16 xl:px-0">
+      <div className="flex flex-col border-b border-border-200/70 pb-14 lg:flex-row">
         <div className="lg:w-1/2">
           <div
             className={`product-gallery h-full bg-gray-100  ${
@@ -131,7 +131,7 @@ const BookDetails: React.FC<Props> = ({ product, isModal = false }) => {
 
         <div className="mt-8 flex flex-col items-start lg:mt-0 lg:w-1/2 ltr:lg:pl-10 rtl:lg:pr-10 ltr:xl:pl-16 rtl:xl:pr-16 ">
           <div className="w-full" ref={intersectionRef}>
-            <div className="flex w-full items-start justify-between space-x-5 rtl:space-x-reverse lg:space-x-8">
+            <div className="flex w-full items-start justify-between space-x-5 lg:space-x-8">
               <div className="flex flex-col items-start">
                 {name && (
                   <h1 className="text-xl font-bold tracking-tight text-heading lg:text-2xl xl:text-3xl">
@@ -149,7 +149,7 @@ const BookDetails: React.FC<Props> = ({ product, isModal = false }) => {
             </div>
 
             {author?.name && (
-              <div className="mt-4 flex items-center space-x-5 rtl:space-x-reverse md:mt-5">
+              <div className="mt-4 flex items-center space-x-5 md:mt-5">
                 <p className="flex items-center text-sm font-normal text-body">
                   {t('text-by-author')}
                   <Link
@@ -181,7 +181,7 @@ const BookDetails: React.FC<Props> = ({ product, isModal = false }) => {
                 </div>
               </>
             ) : (
-              <span className="mt-5 mb-7 flex items-center space-x-4 rtl:space-x-reverse">
+              <span className="mt-5 mb-7 flex items-center space-x-4">
                 <ins className="text-2xl font-bold text-heading no-underline md:text-3xl">
                   {price}
                 </ins>
@@ -213,7 +213,7 @@ const BookDetails: React.FC<Props> = ({ product, isModal = false }) => {
               </div>
             )}
 
-            <div className="mt-4 flex flex-col items-center border-b border-border-200 border-opacity-70 pb-5 md:mt-6 md:pb-8 lg:flex-row">
+            <div className="mt-4 flex flex-col items-center border-b border-border-200/70 pb-5 md:mt-6 md:pb-8 lg:flex-row">
               <div className="mb-3 w-full lg:mb-0">
                 {!is_external ? (
                   <AddToCartAlt
@@ -241,7 +241,7 @@ const BookDetails: React.FC<Props> = ({ product, isModal = false }) => {
                   <Link
                     href={`/${type?.slug}/search/?category=${category.slug}`}
                     key={category.id}
-                    className="bg-transparent text-sm text-body transition-colors after:content-[','] last:after:content-[''] hover:text-accent focus:bg-opacity-100 focus:outline-none ltr:pr-0.5 ltr:last:pr-0 rtl:pl-0.5 rtl:last:pl-0"
+                    className="bg-transparent text-sm text-body transition-colors after:content-[','] last:after:content-[''] hover:text-accent focus:outline-hidden ltr:pr-0.5 ltr:last:pr-0 rtl:pl-0.5 rtl:last:pl-0"
                   >
                     {category.name}
                   </Link>
@@ -255,7 +255,7 @@ const BookDetails: React.FC<Props> = ({ product, isModal = false }) => {
                   <Link
                     href={`/${type?.slug}/search/?tags=${tag.slug}`}
                     key={tag.id}
-                    className="bg-transparent text-sm text-body transition-colors after:content-[','] last:after:content-[''] hover:text-accent focus:bg-opacity-100 focus:outline-none ltr:pr-0.5 ltr:last:pr-0 rtl:pl-0.5 rtl:last:pl-0"
+                    className="bg-transparent text-sm text-body transition-colors after:content-[','] last:after:content-[''] hover:text-accent focus:bg-transparent/100 focus:outline-hidden ltr:pr-0.5 ltr:last:pr-0 rtl:pl-0.5 rtl:last:pl-0"
                   >
                     {tag.name}
                   </Link>

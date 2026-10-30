@@ -87,7 +87,7 @@ export default function VendorContactPage() {
                     href={shopData?.settings?.website ?? Routes?.home}
                     target="_blank"
                     // rel="noreferrer"
-                    className="text-sm font-semibold text-accent hover:text-accent-hover focus:text-blue-500 focus:outline-none"
+                    className="text-sm font-semibold text-accent hover:text-accent-hover focus:text-blue-500 focus:outline-hidden"
                   >
                     {t('text-visit-site')}
                   </Link>
@@ -108,7 +108,7 @@ export default function VendorContactPage() {
                       title={item?.url}
                       target="_blank"
                       // rel="noreferrer"
-                      className={`text-muted transition-colors duration-300 focus:outline-none ltr:mr-8 ltr:last:mr-0 rtl:ml-8 rtl:last:ml-0 hover:${item.hoverClass}`}
+                      className={`text-muted transition-colors duration-300 focus:outline-hidden ltr:mr-8 ltr:last:mr-0 rtl:ml-8 rtl:last:ml-0 hover:${item.hoverClass}`}
                     >
                       {getIcon({
                         iconList: socialIcons,

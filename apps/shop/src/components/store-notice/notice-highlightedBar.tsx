@@ -43,7 +43,7 @@ const HighlightedBar = ({ notice }: { notice: StoreNotice }) => {
           <button
             onClick={() => setHighlightedBar('true')}
             aria-label="Close Button"
-            className="absolute flex items-center justify-center transition-colors duration-200 rounded-full outline-none top-3 h-7 w-7 hover:bg-white hover:bg-opacity-10 focus:bg-opacity-10 focus:text-white ltr:right-0 ltr:mr-2 rtl:left-0 rtl:ml-2 md:h-8 md:w-8 md:ltr:mr-3 md:rtl:ml-3"
+            className="absolute flex items-center justify-center transition-colors duration-200 rounded-full outline-hidden top-3 h-7 w-7 hover:bg-white/10 focus:text-white ltr:right-0 ltr:mr-2 rtl:left-0 rtl:ml-2 md:h-8 md:w-8 md:ltr:mr-3 md:rtl:ml-3"
           >
             <svg
               stroke="currentColor"

@@ -67,7 +67,7 @@ export const AddToCartAlt = ({
 
   const isDraft = data.status === 'draft';
   return (
-    <div className="flex items-center space-x-3 rtl:space-x-reverse">
+    <div className="flex items-center space-x-3">
       <Counter
         value={quantity}
         onDecrement={decrement}

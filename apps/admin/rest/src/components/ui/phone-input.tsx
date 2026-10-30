@@ -54,7 +54,7 @@ const PhoneNumberInput: React.FC<Props> = ({
               onChange={onChange}
               inputClass={twMerge(
                 cn(
-                  '!p-0 !pe-4 !ps-14 !flex !items-center !w-full !appearance-none !transition !duration-300 !ease-in-out !text-heading !text-sm focus:!outline-none focus:!ring-0 !border !border-border-base !rounded focus:!border-accent !h-12',
+                  '!p-0 !pe-4 !ps-14 !flex !items-center !w-full !appearance-none !transition !duration-300 !ease-in-out !text-heading !text-sm focus:!outline-hidden focus:!ring-0 !border !border-border-base !rounded focus:!border-accent !h-12',
                   disabled
                     ? `cursor-not-allowed !border-[#D4D8DD] !bg-[#EEF1F4] select-none`
                     : '',

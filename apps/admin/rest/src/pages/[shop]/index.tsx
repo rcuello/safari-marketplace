@@ -153,7 +153,7 @@ export default function ShopPage() {
                 <Link
                   href={Routes.visitStore(`shops/${slug as string}`)}
                   target="_blank"
-                  className="text-[#666666] transition-colors duration-300 hover:text-opacity-60"
+                  className="text-[#666666] transition-colors duration-300 hover:text-[#666666]/60"
                 >
                   <ExternalLinkIcon />
                 </Link>

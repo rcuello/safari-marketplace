@@ -63,7 +63,7 @@ const MoreInfo = ({
             ''
           )}
           {aboutUsDescription ? (
-            <p className="mb-6 leading-8 text-black text-opacity-80">
+            <p className="mb-6 leading-8 text-black/80">
               {aboutUsDescription}
             </p>
           ) : (

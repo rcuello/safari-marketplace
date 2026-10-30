@@ -16,11 +16,11 @@ const CartItem = ({ item, notAvailable }: Props) => {
   return (
     <div
       className={cn(
-        'flex w-full space-x-3 py-3 first:pt-0 last:pb-0 rtl:space-x-reverse',
+        'flex w-full space-x-3 py-3 first:pt-0 last:pb-0',
       )}
       key={item.id}
     >
-      <div className="relative h-[42px] w-[42px] flex-shrink-0 bg-gray-100">
+      <div className="relative h-[42px] w-[42px] shrink-0 bg-gray-100">
         <Image
           src={item?.image ?? productPlaceholder}
           alt={item.name}

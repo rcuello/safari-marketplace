@@ -89,7 +89,7 @@ const GroupsMenu: React.FC<GroupsMenuProps> = ({
         <Menu.Items
           as="div"
           className={cn(
-            'absolute mt-2 h-56 max-h-56 min-h-40 w-48 overflow-hidden rounded bg-light py-2 shadow-700 focus:outline-none focus-visible:outline-0 sm:max-h-72 lg:h-72 2xl:h-auto 2xl:max-h-screen',
+            'absolute mt-2 h-56 max-h-56 min-h-40 w-48 overflow-hidden rounded bg-light py-2 shadow-700 focus:outline-hidden focus-visible:outline-0 sm:max-h-72 lg:h-72 2xl:h-auto 2xl:max-h-screen',
             {
               'border border-border-200 ltr:right-0 ltr:origin-top-right rtl:left-0 rtl:origin-top-left':
                 variant === 'minimal',
@@ -114,7 +114,7 @@ const GroupsMenu: React.FC<GroupsMenuProps> = ({
                     <Link
                       href={`/${slug}`}
                       className={cn(
-                        'flex w-full items-center space-x-4 px-5 py-2.5 text-sm font-semibold capitalize transition duration-200 hover:text-accent focus:outline-0 focus-visible:outline-0 rtl:space-x-reverse',
+                        'flex w-full items-center space-x-4 px-5 py-2.5 text-sm font-semibold capitalize transition duration-200 hover:text-accent focus:outline-0 focus-visible:outline-0',
                         active ? 'text-accent' : 'text-body-dark',
                       )}
                       onClick={close}

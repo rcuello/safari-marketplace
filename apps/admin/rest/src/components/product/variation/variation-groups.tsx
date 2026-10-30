@@ -14,7 +14,7 @@ const VariationGroups: React.FC<Props> = ({ variations }) => {
     <>
       {Object.keys(variations).map((variationName, index) => (
         <div
-          className="flex items-center border-b  border-border-200 border-opacity-70 py-4 first:pt-0 last:border-b-0 last:pb-0"
+          className="flex items-center border-b border-border-200/70 py-4 first:pt-0 last:border-b-0 last:pb-0"
           key={index}
         >
           <span className="me-4 inline-block min-w-[60px] whitespace-nowrap text-sm font-semibold capitalize leading-none text-heading">
@@ -29,7 +29,7 @@ const VariationGroups: React.FC<Props> = ({ variations }) => {
                 },
               }}
             >
-              <div className="space-s-4 flex w-full">
+              <div className="space-x-4 flex w-full">
                 {variations[variationName].map((attribute: any) => (
                   <Attribute
                     className={variationName}

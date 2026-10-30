@@ -68,7 +68,7 @@ export const AddressForm: React.FC<any> = ({
           <>
             <div>
               <Label>{t('text-type')}</Label>
-              <div className="flex items-center space-x-4 rtl:space-x-reverse">
+              <div className="flex items-center space-x-4">
                 <Radio
                   id="billing"
                   {...register('type')}

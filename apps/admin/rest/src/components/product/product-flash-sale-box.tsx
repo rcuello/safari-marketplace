@@ -65,7 +65,7 @@ const FlashSaleInfo = ({ flashSale, shop }: FlashSaleProps) => {
       <div className="mt-5">
         <Link
           href={flashSaleRoute}
-          className="inline-flex items-center text-accent no-underline transition-colors duration-200 ms-1 hover:text-accent-hover hover:underline focus:text-accent-700 focus:no-underline focus:outline-none"
+          className="inline-flex items-center text-accent no-underline transition-colors duration-200 ms-1 hover:text-accent-hover hover:underline focus:text-accent-700 focus:no-underline focus:outline-hidden"
         >
           <IosArrowLeft height={12} width={15} className="mr-2.5" />
           {t('text-see-details')}

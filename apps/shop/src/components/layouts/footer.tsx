@@ -194,7 +194,7 @@ const Footer = () => {
         )}
 
         {/* {siteSettings.footer.payment_methods && (
-          <div className="flex items-center order-1 mb-5 space-x-5 rtl:space-x-reverse lg:order-2 lg:mb-0">
+          <div className="flex items-center order-1 mb-5 space-x-5 lg:order-2 lg:mb-0">
             {siteSettings.footer.payment_methods.map((method, idx) => (
               <Link
                 className="relative flex items-center w-auto h-5 overflow-hidden"

@@ -203,7 +203,7 @@ const Navbar = () => {
             <motion.button
               whileTap={{ scale: 0.88 }}
               onClick={toggleSidebar}
-              className="group flex h-5 w-5 shrink-0 cursor-pointer flex-col justify-center space-y-1 me-4 focus:text-accent focus:outline-none lg:hidden"
+              className="group flex h-5 w-5 shrink-0 cursor-pointer flex-col justify-center space-y-1 me-4 focus:text-accent focus:outline-hidden lg:hidden"
             >
               <span
                 className={cn(

@@ -107,7 +107,7 @@ const Carousel = ({
       <div
         ref={(node) => setPrevEl(node)}
         // ref={prevRef}
-        className="author-slider-prev absolute top-1/2 z-[5] -mt-4 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-light text-heading shadow-300 outline-none transition-colors hover:text-orange-500 focus:outline-none ltr:-left-3 rtl:-right-3 ltr:lg:-left-4 rtl:lg:-right-4"
+        className="author-slider-prev absolute top-1/2 z-[5] -mt-4 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-light text-heading shadow-300 outline-hidden transition-colors hover:text-orange-500 focus:outline-hidden ltr:-left-3 rtl:-right-3 ltr:lg:-left-4 rtl:lg:-right-4"
       >
         <span className="sr-only">{t('text-previous')}</span>
         {isRTL ? <ArrowNextIcon /> : <ArrowPrevIcon />}
@@ -115,7 +115,7 @@ const Carousel = ({
       <div
         ref={(node) => setNextEl(node)}
         // ref={nextRef}
-        className="author-slider-next absolute top-1/2 z-[5] -mt-4 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-light text-heading shadow-300 outline-none transition-colors hover:text-orange-500 focus:outline-none ltr:-right-3 rtl:-left-3 ltr:lg:-right-4 rtl:lg:-left-4"
+        className="author-slider-next absolute top-1/2 z-[5] -mt-4 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-light text-heading shadow-300 outline-hidden transition-colors hover:text-orange-500 focus:outline-hidden ltr:-right-3 rtl:-left-3 ltr:lg:-right-4 rtl:lg:-left-4"
       >
         <span className="sr-only">{t('text-next')}</span>
         {isRTL ? <ArrowPrevIcon /> : <ArrowNextIcon />}

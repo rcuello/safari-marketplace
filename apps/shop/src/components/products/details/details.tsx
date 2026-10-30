@@ -131,7 +131,7 @@ const Details: React.FC<Props> = ({
   const content = useSanitizeContent({ description: description });
   return (
     <article className="rounded-lg bg-light">
-      <div className="flex flex-col border-b border-border-200 border-opacity-70 md:flex-row">
+      <div className="flex flex-col border-b border-border-200/70 md:flex-row">
         <div className="p-6 pt-10 md:w-1/2 lg:p-14 xl:p-16">
           <div className="mb-8 flex items-center justify-between lg:mb-10">
             {backBtn && <BackButton />}
@@ -157,7 +157,7 @@ const Details: React.FC<Props> = ({
 
         <div className="flex flex-col items-start p-5 pt-10 md:w-1/2 lg:p-14 xl:p-16">
           <div className="w-full" ref={intersectionRef}>
-            <div className="flex w-full items-start justify-between space-x-8 rtl:space-x-reverse">
+            <div className="flex w-full items-start justify-between space-x-8">
               <h1
                 className={classNames(
                   `text-lg font-semibold tracking-tight text-heading md:text-xl xl:text-2xl`,
@@ -305,7 +305,7 @@ const Details: React.FC<Props> = ({
 
       <Element
         name="details"
-        className="border-b border-border-200 border-opacity-70 px-5 py-4 lg:px-16 lg:py-14"
+        className="border-b border-border-200/70 px-5 py-4 lg:px-16 lg:py-14"
       >
         <h2 className="mb-4 text-lg font-semibold tracking-tight text-heading md:mb-6">
           {t('text-details')}

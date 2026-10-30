@@ -29,7 +29,7 @@ const CallToAction = () => {
               dangerouslySetInnerHTML={{ __html: t('text-cta-description') }}
             />
 
-            <div className="mt-8 flex items-center space-x-6 rtl:space-x-reverse lg:mt-14">
+            <div className="mt-8 flex items-center space-x-6 lg:mt-14">
               <Link
                 href={siteSettings.cta.app_store_link}
                 className="w-32 md:w-48"

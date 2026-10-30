@@ -44,7 +44,7 @@ export default function Modal({ open, onClose, children }: any) {
             leaveFrom="opacity-100"
             leaveTo="opacity-0"
           >
-            <div className="fixed inset-0 h-full w-full bg-gray-900 bg-opacity-50" />
+            <div className="fixed inset-0 h-full w-full bg-gray-900/50" />
           </Transition.Child>
 
           {/* This element is to trick the browser into centering the modal contents. */}
@@ -72,7 +72,7 @@ export default function Modal({ open, onClose, children }: any) {
                 aria-label="Close panel"
                 ref={cancelButtonRef}
                 className={cn(
-                  'absolute top-4 z-[60] inline-block outline-none focus:outline-none ltr:right-4 rtl:left-4 lg:hidden',
+                  'absolute top-4 z-[60] inline-block outline-hidden focus:outline-hidden ltr:right-4 rtl:left-4 lg:hidden',
                   searchModal || approveModal ? 'hidden' : '',
                 )}
               >

@@ -14,7 +14,7 @@ export default function ImportCsv({ onDrop, loading, title }: any) {
       <div
         {...getRootProps({
           className:
-            'border-dashed border-2 border-border-base h-36 rounded flex flex-col justify-center items-center cursor-pointer focus:border-accent-400 focus:outline-none p-5',
+            'border-dashed border-2 border-border-base h-36 rounded flex flex-col justify-center items-center cursor-pointer focus:border-accent-400 focus:outline-hidden p-5',
         })}
       >
         <input {...getInputProps()} />

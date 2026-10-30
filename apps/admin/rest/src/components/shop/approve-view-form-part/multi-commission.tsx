@@ -23,7 +23,7 @@ const MultiCommission = ({
   const { t } = useTranslation();
   return (
     <div className="rounded-[0.625rem] bg-light lg:w-[50rem] m-auto w-full max-w-4xl">
-      <div className="flex justify-between items-center py-5 md:px-8 px-4 border-b border-b-black border-opacity-10 text-black">
+      <div className="flex justify-between items-center py-5 md:px-8 px-4 border-b border-b-black/10 text-black">
         <h2 className="font-semibold text-lg leading-none">
           {t('form:text-shop-approve-modal-title')}
         </h2>
@@ -32,7 +32,7 @@ const MultiCommission = ({
         </div>
       </div>
 
-      <div className="md:p-8 p-4 space-y-5 border-b border-b-black border-opacity-10">
+      <div className="md:p-8 p-4 space-y-5 border-b border-b-black/10">
         {data && data?.content ? (
           <>
             <h3 className="text-black font-medium text-sm leading-none mb-3">

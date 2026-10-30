@@ -40,7 +40,7 @@ export default function ShopFaqPage() {
           title={t('text-faq-title')}
           breadcrumbTitle={t('text-home')}
         />
-        <div className="w-full max-w-screen-lg px-4 py-10 mx-auto">
+        <div className="w-full max-w-(--breakpoint-lg) px-4 py-10 mx-auto">
           {!isLoading && !faqs.length ? (
             <div className="min-h-full p-5 md:p-8 lg:p-12 2xl:p-16">
               <NotFound text="text-no-faq" className="h-96" />

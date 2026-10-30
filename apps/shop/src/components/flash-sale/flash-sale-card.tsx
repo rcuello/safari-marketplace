@@ -28,7 +28,7 @@ const FlashSaleCard: React.FC<FlashSaleCardProps> = ({
       <div className="relative mb-4 h-52 overflow-hidden rounded-md bg-gray-300 md:mb-6 xl:h-60 2xl:h-[21.6875rem]">
         {flashSale?.image?.original ? (
           <div
-            className="blur- absolute top-0 left-0 h-full w-full bg-cover bg-center bg-no-repeat blur-sm"
+            className="blur- absolute top-0 left-0 h-full w-full bg-cover bg-center bg-no-repeat blur-xs"
             style={{ backgroundImage: `url(${flashSale?.image?.original})` }}
           ></div>
         ) : (

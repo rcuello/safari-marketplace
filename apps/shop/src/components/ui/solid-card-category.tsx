@@ -94,14 +94,14 @@ function SolidCardCategory({ items }: any) {
       </Swiper>
       <div
         ref={(node) => setPrevEl(node)}
-        className="banner-slider-prev absolute top-1/2 z-10 -mt-4 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-light text-heading shadow-300 outline-none transition-colors hover:text-orange-500 focus:outline-none ltr:-left-4 rtl:-right-4"
+        className="banner-slider-prev absolute top-1/2 z-10 -mt-4 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-light text-heading shadow-300 outline-hidden transition-colors hover:text-orange-500 focus:outline-hidden ltr:-left-4 rtl:-right-4"
       >
         <span className="sr-only">{t('text-previous')}</span>
         {isRTL ? <ArrowNextIcon /> : <ArrowPrevIcon />}
       </div>
       <div
         ref={(node) => setNextEl(node)}
-        className="banner-slider-next absolute top-1/2 z-10 -mt-4 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-light text-heading shadow-300 outline-none transition-colors hover:text-orange-500 focus:outline-none ltr:-right-4 rtl:-left-4"
+        className="banner-slider-next absolute top-1/2 z-10 -mt-4 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-light text-heading shadow-300 outline-hidden transition-colors hover:text-orange-500 focus:outline-hidden ltr:-right-4 rtl:-left-4"
       >
         <span className="sr-only">{t('text-next')}</span>
         {isRTL ? <ArrowPrevIcon /> : <ArrowNextIcon />}

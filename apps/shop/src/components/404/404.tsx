@@ -47,7 +47,7 @@ const NotFound: React.FC<NotFoundProps> = ({
         {link ? (
           <Link
             href={link}
-            className="inline-flex items-center text-bolder underline hover:text-body-dark hover:no-underline focus:outline-none sm:text-base"
+            className="inline-flex items-center text-bolder underline hover:text-body-dark hover:no-underline focus:outline-hidden sm:text-base"
           >
             {t(linkTitle)}
           </Link>

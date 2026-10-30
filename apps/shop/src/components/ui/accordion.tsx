@@ -35,7 +35,7 @@ const Collapse: React.FC<CollapseProps> = ({
   const activeClass = isOpen
     ? variant === 'shadow'
       ? 'shadow-[0px_10px_40px_0px_rgba(187,199,206,0.25)]'
-      : 'shadow-sm'
+      : 'shadow-xs'
     : '';
 
   const { t } = useTranslation(translatorNS);
@@ -66,12 +66,12 @@ const Collapse: React.FC<CollapseProps> = ({
         </h2>
         {isOpen ? (
           <MinusIcon
-            className="flex-shrink-0 stroke-2"
+            className="shrink-0 stroke-2"
             width={18}
             height={18}
           />
         ) : (
-          <PlusIcon className="flex-shrink-0 stroke-2" width={20} height={20} />
+          <PlusIcon className="shrink-0 stroke-2" width={20} height={20} />
         )}
       </motion.header>
       <AnimatePresence initial={false}>

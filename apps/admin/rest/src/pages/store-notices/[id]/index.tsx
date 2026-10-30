@@ -43,7 +43,7 @@ const StoreNoticePage = () => {
       <div className="mb-5">
         <Link
           href={`${Routes?.adminMyShops}?tab=2`}
-          className="flex items-center font-bold no-underline transition-colors duration-200 text-accent ms-1 hover:text-accent-hover hover:underline focus:text-accent-700 focus:no-underline focus:outline-none"
+          className="flex items-center font-bold no-underline transition-colors duration-200 text-accent ms-1 hover:text-accent-hover hover:underline focus:text-accent-700 focus:no-underline focus:outline-hidden"
         >
           <IosArrowLeft height={12} width={15} className="mr-2.5" />
           {t('common:text-back-to-home')}

@@ -16,7 +16,7 @@ export default function RatingProgressBar({
 }: RatingProgressProps) {
   return (
     <div className="flex items-center text-sm text-heading">
-      <div className="flex w-11 shrink-0 items-center space-x-1 font-semibold rtl:space-x-reverse">
+      <div className="flex w-11 shrink-0 items-center space-x-1 font-semibold">
         <span className="text-sm font-semibold text-heading">{ratingId}</span>{' '}
         <StarIcon className="h-2.5 w-2.5 ltr:ml-1.5 rtl:mr-1.5" />
       </div>

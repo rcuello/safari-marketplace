@@ -41,7 +41,7 @@ const RelatedProducts = ({
 {
   /* {renderProductCard(
     item,
-    "!shadow-none border border-border-200 hover:!border-border-200 border-opacity-70"
+    "!shadow-none border border-border-200/70 hover:!border-border-200"
   )} */
 }
 // </motion.div>

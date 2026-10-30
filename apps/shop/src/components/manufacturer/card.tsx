@@ -45,13 +45,13 @@ const ManufacturerCard: React.FC<ManufacturerProps> = ({ item, className }) => {
           {item?.name}
         </span>
         {!isEmpty(item?.socials) ? (
-          <div className="mt-1.5 flex items-center space-x-3 ltr:ml-1 rtl:mr-1 rtl:space-x-reverse">
+          <div className="mt-1.5 flex items-center space-x-3 ltr:ml-1 rtl:mr-1">
             {item?.socials?.map((item: any, index: number) => (
               <a
                 key={index}
                 href={item.url}
                 target="_blank"
-                className={`cursor-pointer text-body transition-colors duration-300 hover:text-accent focus:outline-none`}
+                className={`cursor-pointer text-body transition-colors duration-300 hover:text-accent focus:outline-hidden`}
                 rel="noreferrer"
               >
                 {getIcon({
@@ -63,11 +63,11 @@ const ManufacturerCard: React.FC<ManufacturerProps> = ({ item, className }) => {
             ))}
           </div>
         ) : (
-          <div className="mt-1.5 flex items-center space-x-3 rtl:space-x-reverse">
+          <div className="mt-1.5 flex items-center space-x-3">
             <a
               href="/"
               target="_blank"
-              className={`cursor-pointer text-body transition-colors duration-300 hover:text-accent focus:outline-none`}
+              className={`cursor-pointer text-body transition-colors duration-300 hover:text-accent focus:outline-hidden`}
               rel="noreferrer"
             >
               {getIcon({

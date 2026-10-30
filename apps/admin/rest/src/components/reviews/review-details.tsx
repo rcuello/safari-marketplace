@@ -131,7 +131,7 @@ const ReviewDetailsView = ({ review }: IProps) => {
       </h3>
 
       {/* Product details */}
-      <div className="mb-10 flex w-full items-start space-x-4 rtl:space-x-reverse md:space-x-5">
+      <div className="mb-10 flex w-full items-start space-x-4 md:space-x-5">
         <div className="relative h-20 w-20 shrink-0 border border-gray-200">
           <Image
             src={image?.thumbnail ?? siteSettings.product.placeholder}
@@ -189,7 +189,7 @@ const ReviewDetailsView = ({ review }: IProps) => {
           </div>
 
           {/* Accept/decline buttons */}
-          <div className="flex items-center space-x-4 rtl:space-x-reverse md:space-x-5">
+          <div className="flex items-center space-x-4 md:space-x-5">
             <Button
               size="small"
               variant="outline"
@@ -220,7 +220,7 @@ const ReviewDetailsView = ({ review }: IProps) => {
         </div>
         <p className="text-sm leading-6 text-heading">{comment}</p>
         {photos && !isEmpty(photos) && (
-          <div className="flex items-start pt-3 space-s-2">
+          <div className="flex items-start pt-3 space-x-2">
             {photos?.map((photo: any, idx: any) => (
               <div className="mb-1" key={idx}>
                 <Image
@@ -242,7 +242,7 @@ const ReviewDetailsView = ({ review }: IProps) => {
             </button>
           </div>
         )}
-        <div className="mt-4 flex items-center space-x-4 rtl:space-x-reverse">
+        <div className="mt-4 flex items-center space-x-4">
           <span className="flex items-center text-xs tracking-wider text-gray-400 transition">
             <LikeIcon className="h-4 w-4 me-1.5" />
             {positive_feedbacks_count}

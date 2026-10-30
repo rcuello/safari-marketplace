@@ -42,13 +42,13 @@ const Details: React.FC<ManufacturerProps> = ({ manufacturer }) => {
         )}
 
         {socials && (
-          <div className="mt-5 flex items-center space-x-5 rtl:space-x-reverse">
+          <div className="mt-5 flex items-center space-x-5">
             {socials?.map((item: any, index: number) => (
               <a
                 key={index}
                 href={item.url}
                 target="_blank"
-                className={`cursor-pointer text-body transition-colors duration-300 hover:text-accent focus:outline-none`}
+                className={`cursor-pointer text-body transition-colors duration-300 hover:text-accent focus:outline-hidden`}
                 rel="noreferrer"
               >
                 {getIcon({

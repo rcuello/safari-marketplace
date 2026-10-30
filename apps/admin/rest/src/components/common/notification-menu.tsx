@@ -41,7 +41,7 @@ const NotificationMenu: React.FC<MenuType> = ({ data }) => {
   return (
     <>
       <button
-        className="relative flex items-center justify-center rounded text-heading outline-none transition duration-300 ease-in-out focus:outline-none focus:ring-1"
+        className="relative flex items-center justify-center rounded text-heading outline-hidden transition duration-300 ease-in-out focus:outline-hidden focus:ring-1"
         aria-label="show notifications"
         {...triggerProps}
         onClick={() => setOpen(!isOpen)}
@@ -73,7 +73,7 @@ const NotificationMenu: React.FC<MenuType> = ({ data }) => {
                   {t('text-notification')}
                 </span>
 
-                <button className="text-sm font-semibold text-red-500 transition duration-200 hover:text-red-600 focus:outline-none focus:ring-1">
+                <button className="text-sm font-semibold text-red-500 transition duration-200 hover:text-red-600 focus:outline-hidden focus:ring-1">
                   Clear all
                 </button>
               </div>

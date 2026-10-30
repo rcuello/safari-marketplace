@@ -99,7 +99,7 @@ const Radon: React.FC<RadonProps> = ({ product, className }) => {
                 {maxPrice}
               </p>
             ) : (
-              <div className="flex items-center space-x-2.5 rtl:space-x-reverse">
+              <div className="flex items-center space-x-2.5">
                 <span className="text-base font-semibold text-orange-500">
                   {price}
                 </span>

@@ -24,7 +24,7 @@ export default function AuthorizedMenu() {
       as="div"
       className="relative inline-block shrink-0 grow-0 basis-auto py-2 text-left ps-1.5 sm:border-solid sm:border-gray-200 sm:py-3 sm:ps-6 sm:border-s lg:py-4 xl:py-2"
     >
-      <Menu.Button className="flex max-w-[150px] items-center gap-2 focus:outline-none lg:py-0.5 xl:py-2.5">
+      <Menu.Button className="flex max-w-[150px] items-center gap-2 focus:outline-hidden lg:py-0.5 xl:py-2.5">
         <Avatar
           src={
             data?.profile?.avatar?.thumbnail ??
@@ -55,10 +55,10 @@ export default function AuthorizedMenu() {
       >
         <Menu.Items
           as="ul"
-          className="authorized-menu absolute mt-3 w-56 rounded-lg border border-gray-200 bg-white shadow-box end-0 origin-top-end focus:outline-none lg:mt-4 xl:mt-2"
+          className="authorized-menu absolute mt-3 w-56 rounded-lg border border-gray-200 bg-white shadow-box end-0 ltr:origin-top-right rtl:origin-top-left focus:outline-hidden lg:mt-4 xl:mt-2"
         >
           <Menu.Item>
-            <li className="border-b border-dashed border-gray-200 p-2 focus:outline-none">
+            <li className="border-b border-dashed border-gray-200 p-2 focus:outline-hidden">
               <div className="flex items-center gap-2 rounded-md bg-gray-100 px-3 py-2">
                 <Avatar
                   src={

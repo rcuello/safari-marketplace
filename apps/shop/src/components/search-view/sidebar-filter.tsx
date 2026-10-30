@@ -70,7 +70,7 @@ const SidebarFilter: React.FC<{
       )}
     >
       <div className="sticky top-0 z-10 flex items-center justify-between rounded-tl-xl rounded-tr-xl border-b border-gray-200 bg-white px-5 py-6 lg:static">
-        <div className="flex items-center space-x-3 rtl:space-x-reverse lg:space-x-0">
+        <div className="flex items-center space-x-3 lg:space-x-0">
           <button
             className="text-body focus:outline-0 lg:hidden"
             onClick={() => closeSidebar({ display: false, view: '' })}

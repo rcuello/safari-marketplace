@@ -46,7 +46,7 @@ const ProductCard = ({ item }: Props) => {
   }
 
   return (
-    <div className="cart-type-neon h-full overflow-hidden rounded border border-border-200 bg-light shadow-sm transition-all duration-200 hover:shadow-md">
+    <div className="cart-type-neon h-full overflow-hidden rounded border border-border-200 bg-light shadow-xs transition-all duration-200 hover:shadow-md">
       {/* <h3>{name}</h3> */}
 
       <div
@@ -99,10 +99,10 @@ const ProductCard = ({ item }: Props) => {
             {Number(quantity) > 0 && (
               <button
                 onClick={handleVariableProduct}
-                className="group flex h-7 w-full items-center justify-between rounded bg-gray-100 text-xs text-body-dark transition-colors hover:border-accent hover:bg-accent hover:text-light focus:border-accent focus:bg-accent focus:text-light focus:outline-none md:h-9 md:text-sm"
+                className="group flex h-7 w-full items-center justify-between rounded bg-gray-100 text-xs text-body-dark transition-colors hover:border-accent hover:bg-accent hover:text-light focus:border-accent focus:bg-accent focus:text-light focus:outline-hidden md:h-9 md:text-sm"
               >
                 <span className="flex-1">{t('text-add')}</span>
-                <span className="grid h-7 w-7 place-items-center bg-gray-200 transition-colors duration-200 rounded-te rounded-be group-hover:bg-accent-600 group-focus:bg-accent-600 md:h-9 md:w-9">
+                <span className="grid h-7 w-7 place-items-center bg-gray-200 transition-colors duration-200 rounded-se rounded-ee group-hover:bg-accent-600 group-focus:bg-accent-600 md:h-9 md:w-9">
                   <PlusIcon className="h-4 w-4 stroke-2" />
                 </span>
               </button>

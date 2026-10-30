@@ -40,7 +40,7 @@ const OrderItemList = (_: any, record: any) => {
       </div>
 
       <div className="flex flex-col overflow-hidden ltr:ml-4 rtl:mr-4">
-        <div className="mb-1 flex space-x-1 rtl:space-x-reverse">
+        <div className="mb-1 flex space-x-1">
           <Link
             href={Routes.product(record?.slug)}
             className="inline-block overflow-hidden truncate text-sm text-body transition-colors hover:text-accent hover:underline"

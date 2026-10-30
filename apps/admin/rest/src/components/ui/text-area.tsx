@@ -16,7 +16,7 @@ export interface Props extends TextareaHTMLAttributes<HTMLTextAreaElement> {
 }
 
 const classes = {
-  root: 'align-middle py-3 px-4 w-full rounded appearance-none transition duration-300 ease-in-out text-heading text-sm focus:outline-none focus:ring-0',
+  root: 'align-middle py-3 px-4 w-full rounded appearance-none transition duration-300 ease-in-out text-heading text-sm focus:outline-hidden focus:ring-0',
   normal:
     'bg-gray-100 border border-border-base focus:shadow focus:bg-light focus:border-accent',
   solid:

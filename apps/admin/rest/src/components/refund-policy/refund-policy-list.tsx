@@ -135,7 +135,7 @@ const RefundPolicyList = ({
       width: 180,
       render: (status: string, record: any) => (
         <div
-          className={`flex items-center justify-center space-x-3 rtl:space-x-reverse`}
+          className={`flex items-center justify-center space-x-3`}
         >
           <Badge
             text={status}

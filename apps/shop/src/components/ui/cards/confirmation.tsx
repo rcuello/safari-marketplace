@@ -42,7 +42,7 @@ const Confirmation: React.FC<ConfirmationCardProps> = ({
           <p className="px-6 py-2 leading-relaxed text-body-dark dark:text-muted">
             {t(description)}
           </p>
-          <div className="mt-8 flex w-full items-center justify-between space-x-4 rtl:space-x-reverse">
+          <div className="mt-8 flex w-full items-center justify-between space-x-4">
             <div className="w-1/2">
               <Button
                 onClick={onCancel}
@@ -50,7 +50,7 @@ const Confirmation: React.FC<ConfirmationCardProps> = ({
                 disabled={cancelBtnLoading}
                 variant="custom"
                 className={cn(
-                  'w-full rounded bg-accent py-2 px-4 text-center text-base font-semibold text-light shadow-md transition duration-200 ease-in hover:bg-accent-hover focus:bg-accent-hover focus:outline-none',
+                  'w-full rounded bg-accent py-2 px-4 text-center text-base font-semibold text-light shadow-md transition duration-200 ease-in hover:bg-accent-hover focus:bg-accent-hover focus:outline-hidden',
                   cancelBtnClassName,
                 )}
               >

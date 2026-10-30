@@ -151,8 +151,8 @@ const ProductInventoryList = ({
               <div
                 className={`flex justify-start ${
                   quantity > 0 && quantity < 10
-                    ? 'flex-col items-baseline space-y-3 3xl:flex-row 3xl:space-x-2 3xl:space-y-0 rtl:3xl:space-x-reverse'
-                    : 'items-center space-x-2 rtl:space-x-reverse'
+                    ? 'flex-col items-baseline space-y-3 3xl:flex-row 3xl:space-x-2 3xl:space-y-0'
+                    : 'items-center space-x-2'
                 }`}
               >
                 {quantity < 1 ? (

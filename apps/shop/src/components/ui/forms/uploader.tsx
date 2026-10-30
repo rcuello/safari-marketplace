@@ -70,7 +70,7 @@ export default function Uploader({
       <div
         {...getRootProps({
           className:
-            'border-dashed border-2 border-border-base h-36 rounded flex flex-col justify-center items-center cursor-pointer focus:border-accent-400 focus:outline-none',
+            'border-dashed border-2 border-border-base h-36 rounded flex flex-col justify-center items-center cursor-pointer focus:border-accent-400 focus:outline-hidden',
         })}
       >
         <input

@@ -52,7 +52,7 @@ const HeaderWithMegaMenu: React.FC<MenuProps> = ({ data, className }) => {
     <>
       <header
         className={cn(
-          'site-header-with-search w-full h-auto z-50 fixed shadow-sm',
+          'site-header-with-search w-full h-auto z-50 fixed shadow-xs',
         )}
       >
         <div
@@ -63,7 +63,7 @@ const HeaderWithMegaMenu: React.FC<MenuProps> = ({ data, className }) => {
           <div className="flex items-center w-full">
             <Logo className="mx-auto lg:mx-0" />
 
-            <div className="hidden lg:block w-full xl:w-11/12 2xl:w-10/12 max-w-screen-md mx-auto px-10 overflow-hidden">
+            <div className="hidden lg:block w-full xl:w-11/12 2xl:w-10/12 max-w-(--breakpoint-md) mx-auto px-10 overflow-hidden">
               <Search label={t('text-search-label')} variant="minimal" />
             </div>
           </div>
@@ -81,7 +81,7 @@ const HeaderWithMegaMenu: React.FC<MenuProps> = ({ data, className }) => {
             </>
           ) : null}
 
-          <div className="ltr:ml-10 rtl:mr-10 hidden lg:flex items-center shrink-0 space-x-9 rtl:space-x-reverse">
+          <div className="ltr:ml-10 rtl:mr-10 hidden lg:flex items-center shrink-0 space-x-9">
             <GroupsDropdownMenu variant="minimal" />
             <CartCounterIconButton />
             {isAuthorize ? <AuthorizedMenu minimal={true} /> : <JoinButton />}

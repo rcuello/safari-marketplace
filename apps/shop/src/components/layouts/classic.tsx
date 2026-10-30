@@ -14,7 +14,7 @@ export default function ClassicLayout({ variables }: HomePageProps) {
       <FilterBar variables={variables.categories} />
       <Element
         name="grid"
-        className="flex border-t border-solid border-border-200 border-opacity-70"
+        className="flex border-t border-solid border-border-200/70"
       >
         <Categories layout="classic" variables={variables.categories} />
         <ProductGridHome

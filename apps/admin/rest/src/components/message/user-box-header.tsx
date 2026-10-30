@@ -46,7 +46,7 @@ const UserBoxHeaderView = ({
             <button
               type="button"
               onClick={clear}
-              className="my-auto ml-auto mr-3 text-[#9CA3AF] outline-none focus:outline-none active:outline-none"
+              className="my-auto ml-auto mr-3 text-[#9CA3AF] outline-hidden focus:outline-hidden active:outline-hidden"
             >
               <CloseIcon className="h-4 w-4" />
             </button>

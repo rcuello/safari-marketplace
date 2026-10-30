@@ -132,7 +132,7 @@ const AuthorList = ({
               onChange={handleOnClick}
               className={`${
                 is_approved ? 'bg-accent' : 'bg-gray-300'
-              } relative inline-flex h-6 w-11 items-center rounded-full focus:outline-none`}
+              } relative inline-flex h-6 w-11 items-center rounded-full focus:outline-hidden`}
               dir="ltr"
             >
               <span className="sr-only">Enable</span>

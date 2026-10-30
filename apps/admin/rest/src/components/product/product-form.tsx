@@ -363,7 +363,7 @@ export default function CreateOrUpdateProductForm({
                           remove(index);
                         }}
                         type="button"
-                        className="text-sm text-red-500 transition-colors duration-200 hover:text-red-700 focus:outline-none sm:col-span-1"
+                        className="text-sm text-red-500 transition-colors duration-200 hover:text-red-700 focus:outline-hidden sm:col-span-1"
                       >
                         {t('form:button-label-remove')}
                       </button>
@@ -433,7 +433,7 @@ export default function CreateOrUpdateProductForm({
                     disabled={isSlugDisable}
                   />
                   <button
-                    className="absolute top-[27px] right-px z-0 flex h-[46px] w-11 items-center justify-center rounded-tr rounded-br border-l border-solid border-border-base bg-white px-2 text-body transition duration-200 hover:text-heading focus:outline-none"
+                    className="absolute top-[27px] right-px z-0 flex h-[46px] w-11 items-center justify-center rounded-tr rounded-br border-l border-solid border-border-base bg-white px-2 text-body transition duration-200 hover:text-heading focus:outline-hidden"
                     type="button"
                     title={t('common:text-edit')}
                     onClick={() => setIsSlugDisable(false)}
@@ -588,7 +588,7 @@ export default function CreateOrUpdateProductForm({
                   <Link
                     href={`${process.env.NEXT_PUBLIC_SHOP_URL}/products/preview/${query.productSlug}`}
                     target="_blank"
-                    className="inline-flex h-12 flex-shrink-0 items-center justify-center rounded border !border-accent bg-transparent px-5 py-0 text-sm font-semibold leading-none !text-accent outline-none transition duration-300 ease-in-out me-4 hover:border-accent hover:bg-accent hover:!text-white focus:shadow focus:outline-none focus:ring-1 focus:ring-accent-700 md:text-base"
+                    className="inline-flex h-12 shrink-0 items-center justify-center rounded border !border-accent bg-transparent px-5 py-0 text-sm font-semibold leading-none !text-accent outline-hidden transition duration-300 ease-in-out me-4 hover:border-accent hover:bg-accent hover:!text-white focus:shadow focus:outline-hidden focus:ring-1 focus:ring-accent-700 md:text-base"
                   >
                     <EyeIcon className="w-4 h-4 me-2" />
                     {t('form:button-label-preview-product-on-shop')}
@@ -635,7 +635,7 @@ export default function CreateOrUpdateProductForm({
                 <Link
                   href={`${process.env.NEXT_PUBLIC_SHOP_URL}/products/preview/${query.productSlug}`}
                   target="_blank"
-                  className="inline-flex h-12 flex-shrink-0 items-center justify-center rounded border !border-accent bg-transparent px-5 py-0 font-semibold leading-none !text-accent outline-none transition duration-300 ease-in-out me-4 hover:border-accent hover:bg-accent hover:!text-white focus:shadow focus:outline-none focus:ring-1 focus:ring-accent-700"
+                  className="inline-flex h-12 shrink-0 items-center justify-center rounded border !border-accent bg-transparent px-5 py-0 font-semibold leading-none !text-accent outline-hidden transition duration-300 ease-in-out me-4 hover:border-accent hover:bg-accent hover:!text-white focus:shadow focus:outline-hidden focus:ring-1 focus:ring-accent-700"
                 >
                   <EyeIcon className="w-4 h-4 me-2" />
                   {t('form:button-label-preview-product-on-shop')}

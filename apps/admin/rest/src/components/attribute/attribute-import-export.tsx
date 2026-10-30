@@ -22,7 +22,7 @@ const AttributeExportImport = () => {
           href={`${process?.env?.NEXT_PUBLIC_REST_API_ENDPOINT}/export-attributes/${shopId}`}
           target="_blank"
           rel={'noreferrer'}
-          className="flex h-36 cursor-pointer flex-col items-center justify-center rounded border-2 border-dashed border-border-base p-5 focus:border-accent-400 focus:outline-none"
+          className="flex h-36 cursor-pointer flex-col items-center justify-center rounded border-2 border-dashed border-border-base p-5 focus:border-accent-400 focus:outline-hidden"
         >
           <DownloadIcon className="w-10 text-muted-light" />
 

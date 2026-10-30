@@ -52,7 +52,7 @@ const RefundImageModal = () => {
           <>
             <div
               ref={prevRef}
-              className="absolute z-10 flex items-center justify-center w-8 h-8 -mt-4 transition-all duration-200 border rounded-full shadow-xl cursor-pointer refund-gallery-prev top-2/4 border-border-200 border-opacity-70 bg-light text-heading start-2 hover:bg-gray-100 md:-mt-5 md:h-9 md:w-9 md:start-3"
+              className="absolute z-10 flex items-center justify-center w-8 h-8 -mt-4 transition-all duration-200 border rounded-full shadow-xl cursor-pointer refund-gallery-prev top-2/4 border-border-200/70 bg-light text-heading start-2 hover:bg-gray-100 md:-mt-5 md:h-9 md:w-9 md:start-3"
             >
               {isRTL ? (
                 <ChevronRight className="w-4 h-4" />
@@ -62,7 +62,7 @@ const RefundImageModal = () => {
             </div>
             <div
               ref={nextRef}
-              className="absolute z-10 flex items-center justify-center w-8 h-8 -mt-4 transition-all duration-200 border rounded-full shadow-xl cursor-pointer refund-gallery-next top-2/4 border-border-200 border-opacity-70 bg-light text-heading end-2 hover:bg-gray-100 md:-mt-5 md:h-9 md:w-9 md:end-3"
+              className="absolute z-10 flex items-center justify-center w-8 h-8 -mt-4 transition-all duration-200 border rounded-full shadow-xl cursor-pointer refund-gallery-next top-2/4 border-border-200/70 bg-light text-heading end-2 hover:bg-gray-100 md:-mt-5 md:h-9 md:w-9 md:end-3"
             >
               {isRTL ? (
                 <ChevronLeft className="w-4 h-4" />

@@ -91,7 +91,7 @@ const ShortDetails: React.FC<ShortDetailsProps> = ({ product, isSticky }) => {
       <div className="flex items-center">
         <div
           className={cn(
-            'relative flex shrink-0 items-center justify-center overflow-hidden rounded border border-border-200 border-opacity-70',
+            'relative flex shrink-0 items-center justify-center overflow-hidden rounded border border-border-200/70',
             {
               'h-28 w-28': !hasVariations,
               'h-40 w-40 lg:h-52 lg:w-52': hasVariations,

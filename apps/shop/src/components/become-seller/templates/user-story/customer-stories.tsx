@@ -14,20 +14,20 @@ interface CustomerStoriesProps extends Pick<
 
 const swiperPaginationClassName = `
 	[&_.swiper-pagination]:!relative 
-  [&_.swiper-pagination]:!-mx-4 
-  [&_.swiper-pagination]:!px-4 
-  [&_.swiper-pagination]:!pt-2 
-  [&_.swiper-pagination]:z-10 
-  [&_.swiper-pagination]:mt-8 
-  [&_.swiper-pagination_.swiper-pagination-bullet]:!w-2 
-  [&_.swiper-pagination_.swiper-pagination-bullet]:!h-2 
-  [&_.swiper-pagination_.swiper-pagination-bullet]:!cursor-pointer
-  [&_.swiper-pagination_.swiper-pagination-bullet]:!bg-white 
-  [&_.swiper-pagination_.swiper-pagination-bullet]:!bg-opacity-40 
-  [&_.swiper-pagination_.swiper-pagination-bullet]:!rounded
-  [&_.swiper-pagination_.swiper-pagination-bullet]:!w-[60px] 
-  [&_.swiper-pagination_.swiper-pagination-bullet.swiper-pagination-bullet-active]:!bg-accent 
-  [&_.swiper-pagination_.swiper-pagination-bullet]:duration-200 
+ [&_.swiper-pagination]:!-mx-4 
+ [&_.swiper-pagination]:!px-4 
+ [&_.swiper-pagination]:!pt-2 
+ [&_.swiper-pagination]:z-10 
+ [&_.swiper-pagination]:mt-8 
+ [&_.swiper-pagination_.swiper-pagination-bullet]:!w-2 
+ [&_.swiper-pagination_.swiper-pagination-bullet]:!h-2 
+ [&_.swiper-pagination_.swiper-pagination-bullet]:!cursor-pointer
+ [&_.swiper-pagination_.swiper-pagination-bullet]:!bg-white/40 
+ 
+ [&_.swiper-pagination_.swiper-pagination-bullet]:!rounded
+ [&_.swiper-pagination_.swiper-pagination-bullet]:!w-[60px] 
+ [&_.swiper-pagination_.swiper-pagination-bullet.swiper-pagination-bullet-active]:!bg-accent 
+ [&_.swiper-pagination_.swiper-pagination-bullet]:duration-200 
 	`;
 
 export default function CustomerStories({

@@ -101,13 +101,13 @@ const OwnerStoreNoticePage = () => {
             <Badge
               text={data?.priority}
               className={classNames(
-                `rounded-full border border-current bg-opacity-10 py-2 px-3 text-sm font-medium capitalize leading-none`,
+                `rounded-full border border-current py-2 px-3 text-sm font-medium capitalize leading-none`,
                 {
-                  'bg-[#30947F] text-[#30947F]':
+                  'bg-[#30947F]/10 text-[#30947F]':
                     StoreNoticePriorityType.High === data?.priority,
-                  'bg-[#43A5FF] text-[#43A5FF]':
+                  'bg-[#43A5FF]/10 text-[#43A5FF]':
                     StoreNoticePriorityType.Medium === data?.priority,
-                  'bg-[#F75159] text-[#F75159]':
+                  'bg-[#F75159]/10 text-[#F75159]':
                     StoreNoticePriorityType.Low === data?.priority,
                 },
               )}

@@ -141,7 +141,7 @@ const RegistrationForm = () => {
         {t('form:text-already-account')}{' '}
         <Link
           href={Routes.login}
-          className="font-semibold underline transition-colors duration-200 ms-1 text-accent hover:text-accent-hover hover:no-underline focus:text-accent-700 focus:no-underline focus:outline-none"
+          className="font-semibold underline transition-colors duration-200 ms-1 text-accent hover:text-accent-hover hover:no-underline focus:text-accent-700 focus:no-underline focus:outline-hidden"
         >
           {t('form:button-label-login')}
         </Link>

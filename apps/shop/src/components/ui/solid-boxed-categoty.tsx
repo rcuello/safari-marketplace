@@ -126,14 +126,14 @@ function SolidBoxedCategoryMenu({ items }: any) {
       </Swiper>
       <div
         ref={prevRef}
-        className="absolute z-10 flex items-center justify-center w-8 h-8 -mt-4 rounded-full outline-none cursor-pointer category-slider-prev top-1/2 bg-light text-heading shadow-300 focus:outline-none ltr:-left-3 rtl:-right-3 ltr:lg:-left-4"
+        className="absolute z-10 flex items-center justify-center w-8 h-8 -mt-4 rounded-full outline-hidden cursor-pointer category-slider-prev top-1/2 bg-light text-heading shadow-300 focus:outline-hidden ltr:-left-3 rtl:-right-3 ltr:lg:-left-4"
       >
         <span className="sr-only">{t('text-previous')}</span>
         {isRTL ? <ArrowNextIcon /> : <ArrowPrevIcon />}
       </div>
       <div
         ref={nextRef}
-        className="absolute z-10 flex items-center justify-center w-8 h-8 -mt-4 rounded-full outline-none cursor-pointer category-slider-next top-1/2 bg-light text-heading shadow-300 focus:outline-none ltr:-right-3 rtl:-left-3 ltr:lg:-right-4 rtl:lg:-left-4"
+        className="absolute z-10 flex items-center justify-center w-8 h-8 -mt-4 rounded-full outline-hidden cursor-pointer category-slider-next top-1/2 bg-light text-heading shadow-300 focus:outline-hidden ltr:-right-3 rtl:-left-3 ltr:lg:-right-4 rtl:lg:-left-4"
       >
         <span className="sr-only">{t('text-next')}</span>
         {isRTL ? <ArrowPrevIcon /> : <ArrowNextIcon />}

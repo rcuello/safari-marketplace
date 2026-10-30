@@ -56,7 +56,7 @@ const Helium: React.FC<HeliumProps> = ({ product, className }) => {
     <article
       className={twMerge(
         cn(
-          'product-card cart-type-helium h-full overflow-hidden rounded border border-border-200 bg-light transition-shadow duration-200 hover:shadow-sm',
+          'product-card cart-type-helium h-full overflow-hidden rounded border border-border-200 bg-light transition-shadow duration-200 hover:shadow-xs',
           className,
         ),
       )}
@@ -127,7 +127,7 @@ const Helium: React.FC<HeliumProps> = ({ product, className }) => {
             <>
               <div className="relative">
                 {basePrice && (
-                  <del className="absolute text-xs italic text-opacity-75 -top-4 text-muted md:-top-5">
+                  <del className="absolute text-xs italic -top-4 text-muted/75 md:-top-5">
                     {basePrice}
                   </del>
                 )}

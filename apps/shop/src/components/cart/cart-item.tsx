@@ -49,9 +49,9 @@ const CartItem = ({ item }: CartItemProps) => {
       animate="to"
       exit="from"
       variants={fadeInOut(0.25)}
-      className="flex items-center border-b border-solid border-border-200 border-opacity-75 px-4 py-4 text-sm sm:px-6"
+      className="flex items-center border-b border-solid border-border-200/75 px-4 py-4 text-sm sm:px-6"
     >
-      <div className="flex-shrink-0">
+      <div className="shrink-0">
         <Counter
           value={item.quantity}
           onDecrement={handleRemoveClick}

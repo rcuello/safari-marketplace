@@ -18,7 +18,7 @@ export default function ManufacturersPage() {
             {t('text-search-manufacturers-subtitle')}
           </p>
 
-          <div className="mt-12 w-full max-w-screen-md">
+          <div className="mt-12 w-full max-w-(--breakpoint-md)">
             <Search
               variant="minimal"
               label="search"

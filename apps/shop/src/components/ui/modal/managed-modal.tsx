@@ -127,7 +127,7 @@ const ManagedModal = () => {
         <ShopInfoCard
           shop={data?.shop}
           cardClassName="!hidden"
-          className="!flex !h-screen !w-screen max-w-screen-sm flex-col"
+          className="!flex !h-screen !w-screen max-w-(--breakpoint-sm) flex-col"
         />
       )}
       {view === 'REVIEW_RATING' && <ReviewRating />}

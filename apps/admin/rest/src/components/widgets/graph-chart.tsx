@@ -102,7 +102,7 @@ const GraphChart = ({ widgetTitle, series, labels, colors }: any) => {
   };
 
   return (
-    <div className="h-full w-full rounded bg-light shadow-sm">
+    <div className="h-full w-full rounded bg-light shadow-xs">
       <div className="flex items-start justify-between p-8">
         <h3 className="text-base font-semibold text-heading">{widgetTitle}</h3>
       </div>

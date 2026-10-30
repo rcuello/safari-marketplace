@@ -231,7 +231,7 @@ const Fluorine: React.FC<FluorineProps> = ({
             )}
           </div>
           {Number(product?.quantity) <= 0 && (
-            <div className="rounded bg-[#F75159] bg-opacity-10 p-2 text-sm text-[#F75159]">
+            <div className="rounded bg-[#F75159]/10 p-2 text-sm text-[#F75159]">
               {t('text-out-stock')}
             </div>
           )}

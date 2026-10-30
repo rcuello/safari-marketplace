@@ -65,7 +65,7 @@ const MultiRangeSlider: React.FC<Props> = ({ min, max, onChange }) => {
             event.target.value = value.toString();
           }}
           className={classnames(
-            'thumb absolute z-[3] h-0 w-full outline-none',
+            'thumb absolute z-[3] h-0 w-full outline-hidden',
             {
               'z-[5]': minVal > max - 100,
             },
@@ -82,7 +82,7 @@ const MultiRangeSlider: React.FC<Props> = ({ min, max, onChange }) => {
             setMaxVal(value);
             event.target.value = value.toString();
           }}
-          className="thumb absolute z-[4] h-0 w-full outline-none"
+          className="thumb absolute z-[4] h-0 w-full outline-hidden"
         />
         <div className="relative w-full">
           <div className="track absolute z-[1] h-1 w-full rounded bg-gray-200" />
