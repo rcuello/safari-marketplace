@@ -1,10 +1,42 @@
 /* Los @import van antes de cualquier regla: Turbopack (Lightning CSS) los
-   rechaza detrás de otras, y webpack ya los subía al principio del bundle. */
+   rechaza detrás de otras, y webpack ya los subía al principio del bundle.
+   Van sin capa a propósito (US-86): sobrescriben el CSS de terceros que se
+   importa desde JS (rc-table, toastify, datepicker...), que tampoco tiene capa;
+   con layer(base) perdían contra él. Las fuentes de Google salen de
+   custom-plugins.css para que sigan siendo el primer @import. */
+@import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Raleway&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lato&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Rubik&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans&display=swap');
 @import './custom-plugins.css';
 @import './rich-text-editor.css';
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+@config '../../../tailwind.config.js';
+
+/* Valores por defecto de la v3 que la v4 cambió (US-86): borde gris en vez de
+   currentcolor, anillo azul al 50 %, placeholder gris-400 y cursor de mano en
+   los botones. Son los valores que emitía la 3.4.14 con esta config. */
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: #e5e7eb;
+    --tw-ring-color: rgb(59 130 246 / 0.5);
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: #9ca3af;
+  }
+
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
+    cursor: pointer;
+  }
+}
 
 @layer base {
   :root {

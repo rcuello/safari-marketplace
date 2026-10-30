@@ -1,5 +1,9 @@
+/* La v4 compila cada CSS module por separado: @reference le da el tema sin
+   volver a emitir el CSS global (US-86). */
+@reference '../../../assets/css/main.css';
+
 .color_picker {
-  @apply p-0 h-12 w-12 flex items-center bg-transparent rounded-full border border-border-200 outline-none appearance-none focus:outline-none focus:ring-0;
+  @apply p-0 h-12 w-12 flex items-center bg-transparent rounded-full border border-border-200 outline-hidden appearance-none focus:outline-hidden focus:ring-0;
 }
 
 .color_picker::-webkit-color-swatch-wrapper {

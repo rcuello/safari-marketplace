@@ -1,3 +1,23 @@
+const v3Colors = require('../../tailwind-v3-colors');
+
+// Escala de texto de la v3 con interlineado en rem. La v4 lo define como razón sin
+// unidades (1.25 / 0.875...), y un hijo con text-[13px] heredaba otro interlineado (US-86).
+const v3FontSize = {
+  xs: ['0.75rem', { lineHeight: '1rem' }],
+  sm: ['0.875rem', { lineHeight: '1.25rem' }],
+  base: ['1rem', { lineHeight: '1.5rem' }],
+  lg: ['1.125rem', { lineHeight: '1.75rem' }],
+  xl: ['1.25rem', { lineHeight: '1.75rem' }],
+  '2xl': ['1.5rem', { lineHeight: '2rem' }],
+  '3xl': ['1.875rem', { lineHeight: '2.25rem' }],
+  '4xl': ['2.25rem', { lineHeight: '2.5rem' }],
+  '5xl': ['3rem', { lineHeight: '1' }],
+  '6xl': ['3.75rem', { lineHeight: '1' }],
+  '7xl': ['4.5rem', { lineHeight: '1' }],
+  '8xl': ['6rem', { lineHeight: '1' }],
+  '9xl': ['8rem', { lineHeight: '1' }],
+};
+
 // <alpha-value> lo entienden la v3 y la v4; la v4 no acepta colores definidos como
 // función (US-86). Las variables siguen en formato "r, g, b".
 function withOpacity(variableName) {
@@ -18,6 +38,7 @@ module.exports = {
         heading: [`Inter, sans-serif`],
       },
       colors: {
+        ...v3Colors,
         light: withOpacity('--color-light'),
         dark: withOpacity('--color-dark'),
         accent: withOpacity('--color-accent'),
@@ -123,6 +144,7 @@ module.exports = {
         fit: 'repeat(auto-fit, minmax(0, 1fr))',
       },
       fontSize: {
+        ...v3FontSize,
         h1: 'var(--h1)',
         h2: 'var(--h2)',
         h3: 'var(--h3)',
@@ -135,6 +157,6 @@ module.exports = {
   plugins: [
     require('@tailwindcss/typography'),
     require('@tailwindcss/forms'),
-    require('tailwindcss-rtl'),
+    // tailwindcss-rtl no carga en la v4: ms-/me-/ps-/pe-/start-/end- son nativas (US-86).
   ],
 };
