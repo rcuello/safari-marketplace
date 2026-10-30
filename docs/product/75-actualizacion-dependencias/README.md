@@ -91,7 +91,7 @@ arriba.
 | [US-80](./80-next-13-a-14.md) ✅ | Next 13.5 → 14.2 en shop y admin, con React 18. Implementada el 2026-10-24; también admin/graphql, para tener un solo Next (decisión del dueño, R-1/R-2); el pin de React 18.2.0 se mantiene (D-3) | Sí | ninguna | ~150 |
 | [US-81](./81-eslint-9-flat-config.md) ✅ | ESLint 9 con flat config y Prettier 3 en las tres apps. Implementada el 2026-10-24; `eslint-config-next` 15.5 de puente; ESLint 9 sin soporte → US-82 | Sí | US-80, US-77 | ~250 |
 | [US-82](./82-next-14-a-16.md) ✅ | Next 14.2 → 16 en shop y admin, con React 18. Implementada el 2026-10-25; 16.4.1 por excepción de seguridad; webpack (Turbopack no funcionó); `next-env.d.ts` fuera de git | Sí | US-80, US-81 | ~250 |
-| [US-83](./83-react-19.md) | React 19 en shop y admin | Sí | US-82 | ~200 |
+| [US-83](./83-react-19.md) ✅ | React 19 en shop y admin. Implementada el 2026-10-29 (19.3.1); `react-quill` sustituido por un envoltorio propio sobre Quill 1; `rc-table` sigue en 7.22.2; Turbopack descartado otra vez | Sí | US-82 | ~200 |
 | [US-84](./84-tanstack-query-shop.md) ✅ | react-query 3 → @tanstack/react-query 5 en el shop. Implementada el 2026-10-24 (5.104.1; sin el codemod oficial) | Sí | US-80 | ~300 |
 | [US-85](./85-tanstack-query-admin.md) ✅ | react-query 3 → @tanstack/react-query 5 en el admin. Implementada el 2026-10-24; `react-query` sale del workspace | Sí | US-84 | ~450 |
 | [US-86](./86-tailwind-4.md) | Tailwind 3 → 4 en shop y admin | Sí | US-82 | ~300 |
