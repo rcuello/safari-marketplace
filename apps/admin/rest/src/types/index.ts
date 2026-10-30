@@ -2293,7 +2293,7 @@ export interface OwnershipTransferQueryOptions extends QueryOptions {
 
 export interface StickerCardProps {
   titleTransKey: string;
-  icon?: JSX.Element;
+  icon?: React.JSX.Element;
   color?: string;
   price?: string | number;
   indicator?: 'up' | 'down';

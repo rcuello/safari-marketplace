@@ -3,7 +3,7 @@ import { checkIsScrollingStart } from '@/lib/constants';
 import { useAtom } from 'jotai';
 
 export function useActiveScroll<T extends HTMLElement = HTMLElement>(
-  ref: RefObject<T>,
+  ref: RefObject<T | null>,
   topOffset: number = 80,
 ) {
   const [_, setUnderMaintenanceStart] = useAtom(checkIsScrollingStart);

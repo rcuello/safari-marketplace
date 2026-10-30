@@ -4,7 +4,7 @@ import type { ButtonHTMLAttributes, ReactElement, ReactNode } from 'react';
 
 export type NextPageWithLayout<P = {}> = NextPage<P> & {
   authenticationRequired?: boolean;
-  getLayout?: (page: ReactElement) => ReactNode;
+  getLayout?: (page: ReactElement<P>) => ReactNode;
 };
 
 export interface GetParams {

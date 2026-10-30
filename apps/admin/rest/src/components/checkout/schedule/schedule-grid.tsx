@@ -38,7 +38,10 @@ export const ScheduleGrid: React.FC<ScheduleProps> = ({
       </div>
 
       {schedules && schedules?.length ? (
-        <RadioGroup value={selectedSchedule} onChange={setSchedule}>
+        <RadioGroup
+          value={selectedSchedule}
+          onChange={(schedule) => schedule && setSchedule(schedule)}
+        >
           <RadioGroup.Label className="sr-only">{label}</RadioGroup.Label>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3">
             {schedules?.map((schedule: any, idx: number) => (

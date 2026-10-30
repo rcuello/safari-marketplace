@@ -82,7 +82,7 @@ const HeaderMinimal = ({ layout }: { layout: string }) => {
   );
   const [isScrolling] = useAtom(checkIsScrollingStart);
   const { settings } = useSettings();
-  const siteHeaderRef = React.useRef(null);
+  const siteHeaderRef = React.useRef<HTMLDivElement>(null);
   useActiveScroll(siteHeaderRef);
   const { width } = useWindowSize();
   const handleLogin = useCallback(() => {

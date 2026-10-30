@@ -1,7 +1,7 @@
 type Props = {
   className?: string;
   title?: string;
-  details?: string | JSX.Element;
+  details?: string | React.JSX.Element;
   [key: string]: unknown;
 };
 

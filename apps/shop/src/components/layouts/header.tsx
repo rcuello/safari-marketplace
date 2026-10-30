@@ -72,7 +72,7 @@ const Header = ({ layout }: { layout?: string }) => {
   const [isAuthorize] = useAtom(authorizationAtom);
   const [openDropdown, setOpenDropdown] = useState(false);
   const isHomePage = useIsHomePage();
-  const siteHeaderRef = React.useRef(null);
+  const siteHeaderRef = React.useRef<HTMLElement>(null);
   useActiveScroll(siteHeaderRef);
   const isFlattenHeader = useMemo(
     () => !show && isHomePage && layout !== 'modern',

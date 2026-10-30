@@ -1,5 +1,5 @@
 import React, { Fragment } from 'react';
-import { Dialog, Transition } from '@headlessui/react';
+import { Dialog, DialogBackdrop, Transition } from '@headlessui/react';
 import cn from 'classnames';
 
 const drawerClasses = {
@@ -54,7 +54,7 @@ export function DrawerPortal({
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <Dialog.Overlay
+          <DialogBackdrop
             className={cn(drawerClasses.overlay, overlayClassName)}
           />
         </TransitionChild>

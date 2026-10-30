@@ -108,7 +108,7 @@ type Content = {
 export type TooltipProps = {
   isOpen?: boolean;
   setIsOpen?: React.Dispatch<React.SetStateAction<boolean>>;
-  children: JSX.Element & { ref?: RefObject<any> };
+  children: React.JSX.Element & { ref?: RefObject<any> };
   content: ({ open, setOpen }: Content) => React.ReactNode;
   color?: keyof typeof tooltipClasses.variant.solid.color;
   size?: keyof typeof tooltipClasses.size;

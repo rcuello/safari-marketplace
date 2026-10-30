@@ -20,7 +20,9 @@ export default function GeneralLayout({
   );
 }
 
-export const getGeneralLayout = (page: React.ReactElement) => (
+export const getGeneralLayout = (
+  page: React.ReactElement<{ layout?: string }>,
+) => (
   <GeneralLayout layout={page.props.layout}>
     {page}
     <MobileNavigation />

@@ -6,7 +6,7 @@ import Search from '@/components/ui/search/search';
 import type { Banner } from '@/types';
 import { useHeaderSearch } from '@/layouts/headers/header-search-atom';
 import { useIntersection } from 'react-use';
-import { useEffect, useMemo, useRef } from 'react';
+import { RefObject, useEffect, useMemo, useRef } from 'react';
 import { useIsRTL } from '@/lib/locals';
 import { ArrowNext, ArrowPrev } from '@/components/icons';
 import { useTranslation } from 'next-i18next/pages';
@@ -19,14 +19,17 @@ interface BannerProps {
 
 const BannerWithSearch: React.FC<BannerProps> = ({ banners, layout }) => {
   const { showHeaderSearch, hideHeaderSearch } = useHeaderSearch();
-  const intersectionRef = useRef(null);
+  const intersectionRef = useRef<HTMLDivElement>(null);
   const { t } = useTranslation('common');
   const { isRTL } = useIsRTL();
-  const intersection = useIntersection(intersectionRef, {
-    root: null,
-    rootMargin: '0px',
-    threshold: 1,
-  });
+  const intersection = useIntersection(
+    intersectionRef as RefObject<HTMLElement>,
+    {
+      root: null,
+      rootMargin: '0px',
+      threshold: 1,
+    },
+  );
 
   useEffect(() => {
     if (intersection && intersection.isIntersecting) {

@@ -61,7 +61,9 @@ export default function Manufacturer({ manufacturer, variables }: any) {
   );
 }
 
-const GetLayout = (page: React.ReactElement) => {
+const GetLayout = (
+  page: React.ReactElement<{ manufacturer?: { type?: { slug?: string } } }>,
+) => {
   const { t } = useTranslation('common');
   const [_, setDrawerView] = useAtom(drawerAtom);
   const type = page.props.manufacturer?.type?.slug;

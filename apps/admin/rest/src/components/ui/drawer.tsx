@@ -19,7 +19,6 @@ interface SidebarProps {
   useBlurBackdrop?: boolean;
   onClose: () => void;
 }
-type DivElementRef = React.MutableRefObject<HTMLDivElement>;
 
 const Drawer: FC<SidebarProps> = ({
   children,
@@ -30,7 +29,7 @@ const Drawer: FC<SidebarProps> = ({
 }) => {
   const { locale } = useRouter();
   const dir = locale === 'ar' || locale === 'he' ? 'rtl' : 'ltr';
-  const ref = useRef() as DivElementRef;
+  const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (ref.current) {
       if (open) {

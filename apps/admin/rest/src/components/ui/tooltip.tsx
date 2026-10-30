@@ -98,7 +98,7 @@ const tooltipAnimation = {
 };
 
 export type TooltipProps = {
-  children: JSX.Element & { ref?: RefObject<any> };
+  children: React.JSX.Element & { ref?: RefObject<any> };
   content: React.ReactNode;
   color?: keyof typeof tooltipStyles.variant.solid.color;
   size?: keyof typeof tooltipStyles.size;

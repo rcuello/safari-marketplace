@@ -9,7 +9,7 @@ interface FlashSaleCardProps {
 const FlashSaleCard: React.FC<FlashSaleCardProps> = ({
   flashSales,
   className,
-}): JSX.Element[] => {
+}): React.JSX.Element[] => {
   return flashSales?.map((flashSale) => (
     <FlashSaleItem
       flashSale={flashSale as FlashSale}

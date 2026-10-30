@@ -17,7 +17,7 @@ import isEqual from 'lodash/isEqual';
 import { useTranslation } from 'next-i18next/pages';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { RefObject, useEffect, useMemo, useRef, useState } from 'react';
 import { Element, scroller } from 'react-scroll';
 import { useIntersection } from 'react-use';
 import { useAttributes } from './attributes.context';
@@ -70,12 +70,15 @@ const Details: React.FC<Props> = ({
 
   const router = useRouter();
   const { closeModal } = useModalAction();
-  const intersectionRef = useRef(null);
-  const intersection = useIntersection(intersectionRef, {
-    root: null,
-    rootMargin: '0px',
-    threshold: 1,
-  });
+  const intersectionRef = useRef<HTMLDivElement>(null);
+  const intersection = useIntersection(
+    intersectionRef as RefObject<HTMLElement>,
+    {
+      root: null,
+      rootMargin: '0px',
+      threshold: 1,
+    },
+  );
   useEffect(() => {
     if (intersection && intersection.isIntersecting) {
       setShowStickyShortDetails(false);
