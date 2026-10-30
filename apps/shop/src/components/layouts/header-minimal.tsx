@@ -134,7 +134,7 @@ const HeaderMinimal = ({ layout }: { layout: string }) => {
         <div
           ref={siteHeaderRef}
           className={cn(
-            'fixed z-50 flex w-full items-center justify-between border-b border-border-200 bg-light px-5 py-3 shadow-sm transition-transform duration-300 lg:h-22 lg:py-5 lg:px-6 xl:px-8',
+            'fixed z-50 flex w-full items-center justify-between border-b border-border-200 bg-light px-5 py-3 shadow-xs transition-transform duration-300 lg:h-22 lg:py-5 lg:px-6 xl:px-8',
             {
               'px-5 lg:!px-7 xl:!px-10': layout === 'compact',
             },
@@ -167,15 +167,15 @@ const HeaderMinimal = ({ layout }: { layout: string }) => {
             ''
           )} */}
 
-            <div className="hidden shrink-0 items-center space-x-7 ltr:ml-10 ltr:mr-auto rtl:mr-10 rtl:ml-auto rtl:space-x-reverse lg:flex 2xl:space-x-10">
-              <ul className="hidden shrink-0 items-center space-x-7 rtl:space-x-reverse xl:flex 2xl:space-x-10">
+            <div className="hidden shrink-0 items-center space-x-7 ltr:ml-10 ltr:mr-auto rtl:mr-10 rtl:ml-auto lg:flex 2xl:space-x-10">
+              <ul className="hidden shrink-0 items-center space-x-7 xl:flex 2xl:space-x-10">
                 <StaticMenu />
               </ul>
             </div>
           </div>
 
           {displayMobileHeaderSearch && (
-            <div className="absolute top-0 z-20 flex h-full w-full items-center justify-center space-x-4 border-b-accent-300 bg-light px-5 py-1.5 backdrop-blur ltr:left-0 rtl:right-0 rtl:space-x-reverse lg:border lg:bg-opacity-30">
+            <div className="absolute top-0 z-20 flex h-full w-full items-center justify-center space-x-4 border-b-accent-300 bg-light px-5 py-1.5 backdrop-blur ltr:left-0 rtl:right-0 lg:border lg:bg-light/30">
               <SearchWithSuggestion
                 label={t('text-search-label')}
                 variant="minimal"
@@ -186,7 +186,7 @@ const HeaderMinimal = ({ layout }: { layout: string }) => {
               <Button
                 variant="custom"
                 onClick={() => setDisplayMobileHeaderSearch((prev) => !prev)}
-                className="hidden border border-accent-400 bg-gray-100 !px-4 text-accent lg:inline-flex"
+                className="max-lg:hidden border border-accent-400 bg-gray-100 !px-4 text-accent lg:inline-flex"
               >
                 <CloseIcon className="h-5 w-5" />
               </Button>
@@ -203,7 +203,7 @@ const HeaderMinimal = ({ layout }: { layout: string }) => {
           </div>
         )} */}
 
-          <div className="flex shrink-0 items-center space-x-4 rtl:space-x-reverse sm:space-x-6">
+          <div className="flex shrink-0 items-center space-x-4 sm:space-x-6">
             <div
               className={cn(
                 'hidden',
@@ -214,7 +214,7 @@ const HeaderMinimal = ({ layout }: { layout: string }) => {
             </div>
 
             {isMultiLangEnable ? (
-              <div className="ms-auto lg:me-5 xl:me-8 2xl:me-10 flex-shrink-0">
+              <div className="ms-auto lg:me-5 xl:me-8 2xl:me-10 shrink-0">
                 <LanguageSwitcher />
               </div>
             ) : null}
@@ -222,7 +222,7 @@ const HeaderMinimal = ({ layout }: { layout: string }) => {
             {layout === 'compact' ? (
               <Button
                 variant="custom"
-                className="hidden h-[38px] w-[38px] items-center  gap-2 rounded-full border border-border-200 bg-light !p-1 text-sm !font-normal focus:!shadow-none focus:!ring-0 md:text-base lg:!flex"
+                className="max-lg:hidden h-[38px] w-[38px] items-center  gap-2 rounded-full border border-border-200 bg-light !p-1 text-sm !font-normal focus:!shadow-none focus:!ring-0 md:text-base lg:!flex"
                 onClick={() => setDisplayMobileHeaderSearch((prev) => !prev)}
               >
                 <SearchIcon className="h-4 w-4" />
@@ -235,7 +235,7 @@ const HeaderMinimal = ({ layout }: { layout: string }) => {
             />
 
             <CartCounterIconButton />
-            <div className="flex items-center lg:space-x-4 rtl:lg:space-x-reverse">
+            <div className="flex items-center lg:space-x-4">
               <div className="hidden lg:inline-flex">
                 {isAuthorize ? <AuthorizedMenu /> : <JoinButton />}
               </div>

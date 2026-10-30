@@ -52,7 +52,7 @@ export default function ShopTermsPage() {
           breadcrumbTitle={t('terms-text-home')}
         />
         {/* End of page header */}
-        <div className="container px-4 py-8 mx-auto 3xl:py-18 md:py-10 xl:py-12 2xl:py-14">
+        <div className="container px-4 py-8 mx-auto md:py-10 xl:py-12 2xl:py-14">
           {isEmpty(termsAndConditions) ? (
             <div className="max-w-sm mx-auto">
               <NotFound text="No terms and conditions found." />

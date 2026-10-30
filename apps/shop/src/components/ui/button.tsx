@@ -3,7 +3,7 @@ import cn from 'classnames';
 import React from 'react';
 
 const classes = {
-  root: 'inline-flex items-center justify-center shrink-0 font-semibold leading-none rounded outline-none transition duration-300 ease-in-out focus:outline-0 focus:shadow focus:ring-1 focus:ring-accent-700',
+  root: 'inline-flex items-center justify-center shrink-0 font-semibold leading-none rounded outline-hidden transition duration-300 ease-in-out focus:outline-0 focus:shadow focus:ring-1 focus:ring-accent-700',
   normal:
     'bg-accent text-light border border-transparent hover:bg-accent-hover',
   dark: 'bg-[#092635] hover:bg-[#091625] text-light border border-transparent',
@@ -15,7 +15,7 @@ const classes = {
   disabled:
     'border border-border-base bg-gray-300 hover:bg-gray-300 border-border-400 text-body cursor-not-allowed',
   disabledOutline: 'border border-border-base text-muted cursor-not-allowed',
-  small: 'px-3 py-0 h-9 text-sm h-10',
+  small: 'px-3 py-0 h-9 text-sm',
   medium: 'px-5 py-0 h-12',
   big: 'px-6 py-5',
 };

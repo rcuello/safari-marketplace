@@ -219,7 +219,7 @@ export default function OrderDetailsPage() {
                 <ValidationError message={t(errors?.order_status?.message)} />
               </div>
               <Button loading={updating}>
-                <span className="hidden sm:block">
+                <span className="max-sm:hidden sm:block">
                   {t('form:button-label-change-status')}
                 </span>
                 <span className="block sm:hidden">

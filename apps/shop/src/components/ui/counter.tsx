@@ -32,10 +32,10 @@ type CounterProps = {
 
 const variantClasses = {
   helium:
-    'w-7 h-18 sm:w-20 sm:h-7 md:h-9 md:w-24 bg-accent flex-col-reverse sm:flex-row absolute sm:static bottom-3 ltr:right-3 rtl:left-3 sm:bottom-0 ltr:sm:right-0 ltr:sm:left-0 text-light rounded',
+    'w-7 sm:w-20 sm:h-7 md:h-9 md:w-24 bg-accent flex-col-reverse sm:flex-row absolute sm:static bottom-3 ltr:right-3 rtl:left-3 sm:bottom-0 ltr:sm:right-0 ltr:sm:left-0 text-light rounded',
   neon: 'w-full h-7 md:h-9 bg-accent text-light rounded',
   argon:
-    'w-7 h-18 sm:w-20 sm:h-7 md:h-9 md:w-24 bg-accent flex-col-reverse sm:flex-row text-light rounded',
+    'w-7 sm:w-20 sm:h-7 md:h-9 md:w-24 bg-accent flex-col-reverse sm:flex-row text-light rounded',
   oganesson:
     'w-20 h-8 md:w-24 md:h-10 bg-accent text-light rounded-full shadow-500',
   single:
@@ -45,7 +45,7 @@ const variantClasses = {
   pillVertical:
     'flex-col-reverse items-center w-8 h-24 bg-gray-100 text-heading rounded-full',
   big: 'w-full h-14 rounded text-light bg-accent inline-flex justify-between',
-  text: 'w-7 h-18 sm:w-20 sm:h-7 md:h-9 md:w-24 bg-accent flex-col-reverse sm:flex-row text-light rounded',
+  text: 'w-7 sm:w-20 sm:h-7 md:h-9 md:w-24 bg-accent flex-col-reverse sm:flex-row text-light rounded',
   bordered:
     'h-14 rounded text-heading bg-transparent inline-flex justify-between shrink-0',
   florine: '',
@@ -127,7 +127,7 @@ const Counter: React.FC<CounterProps> = ({
       >
         <span className="sr-only">{t('text-plus')}</span>
         {variant !== 'florine' ? (
-          <PlusIcon className="md:w-4.5 h-3.5 w-3.5 stroke-2.5 md:h-4.5" />
+          <PlusIcon className="h-3.5 w-3.5 stroke-2.5" />
         ) : (
           <PlusIconNew />
         )}

@@ -83,7 +83,7 @@ export const TermsItems = ({
       </h2>
       {content ? (
         <div
-          className="mt-15 leading-loose text-body-dark react-editor-description"
+          className="leading-loose text-body-dark react-editor-description"
           dangerouslySetInnerHTML={{
             __html: content,
           }}

@@ -26,10 +26,10 @@ type CounterProps = {
 
 const variantClasses = {
   helium:
-    'w-7 h-18 sm:w-20 sm:h-7 md:h-9 md:w-24 bg-accent flex-col-reverse sm:flex-row absolute sm:static bottom-3 end-3 sm:bottom-0 sm:end-0 text-light rounded',
+    'w-7 sm:w-20 sm:h-7 md:h-9 md:w-24 bg-accent flex-col-reverse sm:flex-row absolute sm:static bottom-3 end-3 sm:bottom-0 sm:end-0 text-light rounded',
   neon: 'w-full h-7 md:h-9 bg-accent text-light rounded',
   argon:
-    'w-7 h-18 sm:w-20 sm:h-7 md:h-9 md:w-24 bg-accent flex-col-reverse sm:flex-row text-light rounded',
+    'w-7 sm:w-20 sm:h-7 md:h-9 md:w-24 bg-accent flex-col-reverse sm:flex-row text-light rounded',
   oganesson:
     'w-20 h-8 md:w-24 md:h-10 bg-accent text-light rounded-full shadow-500',
   single:
@@ -58,7 +58,7 @@ const Counter: React.FC<CounterProps> = ({
       <button
         onClick={onDecrement}
         className={cn(
-          'cursor-pointer p-2 transition-colors duration-200 hover:bg-accent-hover focus:outline-none',
+          'cursor-pointer p-2 transition-colors duration-200 hover:bg-accent-hover focus:outline-hidden',
           {
             'px-3 py-3 sm:px-2': variant === 'single',
             'px-5': variant === 'big',
@@ -81,7 +81,7 @@ const Counter: React.FC<CounterProps> = ({
         onClick={onIncrement}
         disabled={disabled}
         className={cn(
-          'cursor-pointer p-2 transition-colors duration-200 hover:bg-accent-hover focus:outline-none',
+          'cursor-pointer p-2 transition-colors duration-200 hover:bg-accent-hover focus:outline-hidden',
           {
             'px-3 py-3 sm:px-2': variant === 'single',
             'px-5': variant === 'big',
@@ -91,7 +91,7 @@ const Counter: React.FC<CounterProps> = ({
         title={disabled ? t('text-out-of-stock') : ''}
       >
         <span className="sr-only">{t('text-plus')}</span>
-        <PlusIcon className="md:h-4.5 md:w-4.5 h-3.5 w-3.5 stroke-2" />
+        <PlusIcon className="h-3.5 w-3.5 stroke-2" />
       </button>
     </div>
   );

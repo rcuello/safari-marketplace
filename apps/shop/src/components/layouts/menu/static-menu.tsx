@@ -19,7 +19,7 @@ const StaticMenu = () => {
           </Link>
         </li>
       ))}
-      <li className="menuItem group relative mx-3 cursor-pointer py-3 xl:mx-4">
+      <li className="menuItem group relative cursor-pointer py-3">
         <div className="flex items-center gap-2 group-hover:text-accent">
           <span className="text-brand-dark group-hover:text-brand relative inline-flex items-center py-2 font-normal rtl:left-0">
             {t('text-pages')}

@@ -3,7 +3,7 @@ import * as React from 'react';
 export const PaymongoIcon = ({ ...props }) => {
   return (
     <svg
-      className="w-15 h-6"
+      className="h-6"
       viewBox="0 0 1205 208"
       xmlns="http://www.w3.org/2000/svg"
       {...props}

@@ -219,7 +219,9 @@ const SidebarItem = ({
                 duration: 0.35,
                 ease: [0.33, 1, 0.68, 1],
               }}
-              className={miniSidebar ? 'relative' : '!mt-0'}
+              // En la v4 el space-y-2 del padre pone margin-bottom al botón anterior,
+              // no margin-top aquí: -mt-2 lo anula como antes lo hacía !mt-0 (US-86).
+              className={miniSidebar ? 'relative' : '-mt-2'}
             >
               <div className="pt-2 ltr:pl-5 rtl:pr-5">
                 <div className="space-y-1 border-0 border-l border-dashed border-slate-300 ltr:pl-1 rtl:pr-1">

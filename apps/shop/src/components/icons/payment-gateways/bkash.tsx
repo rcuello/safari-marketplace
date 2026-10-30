@@ -3,7 +3,7 @@ import * as React from 'react';
 export const BkashIcon = ({ ...props }) => {
   return (
     <svg
-      className="w-18 h-8"
+      className="h-8"
       viewBox="0 0 868 410"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"

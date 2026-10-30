@@ -103,7 +103,7 @@ const Header = ({ layout }: { layout?: string }) => {
           cn('site-header-with-search top-0 z-50 w-full transition-all', {
             '': isFlattenHeader,
             'sticky lg:fixed': isHomePage,
-            'sticky border-b border-border-200 shadow-sm': !isHomePage,
+            'sticky border-b border-border-200 shadow-xs': !isHomePage,
             'lg:h-22': !underMaintenanceIsComing,
             'lg:h-auto': shopUnderMaintenanceIsComing,
           }),
@@ -212,7 +212,7 @@ const Header = ({ layout }: { layout?: string }) => {
               <>
                 {(displayMobileHeaderSearch && show) ||
                 (displayMobileHeaderSearch && layout === 'modern') ? (
-                  <div className="absolute top-0 z-20 flex h-full w-full items-center justify-center space-x-4 border-b-accent-300 bg-light px-5 py-1.5 backdrop-blur ltr:left-0 rtl:right-0 rtl:space-x-reverse lg:border lg:bg-opacity-30">
+                  <div className="absolute top-0 z-20 flex h-full w-full items-center justify-center space-x-4 border-b-accent-300 bg-light px-5 py-1.5 backdrop-blur ltr:left-0 rtl:right-0 lg:border lg:bg-light/30">
                     <Search
                       label={t('text-search-label')}
                       variant="minimal"
@@ -224,7 +224,7 @@ const Header = ({ layout }: { layout?: string }) => {
                       onClick={() =>
                         setDisplayMobileHeaderSearch((prev) => !prev)
                       }
-                      className="hidden border border-accent-400 bg-gray-100 !px-4 text-accent lg:inline-flex"
+                      className="max-lg:hidden border border-accent-400 bg-gray-100 !px-4 text-accent lg:inline-flex"
                     >
                       <CloseIcon className="h-5 w-5" />
                     </Button>
@@ -238,15 +238,15 @@ const Header = ({ layout }: { layout?: string }) => {
         >
           Map
         </button> */}
-            <div className="flex shrink-0 items-center space-x-7 rtl:space-x-reverse 2xl:space-x-10">
-              <ul className="hidden shrink-0 items-center space-x-7 rtl:space-x-reverse xl:flex 2xl:space-x-10">
+            <div className="flex shrink-0 items-center space-x-7 2xl:space-x-10">
+              <ul className="hidden shrink-0 items-center space-x-7 xl:flex 2xl:space-x-10">
                 <StaticMenu />
               </ul>
-              <div className="flex items-center space-x-4 rtl:space-x-reverse">
+              <div className="flex items-center space-x-4">
                 {(isHomePage && show) || (isHomePage && layout === 'modern') ? (
                   <Button
                     variant="custom"
-                    className="hidden h-[38px] w-[38px] items-center  gap-2 rounded-full border border-border-200 bg-light !p-1 text-sm !font-normal focus:!shadow-none focus:!ring-0 md:text-base lg:!flex"
+                    className="max-lg:hidden h-[38px] w-[38px] items-center  gap-2 rounded-full border border-border-200 bg-light !p-1 text-sm !font-normal focus:!shadow-none focus:!ring-0 md:text-base lg:!flex"
                     onClick={() =>
                       setDisplayMobileHeaderSearch((prev) => !prev)
                     }
@@ -301,7 +301,7 @@ const Header = ({ layout }: { layout?: string }) => {
                 </div>
                 <Link
                   href={Routes.becomeSeller}
-                  className="hidden h-9 shrink-0 items-center justify-center rounded border border-transparent bg-accent px-3 py-0 text-sm font-semibold leading-none text-light outline-none transition duration-300 ease-in-out hover:bg-accent-hover focus:shadow focus:outline-none focus:ring-1 focus:ring-accent-700 sm:inline-flex"
+                  className="hidden h-9 shrink-0 items-center justify-center rounded border border-transparent bg-accent px-3 py-0 text-sm font-semibold leading-none text-light outline-hidden transition duration-300 ease-in-out hover:bg-accent-hover focus:shadow focus:outline-hidden focus:ring-1 focus:ring-accent-700 sm:inline-flex"
                 >
                   {t('text-become-seller')}
                 </Link>
@@ -310,7 +310,7 @@ const Header = ({ layout }: { layout?: string }) => {
           </div>
           {/* <div
           className={cn(
-            'w-full border-b border-t border-border-200 bg-light shadow-sm 2xl:border-t-0',
+            'w-full border-b border-t border-border-200 bg-light shadow-xs 2xl:border-t-0',
             isHomePage ? 'hidden lg:block' : 'hidden'
           )}
         >
@@ -323,7 +323,7 @@ const Header = ({ layout }: { layout?: string }) => {
             >
               <Button
                 variant="custom"
-                className="flex items-center gap-2 focus:!shadow-none focus:!ring-0"
+                className="!flex items-center gap-2 focus:!shadow-none focus:!ring-0"
                 onClick={() => setOpenDropdown(!openDropdown)}
               >
                 <span className="flex items-center gap-1 text-base text-accent">

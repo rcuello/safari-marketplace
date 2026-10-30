@@ -1,13 +1,17 @@
-@import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Raleway&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Lato&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Rubik&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Open+Sans&display=swap');
 /*
 * RC Pagination
 */
+/* En la v3, space-y-3 más el mt-3 de prev/next daban mt-3 a todos los hijos, y
+   el selector de space-x-3 pisaba el margin-right de rc-pagination. El space-*
+   de la v4 va en :where() y usa margin-bottom/-end: se copia la regla de la v3
+   para que la paginación se vea igual (US-86). */
 .rc-pagination {
-  @apply flex flex-wrap items-center space-x-3 space-y-3 rtl:space-x-reverse;
+  @apply flex flex-wrap items-center *:mt-3;
+}
+
+.rc-pagination > :not([hidden]) ~ :not([hidden]) {
+  margin-right: 0;
+  margin-left: 0.75rem;
 }
 
 .rc-pagination .rc-pagination-item {
@@ -70,7 +74,7 @@
 
 /* RC Table */
 .rc-table {
-  @apply border-separate shadow-sm;
+  @apply border-separate shadow-xs;
   border-spacing: 0;
 }
 
@@ -327,7 +331,7 @@ Overlay Scrollbar - os-theme-thin-dark
   height: 100vh;
 }
 
-@screen lg {
+@media (width >= theme(--breakpoint-lg)) {
   .scrollbar_height {
     height: calc(100vh - 7.25rem);
   }
@@ -554,7 +558,7 @@ html[dir='rtl'] .react-tel-input .country-list .flag {
   @apply top-full;
 }
 #site-header.is-scrolling {
-  @apply border-b border-border-200 bg-light shadow-sm;
+  @apply border-b border-border-200 bg-light shadow-xs;
 }
 
 /* Mobile Drawer Menu */

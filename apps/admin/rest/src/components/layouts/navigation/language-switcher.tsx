@@ -35,8 +35,8 @@ export default function LanguageSwitcher() {
   return (
     <Listbox value={selectedItem} onChange={handleItemClick}>
       {({ open }) => (
-        <div className="min-w-90 relative z-10 py-2 sm:border-gray-200/80 sm:py-3 sm:border-s lg:py-4 lg:pe-6 lg:ms-0">
-          <Listbox.Button className="gap-3r relative flex w-full cursor-pointer items-end rounded px-1.5 py-0.5 text-[13px] font-semibold text-heading text-start focus:outline-none focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 focus-visible:ring-offset-2 focus-visible:ring-offset-orange-300 sm:px-6 xl:text-sm">
+        <div className="relative z-10 py-2 sm:border-gray-200/80 sm:py-3 sm:border-s lg:py-4 lg:pe-6 lg:ms-0">
+          <Listbox.Button className="gap-3r relative flex w-full cursor-pointer items-end rounded px-1.5 py-0.5 text-[13px] font-semibold text-heading text-start focus:outline-hidden focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-white/75 focus-visible:ring-offset-2 focus-visible:ring-offset-orange-300 sm:px-6 xl:text-sm">
             <span className="hidden lg:block">
               <span className="text-xs font-medium text-gray-400">
                 {t('common:text-language')}

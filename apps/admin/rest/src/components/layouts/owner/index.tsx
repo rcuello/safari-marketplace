@@ -48,7 +48,7 @@ const OwnerLayout: React.FC<{ children?: React.ReactNode }> = ({
               (underMaintenance || underMaintenanceStart)
               ? 'lg:pt-[8.75rem]'
               : 'pt-20',
-            miniSidebar && width >= RESPONSIVE_WIDTH ? 'lg:w-24' : 'lg:w-76',
+            miniSidebar && width >= RESPONSIVE_WIDTH ? 'lg:w-24' : '',
           )}
         >
           <div className="w-full h-full overflow-x-hidden sidebar-scrollbar">
@@ -77,7 +77,7 @@ const OwnerLayout: React.FC<{ children?: React.ReactNode }> = ({
               : 'pt-[72px] lg:pt-20',
             miniSidebar && width >= RESPONSIVE_WIDTH
               ? 'ltr:lg:pl-24 rtl:lg:pr-24'
-              : 'ltr:xl:pl-76 rtl:xl:pr-76 ltr:lg:pl-72 rtl:lg:pr-72 rtl:lg:pl-0',
+              : 'ltr:lg:pl-72 rtl:lg:pr-72 rtl:lg:pl-0',
           )}
         >
           <div className="h-full p-5 md:p-8">{children}</div>

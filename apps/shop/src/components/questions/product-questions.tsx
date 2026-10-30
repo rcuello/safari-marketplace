@@ -57,24 +57,21 @@ const ProductQuestions: React.FC<ProductQuestionsProps> = ({
   return (
     <div>
       <div
-        className={cn(
-          '-mt-px border-t border-b border-border-200 border-opacity-70',
-          {
-            'px-5 lg:px-16': !boxedLayout,
-            'px-5 xl:px-0': boxedLayout,
-          },
-        )}
+        className={cn('-mt-px border-t border-b border-border-200/70', {
+          'px-5 lg:px-16': !boxedLayout,
+          'px-5 xl:px-0': boxedLayout,
+        })}
       >
         <div
           className={cn(
             'flex flex-col justify-between sm:flex-row sm:items-center',
             {
-              'mx-auto max-w-screen-xl': boxedLayout,
+              'mx-auto max-w-(--breakpoint-xl)': boxedLayout,
             },
           )}
         >
           <div className="flex flex-col items-start w-full py-3 space-y-1 lg:flex-row lg:items-center lg:justify-between lg:space-y-0 lg:py-0 ltr:lg:pr-5 rtl:lg:pl-5">
-            <h2 className="mb-1 text-lg font-semibold tracking-tight text-heading">
+            <h2 className="mb-2 text-lg font-semibold tracking-tight text-heading lg:mb-1">
               {t('text-question-answers')} (
               {
                 //@ts-ignore
@@ -89,7 +86,7 @@ const ProductQuestions: React.FC<ProductQuestionsProps> = ({
               {t('text-ask-question')}
             </button>
           </div>
-          <div className="-ml-3 shrink-0 border-t border-border-200 border-opacity-70 py-3 sm:ml-0 sm:min-w-[50%] sm:border-t-0 sm:py-8 ltr:sm:border-l ltr:sm:pl-5 rtl:sm:border-r rtl:sm:pr-5 md:min-w-[380px] lg:py-5">
+          <div className="-ml-3 shrink-0 border-t border-border-200/70 py-3 sm:ml-0 sm:min-w-[50%] sm:border-t-0 sm:py-8 ltr:sm:border-l ltr:sm:pl-5 rtl:sm:border-r rtl:sm:pr-5 md:min-w-[380px] lg:py-5">
             <Search
               label={t('text-search-label')}
               placeholder={t('text-question-search-placeholder')}
@@ -100,14 +97,14 @@ const ProductQuestions: React.FC<ProductQuestionsProps> = ({
       </div>
       {questions?.length !== 0 ? (
         <div
-          className={cn('border-b border-border-200 border-opacity-70', {
+          className={cn('border-b border-border-200/70', {
             'px-5 lg:px-16': !boxedLayout,
             'px-5 xl:px-0': boxedLayout,
           })}
         >
           <div
             className={cn({
-              'mx-auto max-w-screen-xl': boxedLayout,
+              'mx-auto max-w-(--breakpoint-xl)': boxedLayout,
             })}
           >
             {questions?.map((question: any) => (
@@ -118,8 +115,8 @@ const ProductQuestions: React.FC<ProductQuestionsProps> = ({
             ))}
             {/* Pagination */}
             {paginatorInfo && (
-              <div className="flex items-center justify-between py-4 border-t border-border-200 border-opacity-70">
-                <div className="text-xs text-body text-opacity-70">
+              <div className="flex items-center justify-between py-4 border-t border-border-200/70">
+                <div className="text-xs text-body/70">
                   {t('text-page')}{' '}
                   {
                     //@ts-ignore
@@ -154,7 +151,7 @@ const ProductQuestions: React.FC<ProductQuestionsProps> = ({
           </div>
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center px-5 py-16 border-b border-border-200 border-opacity-70">
+        <div className="flex flex-col items-center justify-center px-5 py-16 border-b border-border-200/70">
           <h3 className="text-lg font-semibold text-gray-400">
             {t('text-no-question-found')}
           </h3>

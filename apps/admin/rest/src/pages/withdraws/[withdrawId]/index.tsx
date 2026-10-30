@@ -110,7 +110,7 @@ const Withdraw = () => {
               <ValidationError message={t(errors?.status?.message)} />
             </div>
             <Button loading={approving}>
-              <span className="hidden sm:block">
+              <span className="max-sm:hidden sm:block">
                 {t('form:button-label-change-status')}
               </span>
               <span className="block sm:hidden">
@@ -121,7 +121,7 @@ const Withdraw = () => {
 
           <div className="w-full md:order-1 md:w-1/2 md:pe-3">
             <div className="mb-2 flex items-center justify-start">
-              <div className="flex w-4/12 flex-shrink-0 justify-between text-sm text-body me-5">
+              <div className="flex w-4/12 shrink-0 justify-between text-sm text-body me-5">
                 <span>{t('common:text-amount')}</span>
                 <span>:</span>
               </div>
@@ -133,7 +133,7 @@ const Withdraw = () => {
             </div>
 
             <div className="mb-2 flex items-center">
-              <div className="flex w-4/12 flex-shrink-0 justify-between text-sm text-body me-5">
+              <div className="flex w-4/12 shrink-0 justify-between text-sm text-body me-5">
                 <span>{t('common:text-payment-method')}</span>
                 <span>:</span>
               </div>
@@ -143,7 +143,7 @@ const Withdraw = () => {
             </div>
 
             <div className="flex items-center">
-              <div className="flex w-4/12 flex-shrink-0 justify-between text-sm text-body me-5">
+              <div className="flex w-4/12 shrink-0 justify-between text-sm text-body me-5">
                 <span>{t('common:text-status')}</span>
                 <span>:</span>
               </div>
