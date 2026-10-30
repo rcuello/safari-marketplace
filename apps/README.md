@@ -7,8 +7,8 @@ Guía verificada en Windows 11 + Node 22.14 + yarn 1.22.22 (2026-08-24).
 | Servicio | Carpeta | Stack | Puerto |
 |---|---|---|---|
 | API (híbrida: Postgres + mock) | `api/rest` | NestJS 9 | `9001` |
-| Tienda | `shop` | Next.js 16.4 (pages router, webpack) | `3003` |
-| Admin | `admin/rest` | Next.js 16.4 (pages router, webpack) | `3002` |
+| Tienda | `shop` | Next.js 16.4 (pages router, webpack) + React 19.3 | `3003` |
+| Admin | `admin/rest` | Next.js 16.4 (pages router, webpack) + React 19.3 | `3002` |
 
 `shop` y `admin/rest` consumen la API vía `NEXT_PUBLIC_REST_API_ENDPOINT`.
 Existe además una variante GraphQL (`api/graphql` + `dev:gql`) que depende de
@@ -322,14 +322,15 @@ global `Express.Multer.File`.
 ### Warnings esperados en consola
 
 Ruido cosmético, no fallos: `apple-mobile-web-app-capable` deprecado (solo en
-el admin; el shop ya trae también `mobile-web-app-capable`). El aviso de
-`fetchPriority` (Next 13 con React 18.3) ya no aparece: React está fijado en
-18.2.0 (US-80). En la terminal, Next 16 avisa al arrancar `React 18 support is
-deprecated in Next.js 16`: es esperado hasta que llegue React 19 (US-83).
+el admin; el shop ya trae también `mobile-web-app-capable`). React está en
+19.3.1 desde US-83, fijado con `resolutions` en `apps/package.json` (junto con
+`@types/react` y `@types/react-dom`) para que admin/graphql, que sigue
+declarando React 18, no deje una segunda copia en el workspace.
 
-Los scripts de `dev` y `build` llevan `--webpack` (US-82): con Turbopack, el
-default de Next 16, la portada del shop no hidrata y el admin no compila (ver
-la US-82).
+Los scripts de `dev` y `build` llevan `--webpack` (US-82). US-83 volvió a
+probar Turbopack, el default de Next 16, con React 19: en `dev` las dos apps
+piden chunks que no existen (404) y no hidratan, y en `next build` + `next
+start` el shop da errores de hidratación (#418). Ver la US-83.
 
 ## Notas para el despliegue en nube
 
