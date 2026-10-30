@@ -94,7 +94,7 @@ arriba.
 | [US-83](./83-react-19.md) ✅ | React 19 en shop y admin. Implementada el 2026-10-29 (19.3.1); `react-quill` sustituido por un envoltorio propio sobre Quill 1; `rc-table` sigue en 7.22.2; Turbopack descartado otra vez | Sí | US-82 | ~200 |
 | [US-84](./84-tanstack-query-shop.md) ✅ | react-query 3 → @tanstack/react-query 5 en el shop. Implementada el 2026-10-24 (5.104.1; sin el codemod oficial) | Sí | US-80 | ~300 |
 | [US-85](./85-tanstack-query-admin.md) ✅ | react-query 3 → @tanstack/react-query 5 en el admin. Implementada el 2026-10-24; `react-query` sale del workspace | Sí | US-84 | ~450 |
-| [US-86](./86-tailwind-4.md) | Tailwind 3 → 4 en shop y admin | Sí | US-82 | ~300 |
+| [US-86](./86-tailwind-4.md) ✅ | Tailwind 3 → 4 en shop y admin. Implementada el 2026-10-30 (4.3.3); config en JS con `@config`; `tailwindcss-rtl` sustituido por las variantes nativas; paleta y escala de texto de la v3 fijadas para no cambiar la UI | Sí | US-82 | ~300 |
 | [US-87](./87-stripe-sdks.md) | SDKs de Stripe (servidor y cliente) | Sí | US-78, US-83 | ~150 |
 | [US-88](./88-api-jest-a-vitest.md) ✅ | Tests de la API: de jest a Vitest (Nest 11, CommonJS). Implementada el 2026-10-24 (Vitest 4.1.11 + unplugin-swc; la red de tipos pasa a `tsc`) | Sí | US-78 | ~400 |
 | [US-89](./89-api-typescript-6.md) ✅ | TypeScript 6 en la API. Implementada el 2026-10-25; `dist/` idéntico; `strict: false` explícito | Sí | US-88 | ~80 |
@@ -174,7 +174,9 @@ la versión de destino.
 - **R-5 — `tailwindcss-rtl` y Tailwind 4.** El admin usa ese plugin.
   Tailwind 4 trae variantes `rtl:`/`ltr:` propias y cambia cómo se cargan los
   plugins. US-86 tiene que medir qué clases del plugin se usan antes de
-  decidir cómo sustituirlo.
+  decidir cómo sustituirlo. **Resuelto en US-86:** el plugin no carga en la v4 y se
+  sustituyó por las variantes nativas (27 `space-s-*`, 6 `rounded-te/be*` y 4
+  `origin-top-end` renombrados).
 - **R-6 — Las cifras de este README caducan.** Son del 2026-10-24. Cada US
   vuelve a correr `yarn outdated` o `npm view` para su paquete y fija la
   versión exacta que adopta.
