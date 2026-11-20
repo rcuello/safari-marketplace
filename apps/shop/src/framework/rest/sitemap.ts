@@ -16,7 +16,7 @@ import { HttpError } from './client/http-client';
 const CACHE_CONTROL = 'public, max-age=3600';
 // Páginas grandes para pocas llamadas, sin depender de que la API no tenga
 // tope: se pagina hasta `last_page` (D-6).
-const PAGE_SIZE = 500;
+const PAGE_SIZE: string = 500;
 
 // Páginas públicas sin datos por slug (D-3). El inicio es `/`: el type que
 // muestra no se repite como `/<slug>`.
