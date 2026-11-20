@@ -36,7 +36,7 @@ describe('HealthController', () => {
 
   it('liveness responde ok y la réplica, sin tocar la base', () => {
     expect(controller.liveness()).toEqual({
-      status: 'ROTO-A-PROPOSITO',
+      status: 'ok',
       instance: hostname(),
     });
     expect(pingDatabaseMock).not.toHaveBeenCalled();
