@@ -143,7 +143,8 @@ jobs:
     timeout-minutes: 40
     env:
       # Publicar: push a main, o dispatch sobre main. Nunca en pull_request.
-      PUBLICAR: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
+      # PRUEBA CA-6 (NO MERGEAR): fuerza el camino de publicación.
+      PUBLICAR: true
       # En un fork no se publica: no tiene las credenciales del dueño (US-110 D-6).
       ES_FORK: ${{ github.event.repository.fork }}
     steps:
@@ -171,7 +172,8 @@ jobs:
       - name: Credenciales de Docker Hub
         if: env.SUBIR == 'true'
         env:
-          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          # PRUEBA CA-6 (NO MERGEAR): un secreto que no existe.
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN_QUE_NO_EXISTE }}
           DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME }}
         run: |
           falta=0
