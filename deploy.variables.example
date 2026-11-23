@@ -5,21 +5,21 @@
 # tener valores reales. Guía: docs/dokploy/README.md.
 
 # Usuario de Docker Hub donde tu CI publica las imágenes.
-DOCKERHUB_USERNAME=tu-usuario-de-docker-hub
+DOCKERHUB_USERNAME=arv07
 
 # Etiqueta a desplegar: sha- y los 7 primeros caracteres del commit, tal como
 # la muestra el resumen del job de imágenes en GitHub Actions.
-IMAGE_TAG=sha-1234567
+IMAGE_TAG=sha-f31b27b
 
 # URL pública de la tienda, con https y sin / final.
-SHOP_URL=https://tienda.tu-dominio.com
+SHOP_URL=https://tienda.safari-store.winv
 
 # Cadenas largas y aleatorias, distintas entre sí. Por ejemplo:
 #   openssl rand -hex 32
-JWT_SECRET=cambia-esto-por-una-cadena-aleatoria
-SHOP_SECRET=cambia-esto-por-otra-cadena-aleatoria
+JWT_SECRET=6a828a884ef6e269f224755e8be5d3267694dadb07aea3b528a1e8de875e7a61
+SHOP_SECRET=0542883d5d39de892f19888a2334225a5fdd3a4a6bedf116d9a80bb848509db1
 
 # Contraseña de Postgres: SOLO letras y números (los símbolos @ : / # ?
 # rompen la URL de conexión). Se aplica al crear la base: si la cambias
 # después, la API deja de poder conectarse.
-POSTGRES_PASSWORD=cambia-esto-solo-letras-y-numeros
+POSTGRES_PASSWORD=1c81046e74f3ebf7b8c439475855cf6bed5e0c9833e9ab15693a8c8d002a266f
